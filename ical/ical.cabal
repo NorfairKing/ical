@@ -18,6 +18,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , megaparsec
     , text
     , validity
     , validity-bytestring

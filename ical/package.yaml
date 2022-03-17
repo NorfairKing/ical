@@ -8,6 +8,7 @@ library:
   source-dirs: src
   dependencies:
   - bytestring
+  - megaparsec
   - text
   - validity
   - validity-bytestring
