@@ -1,14 +1,9 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module ICal.LineSpec where
 
-import Data.GenValidity
-import Data.GenValidity.Text ()
 import ICal.Line
+import ICal.Line.Gen ()
 import Test.Syd
 import Test.Syd.Validity
-
-instance GenValid UnfoldedLine
 
 spec :: Spec
 spec = do

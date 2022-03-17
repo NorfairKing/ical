@@ -1,0 +1,30 @@
+name: ical-gen
+version: 0.0.0.0
+
+dependencies:
+- base >= 4.7 && < 5
+- ical
+
+library:
+  source-dirs: src
+  dependencies:
+  - genvalidity
+  - genvalidity-bytestring
+  - genvalidity-text
+
+tests:
+  ical-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - genvalidity
+    - genvalidity-bytestring
+    - genvalidity-sydtest
+    - genvalidity-text
+    - ical-gen
+    - sydtest
