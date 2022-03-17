@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.Line.Gen where
+module ICal.UnfoldedLine.Gen where
 
 import Data.GenValidity
 import Data.GenValidity.Text ()
-import ICal.Line
+import ICal.UnfoldedLine
 
 instance GenValid UnfoldedLine

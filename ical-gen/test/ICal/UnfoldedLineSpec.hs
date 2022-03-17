@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ICal.LineSpec where
+module ICal.UnfoldedLineSpec where
 
-import ICal.Line
-import ICal.Line.Gen ()
+import ICal.UnfoldedLine
+import ICal.UnfoldedLine.Gen ()
 import Test.Syd
 import Test.Syd.Validity
 

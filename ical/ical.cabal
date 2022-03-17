@@ -10,7 +10,7 @@ build-type:     Simple
 
 library
   exposed-modules:
-      ICal.Line
+      ICal.UnfoldedLine
   other-modules:
       Paths_ical
   hs-source-dirs:

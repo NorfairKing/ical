@@ -3,7 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ICal.Line where
+module ICal.UnfoldedLine where
 
 import Control.Arrow (left)
 import Control.Monad
@@ -17,7 +17,6 @@ import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
 import Data.Validity.Text ()
-import Data.Void
 import GHC.Generics (Generic)
 
 newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
@@ -29,6 +28,7 @@ instance Validity UnfoldedLine
 parseUnfoldedLinesByteString :: ByteString -> Either String [UnfoldedLine]
 parseUnfoldedLinesByteString = (left show . TE.decodeUtf8') >=> parseUnfoldedLinesText
 
+-- TODO we can probably do something more efficient here with megaparsec.
 parseUnfoldedLinesText :: Text -> Either String [UnfoldedLine]
 parseUnfoldedLinesText t =
   if T.null t

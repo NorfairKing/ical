@@ -10,7 +10,7 @@ build-type:     Simple
 
 library
   exposed-modules:
-      ICal.Line.Gen
+      ICal.UnfoldedLine.Gen
   other-modules:
       Paths_ical_gen
   hs-source-dirs:
@@ -27,7 +27,7 @@ test-suite ical-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ICal.LineSpec
+      ICal.UnfoldedLineSpec
       Paths_ical_gen
   hs-source-dirs:
       test
