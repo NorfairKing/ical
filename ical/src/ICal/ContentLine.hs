@@ -2,14 +2,17 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ICal.ContentLine where
 
 import Control.Arrow (left)
 import Control.Monad
 import Data.ByteString (ByteString)
-import Data.CaseInsensitive as CI
+import Data.CaseInsensitive (CI)
+import qualified Data.CaseInsensitive as CI
 import Data.Map (Map)
+import qualified Data.Map as M
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -24,7 +27,7 @@ import GHC.Generics (Generic)
 import ICal.UnfoldedLine
 
 instance Validity a => Validity (CI a) where
-  validate = validate . original
+  validate = validate . CI.original
 
 -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
 -- "The iCalendar object is organized into individual lines of text, called
@@ -55,4 +58,16 @@ parseContentLine :: UnfoldedLine -> Either String ContentLine
 parseContentLine = undefined
 
 renderContentLine :: ContentLine -> UnfoldedLine
-renderContentLine = undefined
+renderContentLine ContentLine {..} =
+  UnfoldedLine $
+    T.concat
+      [ CI.original contentLineName,
+        T.intercalate
+          ";"
+          ( map
+              (\(k, v) -> CI.original k <> "=" <> CI.original v)
+              (M.toList contentLineParams)
+          ),
+        ":",
+        contentLineValue
+      ]
