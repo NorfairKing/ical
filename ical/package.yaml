@@ -8,8 +8,11 @@ library:
   source-dirs: src
   dependencies:
   - bytestring
+  - case-insensitive
+  - containers
   - megaparsec
   - text
   - validity
   - validity-bytestring
+  - validity-containers
   - validity-text

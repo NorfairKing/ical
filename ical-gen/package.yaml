@@ -8,8 +8,10 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - case-insensitive
   - genvalidity
   - genvalidity-bytestring
+  - genvalidity-containers
   - genvalidity-text
 
 tests:
@@ -22,6 +24,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - containers
     - genvalidity
     - genvalidity-bytestring
     - genvalidity-sydtest

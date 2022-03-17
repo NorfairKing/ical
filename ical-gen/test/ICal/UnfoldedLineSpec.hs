@@ -30,7 +30,7 @@ spec = do
       renderUnfoldedLinesText [""] `shouldBe` "\r\n"
     it "produces the same folded line as before" $
       pureGoldenTextFile
-        "test_resources/line.txt"
+        "test_resources/unfolded-lines.txt"
         ( renderUnfoldedLinesText
             [ "", -- empty line
               "This is rather a short line.",
