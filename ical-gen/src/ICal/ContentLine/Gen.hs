@@ -21,7 +21,20 @@ instance GenValid ContentLine
 
 instance GenValid ContentLineName
 
+instance GenValid ParamName
+
 instance GenValid ParamValue
+
+instance GenValid VendorId where
+  genValid = VendorId . CI.mk . T.pack <$> genAtLeastNOf 3 genVendorIdChar
+
+genAtLeastNOf :: Int -> Gen a -> Gen [a]
+genAtLeastNOf i g
+  | i <= 0 = pure []
+  | otherwise = (:) <$> g <*> genAtLeastNOf (pred i) g
+
+genVendorIdChar :: Gen Char
+genVendorIdChar = genValid `suchThat` (validationIsValid . validateVendorIdChar)
 
 -- where
 --   genValid = do

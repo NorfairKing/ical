@@ -27,10 +27,13 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - QuickCheck
     - containers
     - genvalidity
     - genvalidity-bytestring
     - genvalidity-sydtest
     - genvalidity-text
     - ical-gen
+    - megaparsec
     - sydtest
+    - text

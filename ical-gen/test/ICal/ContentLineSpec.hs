@@ -1,23 +1,52 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module ICal.ContentLineSpec where
 
 import Control.Monad
 import qualified Data.Map as M
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.Builder as LTB
+import qualified Data.Text.Lazy.Builder as Text
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.UnfoldedLine
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
+import Text.Megaparsec
 
 spec :: Spec
 spec = do
+  describe "VendorId" $ do
+    genValidSpec @VendorId
+    it "roundtrips VendorIds" $ parserBuilderRoundtrip vendorIdP vendorIdB
+
+  describe "ParamName" $ do
+    genValidSpec @ParamName
+    it "roundtrips ParamNames" $ parserBuilderRoundtrip paramNameP paramNameB
+
+  describe "ParamValue" $ do
+    genValidSpec @ParamValue
+    it "roundtrips ParamValues" $ parserBuilderRoundtrip paramValueP paramValueB
+
+  describe "ContentLineName" $ do
+    genValidSpec @ContentLineName
+    it "roundtrips ContentLineNames" $ parserBuilderRoundtrip contentLineNameP contentLineNameB
+
+  describe "ContentLine" $ do
+    genValidSpec @ContentLine
+    it "roundtrips ContentLines" $ parserBuilderRoundtrip contentLineP contentLineB
+
   describe "parseContentLine" $
     it "roundtrips with renderContentLine" $
       forAllValid $ \contentLine ->
         case parseContentLine (renderContentLine contentLine) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
+
   describe "examples" $ do
     -- Examples from the spec
     let examples =
@@ -77,3 +106,14 @@ spec = do
         case parseContentLine (UnfoldedLine rendered) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
+
+parserBuilderRoundtrip ::
+  (Show a, Eq a, GenValid a) =>
+  P a ->
+  (a -> Text.Builder) ->
+  Property
+parserBuilderRoundtrip parser builder = forAllValid $ \a ->
+  let rendered = LT.toStrict $ LTB.toLazyText $ builder a
+   in case parse parser "test input" rendered of
+        Left err -> expectationFailure $ errorBundlePretty err
+        Right parsed -> parsed `shouldBe` a
