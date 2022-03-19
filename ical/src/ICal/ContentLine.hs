@@ -14,6 +14,8 @@ import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
 import Data.List
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -54,7 +56,7 @@ instance Validity a => Validity (CI a) where
 -- of the property value, and other attributes."
 data ContentLine = ContentLine
   { contentLineName :: !ContentLineName,
-    contentLineParams :: !(Map ParamName [ParamValue]),
+    contentLineParams :: !(Map ParamName (NonEmpty ParamValue)),
     contentLineValue :: !Text
   }
   deriving stock (Show, Read, Eq, Ord, Generic)
@@ -236,7 +238,7 @@ validateVendorIdChar c =
 -- ; Each property defines the specific ABNF for the parameters
 -- ; allowed on the property.  Refer to specific properties for
 -- ; precise parameter ABNF.
-paramP :: P (ParamName, [ParamValue])
+paramP :: P (ParamName, NonEmpty ParamValue)
 paramP = do
   name <- paramNameP
   void $ char' '='
@@ -244,7 +246,7 @@ paramP = do
   restOfValues <- many $ do
     char' ','
     paramValueP
-  pure (name, firstValue : restOfValues)
+  pure (name, firstValue :| restOfValues)
 
 -- param-name    = iana-token / x-name
 paramNameP :: P ParamName
@@ -333,10 +335,10 @@ contentLineNameB = \case
 vendorIdB :: VendorId -> Text.Builder
 vendorIdB = LTB.fromText . CI.original . unVendorId
 
-contentLineParamsB :: Map ParamName [ParamValue] -> Text.Builder
+contentLineParamsB :: Map ParamName (NonEmpty ParamValue) -> Text.Builder
 contentLineParamsB = foldMap go . M.toList
   where
-    go :: (ParamName, [ParamValue]) -> Text.Builder
+    go :: (ParamName, NonEmpty ParamValue) -> Text.Builder
     go (key, values) =
       mconcat
         [ LTB.singleton ';',
@@ -345,8 +347,8 @@ contentLineParamsB = foldMap go . M.toList
           paramValuesB values
         ]
 
-paramValuesB :: [ParamValue] -> Text.Builder
-paramValuesB = mconcat . intersperse (LTB.singleton ',') . map paramValueB
+paramValuesB :: NonEmpty ParamValue -> Text.Builder
+paramValuesB = mconcat . intersperse (LTB.singleton ',') . map paramValueB . NE.toList
 
 paramNameB :: ParamName -> Text.Builder
 paramNameB = \case

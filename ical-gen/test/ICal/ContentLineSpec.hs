@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -5,6 +6,7 @@ module ICal.ContentLineSpec where
 
 import Control.Monad
 import qualified Data.Map as M
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
@@ -49,7 +51,8 @@ spec = do
 
   describe "examples" $ do
     -- Examples from the spec
-    let examples =
+    let examples :: [(ContentLine, Text)]
+        examples =
           [ -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "ATTENDEE",
@@ -91,7 +94,7 @@ spec = do
             ( ContentLine
                 { contentLineName = "DESCRIPTION",
                   contentLineParams = M.fromList [("ALTREP", ["cid:part1.0001@example.org"])],
-                  contentLineValue = "The Fall'98 Wild Wizards Conference - - Las Vegas, NV, USA"
+                  contentLineValue = "The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
                 },
               "DESCRIPTION;ALTREP=\"cid:part1.0001@example.org\":The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
             )
