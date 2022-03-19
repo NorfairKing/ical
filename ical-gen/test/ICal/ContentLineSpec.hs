@@ -55,8 +55,8 @@ spec = do
                 { contentLineName = "ATTENDEE",
                   contentLineParams =
                     M.fromList
-                      [ ("RSVP", "TRUE"),
-                        ("ROLE", "REQ-PARTICIPANT")
+                      [ ("RSVP", ["TRUE"]),
+                        ("ROLE", ["REQ-PARTICIPANT"])
                       ],
                   contentLineValue = "mailto:jsmith@example.com"
                 },
@@ -64,7 +64,7 @@ spec = do
             ),
             ( ContentLine
                 { contentLineName = "RDATE",
-                  contentLineParams = M.fromList [("VALUE", "DATE")],
+                  contentLineParams = M.fromList [("VALUE", ["DATE"])],
                   contentLineValue = "19970304,19970504,19970704,19970904"
                 },
               "RDATE;VALUE=DATE:19970304,19970504,19970704,19970904"
@@ -80,9 +80,9 @@ spec = do
                 { contentLineName = "ATTACH",
                   contentLineParams =
                     M.fromList
-                      [ ("FMTTYPE", "text/plain"),
-                        ("ENCODING", "BASE64"),
-                        ("VALUE", "BINARY")
+                      [ ("FMTTYPE", ["text/plain"]),
+                        ("ENCODING", ["BASE64"]),
+                        ("VALUE", ["BINARY"])
                       ],
                   contentLineValue = "http://example.com/public/quarterly-report.doc"
                 },
@@ -90,7 +90,7 @@ spec = do
             ), -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "DESCRIPTION",
-                  contentLineParams = M.fromList [("ALTREP", "cid:part1.0001@example.org")],
+                  contentLineParams = M.fromList [("ALTREP", ["cid:part1.0001@example.org"])],
                   contentLineValue = "The Fall'98 Wild Wizards Conference - - Las Vegas, NV, USA"
                 },
               "DESCRIPTION;ALTREP=\"cid:part1.0001@example.org\":The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"

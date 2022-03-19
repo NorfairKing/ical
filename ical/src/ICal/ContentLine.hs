@@ -13,6 +13,7 @@ import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
+import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -53,7 +54,7 @@ instance Validity a => Validity (CI a) where
 -- of the property value, and other attributes."
 data ContentLine = ContentLine
   { contentLineName :: !ContentLineName,
-    contentLineParams :: !(Map ParamName ParamValue),
+    contentLineParams :: !(Map ParamName [ParamValue]),
     contentLineValue :: !Text
   }
   deriving stock (Show, Read, Eq, Ord, Generic)
@@ -139,6 +140,7 @@ instance Validity VendorId where
         decorateList (T.unpack (CI.original unVendorId)) validateVendorIdChar
       ]
 
+-- https://datatracker.ietf.org/doc/html/rfc5545#section-3.2
 -- "Property parameter values that are not in quoted-strings are case-
 -- insensitive."
 data ParamValue
@@ -234,18 +236,21 @@ validateVendorIdChar c =
 -- ; Each property defines the specific ABNF for the parameters
 -- ; allowed on the property.  Refer to specific properties for
 -- ; precise parameter ABNF.
-paramP :: P (ParamName, ParamValue)
+paramP :: P (ParamName, [ParamValue])
 paramP = do
   name <- paramNameP
   void $ char' '='
-  value <- paramValueP
-  pure (name, value)
+  firstValue <- paramValueP
+  restOfValues <- many $ do
+    char' ','
+    paramValueP
+  pure (name, firstValue : restOfValues)
 
 -- param-name    = iana-token / x-name
 paramNameP :: P ParamName
 paramNameP = try (uncurry ParamNameX <$> xNameP) <|> (ParamNameIANA <$> ianaTokenP)
 
--- aram-value   = paramtext / quoted-string
+-- param-value   = paramtext / quoted-string
 paramValueP :: P ParamValue
 paramValueP = try (QuotedParam <$> quotedStringP) <|> (UnquotedParam <$> paramTextP)
 
@@ -328,17 +333,20 @@ contentLineNameB = \case
 vendorIdB :: VendorId -> Text.Builder
 vendorIdB = LTB.fromText . CI.original . unVendorId
 
-contentLineParamsB :: Map ParamName ParamValue -> Text.Builder
+contentLineParamsB :: Map ParamName [ParamValue] -> Text.Builder
 contentLineParamsB = foldMap go . M.toList
   where
-    go :: (ParamName, ParamValue) -> Text.Builder
-    go (key, value) =
+    go :: (ParamName, [ParamValue]) -> Text.Builder
+    go (key, values) =
       mconcat
         [ LTB.singleton ';',
           paramNameB key,
           LTB.singleton '=',
-          paramValueB value
+          paramValuesB values
         ]
+
+paramValuesB :: [ParamValue] -> Text.Builder
+paramValuesB = mconcat . intersperse (LTB.singleton ',') . map paramValueB
 
 paramNameB :: ParamName -> Text.Builder
 paramNameB = \case
