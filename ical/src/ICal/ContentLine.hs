@@ -78,12 +78,12 @@ instance Validity ContentLineName where
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
                 declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorate "The name contains only key characters" $ validateKeyText t
+                decorateList (T.unpack (CI.original t)) validateNameChar
               ]
           ContentLineNameX _ t ->
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorate "The name contains only key characters" $ validateKeyText t
+                decorateList (T.unpack (CI.original t)) validateNameChar
               ]
       ]
 
@@ -112,12 +112,12 @@ instance Validity ParamName where
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
                 declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorate "The name contains only key characters" $ validateKeyText t
+                decorateList (T.unpack (CI.original t)) validateNameChar
               ]
           ParamNameX _ t ->
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorate "The name contains only key characters" $ validateKeyText t
+                decorateList (T.unpack (CI.original t)) validateNameChar
               ]
       ]
 
@@ -161,14 +161,6 @@ instance IsString ParamValue where
      in if haveToQuoteText t
           then QuotedParam t
           else UnquotedParam (CI.mk t)
-
-validateKeyText :: CI Text -> Validation
-validateKeyText c = decorateList (T.unpack (CI.original c)) validateKeyChar
-
-validateKeyChar :: Char -> Validation
-validateKeyChar c =
-  declare "The character is alphanumeric" $
-    Char.isAlphaNum c
 
 parseContentLine :: UnfoldedLine -> Either String ContentLine
 parseContentLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
@@ -215,6 +207,9 @@ xNameP = do
 
 tokenTextP :: P (CI Text)
 tokenTextP = CI.mk . T.pack <$> some (letterChar <|> digitChar <|> char '-')
+
+validateNameChar :: Char -> Validation
+validateNameChar c = declare "The character is a name character" $ Char.isAlpha c || Char.isDigit c || c == '-'
 
 -- vendorid      = 3*(ALPHA / DIGIT)
 -- ; Vendor identification

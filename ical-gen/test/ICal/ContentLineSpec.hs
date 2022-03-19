@@ -86,7 +86,7 @@ spec = do
                       ],
                   contentLineValue = "http://example.com/public/quarterly-report.doc"
                 },
-              "     ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4"
+              "ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:http://example.com/public/quarterly-report.doc"
             ), -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "DESCRIPTION",

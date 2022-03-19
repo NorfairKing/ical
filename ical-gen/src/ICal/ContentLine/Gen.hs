@@ -19,9 +19,25 @@ instance (FoldCase a, GenValid a) => GenValid (CI a) where
 
 instance GenValid ContentLine
 
-instance GenValid ContentLineName
+instance GenValid ContentLineName where
+  genValid =
+    oneof
+      [ ContentLineNameIANA . CI.mk <$> genTextBy genNameChar,
+        ContentLineNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
+      ]
 
-instance GenValid ParamName
+instance GenValid ParamName where
+  genValid =
+    oneof
+      [ ParamNameIANA . CI.mk <$> genTextBy genNameChar,
+        ParamNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
+      ]
+
+genNonEmptyTextBy :: Gen Char -> Gen Text
+genNonEmptyTextBy gen = genTextBy gen `suchThat` (not . T.null)
+
+genNameChar :: Gen Char
+genNameChar = genValid `suchThat` (validationIsValid . validateNameChar)
 
 instance GenValid ParamValue where
   genValid =
