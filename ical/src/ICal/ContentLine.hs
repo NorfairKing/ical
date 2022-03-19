@@ -4,12 +4,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.ContentLine where
 
 import Control.Arrow (left)
 import Control.Monad
-import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
@@ -22,12 +22,11 @@ import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
-import Data.Validity.Containers
+import Data.Validity.Containers ()
 import Data.Validity.Text ()
 import Data.Void
 import GHC.Generics (Generic)
@@ -93,9 +92,9 @@ instance Validity ContentLineName where
 instance IsString ContentLineName where
   fromString s =
     let t = fromString s
-     in case T.stripPrefix "X-" t of
-          Just rest -> undefined -- TODO implement this as well
-          Nothing -> ContentLineNameIANA (CI.mk t)
+     in case parse contentLineNameP "" t of
+          Left err -> error $ errorBundlePretty err
+          Right cln -> cln
 
 data ParamName
   = ParamNameIANA !(CI Text)
@@ -127,9 +126,9 @@ instance Validity ParamName where
 instance IsString ParamName where
   fromString s =
     let t = fromString s
-     in case T.stripPrefix "X-" t of
-          Just rest -> undefined -- TODO implement this as well
-          Nothing -> ParamNameIANA (CI.mk t)
+     in case parse paramNameP "" t of
+          Left err -> error $ errorBundlePretty err
+          Right pn -> pn
 
 newtype VendorId = VendorId {unVendorId :: CI Text}
   deriving stock (Show, Read, Eq, Ord, Generic)
@@ -200,11 +199,11 @@ ianaTokenP = tokenTextP
 -- ; Reserved for experimental use.
 xNameP :: P (Maybe VendorId, CI Text)
 xNameP = do
-  string' "X-"
+  void $ string' "X-"
   mVendorId <- optional $
     try $ do
       i <- vendorIdP
-      char' '-'
+      void $ char' '-'
       pure i
   name <- tokenTextP
   pure (mVendorId, name)
@@ -244,7 +243,7 @@ paramP = do
   void $ char' '='
   firstValue <- paramValueP
   restOfValues <- many $ do
-    char' ','
+    void $ char' ','
     paramValueP
   pure (name, firstValue :| restOfValues)
 
