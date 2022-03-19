@@ -15,8 +15,9 @@ spec = do
   describe "parseContentLine" $
     it "roundtrips with renderContentLine" $
       forAllValid $ \contentLine ->
-        parseContentLine (renderContentLine contentLine)
-          `shouldBe` Right contentLine
+        case parseContentLine (renderContentLine contentLine) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` contentLine
   describe "examples" $ do
     -- Examples from the spec
     let examples =
@@ -59,6 +60,11 @@ spec = do
           ]
     forM_ examples $ \(contentLine, rendered) -> do
       it (unwords ["renders", show contentLine, "as", show rendered]) $
-        renderContentLine contentLine `shouldBe` UnfoldedLine rendered
+        let actualRendered = renderContentLine contentLine
+         in case (,) <$> parseContentLine actualRendered <*> parseContentLine (UnfoldedLine rendered) of
+              Left err -> expectationFailure err
+              Right (actual, expected) -> actual `shouldBe` expected
       it (unwords ["parses", show rendered, "into", show contentLine]) $
-        parseContentLine (UnfoldedLine rendered) `shouldBe` Right contentLine
+        case parseContentLine (UnfoldedLine rendered) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` contentLine

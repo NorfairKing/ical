@@ -11,6 +11,7 @@ import Control.Monad
 import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
+import Data.Char as Char
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.String
@@ -21,10 +22,13 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
-import Data.Validity.Containers ()
+import Data.Validity.Containers
 import Data.Validity.Text ()
+import Data.Void
 import GHC.Generics (Generic)
 import ICal.UnfoldedLine
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 instance Validity a => Validity (CI a) where
   validate = validate . CI.original
@@ -47,25 +51,61 @@ instance Validity a => Validity (CI a) where
 -- of the property value, and other attributes."
 data ContentLine = ContentLine
   { contentLineName :: !(CI Text),
-    contentLineParams :: !(Map (CI Text) (CI Text)),
+    contentLineParams :: !(Map (CI Text) Text),
     contentLineValue :: !Text
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ContentLine
+instance Validity ContentLine where
+  validate cl@ContentLine {..} =
+    mconcat
+      [ genericValidate cl,
+        declare "The name is not empty" $ not $ T.null $ CI.original contentLineName,
+        decorate "The name contains only key characters" $ validateKeyText contentLineName,
+        decorateMap contentLineParams $ \k _ ->
+          mconcat
+            [ declare "The key is not empty" $ not $ T.null $ CI.original k,
+              decorate "The key only contains key characters" $ validateKeyText k
+            ]
+      ]
+
+validateKeyText :: CI Text -> Validation
+validateKeyText c = decorateList (T.unpack (CI.original c)) validateKeyChar
+
+validateKeyChar :: Char -> Validation
+validateKeyChar c =
+  declare "The character is a key character" $ Char.isAlphaNum c
 
 parseContentLine :: UnfoldedLine -> Either String ContentLine
-parseContentLine = undefined
+parseContentLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
+
+type P = Parsec Void Text
+
+contentLineP :: P ContentLine
+contentLineP = do
+  let tokenChar = letterChar <|> digitChar <|> char '-'
+  contentLineName <- CI.mk . T.pack <$> some tokenChar
+  contentLineParams <- fmap M.fromList $
+    many $ do
+      void $ char ';'
+      key <- T.pack <$> some tokenChar
+      void $ char '='
+      value <- T.pack <$> many tokenChar -- TODO or quoted string
+      pure (CI.mk key, value)
+
+  void $ char ':'
+  contentLineValue <- takeRest
+
+  pure ContentLine {..}
 
 renderContentLine :: ContentLine -> UnfoldedLine
 renderContentLine ContentLine {..} =
   UnfoldedLine $
     T.concat
       [ CI.original contentLineName,
-        T.intercalate
-          ";"
+        T.concat $
           ( map
-              (\(k, v) -> CI.original k <> "=" <> CI.original v)
+              (\(k, v) -> ";" <> CI.original k <> "=" <> v)
               (M.toList contentLineParams)
           ),
         ":",

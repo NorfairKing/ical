@@ -8,11 +8,14 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - QuickCheck
   - case-insensitive
+  - containers
   - genvalidity
   - genvalidity-bytestring
   - genvalidity-containers
   - genvalidity-text
+  - text
 
 tests:
   ical-test:

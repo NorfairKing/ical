@@ -19,11 +19,12 @@ import Data.Validity
 import Data.Validity.Text ()
 import GHC.Generics (Generic)
 
+-- | An unfolded line of text, the required newlines are already stripped.
 newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
   deriving stock (Eq, Generic)
   deriving newtype (Show, Read, IsString)
 
-instance Validity UnfoldedLine
+instance Validity UnfoldedLine -- TODO: requirement that it's a single line?
 
 parseUnfoldedLinesByteString :: ByteString -> Either String [UnfoldedLine]
 parseUnfoldedLinesByteString = (left show . TE.decodeUtf8') >=> parseUnfoldedLinesText
