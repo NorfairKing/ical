@@ -151,9 +151,8 @@ instance Validity ParamValue where
     mconcat
       [ genericValidate pv,
         case pv of
-          UnquotedParam c -> decorateList (T.unpack (CI.original c)) $ \c ->
-            declare "The character does not have to be quoted" $ not $ haveToQuoteChar c
-          QuotedParam _ -> valid
+          UnquotedParam c -> decorateList (T.unpack (CI.original c)) validateSafeChar
+          QuotedParam t -> decorateList (T.unpack t) validateQSafeChar
       ]
 
 instance IsString ParamValue where
@@ -274,20 +273,28 @@ quotedStringP = do
 -- QSAFE-CHAR    = WSP / %x21 / %x23-7E / NON-US-ASCII
 -- ; Any character except CONTROL and DQUOTE
 qSafeCharP :: P Char
-qSafeCharP = satisfy $ \case
-  '"' -> False
-  c -> not (Char.isControl c)
+qSafeCharP = satisfy $ validationIsValid . validateQSafeChar
+
+validateQSafeChar :: Char -> Validation
+validateQSafeChar =
+  declare "The character is a quote-safe char" . \case
+    '"' -> False
+    c -> not (Char.isControl c)
 
 -- SAFE-CHAR     = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-7E
 --               / NON-US-ASCII
 -- ; Any character except CONTROL, DQUOTE, ";", ":", ","
 safeCharP :: P Char
-safeCharP = satisfy $ \case
-  '"' -> False
-  ';' -> False
-  ':' -> False
-  ',' -> False
-  c -> not (Char.isControl c)
+safeCharP = satisfy $ validationIsValid . validateSafeChar
+
+validateSafeChar :: Char -> Validation
+validateSafeChar =
+  declare "The character is a safe character" . \case
+    '"' -> False
+    ';' -> False
+    ':' -> False
+    ',' -> False
+    c -> not (Char.isControl c)
 
 -- VALUE-CHAR    = WSP / %x21-7E / NON-US-ASCII
 -- ; Any textual character

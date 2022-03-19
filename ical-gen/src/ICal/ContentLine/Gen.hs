@@ -23,7 +23,18 @@ instance GenValid ContentLineName
 
 instance GenValid ParamName
 
-instance GenValid ParamValue
+instance GenValid ParamValue where
+  genValid =
+    oneof
+      [ UnquotedParam . CI.mk <$> genTextBy genSafeChar,
+        QuotedParam <$> genTextBy genQSafeChar
+      ]
+
+genQSafeChar :: Gen Char
+genQSafeChar = genValid `suchThat` (validationIsValid . validateQSafeChar)
+
+genSafeChar :: Gen Char
+genSafeChar = genValid `suchThat` (validationIsValid . validateSafeChar)
 
 instance GenValid VendorId where
   genValid = VendorId . CI.mk . T.pack <$> genAtLeastNOf 3 genVendorIdChar

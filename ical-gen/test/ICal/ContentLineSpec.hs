@@ -24,13 +24,13 @@ spec = do
     genValidSpec @VendorId
     it "roundtrips VendorIds" $ parserBuilderRoundtrip vendorIdP vendorIdB
 
-  describe "ParamName" $ do
-    genValidSpec @ParamName
-    it "roundtrips ParamNames" $ parserBuilderRoundtrip paramNameP paramNameB
-
   describe "ParamValue" $ do
     genValidSpec @ParamValue
     it "roundtrips ParamValues" $ parserBuilderRoundtrip paramValueP paramValueB
+
+  describe "ParamName" $ do
+    genValidSpec @ParamName
+    it "roundtrips ParamNames" $ parserBuilderRoundtrip paramNameP paramNameB
 
   describe "ContentLineName" $ do
     genValidSpec @ContentLineName
