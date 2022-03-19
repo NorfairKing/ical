@@ -24,7 +24,11 @@ spec = do
           [ -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "ATTENDEE",
-                  contentLineParams = M.fromList [("RSVP", "TRUE"), ("ROLE", "REQ-PARTICIPANT")],
+                  contentLineParams =
+                    M.fromList
+                      [ ("RSVP", "TRUE"),
+                        ("ROLE", "REQ-PARTICIPANT")
+                      ],
                   contentLineValue = "mailto:jsmith@example.com"
                 },
               "ATTENDEE;RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:jsmith@example.com"
@@ -45,7 +49,12 @@ spec = do
             ),
             ( ContentLine
                 { contentLineName = "ATTACH",
-                  contentLineParams = M.fromList [("FMTTYPE", "text/plain"), ("ENCODING", "BASE64"), ("VALUE", "BINARY")],
+                  contentLineParams =
+                    M.fromList
+                      [ ("FMTTYPE", "text/plain"),
+                        ("ENCODING", "BASE64"),
+                        ("VALUE", "BINARY")
+                      ],
                   contentLineValue = "http://example.com/public/quarterly-report.doc"
                 },
               "     ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4"

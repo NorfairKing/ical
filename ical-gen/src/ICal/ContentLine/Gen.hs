@@ -17,22 +17,28 @@ instance (FoldCase a, GenValid a) => GenValid (CI a) where
   genValid = CI.mk <$> genValid
   shrinkValid = fmap CI.mk . shrinkValid . CI.original
 
-instance GenValid ContentLine where
-  genValid = do
-    contentLineName <- genKeyText
-    contentLineParams <- genMapOf $ do
-      key <- genKeyText
-      val <- genValText
-      pure (key, val)
-    contentLineValue <- genValText
-    pure ContentLine {..}
+instance GenValid ContentLine
 
-genKeyText :: Gen (CI Text)
-genKeyText =
-  CI.mk
-    <$> genTextBy
-      (genValid `suchThat` (validationIsValid . validateKeyChar))
-      `suchThat` (not . T.null)
+instance GenValid ContentLineName
 
-genValText :: Gen Text
-genValText = genValid
+instance GenValid ParamValue
+
+-- where
+--   genValid = do
+--     contentLineName <- genKeyText
+--     contentLineParams <- genMapOf $ do
+--       key <- genKeyText
+--       val <- genValText
+--       pure (key, val)
+--     contentLineValue <- genValText
+--     pure ContentLine {..}
+--
+-- genKeyText :: Gen (CI Text)
+-- genKeyText =
+--   CI.mk
+--     <$> genTextBy
+--       (genValid `suchThat` (validationIsValid . validateKeyChar))
+--       `suchThat` (not . T.null)
+--
+-- genValText :: Gen Text
+-- genValText = genValid

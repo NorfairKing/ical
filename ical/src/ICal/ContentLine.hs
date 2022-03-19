@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -14,6 +15,7 @@ import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -50,31 +52,79 @@ instance Validity a => Validity (CI a) where
 -- property value, the language of a text property value, the value type
 -- of the property value, and other attributes."
 data ContentLine = ContentLine
-  { contentLineName :: !(CI Text),
-    contentLineParams :: !(Map (CI Text) Text),
+  { contentLineName :: !ContentLineName,
+    contentLineParams :: !(Map ContentLineName ParamValue),
     contentLineValue :: !Text
   }
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Read, Eq, Ord, Generic)
 
-instance Validity ContentLine where
-  validate cl@ContentLine {..} =
+instance Validity ContentLine
+
+data ContentLineName
+  = ContentLineNameIANA !(CI Text)
+  | ContentLineNameX
+      !(Maybe (CI Text))
+      -- ^ Vendor ID (at least 3 chars)
+      !(CI Text)
+      -- ^ Actual name
+  deriving stock (Show, Read, Eq, Ord, Generic)
+
+instance Validity ContentLineName where
+  validate cln =
     mconcat
-      [ genericValidate cl,
-        declare "The name is not empty" $ not $ T.null $ CI.original contentLineName,
-        decorate "The name contains only key characters" $ validateKeyText contentLineName,
-        decorateMap contentLineParams $ \k _ ->
-          mconcat
-            [ declare "The key is not empty" $ not $ T.null $ CI.original k,
-              decorate "The key only contains key characters" $ validateKeyText k
-            ]
+      [ genericValidate cln,
+        case cln of
+          ContentLineNameIANA t ->
+            mconcat
+              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
+                declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
+                decorate "The name contains only key characters" $ validateKeyText t
+              ]
+          ContentLineNameX _ t ->
+            mconcat
+              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
+                decorate "The name contains only key characters" $ validateKeyText t
+              ]
       ]
+
+instance IsString ContentLineName where
+  fromString s =
+    let t = fromString s
+     in case T.stripPrefix "X-" t of
+          Just rest -> undefined -- TODO implement this as well
+          Nothing -> ContentLineNameIANA (CI.mk t)
+
+-- "Property parameter values that are not in quoted-strings are case-
+-- insensitive."
+data ParamValue
+  = UnquotedParam !(CI Text)
+  | QuotedParam Text
+  deriving stock (Show, Read, Eq, Ord, Generic)
+
+instance Validity ParamValue where
+  validate pv =
+    mconcat
+      [ genericValidate pv,
+        case pv of
+          UnquotedParam c -> decorateList (T.unpack (CI.original c)) $ \c ->
+            declare "The character does not have to be quoted" $ not $ haveToQuoteChar c
+          QuotedParam _ -> valid
+      ]
+
+instance IsString ParamValue where
+  fromString s =
+    let t = fromString s
+     in if haveToQuoteText t
+          then QuotedParam t
+          else UnquotedParam (CI.mk t)
 
 validateKeyText :: CI Text -> Validation
 validateKeyText c = decorateList (T.unpack (CI.original c)) validateKeyChar
 
 validateKeyChar :: Char -> Validation
 validateKeyChar c =
-  declare "The character is a key character" $ Char.isAlphaNum c
+  declare "The character is alphanumeric" $
+    Char.isAlphaNum c
 
 parseContentLine :: UnfoldedLine -> Either String ContentLine
 parseContentLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
@@ -83,31 +133,182 @@ type P = Parsec Void Text
 
 contentLineP :: P ContentLine
 contentLineP = do
-  let tokenChar = letterChar <|> digitChar <|> char '-'
-  contentLineName <- CI.mk . T.pack <$> some tokenChar
+  contentLineName <- nameP
+
   contentLineParams <- fmap M.fromList $
     many $ do
       void $ char ';'
-      key <- T.pack <$> some tokenChar
-      void $ char '='
-      value <- T.pack <$> many tokenChar -- TODO or quoted string
-      pure (CI.mk key, value)
+      paramP
 
   void $ char ':'
   contentLineValue <- takeRest
 
   pure ContentLine {..}
 
+-- name          = iana-token / x-name
+nameP :: P ContentLineName
+nameP = contentLineNameP
+
+contentLineNameP :: P ContentLineName
+contentLineNameP = try xNameP <|> ianaTokenP
+
+-- iana-token    = 1*(ALPHA / DIGIT / "-")
+-- ; iCalendar identifier registered with IANA
+ianaTokenP :: P ContentLineName
+ianaTokenP = ContentLineNameIANA <$> tokenTextP
+
+-- x-name        = "X-" [vendorid "-"] 1*(ALPHA / DIGIT / "-")
+-- ; Reserved for experimental use.
+xNameP :: P ContentLineName
+xNameP = do
+  string' "X-"
+  vendorId <- optional $ do
+    i <- vendorIdP
+    char' '-'
+    pure i
+  name <- tokenTextP
+  pure $ ContentLineNameX vendorId name
+
+tokenTextP :: P (CI Text)
+tokenTextP = CI.mk . T.pack <$> some (letterChar <|> digitChar <|> char '-')
+
+-- vendorid      = 3*(ALPHA / DIGIT)
+-- ; Vendor identification
+vendorIdP :: P (CI Text)
+vendorIdP = CI.mk . T.pack <$> replicateM 3 (letterChar <|> digitChar)
+
+-- param         = param-name "=" param-value *("," param-value)
+-- ; Each property defines the specific ABNF for the parameters
+-- ; allowed on the property.  Refer to specific properties for
+-- ; precise parameter ABNF.
+paramP :: P (ContentLineName, ParamValue)
+paramP = do
+  name <- paramNameP
+  void $ char' '='
+  value <- paramValueP
+  pure (name, value)
+
+-- param-name    = iana-token / x-name
+paramNameP :: P ContentLineName
+paramNameP = contentLineNameP
+
+-- aram-value   = paramtext / quoted-string
+paramValueP :: P ParamValue
+paramValueP = try (QuotedParam <$> quotedStringP) <|> (UnquotedParam <$> paramTextP)
+
+--  paramtext     = *SAFE-CHAR
+paramTextP :: P (CI Text)
+paramTextP = CI.mk . T.pack <$> many safeCharP
+
+-- value         = *VALUE-CHAR
+valueP :: P Text
+valueP = T.pack <$> many valueCharP
+
+-- quoted-string = DQUOTE *QSAFE-CHAR DQUOTE
+quotedStringP :: P Text
+quotedStringP = do
+  void $ char' '"'
+  t <- T.pack <$> many qSafeCharP
+  void $ char' '"'
+  pure t
+
+-- QSAFE-CHAR    = WSP / %x21 / %x23-7E / NON-US-ASCII
+-- ; Any character except CONTROL and DQUOTE
+qSafeCharP :: P Char
+qSafeCharP = satisfy $ \case
+  '"' -> False
+  c -> not (Char.isControl c)
+
+-- SAFE-CHAR     = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-7E
+--               / NON-US-ASCII
+-- ; Any character except CONTROL, DQUOTE, ";", ":", ","
+safeCharP :: P Char
+safeCharP = satisfy $ \case
+  '"' -> False
+  ';' -> False
+  ':' -> False
+  ',' -> False
+  c -> not (Char.isControl c)
+
+-- VALUE-CHAR    = WSP / %x21-7E / NON-US-ASCII
+-- ; Any textual character
+valueCharP :: P Char
+valueCharP = anySingle
+
 renderContentLine :: ContentLine -> UnfoldedLine
-renderContentLine ContentLine {..} =
-  UnfoldedLine $
-    T.concat
-      [ CI.original contentLineName,
-        T.concat $
-          ( map
-              (\(k, v) -> ";" <> CI.original k <> "=" <> v)
-              (M.toList contentLineParams)
-          ),
-        ":",
-        contentLineValue
+renderContentLine =
+  UnfoldedLine . LT.toStrict . LTB.toLazyText . contentLineB
+
+contentLineB :: ContentLine -> Text.Builder
+contentLineB ContentLine {..} =
+  mconcat
+    [ contentLineNameB contentLineName,
+      contentLineParamsB contentLineParams,
+      LTB.singleton ':',
+      LTB.fromText contentLineValue
+    ]
+
+contentLineNameB :: ContentLineName -> Text.Builder
+contentLineNameB = \case
+  ContentLineNameIANA c -> LTB.fromText $ CI.original c
+  ContentLineNameX mVendorId c ->
+    mconcat
+      [ "X-",
+        case mVendorId of
+          Nothing -> mempty
+          Just vendorId ->
+            mconcat
+              [ LTB.fromText $ CI.original vendorId,
+                LTB.singleton '-'
+              ],
+        LTB.fromText $ CI.original c
       ]
+
+contentLineParamsB :: Map ContentLineName ParamValue -> Text.Builder
+contentLineParamsB = foldMap go . M.toList
+  where
+    go :: (ContentLineName, ParamValue) -> Text.Builder
+    go (key, value) =
+      mconcat
+        [ LTB.singleton ';',
+          contentLineNameB key,
+          LTB.singleton '=',
+          paramValueB value
+        ]
+
+paramValueB :: ParamValue -> Text.Builder
+paramValueB = \case
+  UnquotedParam c -> LTB.fromText (CI.original c)
+  QuotedParam t ->
+    mconcat
+      [ LTB.singleton '"',
+        LTB.fromText t,
+        LTB.singleton '"'
+      ]
+
+quoteIfNecessary :: Text -> Text
+quoteIfNecessary t =
+  if haveToQuoteText t
+    then quoteText t
+    else t
+
+quoteText :: Text -> Text
+quoteText t = "\"" <> t <> "\""
+
+haveToQuoteText :: Text -> Bool
+haveToQuoteText = T.any haveToQuoteChar
+
+haveToQuoteChar :: Char -> Bool
+haveToQuoteChar = \case
+  '"' -> True
+  ';' -> True
+  ':' -> True
+  ',' -> True
+  c -> Char.isControl c
+
+atLeastNOf :: Word -> P a -> P [a]
+atLeastNOf w p = case w of
+  0 -> pure []
+  w -> do
+    a <- p
+    (a :) <$> atLeastNOf (pred w) p
