@@ -80,7 +80,7 @@ iCalendarP = many vCalendarP
 vCalendarP :: CP Calendar
 vCalendarP = sectionP "VCALENDAR" $ do
   calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
-    contentLineName /= "BEGIN"
+    contentLineName /= "BEGIN" && contentLineName /= "END"
   traceShowM calPropLines
   calendarProdId <- parseFirst "PRODID" prodIdP calPropLines
   calendarVersion <- parseFirst "VERSION" versionP calPropLines
@@ -113,7 +113,9 @@ data Event = Event
 instance Validity Event
 
 vEventP :: CP Event
-vEventP = sectionP "VEVENT" $ pure Event
+vEventP = sectionP "VEVENT" $ do
+  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} -> contentLineName /= "END"
+  pure Event
 
 vEventB :: Event -> DList ContentLine
 vEventB = sectionB "VEVENT" $ \_ -> mempty
