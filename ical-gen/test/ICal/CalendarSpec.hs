@@ -1,22 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
-module ICal.VCalendarSpec where
+module ICal.CalendarSpec where
 
 import Data.DList (DList (..))
 import qualified Data.DList as DList
-import Data.Text (Text)
-import qualified Data.Text.Lazy as LT
-import qualified Data.Text.Lazy.Builder as LTB
-import qualified Data.Text.Lazy.Builder as Text
+import ICal.Calendar
+import ICal.Calendar.Gen ()
 import ICal.ContentLine
-import ICal.VCalendar
-import ICal.VCalendar.Gen ()
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 import Text.Megaparsec
-import Text.Show.Pretty (ppShow)
 
 spec :: Spec
 spec = do

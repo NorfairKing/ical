@@ -1,9 +1,9 @@
 module ICal where
 
 import Data.ByteString (ByteString)
+import ICal.Calendar
 import ICal.ContentLine
 import ICal.UnfoldedLine
-import ICal.VCalendar
 
 parseICalendar :: ByteString -> Either String [Calendar]
 parseICalendar contents = do

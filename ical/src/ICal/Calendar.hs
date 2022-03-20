@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.VCalendar where
+module ICal.Calendar where
 
 import Control.Arrow (left)
 import Control.Monad

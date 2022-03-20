@@ -10,9 +10,9 @@ build-type:     Simple
 
 library
   exposed-modules:
+      ICal.Calendar.Gen
       ICal.ContentLine.Gen
       ICal.UnfoldedLine.Gen
-      ICal.VCalendar.Gen
   other-modules:
       Paths_ical_gen
   hs-source-dirs:
@@ -34,9 +34,9 @@ test-suite ical-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      ICal.CalendarSpec
       ICal.ContentLineSpec
       ICal.UnfoldedLineSpec
-      ICal.VCalendarSpec
       ICalSpec
       Paths_ical_gen
   hs-source-dirs:
