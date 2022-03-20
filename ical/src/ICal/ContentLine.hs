@@ -68,6 +68,21 @@ data ContentLine = ContentLine
 
 instance Validity ContentLine
 
+instance IsString ContentLine where
+  fromString s =
+    let t = fromString s
+     in case parse contentLineP "" t of
+          Left err -> error $ errorBundlePretty err
+          Right cln -> cln
+
+mkSimpleContentLine :: CI Text -> Text -> ContentLine
+mkSimpleContentLine name value =
+  ContentLine
+    { contentLineName = ContentLineNameIANA name,
+      contentLineParams = M.empty,
+      contentLineValue = value
+    }
+
 data ContentLineName
   = ContentLineNameIANA !(CI Text)
   | ContentLineNameX

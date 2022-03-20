@@ -10,8 +10,10 @@ build-type:     Simple
 
 library
   exposed-modules:
+      ICal
       ICal.ContentLine
       ICal.UnfoldedLine
+      ICal.VCalendar
   other-modules:
       Paths_ical
   hs-source-dirs:
@@ -21,6 +23,7 @@ library
     , bytestring
     , case-insensitive
     , containers
+    , dlist
     , megaparsec
     , text
     , validity

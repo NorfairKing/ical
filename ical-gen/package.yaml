@@ -30,11 +30,13 @@ tests:
     - QuickCheck
     - bytestring
     - containers
+    - dlist
     - genvalidity
     - genvalidity-bytestring
     - genvalidity-sydtest
     - genvalidity-text
     - ical-gen
     - megaparsec
+    - pretty-show
     - sydtest
     - text

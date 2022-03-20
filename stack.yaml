@@ -10,7 +10,7 @@ extra-deps:
   - autodocodec-schema
   - autodocodec-yaml
 - github: NorfairKing/sydtest
-  commit: eaa03d9fcf781fdc9dc750680f3d686c851a2971
+  commit: 3bbfe1fa6a1b8dd820b4a0efcbbf984433d8e94a
   subdirs:
   - sydtest
   - sydtest-discover

@@ -10,6 +10,7 @@ library:
   - bytestring
   - case-insensitive
   - containers
+  - dlist
   - megaparsec
   - text
   - validity

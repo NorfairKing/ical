@@ -124,6 +124,7 @@ parserBuilderRoundtrip ::
   Property
 parserBuilderRoundtrip parser builder = forAllValid $ \a ->
   let rendered = LT.toStrict $ LTB.toLazyText $ builder a
-   in case parse parser "test input" rendered of
-        Left err -> expectationFailure $ errorBundlePretty err
-        Right parsed -> parsed `shouldBe` a
+   in context (show rendered) $
+        case parse parser "test input" rendered of
+          Left err -> expectationFailure $ errorBundlePretty err
+          Right parsed -> parsed `shouldBe` a
