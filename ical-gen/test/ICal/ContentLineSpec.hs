@@ -5,6 +5,7 @@
 module ICal.ContentLineSpec where
 
 import Control.Monad
+import qualified Data.ByteString as SB
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text.Lazy as LT
@@ -107,6 +108,14 @@ spec = do
         case parseContentLine (UnfoldedLine rendered) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
+
+    -- Tests based on example calendars
+    scenarioDirRecur "test_resources/calendars" $ \calFile ->
+      it "can parse and unfold every line" $ do
+        contents <- SB.readFile calFile
+        case parseUnfoldedLinesByteString contents >>= mapM parseContentLine of
+          Left err -> expectationFailure err
+          Right contentLines -> shouldBeValid contentLines
 
 parserBuilderRoundtrip ::
   (Show a, Eq a, GenValid a) =>

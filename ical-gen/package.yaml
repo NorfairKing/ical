@@ -28,6 +28,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - QuickCheck
+    - bytestring
     - containers
     - genvalidity
     - genvalidity-bytestring

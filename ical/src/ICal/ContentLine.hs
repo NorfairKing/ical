@@ -37,22 +37,28 @@ import Text.Megaparsec.Char
 instance Validity a => Validity (CI a) where
   validate = validate . CI.original
 
--- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
--- "The iCalendar object is organized into individual lines of text, called
--- content lines."
+-- [section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+-- @
+--     The iCalendar object is organized into individual lines of text, called
+--     content lines.
+-- @
 --
--- "All names of properties, property parameters, enumerated property
--- values and property parameter values are case-insensitive.  However,
--- all other property values are case-sensitive, unless otherwise
--- stated."
+-- @
+--     All names of properties, property parameters, enumerated property
+--     values and property parameter values are case-insensitive.  However,
+--     all other property values are case-sensitive, unless otherwise
+--     stated.
+-- @
 --
--- https://datatracker.ietf.org/doc/html/rfc5545#section-3.2
--- "A property can have attributes with which it is associated.  These
--- "property parameters" contain meta-information about the property or
--- the property value.  Property parameters are provided to specify such
--- information as the location of an alternate text representation for a
--- property value, the language of a text property value, the value type
--- of the property value, and other attributes."
+-- [section 3.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2)
+-- @
+--     A property can have attributes with which it is associated.  These
+--     "property parameters" contain meta-information about the property or
+--     the property value.  Property parameters are provided to specify such
+--     information as the location of an alternate text representation for a
+--     property value, the language of a text property value, the value type
+--     of the property value, and other attributes.
+-- @
 data ContentLine = ContentLine
   { contentLineName :: !ContentLineName,
     contentLineParams :: !(Map ParamName (NonEmpty ParamValue)),
@@ -100,7 +106,7 @@ data ParamName
   = ParamNameIANA !(CI Text)
   | ParamNameX
       !(Maybe VendorId)
-      -- ^ Vendor ID (at least 3 chars)
+      -- ^ Vendor ID
       !(CI Text)
       -- ^ Actual name
   deriving stock (Show, Read, Eq, Ord, Generic)
