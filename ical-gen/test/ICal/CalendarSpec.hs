@@ -46,7 +46,7 @@ parseSucceedsSpec ::
 parseSucceedsSpec parser contentLines expected =
   it (unwords ["parses", show contentLines, "into", show expected]) $
     case parse parser "test input" contentLines of
-      Left err -> expectationFailure $ show err
+      Left err -> expectationFailure $ errorBundlePretty err
       Right actual -> actual `shouldBe` expected
 
 parserBuilderRoundtrip ::
@@ -58,5 +58,5 @@ parserBuilderRoundtrip parser builder = forAllValid $ \a ->
   let rendered = DList.toList $ builder a
    in context (ppShow rendered) $
         case parse parser "test input" rendered of
-          Left err -> expectationFailure $ show err
+          Left err -> expectationFailure $ errorBundlePretty err
           Right parsed -> parsed `shouldBe` a

@@ -33,15 +33,9 @@ import Text.Megaparsec
 
 parseICalendarFromContentLines :: [ContentLine] -> Either String [Calendar]
 parseICalendarFromContentLines contentLines =
-  left show $ parse iCalendarP "" contentLines
+  left errorBundlePretty $ parse iCalendarP "" contentLines
 
 type CP = Parsec Void [ContentLine]
-
--- instance Stream [ContentLine] where
---   type Token [ContentLine] = ContentLine
---   type Tokens [ContentLine] = [ContentLine]
---   tokensToChunk :: Proxy [ContentLine] -> [ContentLine] -> [ContentLine]
---   tokensToChunk Proxy = id
 
 instance VisualStream [ContentLine] where
   showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
@@ -52,17 +46,25 @@ instance VisualStream [ContentLine] where
       . NE.toList
 
 -- It would be nice to be able to implement this so we can use 'errorBundlePretty' above.
--- instance TraversableStream [ContentLine] where
---   reachOffset ::
---     Int ->
---     PosState [ContentLine] ->
---     (Maybe String, PosState [ContentLine])
---   reachOffset = undefined
---   reachOffsetNoLine ::
---     Int ->
---     PosState [ContentLine] ->
---     PosState [ContentLine]
---   reachOffsetNoLine = undefined
+instance TraversableStream [ContentLine] where
+  reachOffset ::
+    Int ->
+    PosState [ContentLine] ->
+    (Maybe String, PosState [ContentLine])
+  reachOffset offset posState =
+    let newInput = drop offset $ pstateInput posState
+        newState =
+          posState
+            { pstateInput = newInput,
+              pstateOffset = offset,
+              pstateSourcePos =
+                (pstateSourcePos posState)
+                  { sourceLine = mkPos (offset + 1)
+                  }
+            }
+     in case newInput of
+          [] -> (Nothing, newState)
+          (cl : _) -> (Just $ T.unpack $ renderUnfoldedLinesText [renderContentLine cl], newState)
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
@@ -81,7 +83,7 @@ vCalendarP :: CP Calendar
 vCalendarP = sectionP "VCALENDAR" $ do
   calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
     contentLineName /= "BEGIN" && contentLineName /= "END"
-  traceShowM calPropLines
+
   calendarProdId <- parseFirst "PRODID" prodIdP calPropLines
   calendarVersion <- parseFirst "VERSION" versionP calPropLines
 
@@ -114,7 +116,9 @@ instance Validity Event
 
 vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
-  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} -> contentLineName /= "END"
+  eventProps <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
+    not $ contentLineName == "END" && contentLineValue == "VEVENT"
+  traceShowM eventProps
   pure Event
 
 vEventB :: Event -> DList ContentLine

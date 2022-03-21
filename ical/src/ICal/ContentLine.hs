@@ -27,7 +27,7 @@ import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
 import Data.Validity.Containers ()
-import Data.Validity.Text ()
+import Data.Validity.Text
 import Data.Void
 import GHC.Generics (Generic)
 import ICal.UnfoldedLine
@@ -101,12 +101,12 @@ instance Validity ContentLineName where
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
                 declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorateList (T.unpack (CI.original t)) validateNameChar
+                decorateText (CI.original t) validateNameChar
               ]
           ContentLineNameX _ t ->
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorateList (T.unpack (CI.original t)) validateNameChar
+                decorateText (CI.original t) validateNameChar
               ]
       ]
 
@@ -135,12 +135,12 @@ instance Validity ParamName where
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
                 declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorateList (T.unpack (CI.original t)) validateNameChar
+                decorateText (CI.original t) validateNameChar
               ]
           ParamNameX _ t ->
             mconcat
               [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorateList (T.unpack (CI.original t)) validateNameChar
+                decorateText (CI.original t) validateNameChar
               ]
       ]
 
@@ -159,7 +159,7 @@ instance Validity VendorId where
     mconcat
       [ genericValidate vi,
         declare "The VendorId is at least three characters long" $ T.length (CI.original unVendorId) >= 3,
-        decorateList (T.unpack (CI.original unVendorId)) validateVendorIdChar
+        decorateText (CI.original unVendorId) validateVendorIdChar
       ]
 
 -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.2
@@ -175,8 +175,8 @@ instance Validity ParamValue where
     mconcat
       [ genericValidate pv,
         case pv of
-          UnquotedParam c -> decorateList (T.unpack (CI.original c)) validateSafeChar
-          QuotedParam t -> decorateList (T.unpack t) validateQSafeChar
+          UnquotedParam c -> decorateText (CI.original c) validateSafeChar
+          QuotedParam t -> decorateText t validateQSafeChar
       ]
 
 instance IsString ParamValue where
