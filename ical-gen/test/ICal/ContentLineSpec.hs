@@ -8,6 +8,7 @@ import Control.Monad
 import qualified Data.ByteString as SB
 import qualified Data.Map as M
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
@@ -47,6 +48,13 @@ spec = do
         case parseContentLine (renderContentLine contentLine) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
+
+  describe "parseContentLinesText" $
+    it "roundtrips with renderContentLinesText" $
+      forAllValid $ \contentLines ->
+        case parseContentLinesText (renderContentLinesText contentLines) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` contentLines
 
   describe "examples" $ do
     -- Examples from the spec
@@ -113,7 +121,7 @@ spec = do
     scenarioDirRecur "test_resources/calendars" $ \calFile ->
       it "can parse and unfold every line" $ do
         contents <- SB.readFile calFile
-        case parseUnfoldedLinesByteString contents >>= mapM parseContentLine of
+        case parseContentLinesByteString contents of
           Left err -> expectationFailure err
           Right contentLines -> shouldBeValid contentLines
 
@@ -124,7 +132,7 @@ parserBuilderRoundtrip ::
   Property
 parserBuilderRoundtrip parser builder = forAllValid $ \a ->
   let rendered = LT.toStrict $ LTB.toLazyText $ builder a
-   in context (show rendered) $
+   in context (T.unpack rendered) $
         case parse parser "test input" rendered of
           Left err -> expectationFailure $ errorBundlePretty err
           Right parsed -> parsed `shouldBe` a

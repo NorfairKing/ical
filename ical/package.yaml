@@ -15,5 +15,6 @@ library:
   - text
   - validity
   - validity-bytestring
+  - validity-case-insensitive
   - validity-containers
   - validity-text

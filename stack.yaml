@@ -20,6 +20,7 @@ extra-deps:
   - genvalidity
   - genvalidity-aeson
   - genvalidity-bytestring
+  - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-criterion
   - genvalidity-path
@@ -39,6 +40,7 @@ extra-deps:
   - validity
   - validity-aeson
   - validity-bytestring
+  - validity-case-insensitive
   - validity-containers
   - validity-path
   - validity-persistent

@@ -13,6 +13,7 @@ library:
   - containers
   - genvalidity
   - genvalidity-bytestring
+  - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-text
   - text
@@ -32,9 +33,7 @@ tests:
     - containers
     - dlist
     - genvalidity
-    - genvalidity-bytestring
     - genvalidity-sydtest
-    - genvalidity-text
     - ical-gen
     - megaparsec
     - pretty-show

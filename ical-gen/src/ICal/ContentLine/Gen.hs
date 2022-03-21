@@ -5,16 +5,13 @@ module ICal.ContentLine.Gen where
 
 import Data.CaseInsensitive as CI
 import Data.GenValidity
+import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Map ()
 import Data.GenValidity.Text
 import Data.Text
 import qualified Data.Text as T
 import ICal.ContentLine
 import Test.QuickCheck
-
-instance (FoldCase a, GenValid a) => GenValid (CI a) where
-  genValid = CI.mk <$> genValid
-  shrinkValid = fmap CI.mk . shrinkValid . CI.original
 
 instance GenValid ContentLine
 

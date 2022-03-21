@@ -10,6 +10,7 @@ module ICal.ContentLine where
 
 import Control.Arrow (left)
 import Control.Monad
+import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
@@ -26,6 +27,7 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
+import Data.Validity.CaseInsensitive ()
 import Data.Validity.Containers ()
 import Data.Validity.Text
 import Data.Void
@@ -33,9 +35,6 @@ import GHC.Generics (Generic)
 import ICal.UnfoldedLine
 import Text.Megaparsec
 import Text.Megaparsec.Char
-
-instance Validity a => Validity (CI a) where
-  validate = validate . CI.original
 
 -- [section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
 -- @
@@ -186,8 +185,24 @@ instance IsString ParamValue where
           then QuotedParam t
           else UnquotedParam (CI.mk t)
 
+renderContentLineText :: ContentLine -> Text
+renderContentLineText = renderContentLinesText . (: [])
+
+renderContentLinesText :: [ContentLine] -> Text
+renderContentLinesText = renderUnfoldedLinesText . map renderContentLine
+
+parseContentLinesText :: Text -> Either String [ContentLine]
+parseContentLinesText = parseUnfoldedLinesText >=> mapM parseContentLine
+
+parseContentLinesByteString :: ByteString -> Either String [ContentLine]
+parseContentLinesByteString = parseUnfoldedLinesByteString >=> mapM parseContentLine
+
 parseContentLine :: UnfoldedLine -> Either String ContentLine
 parseContentLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
+
+renderContentLine :: ContentLine -> UnfoldedLine
+renderContentLine =
+  UnfoldedLine . LT.toStrict . LTB.toLazyText . contentLineB
 
 type P = Parsec Void Text
 
@@ -322,10 +337,6 @@ validateSafeChar =
 -- ; Any textual character
 valueCharP :: P Char
 valueCharP = anySingle
-
-renderContentLine :: ContentLine -> UnfoldedLine
-renderContentLine =
-  UnfoldedLine . LT.toStrict . LTB.toLazyText . contentLineB
 
 contentLineB :: ContentLine -> Text.Builder
 contentLineB ContentLine {..} =

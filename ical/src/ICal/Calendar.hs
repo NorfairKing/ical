@@ -25,7 +25,6 @@ import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Void
-import Debug.Trace
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.UnfoldedLine
@@ -89,13 +88,12 @@ vCalendarP = sectionP "VCALENDAR" $ do
 
   calendarEvents <- fmap catMaybes $
     many $ do
-      ContentLine {..} <- lineWithNameP "BEGIN"
+      ContentLine {..} <- lookAhead $ lineWithNameP "BEGIN"
       case contentLineValue of
         "VEVENT" -> do
           event <- vEventP
           pure $ Just event
-        _ -> pure Nothing
-
+        _ -> fail "unknown calendar thing" -- TODO better name for thing.
   pure Calendar {..}
 
 vCalendarB :: Calendar -> DList ContentLine
@@ -116,9 +114,8 @@ instance Validity Event
 
 vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
-  eventProps <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
+  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValue == "VEVENT"
-  traceShowM eventProps
   pure Event
 
 vEventB :: Event -> DList ContentLine

@@ -28,6 +28,7 @@ library
     , text
     , validity
     , validity-bytestring
+    , validity-case-insensitive
     , validity-containers
     , validity-text
   default-language: Haskell2010

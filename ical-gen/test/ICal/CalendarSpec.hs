@@ -5,9 +5,11 @@ module ICal.CalendarSpec where
 
 import Data.DList (DList (..))
 import qualified Data.DList as DList
+import qualified Data.Text as T
 import ICal.Calendar
 import ICal.Calendar.Gen ()
 import ICal.ContentLine
+import ICal.UnfoldedLine
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -56,7 +58,16 @@ parserBuilderRoundtrip ::
   Property
 parserBuilderRoundtrip parser builder = forAllValid $ \a ->
   let rendered = DList.toList $ builder a
-   in context (ppShow rendered) $
+      renderedText = renderUnfoldedLinesText $ map renderContentLine rendered
+      ctx =
+        unlines
+          [ "Internal representation:",
+            ppShow rendered,
+            "",
+            "Textual representation:",
+            T.unpack renderedText
+          ]
+   in context ctx $
         case parse parser "test input" rendered of
           Left err -> expectationFailure $ errorBundlePretty err
           Right parsed -> parsed `shouldBe` a

@@ -24,6 +24,7 @@ library
     , containers
     , genvalidity
     , genvalidity-bytestring
+    , genvalidity-case-insensitive
     , genvalidity-containers
     , genvalidity-text
     , ical
@@ -51,9 +52,7 @@ test-suite ical-test
     , containers
     , dlist
     , genvalidity
-    , genvalidity-bytestring
     , genvalidity-sydtest
-    , genvalidity-text
     , ical
     , ical-gen
     , megaparsec
