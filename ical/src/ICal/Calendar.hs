@@ -16,9 +16,12 @@ import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.DList (DList (..))
 import qualified Data.DList as DList
+import Data.Either
+import Data.Functor
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe
+import Data.Monoid
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -69,7 +72,8 @@ instance TraversableStream [ContentLine] where
 data Calendar = Calendar
   { calendarProdId :: !ProdId,
     calendarVersion :: !Version,
-    calendarEvents :: ![Event]
+    calendarEvents :: ![Event],
+    calendarTimeZones :: ![TimeZone]
   }
   deriving (Show, Eq, Generic)
 
@@ -86,15 +90,19 @@ vCalendarP = sectionP "VCALENDAR" $ do
   calendarProdId <- parseFirst "PRODID" prodIdP calPropLines
   calendarVersion <- parseFirst "VERSION" versionP calPropLines
 
-  calendarEvents <- fmap catMaybes $
-    many $ do
-      ContentLine {..} <- lookAhead $ lineWithNameP "BEGIN"
-      case contentLineValue of
-        "VEVENT" -> do
-          event <- vEventP
-          pure $ Just event
-        _ -> fail "unknown calendar thing" -- TODO better name for thing.
-  pure Calendar {..}
+  calendarMods <-
+    many $
+      msum
+        [ (\event c -> c {calendarEvents = event : calendarEvents c})
+            <$> vEventP,
+          (\timeZone c -> c {calendarTimeZones = timeZone : calendarTimeZones c})
+            <$> vTimeZoneP
+        ]
+  let calendarEvents = []
+  let calendarTimeZones = []
+  let calendarMod :: Calendar -> Calendar
+      calendarMod = appEndo $ mconcat $ map Endo calendarMods
+  pure $ calendarMod $ Calendar {..}
 
 vCalendarB :: Calendar -> DList ContentLine
 vCalendarB = sectionB "VCALENDAR" $ \Calendar {..} ->
@@ -103,23 +111,9 @@ vCalendarB = sectionB "VCALENDAR" $ \Calendar {..} ->
       [ [ prodIdB calendarProdId,
           versionB calendarVersion
         ],
-        map vEventB calendarEvents
+        map vEventB calendarEvents,
+        map vTimeZoneB calendarTimeZones
       ]
-
--- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
-data Event = Event
-  deriving (Show, Eq, Generic)
-
-instance Validity Event
-
-vEventP :: CP Event
-vEventP = sectionP "VEVENT" $ do
-  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValue == "VEVENT"
-  pure Event
-
-vEventB :: Event -> DList ContentLine
-vEventB = sectionB "VEVENT" $ \_ -> mempty
 
 -- [section 3.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3)
 newtype ProdId = ProdId {unProdId :: Text}
@@ -187,3 +181,33 @@ endP name = void $ single $ mkSimpleContentLine "END" name
 
 endB :: Text -> DList ContentLine
 endB name = DList.singleton $ mkSimpleContentLine "END" name
+
+-- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
+data Event = Event
+  deriving (Show, Eq, Generic)
+
+instance Validity Event
+
+vEventP :: CP Event
+vEventP = sectionP "VEVENT" $ do
+  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
+    not $ contentLineName == "END" && contentLineValue == "VEVENT"
+  pure Event
+
+vEventB :: Event -> DList ContentLine
+vEventB = sectionB "VEVENT" $ \_ -> mempty
+
+-- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)
+data TimeZone = TimeZone
+  deriving (Show, Eq, Generic)
+
+instance Validity TimeZone
+
+vTimeZoneP :: CP TimeZone
+vTimeZoneP = sectionP "VTIMEZONE" $ do
+  _ <- takeWhileP (Just "timezoneProps") $ \ContentLine {..} ->
+    not $ contentLineName == "END" && contentLineValue == "VTIMEZONE"
+  pure TimeZone
+
+vTimeZoneB :: TimeZone -> DList ContentLine
+vTimeZoneB = sectionB "VTIMEZONE" $ \_ -> mempty

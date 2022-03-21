@@ -107,12 +107,12 @@ spec = do
             )
           ]
     forM_ examples $ \(contentLine, rendered) -> do
-      it (unwords ["renders", show contentLine, "as", show rendered]) $
+      it "renders this example correctly" $
         let actualRendered = renderContentLine contentLine
          in case (,) <$> parseContentLine actualRendered <*> parseContentLine (UnfoldedLine rendered) of
               Left err -> expectationFailure err
               Right (actual, expected) -> actual `shouldBe` expected
-      it (unwords ["parses", show rendered, "into", show contentLine]) $
+      it "parses this example correctly" $
         case parseContentLine (UnfoldedLine rendered) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine

@@ -34,6 +34,11 @@ spec = do
   describe "vEventP" $
     it "roundtrips with vEventB" $ parserBuilderRoundtrip vEventP vEventB
 
+  describe "TimeZone" $
+    genValidSpec @TimeZone
+  describe "vTimeZoneP" $
+    it "roundtrips with vTimeZoneB" $ parserBuilderRoundtrip vTimeZoneP vTimeZoneB
+
   describe "Calendar" $
     genValidSpec @Calendar
   describe "vCalendarP" $
@@ -46,7 +51,7 @@ parseSucceedsSpec ::
   a ->
   Spec
 parseSucceedsSpec parser contentLines expected =
-  it (unwords ["parses", show contentLines, "into", show expected]) $
+  it "parses these content lines correctly" $
     case parse parser "test input" contentLines of
       Left err -> expectationFailure $ errorBundlePretty err
       Right actual -> actual `shouldBe` expected

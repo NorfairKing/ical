@@ -8,8 +8,10 @@ import ICal.Calendar
 
 instance GenValid Calendar
 
-instance GenValid Event
-
 instance GenValid ProdId
 
 instance GenValid Version
+
+instance GenValid Event
+
+instance GenValid TimeZone
