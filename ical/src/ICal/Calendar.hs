@@ -157,6 +157,34 @@ uidP = do
 uidB :: UID -> DList ContentLine
 uidB = DList.singleton . mkSimpleContentLine "UID" . unUID
 
+-- [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
+newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
+  deriving (Show, Eq, Generic)
+
+instance Validity DateTimeStamp
+
+dateTimeStampP :: CP DateTimeStamp
+dateTimeStampP = do
+  ContentLine {..} <- lineWithNameP "DTSTAMP"
+  case parseDateTime contentLineValue of
+    Left err -> fail err
+    Right dateTime -> pure DateTimeStamp {unDateTimeStamp = dateTime}
+
+dateTimeStampB :: DateTimeStamp -> DList ContentLine
+dateTimeStampB = DList.singleton . mkSimpleContentLine "DTSTAMP" . renderDateTime . unDateTimeStamp
+
+-- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
+data DateTime = DateTime
+  deriving (Show, Eq, Generic)
+
+instance Validity DateTime
+
+renderDateTime :: DateTime -> Text
+renderDateTime = undefined
+
+parseDateTime :: Text -> Either String DateTime
+parseDateTime = undefined
+
 parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
 parseFirst partName parser = go
   where
@@ -198,7 +226,8 @@ endB name = DList.singleton $ mkSimpleContentLine "END" name
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
-  { eventUID :: !UID
+  { eventUID :: !UID,
+    eventDateTimeStamp :: !DateTimeStamp
   }
   deriving (Show, Eq, Generic)
 
@@ -209,12 +238,14 @@ vEventP = sectionP "VEVENT" $ do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValue == "VEVENT"
   eventUID <- parseFirst "UID" uidP eventProperties
+  eventDateTimeStamp <- parseFirst "DTSTAMP" dateTimeStampP eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
 vEventB = sectionB "VEVENT" $ \Event {..} ->
   mconcat
-    [ uidB eventUID
+    [ uidB eventUID,
+      dateTimeStampB eventDateTimeStamp
     ]
 
 -- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)

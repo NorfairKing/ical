@@ -35,6 +35,22 @@ spec = do
     parseSucceedsSpec uidP ["UID:19960401T080045Z-4000F192713-0052@example.com"] (UID "19960401T080045Z-4000F192713-0052@example.com")
     it "roundtrips with uidB" $ parserBuilderRoundtrip uidP uidB
 
+  describe "DateTime" $
+    genValidSpec @DateTime
+  describe "parseDateTime" $ do
+    -- TODO example-based test
+    it "roundtrips with renderDateTime" $
+      forAllValid $ \dateTime ->
+        case parseDateTime (renderDateTime dateTime) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` dateTime
+
+  describe "DateTimeStamp" $
+    genValidSpec @DateTimeStamp
+  describe "dateTimeStampP" $ do
+    -- TODO example-based test
+    it "roundtrips with dateTimeStampB" $ parserBuilderRoundtrip dateTimeStampP dateTimeStampB
+
   describe "Event" $
     genValidSpec @Event
   describe "vEventP" $
