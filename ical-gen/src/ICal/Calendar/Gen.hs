@@ -12,6 +12,8 @@ instance GenValid ProdId
 
 instance GenValid Version
 
+instance GenValid UID
+
 instance GenValid Event
 
 instance GenValid TimeZone

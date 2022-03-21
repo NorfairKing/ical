@@ -143,6 +143,20 @@ versionP = do
 versionB :: Version -> DList ContentLine
 versionB = DList.singleton . mkSimpleContentLine "VERSION" . unVersion
 
+-- [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
+newtype UID = UID {unUID :: Text}
+  deriving (Show, Eq, Generic)
+
+instance Validity UID
+
+uidP :: CP UID
+uidP = do
+  ContentLine {..} <- lineWithNameP "UID"
+  pure $ UID {unUID = contentLineValue}
+
+uidB :: UID -> DList ContentLine
+uidB = DList.singleton . mkSimpleContentLine "UID" . unUID
+
 parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
 parseFirst partName parser = go
   where
@@ -184,18 +198,24 @@ endB name = DList.singleton $ mkSimpleContentLine "END" name
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
+  { eventUID :: !UID
+  }
   deriving (Show, Eq, Generic)
 
 instance Validity Event
 
 vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
-  _ <- takeWhileP (Just "eventProps") $ \ContentLine {..} ->
+  eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValue == "VEVENT"
-  pure Event
+  eventUID <- parseFirst "UID" uidP eventProperties
+  pure Event {..}
 
 vEventB :: Event -> DList ContentLine
-vEventB = sectionB "VEVENT" $ \_ -> mempty
+vEventB = sectionB "VEVENT" $ \Event {..} ->
+  mconcat
+    [ uidB eventUID
+    ]
 
 -- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)
 data TimeZone = TimeZone
@@ -205,7 +225,7 @@ instance Validity TimeZone
 
 vTimeZoneP :: CP TimeZone
 vTimeZoneP = sectionP "VTIMEZONE" $ do
-  _ <- takeWhileP (Just "timezoneProps") $ \ContentLine {..} ->
+  _ <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValue == "VTIMEZONE"
   pure TimeZone
 

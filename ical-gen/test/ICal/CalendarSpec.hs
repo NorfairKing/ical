@@ -29,6 +29,12 @@ spec = do
     parseSucceedsSpec versionP ["VERSION:2.0"] (Version "2.0")
     it "roundtrips with versionB" $ parserBuilderRoundtrip versionP versionB
 
+  describe "UID" $
+    genValidSpec @UID
+  describe "uidP" $ do
+    parseSucceedsSpec uidP ["UID:19960401T080045Z-4000F192713-0052@example.com"] (UID "19960401T080045Z-4000F192713-0052@example.com")
+    it "roundtrips with uidB" $ parserBuilderRoundtrip uidP uidB
+
   describe "Event" $
     genValidSpec @Event
   describe "vEventP" $
