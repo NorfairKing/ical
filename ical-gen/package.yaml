@@ -16,6 +16,7 @@ library:
   - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-text
+  - genvalidity-time
   - text
 
 tests:

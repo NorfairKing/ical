@@ -16,6 +16,10 @@ instance GenValid UID
 
 instance GenValid DateTimeStamp
 
+instance GenValid Date
+
+instance GenValid Time
+
 instance GenValid DateTime
 
 instance GenValid Event

@@ -45,6 +45,26 @@ spec = do
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` dateTime
 
+  describe "Date" $
+    genValidSpec @Date
+  describe "parseDate" $ do
+    -- TODO example-based test
+    it "roundtrips with renderDate" $
+      forAllValid $ \date ->
+        case parseDate (renderDate date) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` date
+
+  describe "Time" $
+    genValidSpec @Time
+  describe "parseTime" $ do
+    -- TODO example-based test
+    it "roundtrips with renderTime" $
+      forAllValid $ \time ->
+        case parseTime (renderTime time) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` time
+
   describe "DateTimeStamp" $
     genValidSpec @DateTimeStamp
   describe "dateTimeStampP" $ do

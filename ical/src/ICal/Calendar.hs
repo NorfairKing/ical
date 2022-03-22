@@ -185,6 +185,30 @@ renderDateTime = undefined
 parseDateTime :: Text -> Either String DateTime
 parseDateTime = undefined
 
+-- [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
+data Date = Date
+  deriving (Show, Eq, Generic)
+
+instance Validity Date
+
+renderDate :: Date -> Text
+renderDate = undefined
+
+parseDate :: Text -> Either String Date
+parseDate = undefined
+
+-- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
+data Time = Time
+  deriving (Show, Eq, Generic)
+
+instance Validity Time
+
+renderTime :: Time -> Text
+renderTime = undefined
+
+parseTime :: Text -> Either String Time
+parseTime = undefined
+
 parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
 parseFirst partName parser = go
   where

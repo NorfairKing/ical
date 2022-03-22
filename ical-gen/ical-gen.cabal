@@ -27,6 +27,7 @@ library
     , genvalidity-case-insensitive
     , genvalidity-containers
     , genvalidity-text
+    , genvalidity-time
     , ical
     , text
   default-language: Haskell2010

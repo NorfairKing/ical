@@ -13,8 +13,10 @@ library:
   - dlist
   - megaparsec
   - text
+  - time
   - validity
   - validity-bytestring
   - validity-case-insensitive
   - validity-containers
   - validity-text
+  - validity-time
