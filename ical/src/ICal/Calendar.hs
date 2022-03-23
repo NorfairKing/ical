@@ -25,8 +25,10 @@ import Data.Monoid
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
+import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
@@ -198,16 +200,24 @@ parseDate :: Text -> Either String Date
 parseDate = undefined
 
 -- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
-data Time = Time
+newtype Time = Time {unTime :: Time.TimeOfDay}
   deriving (Show, Eq, Generic)
 
 instance Validity Time
 
 renderTime :: Time -> Text
-renderTime = undefined
+renderTime = T.pack . Time.formatTime Time.defaultTimeLocale timeFormatStr . unTime
 
 parseTime :: Text -> Either String Time
-parseTime = undefined
+parseTime = fmap Time . parseTimeEither timeFormatStr . T.unpack
+
+parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
+parseTimeEither formatStr s = case Time.parseTime Time.defaultTimeLocale formatStr s of
+  Nothing -> Left $ "Could not parse time value: " <> s
+  Just t -> Right t
+
+timeFormatStr :: String
+timeFormatStr = "%H%M%S"
 
 parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
 parseFirst partName parser = go
