@@ -24,21 +24,24 @@ spec :: Spec
 spec = do
   describe "ProdId" $ do
     genValidSpec @ProdId
+    propertySpec @ProdId
   describe "prodIdP" $ do
-    parseSucceedsSpec prodIdP ["PRODID:Example"] (ProdId "Example")
-    it "roundtrips with prodIdB" $ parserBuilderRoundtrip prodIdP prodIdB
+    it "works for this example" $
+      prodIdP "PRODID:Example" `shouldBe` Right (ProdId "Example")
 
-  describe "Version" $
+  describe "Version" $ do
     genValidSpec @Version
+    propertySpec @Version
   describe "versionP" $ do
-    parseSucceedsSpec versionP ["VERSION:2.0"] (Version "2.0")
-    it "roundtrips with versionB" $ parserBuilderRoundtrip versionP versionB
+    it "works for this example" $
+      versionP "VERSION:2.0" `shouldBe` Right (Version "2.0")
 
-  describe "UID" $
+  describe "UID" $ do
     genValidSpec @UID
+    propertySpec @UID
   describe "uidP" $ do
-    parseSucceedsSpec uidP ["UID:19960401T080045Z-4000F192713-0052@example.com"] (UID "19960401T080045Z-4000F192713-0052@example.com")
-    it "roundtrips with uidB" $ parserBuilderRoundtrip uidP uidB
+    it "works for this example" $
+      uidP "UID:19960401T080045Z-4000F192713-0052@example.com" `shouldBe` Right (UID "19960401T080045Z-4000F192713-0052@example.com")
 
   describe "DateTime" $
     genValidSpec @DateTime
@@ -110,11 +113,12 @@ spec = do
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` time
 
-  describe "DateTimeStamp" $
+  describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
+    propertySpec @DateTimeStamp
   describe "dateTimeStampP" $ do
     -- TODO example-based test
-    it "roundtrips with dateTimeStampB" $ parserBuilderRoundtrip dateTimeStampP dateTimeStampB
+    pure ()
 
   describe "Event" $ do
     genValidSpec @Event

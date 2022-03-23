@@ -20,6 +20,8 @@ import Data.Either
 import Data.Functor
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import Data.Proxy
@@ -80,8 +82,18 @@ class IsComponent component where
 
 -- Law for this typeclass: The property roundtrips through 'ContentLine'.
 class IsProperty property where
+  -- | Parser for the property
   propertyP :: ContentLine -> Either String property
+
+  -- | Builder for the property
   propertyB :: property -> ContentLine
+
+class IsPropertyType propertyType where
+  -- | Parser for the property type
+  propertyTypeP :: Map ParamName (NonEmpty ParamValue) -> Text -> Either String propertyType
+
+  -- | Builder for the property type
+  propertyTypeB :: propertyType -> Map ParamName (NonEmpty ParamValue)
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
@@ -193,15 +205,16 @@ newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
 
 instance Validity DateTimeStamp
 
-dateTimeStampP :: CP DateTimeStamp
-dateTimeStampP = do
-  ContentLine {..} <- lineWithNameP "DTSTAMP"
-  case parseDateTime contentLineValue of
-    Left err -> fail err
-    Right dateTime -> pure DateTimeStamp {unDateTimeStamp = dateTime}
+instance IsProperty DateTimeStamp where
+  propertyP = dateTimeStampP
+  propertyB = dateTimeStampB
 
-dateTimeStampB :: DateTimeStamp -> DList ContentLine
-dateTimeStampB = DList.singleton . mkSimpleContentLine "DTSTAMP" . renderDateTime . unDateTimeStamp
+dateTimeStampP :: ContentLine -> Either String DateTimeStamp
+dateTimeStampP = propertyWithNameP "DTSTAMP" $ \ContentLine {..} ->
+  DateTimeStamp <$> parseDateTime contentLineValue
+
+dateTimeStampB :: DateTimeStamp -> ContentLine
+dateTimeStampB = mkSimpleContentLine "DTSTAMP" . renderDateTime . unDateTimeStamp
 
 -- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
 data DateTime
@@ -319,7 +332,7 @@ propertyWithNameP name func cln =
           [ "Expected content line with name",
             show name,
             "but got",
-            show contentLineName,
+            show $ contentLineName cln,
             "instead."
           ]
 
