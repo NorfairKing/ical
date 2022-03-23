@@ -188,16 +188,19 @@ parseDateTime :: Text -> Either String DateTime
 parseDateTime = undefined
 
 -- [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
-data Date = Date
+newtype Date = Date {unDate :: Time.Day}
   deriving (Show, Eq, Generic)
 
 instance Validity Date
 
 renderDate :: Date -> Text
-renderDate = undefined
+renderDate = T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
 
 parseDate :: Text -> Either String Date
-parseDate = undefined
+parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack
+
+dateFormatStr :: String
+dateFormatStr = "%Y%M%d"
 
 -- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
 --
