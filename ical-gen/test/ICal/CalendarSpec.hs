@@ -1,4 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module ICal.CalendarSpec where
@@ -114,20 +116,17 @@ spec = do
     -- TODO example-based test
     it "roundtrips with dateTimeStampB" $ parserBuilderRoundtrip dateTimeStampP dateTimeStampB
 
-  describe "Event" $
+  describe "Event" $ do
     genValidSpec @Event
-  describe "vEventP" $
-    it "roundtrips with vEventB" $ parserBuilderRoundtrip vEventP vEventB
+    componentSpec @TimeZone
 
-  describe "TimeZone" $
+  describe "TimeZone" $ do
     genValidSpec @TimeZone
-  describe "vTimeZoneP" $
-    it "roundtrips with vTimeZoneB" $ parserBuilderRoundtrip vTimeZoneP vTimeZoneB
+    componentSpec @TimeZone
 
-  describe "Calendar" $
+  describe "Calendar" $ do
     genValidSpec @Calendar
-  describe "vCalendarP" $
-    it "roundtrips with vCalendarB" $ parserBuilderRoundtrip vCalendarP vCalendarB
+    componentSpec @Calendar
 
 parseSucceedsSpec ::
   (Show a, Eq a) =>
@@ -140,6 +139,14 @@ parseSucceedsSpec parser contentLines expected =
     case parse parser "test input" contentLines of
       Left err -> expectationFailure $ errorBundlePretty err
       Right actual -> actual `shouldBe` expected
+
+componentSpec ::
+  forall a.
+  (Show a, Eq a, GenValid a, IsComponent a) =>
+  Spec
+componentSpec =
+  it "roundtrips through ContentLines" $
+    parserBuilderRoundtrip (componentP :: CP a) componentB
 
 parserBuilderRoundtrip ::
   (Show a, Eq a, GenValid a) =>

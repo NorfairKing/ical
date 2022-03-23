@@ -70,6 +70,14 @@ instance TraversableStream [ContentLine] where
           [] -> (Nothing, newState)
           (cl : _) -> (Just $ T.unpack $ renderUnfoldedLinesText [renderContentLine cl], newState)
 
+-- Law for this typeclass: The component roundtrips through '[ContentLine]'.
+class IsComponent component where
+  -- | Parser for this component
+  componentP :: CP component
+
+  -- | Builder for this component
+  componentB :: component -> DList ContentLine
+
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
   { calendarProdId :: !ProdId,
@@ -83,6 +91,10 @@ instance Validity Calendar
 
 iCalendarP :: CP [Calendar]
 iCalendarP = many vCalendarP
+
+instance IsComponent Calendar where
+  componentP = vCalendarP
+  componentB = vCalendarB
 
 vCalendarP :: CP Calendar
 vCalendarP = sectionP "VCALENDAR" $ do
@@ -315,6 +327,10 @@ data Event = Event
 
 instance Validity Event
 
+instance IsComponent Event where
+  componentP = vEventP
+  componentB = vEventB
+
 vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
@@ -335,6 +351,10 @@ data TimeZone = TimeZone
   deriving (Show, Eq, Generic)
 
 instance Validity TimeZone
+
+instance IsComponent TimeZone where
+  componentP = vTimeZoneP
+  componentB = vTimeZoneB
 
 vTimeZoneP :: CP TimeZone
 vTimeZoneP = sectionP "VTIMEZONE" $ do
