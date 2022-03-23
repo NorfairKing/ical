@@ -8,7 +8,7 @@ import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time (TimeOfDay (..))
+import Data.Time (TimeOfDay (..), fromGregorian)
 import ICal.Calendar
 import ICal.Calendar.Gen ()
 import ICal.ContentLine
@@ -51,7 +51,17 @@ spec = do
   describe "Date" $
     genValidSpec @Date
   describe "parseDate" $ do
-    -- TODO example-based test
+    let examples :: [(Date, Text)]
+        examples =
+          [ (Date $ fromGregorian 1997 07 14, "19970714")
+          ]
+    describe "examples" $
+      forM_ examples $ \(date, text) -> do
+        it "renders this example date correctly" $
+          renderDate date `shouldBe` text
+        it "parses this example text correctly" $
+          parseDate text `shouldBe` Right date
+
     it "roundtrips with renderDate" $
       forAllValid $ \date ->
         case parseDate (renderDate date) of
@@ -61,13 +71,6 @@ spec = do
   describe "Time" $
     genValidSpec @Time
   describe "parseTime" $ do
-    -- TODO example-based test
-    it "roundtrips with renderTime" $
-      forAllValid $ \time ->
-        case parseTime (renderTime time) of
-          Left err -> expectationFailure err
-          Right actual -> actual `shouldBe` time
-
     let examples :: [(Time, Text)]
         examples =
           [ (TimeFloating $ TimeOfDay 23 00 00, "230000"),
@@ -84,6 +87,12 @@ spec = do
       case parseTime "230000-0800" of
         Left _ -> pure ()
         Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
+
+    it "roundtrips with renderTime" $
+      forAllValid $ \time ->
+        case parseTime (renderTime time) of
+          Left err -> expectationFailure err
+          Right actual -> actual `shouldBe` time
 
   describe "DateTimeStamp" $
     genValidSpec @DateTimeStamp
