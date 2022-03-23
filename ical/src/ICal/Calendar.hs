@@ -78,6 +78,11 @@ class IsComponent component where
   -- | Builder for this component
   componentB :: component -> DList ContentLine
 
+-- Law for this typeclass: The property roundtrips through 'ContentLine'.
+class IsProperty property where
+  propertyP :: ContentLine -> Either String property
+  propertyB :: property -> ContentLine
+
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
   { calendarProdId :: !ProdId,
@@ -101,8 +106,8 @@ vCalendarP = sectionP "VCALENDAR" $ do
   calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
     contentLineName /= "BEGIN" && contentLineName /= "END"
 
-  calendarProdId <- parseFirst "PRODID" prodIdP calPropLines
-  calendarVersion <- parseFirst "VERSION" versionP calPropLines
+  calendarProdId <- parseFirst "PRODID" calPropLines
+  calendarVersion <- parseFirst "VERSION" calPropLines
 
   calendarMods <-
     many $
@@ -122,8 +127,10 @@ vCalendarB :: Calendar -> DList ContentLine
 vCalendarB = sectionB "VCALENDAR" $ \Calendar {..} ->
   mconcat $
     concat
-      [ [ prodIdB calendarProdId,
-          versionB calendarVersion
+      [ [ DList.fromList
+            [ prodIdB calendarProdId,
+              versionB calendarVersion
+            ]
         ],
         map vEventB calendarEvents,
         map vTimeZoneB calendarTimeZones
@@ -135,13 +142,16 @@ newtype ProdId = ProdId {unProdId :: Text}
 
 instance Validity ProdId
 
-prodIdP :: CP ProdId
-prodIdP = do
-  ContentLine {..} <- lineWithNameP "PRODID"
-  pure $ ProdId {unProdId = contentLineValue}
+instance IsProperty ProdId where
+  propertyP = prodIdP
+  propertyB = prodIdB
 
-prodIdB :: ProdId -> DList ContentLine
-prodIdB = DList.singleton . mkSimpleContentLine "PRODID" . unProdId
+prodIdP :: ContentLine -> Either String ProdId
+prodIdP = propertyWithNameP "PRODID" $ \ContentLine {..} ->
+  Right ProdId {unProdId = contentLineValue}
+
+prodIdB :: ProdId -> ContentLine
+prodIdB = mkSimpleContentLine "PRODID" . unProdId
 
 -- [section 3.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4)
 newtype Version = Version {unVersion :: Text}
@@ -149,13 +159,16 @@ newtype Version = Version {unVersion :: Text}
 
 instance Validity Version
 
-versionP :: CP Version
-versionP = do
-  ContentLine {..} <- lineWithNameP "VERSION"
-  pure $ Version {unVersion = contentLineValue}
+instance IsProperty Version where
+  propertyP = versionP
+  propertyB = versionB
 
-versionB :: Version -> DList ContentLine
-versionB = DList.singleton . mkSimpleContentLine "VERSION" . unVersion
+versionP :: ContentLine -> Either String Version
+versionP = propertyWithNameP "VERSION" $ \ContentLine {..} ->
+  Right $ Version {unVersion = contentLineValue}
+
+versionB :: Version -> ContentLine
+versionB = mkSimpleContentLine "VERSION" . unVersion
 
 -- [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
 newtype UID = UID {unUID :: Text}
@@ -163,13 +176,16 @@ newtype UID = UID {unUID :: Text}
 
 instance Validity UID
 
-uidP :: CP UID
-uidP = do
-  ContentLine {..} <- lineWithNameP "UID"
-  pure $ UID {unUID = contentLineValue}
+instance IsProperty UID where
+  propertyP = uidP
+  propertyB = uidB
 
-uidB :: UID -> DList ContentLine
-uidB = DList.singleton . mkSimpleContentLine "UID" . unUID
+uidP :: ContentLine -> Either String UID
+uidP = propertyWithNameP "UID" $ \ContentLine {..} ->
+  Right $ UID {unUID = contentLineValue}
+
+uidB :: UID -> ContentLine
+uidB = mkSimpleContentLine "UID" . unUID
 
 -- [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
 newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
@@ -279,19 +295,33 @@ timeFloatingFormatStr = "%H%M%S"
 timeUTCFormatStr :: String
 timeUTCFormatStr = "%H%M%SZ"
 
-parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
-parseFirst partName parser = go
+parseFirst :: forall a. IsProperty a => Text -> [ContentLine] -> CP a
+parseFirst propertyName = go
   where
     go :: [ContentLine] -> CP a
     go = \case
-      [] -> fail $ "Did not find required " <> T.unpack (CI.original partName)
-      cls@(_ : rest) -> case parse parser "" cls of
+      [] -> fail $ "Did not find required " <> T.unpack propertyName
+      (cl : cls) -> case propertyP cl of
         Right result -> pure result
-        Left _ -> go rest
+        Left _ -> go cls
 
 lineWithNameP :: ContentLineName -> CP ContentLine
 lineWithNameP name = satisfy $ \ContentLine {..} ->
   contentLineName == name
+
+propertyWithNameP :: ContentLineName -> (ContentLine -> Either String a) -> (ContentLine -> Either String a)
+propertyWithNameP name func cln =
+  if contentLineName cln == name
+    then func cln
+    else
+      Left $
+        unwords
+          [ "Expected content line with name",
+            show name,
+            "but got",
+            show contentLineName,
+            "instead."
+          ]
 
 sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
 sectionB name func =
@@ -335,13 +365,13 @@ vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValue == "VEVENT"
-  eventUID <- parseFirst "UID" uidP eventProperties
-  eventDateTimeStamp <- parseFirst "DTSTAMP" dateTimeStampP eventProperties
+  eventUID <- parseFirst "UID" eventProperties
+  eventDateTimeStamp <- parseFirst "DTSTAMP" eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
 vEventB = sectionB "VEVENT" $ \Event {..} ->
-  mconcat
+  DList.fromList
     [ uidB eventUID,
       dateTimeStampB eventDateTimeStamp
     ]

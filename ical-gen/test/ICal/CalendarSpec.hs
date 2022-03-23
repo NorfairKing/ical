@@ -144,7 +144,10 @@ componentSpec ::
   forall a.
   (Show a, Eq a, GenValid a, IsComponent a) =>
   Spec
-componentSpec =
+componentSpec = do
+  it "renders to a valid list of ContentLines" $
+    forAllValid $ \component ->
+      shouldBeValid $ DList.toList $ componentB (component :: a)
   it "roundtrips through ContentLines" $
     parserBuilderRoundtrip (componentP :: CP a) componentB
 
@@ -168,3 +171,18 @@ parserBuilderRoundtrip parser builder = forAllValid $ \a ->
         case parse parser "test input" rendered of
           Left err -> expectationFailure $ errorBundlePretty err
           Right parsed -> parsed `shouldBe` a
+
+propertySpec ::
+  forall a.
+  (Show a, Eq a, GenValid a, IsProperty a) =>
+  Spec
+propertySpec = do
+  it "always renders to a valid property" $
+    forAllValid $ \property ->
+      shouldBeValid $ propertyB (property :: a)
+  it "roundtrips through ContentLine" $
+    forAllValid $ \property ->
+      let rendered = propertyB (property :: a)
+       in case propertyP rendered of
+            Left err -> expectationFailure err
+            Right actual -> actual `shouldBe` property
