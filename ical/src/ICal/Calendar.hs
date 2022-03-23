@@ -176,16 +176,31 @@ dateTimeStampB :: DateTimeStamp -> DList ContentLine
 dateTimeStampB = DList.singleton . mkSimpleContentLine "DTSTAMP" . renderDateTime . unDateTimeStamp
 
 -- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
-data DateTime = DateTime
+data DateTime
+  = DateTimeFloating !Time.LocalTime
+  | DateTimeUTC !Time.LocalTime
+  -- TODO represent the TZID
   deriving (Show, Eq, Generic)
 
 instance Validity DateTime
 
 renderDateTime :: DateTime -> Text
-renderDateTime = undefined
+renderDateTime =
+  T.pack . \case
+    DateTimeFloating lt -> Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr lt
+    DateTimeUTC lt -> Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
 
 parseDateTime :: Text -> Either String DateTime
-parseDateTime = undefined
+parseDateTime t =
+  let s = T.unpack t
+   in (DateTimeFloating <$> parseTimeEither dateTimeFloatingFormatStr s)
+        <|> (DateTimeUTC <$> parseTimeEither dateTimeUTCFormatStr s)
+
+dateTimeFloatingFormatStr :: String
+dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
+
+dateTimeUTCFormatStr :: String
+dateTimeUTCFormatStr = "%Y%m%dT%H%M%SZ"
 
 -- [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
 newtype Date = Date {unDate :: Time.Day}

@@ -8,7 +8,7 @@ import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time (TimeOfDay (..), fromGregorian)
+import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.Calendar
 import ICal.Calendar.Gen ()
 import ICal.ContentLine
@@ -41,12 +41,26 @@ spec = do
   describe "DateTime" $
     genValidSpec @DateTime
   describe "parseDateTime" $ do
-    -- TODO example-based test
     it "roundtrips with renderDateTime" $
       forAllValid $ \dateTime ->
         case parseDateTime (renderDateTime dateTime) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` dateTime
+
+    -- Examples from the spec
+    let examples :: [(DateTime, Text)]
+        examples =
+          [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), "19980118T230000"),
+            (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), "19980119T070000Z"),
+            (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), "19970714T133000"),
+            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), "19970714T173000Z")
+          ]
+    describe "examples" $
+      forM_ examples $ \(dateTime, text) -> do
+        it "renders this example dateTime correctly" $
+          renderDateTime dateTime `shouldBe` text
+        it "parses this example text correctly" $
+          parseDateTime text `shouldBe` Right dateTime
 
   describe "Date" $
     genValidSpec @Date
