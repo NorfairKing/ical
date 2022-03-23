@@ -60,4 +60,5 @@ test-suite ical-test
     , pretty-show
     , sydtest
     , text
+    , time
   default-language: Haskell2010

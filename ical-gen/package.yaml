@@ -40,3 +40,4 @@ tests:
     - pretty-show
     - sydtest
     - text
+    - time

@@ -200,24 +200,54 @@ parseDate :: Text -> Either String Date
 parseDate = undefined
 
 -- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
-newtype Time = Time {unTime :: Time.TimeOfDay}
+--
+-- @
+--      Purpose:  This value type is used to identify values that contain a
+--         time of day.
+--
+--      Format Definition:  This value type is defined by the following
+--         notation:
+--
+--          time         = time-hour time-minute time-second [time-utc]
+--
+--          time-hour    = 2DIGIT        ;00-23
+--          time-minute  = 2DIGIT        ;00-59
+--          time-second  = 2DIGIT        ;00-60
+--          ;The "60" value is used to account for positive "leap" seconds.
+--
+--          time-utc     = "Z"
+--
+-- @
+data Time
+  = TimeFloating !Time.TimeOfDay
+  | TimeUTC !Time.TimeOfDay
+  -- TODO how do we represent times with a timezone identifier?
   deriving (Show, Eq, Generic)
 
 instance Validity Time
 
 renderTime :: Time -> Text
-renderTime = T.pack . Time.formatTime Time.defaultTimeLocale timeFormatStr . unTime
+renderTime =
+  T.pack . \case
+    TimeFloating tod -> Time.formatTime Time.defaultTimeLocale timeFloatingFormatStr tod
+    TimeUTC tod -> Time.formatTime Time.defaultTimeLocale timeUTCFormatStr tod
 
 parseTime :: Text -> Either String Time
-parseTime = fmap Time . parseTimeEither timeFormatStr . T.unpack
+parseTime t =
+  let s = T.unpack t
+   in (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
+        <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
 
 parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
 parseTimeEither formatStr s = case Time.parseTime Time.defaultTimeLocale formatStr s of
   Nothing -> Left $ "Could not parse time value: " <> s
   Just t -> Right t
 
-timeFormatStr :: String
-timeFormatStr = "%H%M%S"
+timeFloatingFormatStr :: String
+timeFloatingFormatStr = "%H%M%S"
+
+timeUTCFormatStr :: String
+timeUTCFormatStr = "%H%M%SZ"
 
 parseFirst :: forall a. CI Text -> CP a -> [ContentLine] -> CP a
 parseFirst partName parser = go

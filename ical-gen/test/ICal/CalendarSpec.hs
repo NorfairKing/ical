@@ -3,9 +3,12 @@
 
 module ICal.CalendarSpec where
 
+import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
+import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Time (TimeOfDay (..))
 import ICal.Calendar
 import ICal.Calendar.Gen ()
 import ICal.ContentLine
@@ -64,6 +67,23 @@ spec = do
         case parseTime (renderTime time) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` time
+
+    let examples :: [(Time, Text)]
+        examples =
+          [ (TimeFloating $ TimeOfDay 23 00 00, "230000"),
+            (TimeUTC $ TimeOfDay 07 00 00, "070000Z")
+          ]
+    describe "examples" $
+      forM_ examples $ \(time, text) -> do
+        it "renders this example time correctly" $
+          renderTime time `shouldBe` text
+        it "parses this example text correctly" $
+          parseTime text `shouldBe` Right time
+
+    it "fails to parse this counterexample from the spec" $
+      case parseTime "230000-0800" of
+        Left _ -> pure ()
+        Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
 
   describe "DateTimeStamp" $
     genValidSpec @DateTimeStamp
