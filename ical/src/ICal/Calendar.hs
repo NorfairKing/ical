@@ -93,7 +93,7 @@ class IsPropertyType propertyType where
   propertyTypeP :: Map ParamName (NonEmpty ParamValue) -> Text -> Either String propertyType
 
   -- | Builder for the property type
-  propertyTypeB :: propertyType -> Map ParamName (NonEmpty ParamValue)
+  propertyTypeB :: propertyType -> (Map ParamName (NonEmpty ParamValue), Text)
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar

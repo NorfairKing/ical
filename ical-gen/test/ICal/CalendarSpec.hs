@@ -181,7 +181,7 @@ propertySpec ::
   (Show a, Eq a, GenValid a, IsProperty a) =>
   Spec
 propertySpec = do
-  it "always renders to a valid property" $
+  it "always renders to a valid content line" $
     forAllValid $ \property ->
       shouldBeValid $ propertyB (property :: a)
   it "roundtrips through ContentLine" $
@@ -190,3 +190,18 @@ propertySpec = do
        in case propertyP rendered of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` property
+
+propertyTypeSpec ::
+  forall a.
+  (Show a, Eq a, GenValid a, IsPropertyType a) =>
+  Spec
+propertyTypeSpec = do
+  it "always renders to a valid content line" $
+    forAllValid $ \propertyType ->
+      shouldBeValid $ propertyTypeB (propertyType :: a)
+  it "roundtrips through ContentLine" $
+    forAllValid $ \propertyType ->
+      let (params, value) = propertyTypeB (propertyType :: a)
+       in case propertyTypeP params value of
+            Left err -> expectationFailure err
+            Right actual -> actual `shouldBe` propertyType
