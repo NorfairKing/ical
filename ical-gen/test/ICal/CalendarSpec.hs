@@ -10,7 +10,6 @@ import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import qualified Data.Map as M
-import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.Calendar
@@ -53,14 +52,6 @@ spec = do
       tzIDP "TZID:America/New_York" `shouldBe` Right (TZID "America/New_York")
       tzIDP "TZID:America/Los_Angeles" `shouldBe` Right (TZID "America/Los_Angeles")
       tzIDP "TZID:/example.org/America/New_York" `shouldBe` Right (TZID "/example.org/America/New_York")
-
-  describe "TZIDParam" $ do
-    genValidSpec @TZIDParam
-    parameterSpec @TZIDParam
-  describe "tzIDP" $ do
-    it "works for these examples" $ do
-      tzIDParamP ["America/New_York"] `shouldBe` Right (TZIDParam "America/New_York")
-      tzIDParamP ["/example.org/America/New_York"] `shouldBe` Right (TZIDParam "/example.org/America/New_York")
 
   describe "DateTime" $ do
     genValidSpec @DateTime
@@ -214,14 +205,14 @@ propertySpec ::
   Spec
 propertySpec = do
   it "always renders to a valid content line" $
-    forAllValid $ \property ->
-      shouldBeValid $ propertyB (property :: a)
+    forAllValid $ \a ->
+      shouldBeValid $ propertyB (a :: a)
   it "roundtrips through ContentLine" $
-    forAllValid $ \property ->
-      let rendered = propertyB (property :: a)
+    forAllValid $ \a ->
+      let rendered = propertyB (a :: a)
        in case propertyP rendered of
             Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` property
+            Right actual -> actual `shouldBe` a
 
 propertyTypeSpec ::
   forall a.
@@ -237,18 +228,3 @@ propertyTypeSpec = do
        in case propertyTypeP value of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` propertyType
-
-parameterSpec ::
-  forall a.
-  (Show a, Eq a, GenValid a, IsParameter a) =>
-  Spec
-parameterSpec = do
-  it "always renders a valid parameter values" $
-    forAllValid $ \parameter ->
-      shouldBeValid $ parameterB (parameter :: a)
-  it "roundtrips through parameter values" $
-    forAllValid $ \parameter ->
-      let values = parameterB (parameter :: a)
-       in case parameterP values of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` parameter

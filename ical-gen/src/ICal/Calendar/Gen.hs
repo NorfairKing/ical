@@ -8,6 +8,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.Time (LocalTime (..), TimeOfDay (..))
 import ICal.Calendar
+import ICal.Parameter.Gen ()
 import Test.QuickCheck
 
 instance GenValid Calendar
@@ -21,8 +22,6 @@ instance GenValid UID
 instance GenValid DateTimeStamp
 
 instance GenValid Date
-
-instance GenValid TZIDParam
 
 instance GenValid TZID
 

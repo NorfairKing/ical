@@ -14,20 +14,13 @@ module ICal.Calendar where
 
 import Control.Arrow (left)
 import Control.Monad
-import Data.CaseInsensitive (CI)
-import qualified Data.CaseInsensitive as CI
 import Data.DList (DList (..))
 import qualified Data.DList as DList
-import Data.Either
-import Data.Functor
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe
 import Data.Monoid
 import Data.Proxy
-import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -37,6 +30,7 @@ import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
@@ -96,22 +90,6 @@ class IsPropertyType propertyType where
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
-
-class IsParameter param where
-  -- Name of the parameter
-  parameterName :: Proxy param -> ParamName
-
-  -- | Parser for the parameter
-  parameterP :: NonEmpty ParamValue -> Either String param
-
-  -- | Builder for the parameter
-  parameterB :: param -> NonEmpty ParamValue
-
-lookupParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Maybe (Either String param)
-lookupParam m = do
-  let name = parameterName (Proxy :: Proxy param)
-  pvs <- M.lookup name m
-  pure $ parameterP pvs
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
@@ -246,9 +224,9 @@ instance Validity DateTime where
     mconcat
       [ genericValidate dt,
         let lt = case dt of
-              DateTimeFloating lt -> lt
-              DateTimeUTC lt -> lt
-              DateTimeZoned _ lt -> lt
+              DateTimeFloating l -> l
+              DateTimeUTC l -> l
+              DateTimeZoned _ l -> l
          in validateImpreciseLocalTime lt
       ]
 
@@ -349,7 +327,7 @@ validateImpreciseTimeOfDay :: Time.TimeOfDay -> Validation
 validateImpreciseTimeOfDay tod =
   declare "The number of seconds is integer" $
     let sec = Time.todSec tod
-     in ceiling sec == floor sec
+     in ceiling sec == (floor sec :: Int)
 
 instance IsPropertyType Time where
   propertyTypeP = timeP
@@ -504,28 +482,3 @@ tzIDP = propertyWithNameP "TZID" $ \ContentLine {..} ->
 
 tzIDB :: TZID -> ContentLine
 tzIDB = mkSimpleContentLine "TZID" . unTZID
-
--- [section 3.2.19](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)
-newtype TZIDParam = TZIDParam {unTZIDParam :: CI Text}
-  deriving stock (Eq, Generic)
-  deriving newtype (Show, IsString, Read)
-
-instance Validity TZIDParam
-
-instance IsParameter TZIDParam where
-  parameterName Proxy = "TZID"
-  parameterP = tzIDParamP
-  parameterB = tzIDParamB
-
-tzIDParamP :: NonEmpty ParamValue -> Either String TZIDParam
-tzIDParamP = singleParamP $ \case
-  UnquotedParam c -> Right $ TZIDParam {unTZIDParam = c}
-  p -> Left $ "Expected TZIDParam to be unquoted, but was quoted: " <> show p
-
-tzIDParamB :: TZIDParam -> NonEmpty ParamValue
-tzIDParamB = (:| []) . UnquotedParam . unTZIDParam
-
-singleParamP :: (ParamValue -> Either String TZIDParam) -> NonEmpty ParamValue -> Either String TZIDParam
-singleParamP func = \case
-  value :| [] -> func value
-  _ -> Left "Expected one parameter value, but got multiple."

@@ -13,6 +13,7 @@ library
       ICal
       ICal.Calendar
       ICal.ContentLine
+      ICal.Parameter
       ICal.UnfoldedLine
   other-modules:
       Paths_ical

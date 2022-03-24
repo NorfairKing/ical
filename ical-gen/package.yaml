@@ -15,8 +15,10 @@ library:
   - genvalidity-bytestring
   - genvalidity-case-insensitive
   - genvalidity-containers
+  - genvalidity-sydtest
   - genvalidity-text
   - genvalidity-time
+  - sydtest
   - text
   - time
 
