@@ -46,6 +46,9 @@ propertyWithNameP :: IsPropertyType propertyType => ContentLineName -> (ContentL
 propertyWithNameP cln = parsePropertyWithName cln $ \ContentLine {..} ->
   propertyTypeP contentLineValue
 
+propertyWithNameB :: IsPropertyType propertyType => ContentLineName -> (propertyType -> ContentLine)
+propertyWithNameB cln = ContentLine cln . propertyTypeB
+
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Generic)
 
@@ -59,7 +62,7 @@ beginP :: ContentLine -> Either String Begin
 beginP = fmap Begin . propertyWithNameP "BEGIN"
 
 beginB :: Begin -> ContentLine
-beginB = mkSimpleContentLine "BEGIN" . unBegin
+beginB = propertyWithNameB "BEGIN" . unBegin
 
 newtype End = End {unEnd :: Text}
   deriving (Show, Eq, Generic)
@@ -74,7 +77,7 @@ endP :: ContentLine -> Either String End
 endP = fmap End . propertyWithNameP "END"
 
 endB :: End -> ContentLine
-endB = mkSimpleContentLine "END" . unEnd
+endB = propertyWithNameB "END" . unEnd
 
 -- [section 3.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3)
 newtype ProdId = ProdId {unProdId :: Text}
@@ -90,7 +93,7 @@ prodIdP :: ContentLine -> Either String ProdId
 prodIdP = fmap ProdId . propertyWithNameP "PRODID"
 
 prodIdB :: ProdId -> ContentLine
-prodIdB = mkSimpleContentLine "PRODID" . unProdId
+prodIdB = propertyWithNameB "PRODID" . unProdId
 
 -- [section 3.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4)
 newtype Version = Version {unVersion :: Text}
@@ -106,7 +109,7 @@ versionP :: ContentLine -> Either String Version
 versionP = fmap Version . propertyWithNameP "VERSION"
 
 versionB :: Version -> ContentLine
-versionB = mkSimpleContentLine "VERSION" . unVersion
+versionB = propertyWithNameB "VERSION" . unVersion
 
 -- [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
 newtype UID = UID {unUID :: Text}
@@ -122,7 +125,7 @@ uidP :: ContentLine -> Either String UID
 uidP = fmap UID . propertyWithNameP "UID"
 
 uidB :: UID -> ContentLine
-uidB = mkSimpleContentLine "UID" . unUID
+uidB = propertyWithNameB "UID" . unUID
 
 -- [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
 newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
@@ -138,7 +141,7 @@ dateTimeStampP :: ContentLine -> Either String DateTimeStamp
 dateTimeStampP = fmap DateTimeStamp . propertyWithNameP "DTSTAMP"
 
 dateTimeStampB :: DateTimeStamp -> ContentLine
-dateTimeStampB = ContentLine "DTSTAMP" . dateTimeB . unDateTimeStamp
+dateTimeStampB = propertyWithNameB "DTSTAMP" . unDateTimeStamp
 
 -- [section 3.8.3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.1)
 newtype TZID = TZID {unTZID :: Text}
@@ -154,4 +157,4 @@ tzIDP :: ContentLine -> Either String TZID
 tzIDP = fmap TZID . propertyWithNameP "TZID"
 
 tzIDB :: TZID -> ContentLine
-tzIDB = mkSimpleContentLine "TZID" . unTZID
+tzIDB = propertyWithNameB "TZID" . unTZID
