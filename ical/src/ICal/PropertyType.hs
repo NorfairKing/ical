@@ -14,6 +14,7 @@ module ICal.PropertyType where
 
 import qualified Data.Map as M
 import Data.Proxy
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -24,12 +25,20 @@ import ICal.ContentLine
 import ICal.Parameter
 import Text.Megaparsec
 
+-- [section 3.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3)
 class IsPropertyType propertyType where
   -- | Parser for the property type
   propertyTypeP :: ContentLineValue -> Either String propertyType
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
+
+-- [section 3.3.11](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.11)
+--
+-- TODO text encoding
+instance IsPropertyType Text where
+  propertyTypeP = Right . contentLineValueRaw
+  propertyTypeB = mkSimpleContentLineValue
 
 -- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
 data DateTime

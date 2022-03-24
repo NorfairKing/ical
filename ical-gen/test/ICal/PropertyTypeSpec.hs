@@ -8,6 +8,7 @@ module ICal.PropertyTypeSpec where
 
 import Control.Monad
 import qualified Data.Map as M
+import Data.Text (Text)
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
 import ICal.PropertyType
@@ -17,6 +18,8 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  propertyTypeSpec @Text
+
   describe "DateTime" $ do
     genValidSpec @DateTime
     propertyTypeSpec @DateTime

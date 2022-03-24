@@ -28,8 +28,8 @@ class IsProperty property where
   -- | Builder for the property
   propertyB :: property -> ContentLine
 
-propertyWithNameP :: ContentLineName -> (ContentLine -> Either String a) -> (ContentLine -> Either String a)
-propertyWithNameP name func cln =
+parsePropertyWithName :: ContentLineName -> (ContentLine -> Either String a) -> (ContentLine -> Either String a)
+parsePropertyWithName name func cln =
   if contentLineName cln == name
     then func cln
     else
@@ -42,6 +42,10 @@ propertyWithNameP name func cln =
             "instead."
           ]
 
+propertyWithNameP :: IsPropertyType propertyType => ContentLineName -> (ContentLine -> Either String propertyType)
+propertyWithNameP cln = parsePropertyWithName cln $ \ContentLine {..} ->
+  propertyTypeP contentLineValue
+
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Generic)
 
@@ -52,8 +56,7 @@ instance IsProperty Begin where
   propertyB = beginB
 
 beginP :: ContentLine -> Either String Begin
-beginP = propertyWithNameP "BEGIN" $ \ContentLine {..} ->
-  Right Begin {unBegin = contentLineValueRaw contentLineValue}
+beginP = fmap Begin . propertyWithNameP "BEGIN"
 
 beginB :: Begin -> ContentLine
 beginB = mkSimpleContentLine "BEGIN" . unBegin
@@ -68,8 +71,7 @@ instance IsProperty End where
   propertyB = endB
 
 endP :: ContentLine -> Either String End
-endP = propertyWithNameP "END" $ \ContentLine {..} ->
-  Right End {unEnd = contentLineValueRaw contentLineValue}
+endP = fmap End . propertyWithNameP "END"
 
 endB :: End -> ContentLine
 endB = mkSimpleContentLine "END" . unEnd
@@ -85,8 +87,7 @@ instance IsProperty ProdId where
   propertyB = prodIdB
 
 prodIdP :: ContentLine -> Either String ProdId
-prodIdP = propertyWithNameP "PRODID" $ \ContentLine {..} ->
-  Right ProdId {unProdId = contentLineValueRaw contentLineValue}
+prodIdP = fmap ProdId . propertyWithNameP "PRODID"
 
 prodIdB :: ProdId -> ContentLine
 prodIdB = mkSimpleContentLine "PRODID" . unProdId
@@ -102,8 +103,7 @@ instance IsProperty Version where
   propertyB = versionB
 
 versionP :: ContentLine -> Either String Version
-versionP = propertyWithNameP "VERSION" $ \ContentLine {..} ->
-  Right $ Version {unVersion = contentLineValueRaw contentLineValue}
+versionP = fmap Version . propertyWithNameP "VERSION"
 
 versionB :: Version -> ContentLine
 versionB = mkSimpleContentLine "VERSION" . unVersion
@@ -119,8 +119,7 @@ instance IsProperty UID where
   propertyB = uidB
 
 uidP :: ContentLine -> Either String UID
-uidP = propertyWithNameP "UID" $ \ContentLine {..} ->
-  Right $ UID {unUID = contentLineValueRaw contentLineValue}
+uidP = fmap UID . propertyWithNameP "UID"
 
 uidB :: UID -> ContentLine
 uidB = mkSimpleContentLine "UID" . unUID
@@ -136,8 +135,7 @@ instance IsProperty DateTimeStamp where
   propertyB = dateTimeStampB
 
 dateTimeStampP :: ContentLine -> Either String DateTimeStamp
-dateTimeStampP = propertyWithNameP "DTSTAMP" $ \ContentLine {..} ->
-  DateTimeStamp <$> dateTimeP contentLineValue
+dateTimeStampP = fmap DateTimeStamp . propertyWithNameP "DTSTAMP"
 
 dateTimeStampB :: DateTimeStamp -> ContentLine
 dateTimeStampB = ContentLine "DTSTAMP" . dateTimeB . unDateTimeStamp
@@ -153,8 +151,7 @@ instance IsProperty TZID where
   propertyB = tzIDB
 
 tzIDP :: ContentLine -> Either String TZID
-tzIDP = propertyWithNameP "TZID" $ \ContentLine {..} ->
-  Right $ TZID {unTZID = contentLineValueRaw contentLineValue}
+tzIDP = fmap TZID . propertyWithNameP "TZID"
 
 tzIDB :: TZID -> ContentLine
 tzIDB = mkSimpleContentLine "TZID" . unTZID
