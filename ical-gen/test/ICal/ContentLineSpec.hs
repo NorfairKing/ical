@@ -42,66 +42,6 @@ spec = do
     genValidSpec @ContentLineValue
     it "roundtrips ContentLineValues" $ parserBuilderRoundtrip contentLineValueP contentLineValueB
 
-    describe "examples" $ do
-      -- Examples from the spec
-      let examples :: [(ContentLineValue, Text)]
-          examples =
-            [ ( ContentLineValue
-                  { contentLineValueParams =
-                      M.fromList
-                        [ ("RSVP", ["TRUE"]),
-                          ("ROLE", ["REQ-PARTICIPANT"])
-                        ],
-                    contentLineValueRaw = "mailto:jsmith@example.com"
-                  },
-                "RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:jsmith@example.com"
-              ),
-              ( ContentLineValue
-                  { contentLineValueParams = M.fromList [("VALUE", ["DATE"])],
-                    contentLineValueRaw = "19970304,19970504,19970704,19970904"
-                  },
-                "VALUE=DATE:19970304,19970504,19970704,19970904"
-              ),
-              ( ContentLineValue
-                  { contentLineValueParams = M.empty,
-                    contentLineValueRaw = "http://example.com/public/quarterly-report.doc"
-                  },
-                "http://example.com/public/quarterly-report.doc"
-              ),
-              ( ContentLineValue
-                  { contentLineValueParams =
-                      M.fromList
-                        [ ("FMTTYPE", ["text/plain"]),
-                          ("ENCODING", ["BASE64"]),
-                          ("VALUE", ["BINARY"])
-                        ],
-                    contentLineValueRaw = "http://example.com/public/quarterly-report.doc"
-                  },
-                "FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:http://example.com/public/quarterly-report.doc"
-              ),
-              ( ContentLineValue
-                  { contentLineValueParams =
-                      M.fromList
-                        [ ( "ALTREP",
-                            ["cid:part1.0001@example.org"]
-                          )
-                        ],
-                    contentLineValueRaw = "The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
-                  },
-                "ALTREP=\"cid:part1.0001@example.org\":The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
-              )
-            ]
-      forM_ examples $ \(contentLineValue, rendered) -> do
-        it "renders this example correctly" $
-          let actualRendered = LT.toStrict $ LTB.toLazyText $ contentLineValueB contentLineValue
-           in case (,) <$> parse contentLineValueP "test input" actualRendered <*> parse contentLineValueP "test input" rendered of
-                Left err -> expectationFailure $ errorBundlePretty err
-                Right (actual, expected) -> actual `shouldBe` expected
-        it "parses this example correctly" $
-          case parse contentLineValueP "test input" rendered of
-            Left err -> expectationFailure $ errorBundlePretty err
-            Right actual -> actual `shouldBe` contentLineValue
-
   describe "ContentLine" $ do
     genValidSpec @ContentLine
     it "roundtrips ContentLines" $ parserBuilderRoundtrip contentLineP contentLineB

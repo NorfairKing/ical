@@ -294,14 +294,18 @@ newtype Date = Date {unDate :: Time.Day}
 
 instance Validity Date
 
-renderDate :: Date -> Text
-renderDate = T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
+instance IsPropertyType Date where
+  propertyTypeP = dateP
+  propertyTypeB = dateB
 
-parseDate :: Text -> Either String Date
-parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack
+dateP :: ContentLineValue -> Either String Date
+dateP = fmap Date . parseTimeEither dateFormatStr . T.unpack . contentLineValueRaw
+
+dateB :: Date -> ContentLineValue
+dateB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
 
 dateFormatStr :: String
-dateFormatStr = "%Y%M%d"
+dateFormatStr = "%Y%m%d"
 
 -- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
 --
@@ -418,7 +422,7 @@ instance IsComponent Event where
 vEventP :: CP Event
 vEventP = sectionP "VEVENT" $ do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValue == "VEVENT"
+    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
   eventUID <- parseFirst "UID" eventProperties
   eventDateTimeStamp <- parseFirst "DTSTAMP" eventProperties
   pure Event {..}
@@ -443,7 +447,7 @@ instance IsComponent TimeZone where
 vTimeZoneP :: CP TimeZone
 vTimeZoneP = sectionP "VTIMEZONE" $ do
   _ <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValue == "VTIMEZONE"
+    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VTIMEZONE"
   pure TimeZone
 
 vTimeZoneB :: TimeZone -> DList ContentLine

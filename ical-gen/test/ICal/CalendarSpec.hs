@@ -9,6 +9,7 @@ module ICal.CalendarSpec where
 import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
+import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
@@ -68,11 +69,16 @@ spec = do
     -- Examples from the spec
     let examples :: [(DateTime, ContentLineValue)]
         examples =
-          [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), "19980118T230000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), "19980119T070000Z"),
-            (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), "19970714T133000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), "19970714T173000Z"),
-            (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00), "TZID=America/New_York:19980119T020000")
+          [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), mkSimpleContentLineValue "19980118T230000"),
+            (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), mkSimpleContentLineValue "19980119T070000Z"),
+            (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), mkSimpleContentLineValue "19970714T133000"),
+            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), mkSimpleContentLineValue "19970714T173000Z"),
+            ( DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00),
+              ContentLineValue
+                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
+                  contentLineValueRaw = "19980119T020000"
+                }
+            )
           ]
     describe "examples" $
       forM_ examples $ \(dateTime, text) -> do
@@ -87,29 +93,24 @@ spec = do
     --        19980119T230000-0800       ;Invalid time format
     -- @
     it "fails to parse this invalid datetime" $
-      case dateTimeP "19980119T230000-0800" of
+      case dateTimeP (mkSimpleContentLineValue "19980119T230000-0800") of
         Left _ -> pure ()
         Right _ -> expectationFailure "Should have failed to parse."
 
-  describe "Date" $
+  describe "Date" $ do
     genValidSpec @Date
-  describe "parseDate" $ do
-    let examples :: [(Date, Text)]
+    propertyTypeSpec @Date
+  describe "dateP" $ do
+    let examples :: [(Date, ContentLineValue)]
         examples =
-          [ (Date $ fromGregorian 1997 07 14, "19970714")
+          [ (Date $ fromGregorian 1997 07 14, mkSimpleContentLineValue "19970714")
           ]
     describe "examples" $
       forM_ examples $ \(date, text) -> do
         it "renders this example date correctly" $
-          renderDate date `shouldBe` text
+          dateB date `shouldBe` text
         it "parses this example text correctly" $
-          parseDate text `shouldBe` Right date
-
-    it "roundtrips with renderDate" $
-      forAllValid $ \date ->
-        case parseDate (renderDate date) of
-          Left err -> expectationFailure err
-          Right actual -> actual `shouldBe` date
+          dateP text `shouldBe` Right date
 
   describe "Time" $
     genValidSpec @Time

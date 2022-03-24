@@ -88,12 +88,15 @@ data ContentLineValue = ContentLineValue
 
 instance Validity ContentLineValue
 
-instance IsString ContentLineValue where
-  fromString s =
-    let t = fromString s
-     in case parse contentLineValueP "" t of
-          Left err -> error $ errorBundlePretty err
-          Right cln -> cln
+-- It turns out that this 'IsString' instance is a bother to write because of how ';' and ':' interact with parsing.
+-- Instead we better use 'mkSimpleContentLineValue' below and the record constructor.
+--
+-- instance IsString ContentLineValue where
+--   fromString s =
+--     let t = fromString s
+--      in case parse contentLineValueP "" t of
+--           Left err -> error $ errorBundlePretty err
+--           Right cln -> cln
 
 mkSimpleContentLineValue :: Text -> ContentLineValue
 mkSimpleContentLineValue value =
@@ -245,8 +248,11 @@ contentLineValueP = do
       void $ char ';'
       paramP
   void $ char ':'
-  contentLineValueRaw <- takeRest
+  contentLineValueRaw <- contentLineValueRawP
   pure ContentLineValue {..}
+
+contentLineValueRawP :: P Text
+contentLineValueRawP = takeRest
 
 -- iana-token    = 1*(ALPHA / DIGIT / "-")
 -- ; iCalendar identifier registered with IANA
