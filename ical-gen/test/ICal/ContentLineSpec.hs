@@ -38,6 +38,10 @@ spec = do
     genValidSpec @ContentLineName
     it "roundtrips ContentLineNames" $ parserBuilderRoundtrip contentLineNameP contentLineNameB
 
+  describe "ContentLineValue" $ do
+    genValidSpec @ContentLineValue
+    it "roundtrips ContentLineValues" $ parserBuilderRoundtrip contentLineValueP contentLineValueB
+
   describe "ContentLine" $ do
     genValidSpec @ContentLine
     it "roundtrips ContentLines" $ parserBuilderRoundtrip contentLineP contentLineB
@@ -63,45 +67,65 @@ spec = do
           [ -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "ATTENDEE",
-                  contentLineParams =
-                    M.fromList
-                      [ ("RSVP", ["TRUE"]),
-                        ("ROLE", ["REQ-PARTICIPANT"])
-                      ],
-                  contentLineValue = "mailto:jsmith@example.com"
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams =
+                          M.fromList
+                            [ ("RSVP", ["TRUE"]),
+                              ("ROLE", ["REQ-PARTICIPANT"])
+                            ],
+                        contentLineValueRaw = "mailto:jsmith@example.com"
+                      }
                 },
               "ATTENDEE;RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:jsmith@example.com"
             ),
             ( ContentLine
                 { contentLineName = "RDATE",
-                  contentLineParams = M.fromList [("VALUE", ["DATE"])],
-                  contentLineValue = "19970304,19970504,19970704,19970904"
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams = M.fromList [("VALUE", ["DATE"])],
+                        contentLineValueRaw = "19970304,19970504,19970704,19970904"
+                      }
                 },
               "RDATE;VALUE=DATE:19970304,19970504,19970704,19970904"
             ),
             ( ContentLine
                 { contentLineName = "ATTACH",
-                  contentLineParams = M.empty,
-                  contentLineValue = "http://example.com/public/quarterly-report.doc"
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams = M.empty,
+                        contentLineValueRaw = "http://example.com/public/quarterly-report.doc"
+                      }
                 },
               "ATTACH:http://example.com/public/quarterly-report.doc"
             ),
             ( ContentLine
                 { contentLineName = "ATTACH",
-                  contentLineParams =
-                    M.fromList
-                      [ ("FMTTYPE", ["text/plain"]),
-                        ("ENCODING", ["BASE64"]),
-                        ("VALUE", ["BINARY"])
-                      ],
-                  contentLineValue = "http://example.com/public/quarterly-report.doc"
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams =
+                          M.fromList
+                            [ ("FMTTYPE", ["text/plain"]),
+                              ("ENCODING", ["BASE64"]),
+                              ("VALUE", ["BINARY"])
+                            ],
+                        contentLineValueRaw = "http://example.com/public/quarterly-report.doc"
+                      }
                 },
               "ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:http://example.com/public/quarterly-report.doc"
             ), -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.1
             ( ContentLine
                 { contentLineName = "DESCRIPTION",
-                  contentLineParams = M.fromList [("ALTREP", ["cid:part1.0001@example.org"])],
-                  contentLineValue = "The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams =
+                          M.fromList
+                            [ ( "ALTREP",
+                                ["cid:part1.0001@example.org"]
+                              )
+                            ],
+                        contentLineValueRaw = "The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
+                      }
                 },
               "DESCRIPTION;ALTREP=\"cid:part1.0001@example.org\":The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
             )

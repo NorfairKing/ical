@@ -60,8 +60,7 @@ import Text.Megaparsec.Char
 -- @
 data ContentLine = ContentLine
   { contentLineName :: !ContentLineName,
-    contentLineParams :: !(Map ParamName (NonEmpty ParamValue)),
-    contentLineValue :: !Text
+    contentLineValue :: !ContentLineValue
   }
   deriving stock (Show, Read, Eq, Ord, Generic)
 
@@ -78,8 +77,29 @@ mkSimpleContentLine :: CI Text -> Text -> ContentLine
 mkSimpleContentLine name value =
   ContentLine
     { contentLineName = ContentLineNameIANA name,
-      contentLineParams = M.empty,
-      contentLineValue = value
+      contentLineValue = mkSimpleContentLineValue value
+    }
+
+data ContentLineValue = ContentLineValue
+  { contentLineValueParams :: !(Map ParamName (NonEmpty ParamValue)),
+    contentLineValueRaw :: !Text
+  }
+  deriving stock (Show, Read, Eq, Ord, Generic)
+
+instance Validity ContentLineValue
+
+instance IsString ContentLineValue where
+  fromString s =
+    let t = fromString s
+     in case parse contentLineValueP "" t of
+          Left err -> error $ errorBundlePretty err
+          Right cln -> cln
+
+mkSimpleContentLineValue :: Text -> ContentLineValue
+mkSimpleContentLineValue value =
+  ContentLineValue
+    { contentLineValueParams = M.empty,
+      contentLineValueRaw = value
     }
 
 data ContentLineName
@@ -209,15 +229,7 @@ type P = Parsec Void Text
 contentLineP :: P ContentLine
 contentLineP = do
   contentLineName <- contentLineNameP
-
-  contentLineParams <- fmap M.fromList $
-    many $ do
-      void $ char ';'
-      paramP
-
-  void $ char ':'
-  contentLineValue <- takeRest
-
+  contentLineValue <- contentLineValueP
   pure ContentLine {..}
 
 -- name          = iana-token / x-name
@@ -225,6 +237,16 @@ contentLineNameP :: P ContentLineName
 contentLineNameP =
   try (uncurry ContentLineNameX <$> xNameP)
     <|> (ContentLineNameIANA <$> ianaTokenP)
+
+contentLineValueP :: P ContentLineValue
+contentLineValueP = do
+  contentLineValueParams <- fmap M.fromList $
+    many $ do
+      void $ char ';'
+      paramP
+  void $ char ':'
+  contentLineValueRaw <- takeRest
+  pure ContentLineValue {..}
 
 -- iana-token    = 1*(ALPHA / DIGIT / "-")
 -- ; iCalendar identifier registered with IANA
@@ -342,9 +364,15 @@ contentLineB :: ContentLine -> Text.Builder
 contentLineB ContentLine {..} =
   mconcat
     [ contentLineNameB contentLineName,
-      contentLineParamsB contentLineParams,
+      contentLineValueB contentLineValue
+    ]
+
+contentLineValueB :: ContentLineValue -> Text.Builder
+contentLineValueB ContentLineValue {..} =
+  mconcat
+    [ contentLineParamsB contentLineValueParams,
       LTB.singleton ':',
-      LTB.fromText contentLineValue
+      LTB.fromText contentLineValueRaw
     ]
 
 contentLineNameB :: ContentLineName -> Text.Builder

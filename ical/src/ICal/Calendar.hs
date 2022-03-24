@@ -51,7 +51,6 @@ instance VisualStream [ContentLine] where
       . map renderContentLine
       . NE.toList
 
--- It would be nice to be able to implement this so we can use 'errorBundlePretty' above.
 instance TraversableStream [ContentLine] where
   reachOffset ::
     Int ->
@@ -90,10 +89,10 @@ class IsProperty property where
 
 class IsPropertyType propertyType where
   -- | Parser for the property type
-  propertyTypeP :: Map ParamName (NonEmpty ParamValue) -> Text -> Either String propertyType
+  propertyTypeP :: ContentLineValue -> Either String propertyType
 
   -- | Builder for the property type
-  propertyTypeB :: propertyType -> (Map ParamName (NonEmpty ParamValue), Text)
+  propertyTypeB :: propertyType -> ContentLineValue
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
@@ -160,7 +159,7 @@ instance IsProperty ProdId where
 
 prodIdP :: ContentLine -> Either String ProdId
 prodIdP = propertyWithNameP "PRODID" $ \ContentLine {..} ->
-  Right ProdId {unProdId = contentLineValue}
+  Right ProdId {unProdId = contentLineValueRaw contentLineValue}
 
 prodIdB :: ProdId -> ContentLine
 prodIdB = mkSimpleContentLine "PRODID" . unProdId
@@ -177,7 +176,7 @@ instance IsProperty Version where
 
 versionP :: ContentLine -> Either String Version
 versionP = propertyWithNameP "VERSION" $ \ContentLine {..} ->
-  Right $ Version {unVersion = contentLineValue}
+  Right $ Version {unVersion = contentLineValueRaw contentLineValue}
 
 versionB :: Version -> ContentLine
 versionB = mkSimpleContentLine "VERSION" . unVersion
@@ -194,7 +193,7 @@ instance IsProperty UID where
 
 uidP :: ContentLine -> Either String UID
 uidP = propertyWithNameP "UID" $ \ContentLine {..} ->
-  Right $ UID {unUID = contentLineValue}
+  Right $ UID {unUID = contentLineValueRaw contentLineValue}
 
 uidB :: UID -> ContentLine
 uidB = mkSimpleContentLine "UID" . unUID
@@ -211,37 +210,52 @@ instance IsProperty DateTimeStamp where
 
 dateTimeStampP :: ContentLine -> Either String DateTimeStamp
 dateTimeStampP = propertyWithNameP "DTSTAMP" $ \ContentLine {..} ->
-  DateTimeStamp <$> parseDateTime contentLineValue
+  DateTimeStamp <$> dateTimeP contentLineValue
 
 dateTimeStampB :: DateTimeStamp -> ContentLine
-dateTimeStampB = mkSimpleContentLine "DTSTAMP" . renderDateTime . unDateTimeStamp
+dateTimeStampB = ContentLine "DTSTAMP" . dateTimeB . unDateTimeStamp
 
 -- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
 data DateTime
   = DateTimeFloating !Time.LocalTime
   | DateTimeUTC !Time.LocalTime
-  -- TODO represent the TZID
+  | DateTimeZoned !(CI Text) !Time.LocalTime -- TODO make this a timezoneID?
   deriving (Show, Eq, Generic)
 
 instance Validity DateTime
 
-renderDateTime :: DateTime -> Text
-renderDateTime =
-  T.pack . \case
-    DateTimeFloating lt -> Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr lt
-    DateTimeUTC lt -> Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
+instance IsPropertyType DateTime where
+  propertyTypeP = dateTimeP
+  propertyTypeB = dateTimeB
 
-parseDateTime :: Text -> Either String DateTime
-parseDateTime t =
-  let s = T.unpack t
-   in (DateTimeFloating <$> parseTimeEither dateTimeFloatingFormatStr s)
-        <|> (DateTimeUTC <$> parseTimeEither dateTimeUTCFormatStr s)
+dateTimeP :: ContentLineValue -> Either String DateTime
+dateTimeP ContentLineValue {..} =
+  let s = T.unpack contentLineValueRaw
+   in case M.lookup "TZID" contentLineValueParams of
+        Just (UnquotedParam tzid :| _) -> DateTimeZoned tzid <$> parseTimeEither dateTimeZonedFormatStr s
+        _ ->
+          (DateTimeFloating <$> parseTimeEither dateTimeFloatingFormatStr s)
+            <|> (DateTimeUTC <$> parseTimeEither dateTimeUTCFormatStr s)
+
+dateTimeB :: DateTime -> ContentLineValue
+dateTimeB =
+  \case
+    DateTimeFloating lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr lt
+    DateTimeUTC lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
+    DateTimeZoned tzid lt ->
+      ContentLineValue
+        { contentLineValueParams = M.singleton "TZID" (UnquotedParam tzid :| []),
+          contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
+        }
 
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
 
 dateTimeUTCFormatStr :: String
 dateTimeUTCFormatStr = "%Y%m%dT%H%M%SZ"
+
+dateTimeZonedFormatStr :: String
+dateTimeZonedFormatStr = "%Y%m%dT%H%M%S"
 
 -- [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
 newtype Date = Date {unDate :: Time.Day}
@@ -298,7 +312,7 @@ parseTime t =
         <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
 
 parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
-parseTimeEither formatStr s = case Time.parseTime Time.defaultTimeLocale formatStr s of
+parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
   Nothing -> Left $ "Could not parse time value: " <> s
   Just t -> Right t
 

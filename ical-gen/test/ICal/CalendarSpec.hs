@@ -43,29 +43,35 @@ spec = do
     it "works for this example" $
       uidP "UID:19960401T080045Z-4000F192713-0052@example.com" `shouldBe` Right (UID "19960401T080045Z-4000F192713-0052@example.com")
 
-  describe "DateTime" $
+  describe "DateTime" $ do
     genValidSpec @DateTime
-  describe "parseDateTime" $ do
-    it "roundtrips with renderDateTime" $
-      forAllValid $ \dateTime ->
-        case parseDateTime (renderDateTime dateTime) of
-          Left err -> expectationFailure err
-          Right actual -> actual `shouldBe` dateTime
-
+    propertyTypeSpec @DateTime
+  describe "dateTimeP" $ do
     -- Examples from the spec
-    let examples :: [(DateTime, Text)]
+    let examples :: [(DateTime, ContentLineValue)]
         examples =
           [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), "19980118T230000"),
             (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), "19980119T070000Z"),
             (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), "19970714T133000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), "19970714T173000Z")
+            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), "19970714T173000Z"),
+            (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00), "TZID=America/New_York:19980119T020000")
           ]
     describe "examples" $
       forM_ examples $ \(dateTime, text) -> do
         it "renders this example dateTime correctly" $
-          renderDateTime dateTime `shouldBe` text
+          dateTimeB dateTime `shouldBe` text
         it "parses this example text correctly" $
-          parseDateTime text `shouldBe` Right dateTime
+          dateTimeP text `shouldBe` Right dateTime
+    -- @
+    --       The form of date and time with UTC offset MUST NOT be used.  For
+    --       example, the following is not valid for a DATE-TIME value:
+    --
+    --        19980119T230000-0800       ;Invalid time format
+    -- @
+    it "fails to parse this invalid datetime" $
+      case dateTimeP "19980119T230000-0800" of
+        Left _ -> pure ()
+        Right _ -> expectationFailure "Should have failed to parse."
 
   describe "Date" $
     genValidSpec @Date
@@ -201,7 +207,7 @@ propertyTypeSpec = do
       shouldBeValid $ propertyTypeB (propertyType :: a)
   it "roundtrips through ContentLine" $
     forAllValid $ \propertyType ->
-      let (params, value) = propertyTypeB (propertyType :: a)
-       in case propertyTypeP params value of
+      let value = propertyTypeB (propertyType :: a)
+       in case propertyTypeP value of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` propertyType

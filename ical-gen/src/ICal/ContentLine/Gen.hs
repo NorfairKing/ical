@@ -15,6 +15,8 @@ import Test.QuickCheck
 
 instance GenValid ContentLine
 
+instance GenValid ContentLineValue
+
 instance GenValid ContentLineName where
   genValid =
     oneof
