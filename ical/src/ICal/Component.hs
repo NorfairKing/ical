@@ -68,11 +68,36 @@ instance TraversableStream [ContentLine] where
 
 -- Law for this typeclass: The component roundtrips through '[ContentLine]'.
 class IsComponent component where
+  -- | Name for this component
+  componentName :: Proxy component -> Text
+
   -- | Parser for this component
   componentP :: CP component
 
   -- | Builder for this component
   componentB :: component -> DList ContentLine
+
+componentSectionP :: forall component. IsComponent component => CP component
+componentSectionP = sectionP (componentName (Proxy :: Proxy component)) componentP
+
+sectionP :: Text -> CP a -> CP a
+sectionP name parser = do
+  parseGivenProperty $ Begin name
+  result <- parser
+  parseGivenProperty $ End name
+  pure result
+
+parseGivenProperty :: IsProperty property => property -> CP ()
+parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenProperty
+
+componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
+componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
+
+sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
+sectionB name func =
+  (DList.singleton (propertyContentLineB (Begin name)) <>)
+    . (<> DList.singleton (propertyContentLineB (End name)))
+    . func
 
 propertyListB :: IsProperty property => property -> DList ContentLine
 propertyListB = DList.singleton . propertyContentLineB
@@ -92,14 +117,15 @@ data Calendar = Calendar
 instance Validity Calendar
 
 iCalendarP :: CP [Calendar]
-iCalendarP = many vCalendarP
+iCalendarP = many componentSectionP
 
 instance IsComponent Calendar where
+  componentName Proxy = "VCALENDAR"
   componentP = vCalendarP
   componentB = vCalendarB
 
 vCalendarP :: CP Calendar
-vCalendarP = sectionP "VCALENDAR" $ do
+vCalendarP = do
   calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
     contentLineName /= "BEGIN" && contentLineName /= "END"
 
@@ -110,9 +136,9 @@ vCalendarP = sectionP "VCALENDAR" $ do
     many $
       msum
         [ (\event c -> c {calendarEvents = event : calendarEvents c})
-            <$> vEventP,
+            <$> componentSectionP,
           (\timeZone c -> c {calendarTimeZones = timeZone : calendarTimeZones c})
-            <$> vTimeZoneP
+            <$> componentSectionP
         ]
   let calendarEvents = []
   let calendarTimeZones = []
@@ -121,14 +147,14 @@ vCalendarP = sectionP "VCALENDAR" $ do
   pure $ calendarMod $ Calendar {..}
 
 vCalendarB :: Calendar -> DList ContentLine
-vCalendarB = sectionB "VCALENDAR" $ \Calendar {..} ->
+vCalendarB Calendar {..} =
   mconcat $
     concat
       [ [ propertyListB calendarProdId,
           propertyListB calendarVersion
         ],
-        map vEventB calendarEvents,
-        map vTimeZoneB calendarTimeZones
+        map componentSectionB calendarEvents,
+        map componentSectionB calendarTimeZones
       ]
 
 parseFirst :: forall a. IsProperty a => Text -> [ContentLine] -> CP a
@@ -150,22 +176,6 @@ parseFirstMaybe = go
       (cl : cls) -> case propertyContentLineP cl of
         Right result -> pure (Just result)
         Left _ -> go cls
-
-sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
-sectionB name func =
-  (DList.singleton (propertyContentLineB (Begin name)) <>)
-    . (<> DList.singleton (propertyContentLineB (End name)))
-    . func
-
-sectionP :: Text -> CP a -> CP a
-sectionP name parser = do
-  parseGivenProperty $ Begin name
-  result <- parser
-  parseGivenProperty $ End name
-  pure result
-
-parseGivenProperty :: IsProperty property => property -> CP ()
-parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenProperty
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
@@ -198,11 +208,12 @@ data Event = Event
 instance Validity Event
 
 instance IsComponent Event where
+  componentName Proxy = "VEVENT"
   componentP = vEventP
   componentB = vEventB
 
 vEventP :: CP Event
-vEventP = sectionP "VEVENT" $ do
+vEventP = do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
   eventUID <- parseFirst "UID" eventProperties
@@ -212,7 +223,7 @@ vEventP = sectionP "VEVENT" $ do
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
-vEventB = sectionB "VEVENT" $ \Event {..} ->
+vEventB Event {..} =
   mconcat
     [ propertyListB eventUID,
       propertyListB eventDateTimeStamp,
@@ -227,14 +238,15 @@ data TimeZone = TimeZone
 instance Validity TimeZone
 
 instance IsComponent TimeZone where
+  componentName Proxy = "VTIMEZONE"
   componentP = vTimeZoneP
   componentB = vTimeZoneB
 
 vTimeZoneP :: CP TimeZone
-vTimeZoneP = sectionP "VTIMEZONE" $ do
+vTimeZoneP = do
   _ <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VTIMEZONE"
   pure TimeZone
 
 vTimeZoneB :: TimeZone -> DList ContentLine
-vTimeZoneB = sectionB "VTIMEZONE" $ \_ -> mempty
+vTimeZoneB _ = mempty
