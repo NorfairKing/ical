@@ -6,8 +6,10 @@
 
 module ICal.PropertySpec where
 
+import Data.Time
 import ICal.Property
 import ICal.Property.Gen
+import ICal.PropertyType
 import Test.Syd
 import Test.Syd.Validity
 
@@ -47,12 +49,14 @@ spec = do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
   describe "dateTimeStampP" $ do
-    -- TODO example-based test
-    pure ()
+    it "works for this example" $
+      dateTimeStampP "DTSTAMP:19971210T080000Z"
+        `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
   describe "dateTimeStartP" $ do
-    -- TODO example-based test
-    pure ()
+    it "works for this example" $
+      dateTimeStartP "DTSTART:19980118T073000Z"
+        `shouldBe` Right (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
