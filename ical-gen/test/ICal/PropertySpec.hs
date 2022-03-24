@@ -70,3 +70,11 @@ spec = do
     it "works for this example" $
       propertyContentLineP "CREATED:19960329T133000Z"
         `shouldBe` Right (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
+
+  describe "Description" $ do
+    genValidSpec @Description
+    propertySpec @Description
+    it "works for this example" $
+      propertyContentLineP
+        "DESCRIPTION:Meeting to provide technical review for \"Phoenix\"\n design.\\nHappy Face Conference Room. Phoenix design team\nMUST attend this meeting.\\nRSVP to team leader."
+        `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
