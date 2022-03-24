@@ -6,12 +6,9 @@
 
 module ICal.CalendarSpec where
 
-import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
-import qualified Data.Map as M
 import qualified Data.Text as T
-import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.Calendar
 import ICal.Calendar.Gen ()
 import ICal.ContentLine
@@ -52,89 +49,6 @@ spec = do
       tzIDP "TZID:America/New_York" `shouldBe` Right (TZID "America/New_York")
       tzIDP "TZID:America/Los_Angeles" `shouldBe` Right (TZID "America/Los_Angeles")
       tzIDP "TZID:/example.org/America/New_York" `shouldBe` Right (TZID "/example.org/America/New_York")
-
-  describe "DateTime" $ do
-    genValidSpec @DateTime
-    propertyTypeSpec @DateTime
-  describe "dateTimeP" $ do
-    -- Examples from the spec
-    let examples :: [(DateTime, ContentLineValue)]
-        examples =
-          [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), mkSimpleContentLineValue "19980118T230000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), mkSimpleContentLineValue "19980119T070000Z"),
-            (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), mkSimpleContentLineValue "19970714T133000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), mkSimpleContentLineValue "19970714T173000Z"),
-            ( DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00),
-              ContentLineValue
-                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
-                  contentLineValueRaw = "19980119T020000"
-                }
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(dateTime, text) -> do
-        it "renders this example dateTime correctly" $
-          dateTimeB dateTime `shouldBe` text
-        it "parses this example text correctly" $
-          dateTimeP text `shouldBe` Right dateTime
-    -- @
-    --       The form of date and time with UTC offset MUST NOT be used.  For
-    --       example, the following is not valid for a DATE-TIME value:
-    --
-    --        19980119T230000-0800       ;Invalid time format
-    -- @
-    it "fails to parse this invalid datetime" $
-      case dateTimeP (mkSimpleContentLineValue "19980119T230000-0800") of
-        Left _ -> pure ()
-        Right _ -> expectationFailure "Should have failed to parse."
-
-  describe "Date" $ do
-    genValidSpec @Date
-    propertyTypeSpec @Date
-  describe "dateP" $ do
-    let examples :: [(Date, ContentLineValue)]
-        examples =
-          [ (Date $ fromGregorian 1997 07 14, mkSimpleContentLineValue "19970714")
-          ]
-    describe "examples" $
-      forM_ examples $ \(date, text) -> do
-        it "renders this example date correctly" $
-          dateB date `shouldBe` text
-        it "parses this example text correctly" $
-          dateP text `shouldBe` Right date
-
-  describe "Time" $ do
-    genValidSpec @Time
-    propertyTypeSpec @Time
-  describe "timeP" $ do
-    let examples :: [(Time, ContentLineValue)]
-        examples =
-          [ (TimeFloating $ TimeOfDay 23 00 00, mkSimpleContentLineValue "230000"),
-            (TimeUTC $ TimeOfDay 07 00 00, mkSimpleContentLineValue "070000Z"),
-            ( TimeZoned "America/New_York" (TimeOfDay 08 30 00),
-              ContentLineValue
-                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
-                  contentLineValueRaw = "083000"
-                }
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(time, text) -> do
-        it "renders this example time correctly" $
-          timeB time `shouldBe` text
-        it "parses this example text correctly" $
-          timeP text `shouldBe` Right time
-
-    it "fails to parse this counterexample from the spec" $
-      case timeP (mkSimpleContentLineValue "230000-0800") of
-        Left _ -> pure ()
-        Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
-
-    it "roundtrips with timeB" $
-      forAllValid $ \time ->
-        case timeP (timeB time) of
-          Left err -> expectationFailure err
-          Right actual -> actual `shouldBe` time
 
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
@@ -213,18 +127,3 @@ propertySpec = do
        in case propertyP rendered of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` a
-
-propertyTypeSpec ::
-  forall a.
-  (Show a, Eq a, GenValid a, IsPropertyType a) =>
-  Spec
-propertyTypeSpec = do
-  it "always renders to a valid content line" $
-    forAllValid $ \propertyType ->
-      shouldBeValid $ propertyTypeB (propertyType :: a)
-  it "roundtrips through ContentLine" $
-    forAllValid $ \propertyType ->
-      let value = propertyTypeB (propertyType :: a)
-       in case propertyTypeP value of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` propertyType
