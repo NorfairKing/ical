@@ -11,7 +11,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import ICal.Parameter.Gen ()
 import ICal.Property
-import ICal.PropertyType.Gen ()
+import ICal.PropertyType.Gen
 import Test.Syd
 import Test.Syd.Validity
 
@@ -26,6 +26,9 @@ instance GenValid TZID
 instance GenValid DateTimeStamp
 
 instance GenValid DateTimeStart
+
+instance GenValid Created where
+  genValid = Created <$> genImpreciseLocalTime
 
 propertySpec ::
   forall a.

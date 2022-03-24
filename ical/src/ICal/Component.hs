@@ -165,7 +165,11 @@ parseGivenProperty givenProperty = void $ single $ propertyB givenProperty
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
-  { eventUID :: !UID,
+  { -- @
+    --     ; The following are REQUIRED,
+    --     ; but MUST NOT occur more than once.
+    -- @
+    eventUID :: !UID,
     eventDateTimeStamp :: !DateTimeStamp,
     -- @
     --     ;
@@ -176,7 +180,14 @@ data Event = Event
     --     ; more than once.
     --     ;
     -- @
-    eventDateTimeStart :: !(Maybe DateTimeStart)
+    eventDateTimeStart :: !(Maybe DateTimeStart),
+    -- @
+    --     ;
+    --     ; The following are OPTIONAL,
+    --     ; but MUST NOT occur more than once.
+    --     ;
+    -- @
+    eventCreated :: !(Maybe Created)
   }
   deriving (Show, Eq, Generic)
 
@@ -193,15 +204,19 @@ vEventP = sectionP "VEVENT" $ do
   eventUID <- parseFirst "UID" eventProperties
   eventDateTimeStamp <- parseFirst "DTSTAMP" eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
+  eventCreated <- parseFirstMaybe eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
 vEventB = sectionB "VEVENT" $ \Event {..} ->
-  DList.fromList
-    [ uidB eventUID,
-      dateTimeStampB eventDateTimeStamp
+  mconcat
+    [ DList.fromList
+        [ uidB eventUID,
+          dateTimeStampB eventDateTimeStamp
+        ],
+      maybe mempty (DList.singleton . dateTimeStartB) eventDateTimeStart,
+      maybe mempty (DList.singleton . createdB) eventCreated
     ]
-    <> maybe mempty (DList.singleton . dateTimeStartB) eventDateTimeStart
 
 -- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)
 data TimeZone = TimeZone

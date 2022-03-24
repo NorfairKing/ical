@@ -19,7 +19,7 @@ spec = do
 
   describe "Event" $ do
     genValidSpec @Event
-    componentSpec @TimeZone
+    componentSpec @Event
 
   describe "Calendar" $ do
     genValidSpec @Calendar

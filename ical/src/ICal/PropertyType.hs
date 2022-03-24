@@ -68,24 +68,43 @@ instance IsPropertyType DateTime where
   propertyTypeB = dateTimeB
 
 dateTimeP :: ContentLineValue -> Either String DateTime
-dateTimeP ContentLineValue {..} =
+dateTimeP clv@ContentLineValue {..} =
   let s = T.unpack contentLineValueRaw
    in case lookupParam contentLineValueParams of
         Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
         _ ->
-          (DateTimeFloating <$> parseTimeEither dateTimeFloatingFormatStr s)
-            <|> (DateTimeUTC <$> parseTimeEither dateTimeUTCFormatStr s)
+          (DateTimeFloating <$> dateTimeFloatingP clv)
+            <|> (DateTimeUTC <$> dateTimeUTCP clv)
+
+dateTimeFloatingP :: ContentLineValue -> Either String Time.LocalTime
+dateTimeFloatingP ContentLineValue {..} =
+  let s = T.unpack contentLineValueRaw
+   in parseTimeEither dateTimeFloatingFormatStr s
+
+dateTimeUTCP :: ContentLineValue -> Either String Time.LocalTime
+dateTimeUTCP ContentLineValue {..} =
+  let s = T.unpack contentLineValueRaw
+   in parseTimeEither dateTimeUTCFormatStr s
 
 dateTimeB :: DateTime -> ContentLineValue
 dateTimeB =
   \case
-    DateTimeFloating lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr lt
-    DateTimeUTC lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
-    DateTimeZoned tzidParam lt ->
-      ContentLineValue
-        { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),
-          contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
-        }
+    DateTimeFloating lt -> dateTimeFloatingB lt
+    DateTimeUTC lt -> dateTimeUTCB lt
+    DateTimeZoned tzidParam lt -> dateTimeZonedB tzidParam lt
+
+dateTimeFloatingB :: Time.LocalTime -> ContentLineValue
+dateTimeFloatingB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
+
+dateTimeUTCB :: Time.LocalTime -> ContentLineValue
+dateTimeUTCB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr
+
+dateTimeZonedB :: TZIDParam -> Time.LocalTime -> ContentLineValue
+dateTimeZonedB tzidParam lt =
+  ContentLineValue
+    { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),
+      contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
+    }
 
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
