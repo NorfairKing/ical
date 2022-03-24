@@ -26,7 +26,14 @@ instance GenValid TZIDParam
 
 instance GenValid TZID
 
-instance GenValid Time
+instance GenValid Time where
+  genValid = do
+    lt <- genImpreciseTimeOfDay
+    oneof
+      [ pure $ TimeFloating lt,
+        pure $ TimeUTC lt,
+        TimeZoned <$> genValid <*> pure lt
+      ]
 
 instance GenValid DateTime where
   genValid = do

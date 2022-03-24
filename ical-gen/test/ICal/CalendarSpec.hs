@@ -112,29 +112,36 @@ spec = do
         it "parses this example text correctly" $
           dateP text `shouldBe` Right date
 
-  describe "Time" $
+  describe "Time" $ do
     genValidSpec @Time
-  describe "parseTime" $ do
-    let examples :: [(Time, Text)]
+    propertyTypeSpec @Time
+  describe "timeP" $ do
+    let examples :: [(Time, ContentLineValue)]
         examples =
-          [ (TimeFloating $ TimeOfDay 23 00 00, "230000"),
-            (TimeUTC $ TimeOfDay 07 00 00, "070000Z")
+          [ (TimeFloating $ TimeOfDay 23 00 00, mkSimpleContentLineValue "230000"),
+            (TimeUTC $ TimeOfDay 07 00 00, mkSimpleContentLineValue "070000Z"),
+            ( TimeZoned "America/New_York" (TimeOfDay 08 30 00),
+              ContentLineValue
+                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
+                  contentLineValueRaw = "083000"
+                }
+            )
           ]
     describe "examples" $
       forM_ examples $ \(time, text) -> do
         it "renders this example time correctly" $
-          renderTime time `shouldBe` text
+          timeB time `shouldBe` text
         it "parses this example text correctly" $
-          parseTime text `shouldBe` Right time
+          timeP text `shouldBe` Right time
 
     it "fails to parse this counterexample from the spec" $
-      case parseTime "230000-0800" of
+      case timeP (mkSimpleContentLineValue "230000-0800") of
         Left _ -> pure ()
         Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
 
-    it "roundtrips with renderTime" $
+    it "roundtrips with timeB" $
       forAllValid $ \time ->
-        case parseTime (renderTime time) of
+        case timeP (timeB time) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` time
 

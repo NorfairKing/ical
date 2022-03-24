@@ -245,15 +245,17 @@ instance Validity DateTime where
   validate dt =
     mconcat
       [ genericValidate dt,
-        declare "The number of seconds is integer" $
-          let lt = case dt of
-                DateTimeFloating lt -> lt
-                DateTimeUTC lt -> lt
-                DateTimeZoned _ lt -> lt
-              tod = Time.localTimeOfDay lt
-              sec = Time.todSec tod
-           in ceiling sec == floor sec
+        let lt = case dt of
+              DateTimeFloating lt -> lt
+              DateTimeUTC lt -> lt
+              DateTimeZoned _ lt -> lt
+         in validateImpreciseLocalTime lt
       ]
+
+validateImpreciseLocalTime :: Time.LocalTime -> Validation
+validateImpreciseLocalTime lt =
+  let tod = Time.localTimeOfDay lt
+   in validateImpreciseTimeOfDay tod
 
 instance IsPropertyType DateTime where
   propertyTypeP = dateTimeP
@@ -273,9 +275,9 @@ dateTimeB =
   \case
     DateTimeFloating lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr lt
     DateTimeUTC lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
-    DateTimeZoned tzid lt ->
+    DateTimeZoned tzidParam lt ->
       ContentLineValue
-        { contentLineValueParams = M.singleton (parameterName (Proxy :: Proxy TZIDParam)) (parameterB tzid),
+        { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),
           contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
         }
 
@@ -329,22 +331,52 @@ dateFormatStr = "%Y%m%d"
 data Time
   = TimeFloating !Time.TimeOfDay
   | TimeUTC !Time.TimeOfDay
-  -- TODO how do we represent times with a timezone identifier?
+  | TimeZoned !TZIDParam !Time.TimeOfDay
   deriving (Show, Eq, Generic)
 
-instance Validity Time
+instance Validity Time where
+  validate time =
+    mconcat
+      [ genericValidate time,
+        let tod = case time of
+              TimeFloating t -> t
+              TimeUTC t -> t
+              TimeZoned _ t -> t
+         in validateImpreciseTimeOfDay tod
+      ]
 
-renderTime :: Time -> Text
-renderTime =
-  T.pack . \case
-    TimeFloating tod -> Time.formatTime Time.defaultTimeLocale timeFloatingFormatStr tod
-    TimeUTC tod -> Time.formatTime Time.defaultTimeLocale timeUTCFormatStr tod
+validateImpreciseTimeOfDay :: Time.TimeOfDay -> Validation
+validateImpreciseTimeOfDay tod =
+  declare "The number of seconds is integer" $
+    let sec = Time.todSec tod
+     in ceiling sec == floor sec
 
-parseTime :: Text -> Either String Time
-parseTime t =
-  let s = T.unpack t
-   in (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
-        <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
+instance IsPropertyType Time where
+  propertyTypeP = timeP
+  propertyTypeB = timeB
+
+timeP :: ContentLineValue -> Either String Time
+timeP ContentLineValue {..} =
+  let s = T.unpack contentLineValueRaw
+   in case lookupParam contentLineValueParams of
+        Nothing ->
+          (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
+            <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
+        Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
+
+timeB :: Time -> ContentLineValue
+timeB =
+  \case
+    TimeFloating tod -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale timeFloatingFormatStr tod
+    TimeUTC tod -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale timeUTCFormatStr tod
+    TimeZoned tzidParam tod ->
+      ContentLineValue
+        { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (tzIDParamB tzidParam),
+          contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale timeZonedFormatStr tod
+        }
+
+proxyOf :: a -> Proxy a
+proxyOf _ = Proxy
 
 parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
 parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
@@ -356,6 +388,9 @@ timeFloatingFormatStr = "%H%M%S"
 
 timeUTCFormatStr :: String
 timeUTCFormatStr = "%H%M%SZ"
+
+timeZonedFormatStr :: String
+timeZonedFormatStr = "%H%M%S"
 
 parseFirst :: forall a. IsProperty a => Text -> [ContentLine] -> CP a
 parseFirst propertyName = go
