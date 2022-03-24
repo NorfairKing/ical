@@ -18,6 +18,7 @@ library:
   - genvalidity-text
   - genvalidity-time
   - text
+  - time
 
 tests:
   ical-test:

@@ -6,7 +6,9 @@ import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import Data.Time (LocalTime (..), TimeOfDay (..))
 import ICal.Calendar
+import Test.QuickCheck
 
 instance GenValid Calendar
 
@@ -20,10 +22,31 @@ instance GenValid DateTimeStamp
 
 instance GenValid Date
 
+instance GenValid TZIDParam
+
+instance GenValid TZID
+
 instance GenValid Time
 
-instance GenValid DateTime
+instance GenValid DateTime where
+  genValid = do
+    lt <- genImpreciseLocalTime
+    oneof
+      [ pure $ DateTimeFloating lt,
+        pure $ DateTimeUTC lt,
+        DateTimeZoned <$> genValid <*> pure lt
+      ]
 
 instance GenValid Event
 
 instance GenValid TimeZone
+
+genImpreciseLocalTime :: Gen LocalTime
+genImpreciseLocalTime = LocalTime <$> genValid <*> genImpreciseTimeOfDay
+
+genImpreciseTimeOfDay :: Gen TimeOfDay
+genImpreciseTimeOfDay =
+  TimeOfDay
+    <$> choose (0, 23)
+    <*> choose (0, 59)
+    <*> (fromIntegral <$> (choose (0, 60) :: Gen Int))

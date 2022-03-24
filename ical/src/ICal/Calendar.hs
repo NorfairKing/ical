@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -25,6 +27,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Monoid
 import Data.Proxy
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -93,6 +96,22 @@ class IsPropertyType propertyType where
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
+
+class IsParameter param where
+  -- Name of the parameter
+  parameterName :: Proxy param -> ParamName
+
+  -- | Parser for the parameter
+  parameterP :: NonEmpty ParamValue -> Either String param
+
+  -- | Builder for the parameter
+  parameterB :: param -> NonEmpty ParamValue
+
+lookupParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Maybe (Either String param)
+lookupParam m = do
+  let name = parameterName (Proxy :: Proxy param)
+  pvs <- M.lookup name m
+  pure $ parameterP pvs
 
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
@@ -219,10 +238,22 @@ dateTimeStampB = ContentLine "DTSTAMP" . dateTimeB . unDateTimeStamp
 data DateTime
   = DateTimeFloating !Time.LocalTime
   | DateTimeUTC !Time.LocalTime
-  | DateTimeZoned !(CI Text) !Time.LocalTime -- TODO make this a timezoneID?
+  | DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
   deriving (Show, Eq, Generic)
 
-instance Validity DateTime
+instance Validity DateTime where
+  validate dt =
+    mconcat
+      [ genericValidate dt,
+        declare "The number of seconds is integer" $
+          let lt = case dt of
+                DateTimeFloating lt -> lt
+                DateTimeUTC lt -> lt
+                DateTimeZoned _ lt -> lt
+              tod = Time.localTimeOfDay lt
+              sec = Time.todSec tod
+           in ceiling sec == floor sec
+      ]
 
 instance IsPropertyType DateTime where
   propertyTypeP = dateTimeP
@@ -231,8 +262,8 @@ instance IsPropertyType DateTime where
 dateTimeP :: ContentLineValue -> Either String DateTime
 dateTimeP ContentLineValue {..} =
   let s = T.unpack contentLineValueRaw
-   in case M.lookup "TZID" contentLineValueParams of
-        Just (UnquotedParam tzid :| _) -> DateTimeZoned tzid <$> parseTimeEither dateTimeZonedFormatStr s
+   in case lookupParam contentLineValueParams of
+        Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
         _ ->
           (DateTimeFloating <$> parseTimeEither dateTimeFloatingFormatStr s)
             <|> (DateTimeUTC <$> parseTimeEither dateTimeUTCFormatStr s)
@@ -244,7 +275,7 @@ dateTimeB =
     DateTimeUTC lt -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr lt
     DateTimeZoned tzid lt ->
       ContentLineValue
-        { contentLineValueParams = M.singleton "TZID" (UnquotedParam tzid :| []),
+        { contentLineValueParams = M.singleton (parameterName (Proxy :: Proxy TZIDParam)) (parameterB tzid),
           contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
         }
 
@@ -332,10 +363,6 @@ parseFirst propertyName = go
         Right result -> pure result
         Left _ -> go cls
 
-lineWithNameP :: ContentLineName -> CP ContentLine
-lineWithNameP name = satisfy $ \ContentLine {..} ->
-  contentLineName == name
-
 propertyWithNameP :: ContentLineName -> (ContentLine -> Either String a) -> (ContentLine -> Either String a)
 propertyWithNameP name func cln =
   if contentLineName cln == name
@@ -421,3 +448,45 @@ vTimeZoneP = sectionP "VTIMEZONE" $ do
 
 vTimeZoneB :: TimeZone -> DList ContentLine
 vTimeZoneB = sectionB "VTIMEZONE" $ \_ -> mempty
+
+-- [section 3.8.3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.1)
+newtype TZID = TZID {unTZID :: Text}
+  deriving (Show, Eq, Generic)
+
+instance Validity TZID
+
+instance IsProperty TZID where
+  propertyP = tzIDP
+  propertyB = tzIDB
+
+tzIDP :: ContentLine -> Either String TZID
+tzIDP = propertyWithNameP "TZID" $ \ContentLine {..} ->
+  Right $ TZID {unTZID = contentLineValueRaw contentLineValue}
+
+tzIDB :: TZID -> ContentLine
+tzIDB = mkSimpleContentLine "TZID" . unTZID
+
+-- [section 3.2.19](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)
+newtype TZIDParam = TZIDParam {unTZIDParam :: CI Text}
+  deriving stock (Eq, Generic)
+  deriving newtype (Show, IsString, Read)
+
+instance Validity TZIDParam
+
+instance IsParameter TZIDParam where
+  parameterName Proxy = "TZID"
+  parameterP = tzIDParamP
+  parameterB = tzIDParamB
+
+tzIDParamP :: NonEmpty ParamValue -> Either String TZIDParam
+tzIDParamP = singleParamP $ \case
+  UnquotedParam c -> Right $ TZIDParam {unTZIDParam = c}
+  p -> Left $ "Expected TZIDParam to be unquoted, but was quoted: " <> show p
+
+tzIDParamB :: TZIDParam -> NonEmpty ParamValue
+tzIDParamB = (:| []) . UnquotedParam . unTZIDParam
+
+singleParamP :: (ParamValue -> Either String TZIDParam) -> NonEmpty ParamValue -> Either String TZIDParam
+singleParamP func = \case
+  value :| [] -> func value
+  _ -> Left "Expected one parameter value, but got multiple."
