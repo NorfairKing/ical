@@ -63,14 +63,8 @@ instance Validity Begin
 
 instance IsProperty Begin where
   propertyName Proxy = "BEGIN"
-  propertyP = beginP
-  propertyB = beginB
-
-beginP :: ContentLineValue -> Either String Begin
-beginP = fmap Begin . propertyTypeP
-
-beginB :: Begin -> ContentLineValue
-beginB = propertyTypeB . unBegin
+  propertyP = fmap Begin . propertyTypeP
+  propertyB = propertyTypeB . unBegin
 
 newtype End = End {unEnd :: Text}
   deriving (Show, Eq, Generic)
@@ -79,14 +73,8 @@ instance Validity End
 
 instance IsProperty End where
   propertyName Proxy = "END"
-  propertyP = endP
-  propertyB = endB
-
-endP :: ContentLineValue -> Either String End
-endP = fmap End . propertyTypeP
-
-endB :: End -> ContentLineValue
-endB = propertyTypeB . unEnd
+  propertyP = fmap End . propertyTypeP
+  propertyB = propertyTypeB . unEnd
 
 -- [section 3.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3)
 newtype ProdId = ProdId {unProdId :: Text}
@@ -96,14 +84,8 @@ instance Validity ProdId
 
 instance IsProperty ProdId where
   propertyName Proxy = "PRODID"
-  propertyP = prodIdP
-  propertyB = prodIdB
-
-prodIdP :: ContentLineValue -> Either String ProdId
-prodIdP = fmap ProdId . propertyTypeP
-
-prodIdB :: ProdId -> ContentLineValue
-prodIdB = propertyTypeB . unProdId
+  propertyP = fmap ProdId . propertyTypeP
+  propertyB = propertyTypeB . unProdId
 
 -- [section 3.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4)
 newtype Version = Version {unVersion :: Text}
@@ -130,14 +112,8 @@ instance Validity UID
 
 instance IsProperty UID where
   propertyName Proxy = "UID"
-  propertyP = uidP
-  propertyB = uidB
-
-uidP :: ContentLineValue -> Either String UID
-uidP = fmap UID . propertyTypeP
-
-uidB :: UID -> ContentLineValue
-uidB = propertyTypeB . unUID
+  propertyP = fmap UID . propertyTypeP
+  propertyB = propertyTypeB . unUID
 
 -- [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
 newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
@@ -147,14 +123,8 @@ instance Validity DateTimeStamp
 
 instance IsProperty DateTimeStamp where
   propertyName Proxy = "DTSTAMP"
-  propertyP = dateTimeStampP
-  propertyB = dateTimeStampB
-
-dateTimeStampP :: ContentLineValue -> Either String DateTimeStamp
-dateTimeStampP = fmap DateTimeStamp . propertyTypeP
-
-dateTimeStampB :: DateTimeStamp -> ContentLineValue
-dateTimeStampB = propertyTypeB . unDateTimeStamp
+  propertyP = fmap DateTimeStamp . propertyTypeP
+  propertyB = propertyTypeB . unDateTimeStamp
 
 -- [section 3.8.3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.1)
 newtype TZID = TZID {unTZID :: Text}
@@ -164,14 +134,8 @@ instance Validity TZID
 
 instance IsProperty TZID where
   propertyName Proxy = "TZID"
-  propertyP = tzIDP
-  propertyB = tzIDB
-
-tzIDP :: ContentLineValue -> Either String TZID
-tzIDP = fmap TZID . propertyTypeP
-
-tzIDB :: TZID -> ContentLineValue
-tzIDB = propertyTypeB . unTZID
+  propertyP = fmap TZID . propertyTypeP
+  propertyB = propertyTypeB . unTZID
 
 -- [section 3.8.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
 --
@@ -193,18 +157,12 @@ instance Validity DateTimeStart
 
 instance IsProperty DateTimeStart where
   propertyName Proxy = "DTSTART"
-  propertyP = dateTimeStartP
-  propertyB = dateTimeStartB
-
-dateTimeStartP :: ContentLineValue -> Either String DateTimeStart
-dateTimeStartP cl =
-  (DateTimeStartDate <$> propertyTypeP cl)
-    <|> (DateTimeStartDateTime <$> propertyTypeP cl)
-
-dateTimeStartB :: DateTimeStart -> ContentLineValue
-dateTimeStartB = \case
-  DateTimeStartDate date -> propertyTypeB date
-  DateTimeStartDateTime dateTime -> propertyTypeB dateTime
+  propertyP cl =
+    (DateTimeStartDate <$> propertyTypeP cl)
+      <|> (DateTimeStartDateTime <$> propertyTypeP cl)
+  propertyB = \case
+    DateTimeStartDate date -> propertyTypeB date
+    DateTimeStartDateTime dateTime -> propertyTypeB dateTime
 
 -- | [section 3.8.7.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.1)
 --
@@ -258,14 +216,8 @@ instance Validity Created where
 
 instance IsProperty Created where
   propertyName Proxy = "CREATED"
-  propertyP = createdP
-  propertyB = createdB
-
-createdP :: ContentLineValue -> Either String Created
-createdP = fmap Created . dateTimeUTCP
-
-createdB :: Created -> ContentLineValue
-createdB = dateTimeUTCB . unCreated
+  propertyP = fmap Created . dateTimeUTCP
+  propertyB = dateTimeUTCB . unCreated
 
 -- [section 3.8.1.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.5)
 --
@@ -328,11 +280,5 @@ instance Validity Description
 
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
-  propertyP = descriptionP
-  propertyB = descriptionB
-
-descriptionP :: ContentLineValue -> Either String Description
-descriptionP = fmap Description . propertyTypeP
-
-descriptionB :: Description -> ContentLineValue
-descriptionB = propertyTypeB . unDescription
+  propertyP = fmap Description . propertyTypeP
+  propertyB = propertyTypeB . unDescription
