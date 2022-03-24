@@ -137,6 +137,16 @@ parseFirst propertyName = go
         Right result -> pure result
         Left _ -> go cls
 
+parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
+parseFirstMaybe = go
+  where
+    go :: [ContentLine] -> CP (Maybe a)
+    go = \case
+      [] -> pure Nothing
+      (cl : cls) -> case propertyP cl of
+        Right result -> pure (Just result)
+        Left _ -> go cls
+
 sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
 sectionB name func =
   (DList.singleton (propertyB (Begin name)) <>)
@@ -156,7 +166,17 @@ parseGivenProperty givenProperty = void $ single $ propertyB givenProperty
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
   { eventUID :: !UID,
-    eventDateTimeStamp :: !DateTimeStamp
+    eventDateTimeStamp :: !DateTimeStamp,
+    -- @
+    --     ;
+    --     ; The following is REQUIRED if the component
+    --     ; appears in an iCalendar object that doesn't
+    --     ; specify the "METHOD" property; otherwise, it
+    --     ; is OPTIONAL; in any case, it MUST NOT occur
+    --     ; more than once.
+    --     ;
+    -- @
+    eventDateTimeStart :: !(Maybe DateTimeStart)
   }
   deriving (Show, Eq, Generic)
 
@@ -172,6 +192,7 @@ vEventP = sectionP "VEVENT" $ do
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
   eventUID <- parseFirst "UID" eventProperties
   eventDateTimeStamp <- parseFirst "DTSTAMP" eventProperties
+  eventDateTimeStart <- parseFirstMaybe eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
