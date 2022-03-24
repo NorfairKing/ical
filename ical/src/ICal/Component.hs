@@ -139,28 +139,19 @@ parseFirst propertyName = go
 
 sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
 sectionB name func =
-  (beginB name <>)
-    . (<> endB name)
+  (DList.singleton (propertyB (Begin name)) <>)
+    . (<> DList.singleton (propertyB (End name)))
     . func
 
 sectionP :: Text -> CP a -> CP a
 sectionP name parser = do
-  beginP name
+  parseGivenProperty $ Begin name
   result <- parser
-  endP name
+  parseGivenProperty $ End name
   pure result
 
-beginP :: Text -> CP ()
-beginP name = void $ single $ mkSimpleContentLine "BEGIN" name
-
-beginB :: Text -> DList ContentLine
-beginB name = DList.singleton $ mkSimpleContentLine "BEGIN" name
-
-endP :: Text -> CP ()
-endP name = void $ single $ mkSimpleContentLine "END" name
-
-endB :: Text -> DList ContentLine
-endB name = DList.singleton $ mkSimpleContentLine "END" name
+parseGivenProperty :: IsProperty property => property -> CP ()
+parseGivenProperty givenProperty = void $ single $ propertyB givenProperty
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
