@@ -74,6 +74,12 @@ class IsComponent component where
   -- | Builder for this component
   componentB :: component -> DList ContentLine
 
+propertyListB :: IsProperty property => property -> DList ContentLine
+propertyListB = DList.singleton . propertyContentLineB
+
+propertyMListB :: IsProperty property => Maybe property -> DList ContentLine
+propertyMListB = maybe DList.empty (DList.singleton . propertyContentLineB)
+
 -- [section 3.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6)
 data Calendar = Calendar
   { calendarProdId :: !ProdId,
@@ -118,10 +124,8 @@ vCalendarB :: Calendar -> DList ContentLine
 vCalendarB = sectionB "VCALENDAR" $ \Calendar {..} ->
   mconcat $
     concat
-      [ [ DList.fromList
-            [ prodIdB calendarProdId,
-              versionB calendarVersion
-            ]
+      [ [ propertyListB calendarProdId,
+          propertyListB calendarVersion
         ],
         map vEventB calendarEvents,
         map vTimeZoneB calendarTimeZones
@@ -133,7 +137,7 @@ parseFirst propertyName = go
     go :: [ContentLine] -> CP a
     go = \case
       [] -> fail $ "Did not find required " <> T.unpack propertyName
-      (cl : cls) -> case propertyP cl of
+      (cl : cls) -> case propertyContentLineP cl of
         Right result -> pure result
         Left _ -> go cls
 
@@ -143,14 +147,14 @@ parseFirstMaybe = go
     go :: [ContentLine] -> CP (Maybe a)
     go = \case
       [] -> pure Nothing
-      (cl : cls) -> case propertyP cl of
+      (cl : cls) -> case propertyContentLineP cl of
         Right result -> pure (Just result)
         Left _ -> go cls
 
 sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
 sectionB name func =
-  (DList.singleton (propertyB (Begin name)) <>)
-    . (<> DList.singleton (propertyB (End name)))
+  (DList.singleton (propertyContentLineB (Begin name)) <>)
+    . (<> DList.singleton (propertyContentLineB (End name)))
     . func
 
 sectionP :: Text -> CP a -> CP a
@@ -161,7 +165,7 @@ sectionP name parser = do
   pure result
 
 parseGivenProperty :: IsProperty property => property -> CP ()
-parseGivenProperty givenProperty = void $ single $ propertyB givenProperty
+parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenProperty
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
@@ -210,12 +214,10 @@ vEventP = sectionP "VEVENT" $ do
 vEventB :: Event -> DList ContentLine
 vEventB = sectionB "VEVENT" $ \Event {..} ->
   mconcat
-    [ DList.fromList
-        [ uidB eventUID,
-          dateTimeStampB eventDateTimeStamp
-        ],
-      maybe mempty (DList.singleton . dateTimeStartB) eventDateTimeStart,
-      maybe mempty (DList.singleton . createdB) eventCreated
+    [ propertyListB eventUID,
+      propertyListB eventDateTimeStamp,
+      propertyMListB eventDateTimeStart,
+      propertyMListB eventCreated
     ]
 
 -- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)

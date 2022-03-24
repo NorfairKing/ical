@@ -34,6 +34,28 @@ class IsProperty property where
   -- | Builder for the property
   propertyB :: property -> ContentLineValue
 
+propertyContentLineP ::
+  forall property.
+  IsProperty property =>
+  ContentLine ->
+  Either String property
+propertyContentLineP ContentLine {..} =
+  let name = propertyName (Proxy :: Proxy property)
+   in if contentLineName == name
+        then propertyP contentLineValue
+        else
+          Left $
+            unwords
+              [ "Expected content line with name",
+                show name,
+                "but got",
+                show contentLineName,
+                "instead."
+              ]
+
+propertyContentLineB :: forall property. IsProperty property => property -> ContentLine
+propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . propertyB
+
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Generic)
 
