@@ -201,6 +201,7 @@ vEventB = sectionB "VEVENT" $ \Event {..} ->
     [ uidB eventUID,
       dateTimeStampB eventDateTimeStamp
     ]
+    <> maybe mempty (DList.singleton . dateTimeStartB) eventDateTimeStart
 
 -- [section 3.6.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.5)
 data TimeZone = TimeZone

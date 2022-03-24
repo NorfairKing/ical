@@ -39,9 +39,9 @@ componentSpec = do
           renderedText = renderUnfoldedLinesText $ map renderContentLine rendered
           ctx =
             unlines
-              [ "Internal representation:",
-                ppShow rendered,
-                "",
+              [ -- "Internal representation:",
+                -- ppShow rendered,
+                -- "",
                 "Textual representation:",
                 T.unpack renderedText
               ]

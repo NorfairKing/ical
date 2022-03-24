@@ -49,9 +49,11 @@ spec = do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
   describe "dateTimeStampP" $ do
-    it "works for this example" $
+    it "works for these examplse" $ do
       dateTimeStampP "DTSTAMP:19971210T080000Z"
         `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
+      dateTimeStampP "DTSTAMP:18581117T000000Z"
+        `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
