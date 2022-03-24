@@ -18,28 +18,24 @@ spec = do
   describe "ProdId" $ do
     genValidSpec @ProdId
     propertySpec @ProdId
-  describe "prodIdP" $ do
     it "works for this example" $
       propertyContentLineP "PRODID:Example" `shouldBe` Right (ProdId "Example")
 
   describe "Version" $ do
     genValidSpec @Version
     propertySpec @Version
-  describe "versionP" $ do
     it "works for this example" $
       propertyContentLineP "VERSION:2.0" `shouldBe` Right (Version "2.0")
 
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID
-  describe "uidP" $ do
     it "works for this example" $
       propertyContentLineP "UID:19960401T080045Z-4000F192713-0052@example.com" `shouldBe` Right (UID "19960401T080045Z-4000F192713-0052@example.com")
 
   describe "TZID" $ do
     genValidSpec @TZID
     propertySpec @TZID
-  describe "tzIDP" $ do
     it "works for these examples" $ do
       propertyContentLineP "TZID:America/New_York" `shouldBe` Right (TZID "America/New_York")
       propertyContentLineP "TZID:America/Los_Angeles" `shouldBe` Right (TZID "America/Los_Angeles")
@@ -48,7 +44,6 @@ spec = do
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
-  describe "dateTimeStampP" $ do
     it "works for these examplse" $ do
       propertyContentLineP "DTSTAMP:19971210T080000Z"
         `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
@@ -58,7 +53,6 @@ spec = do
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
-  describe "dateTimeStartP" $ do
     it "works for this example" $
       propertyContentLineP "DTSTART:19980118T073000Z"
         `shouldBe` Right (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
@@ -66,7 +60,6 @@ spec = do
   describe "Created" $ do
     genValidSpec @Created
     propertySpec @Created
-  describe "createdP" $ do
     it "works for this example" $
       propertyContentLineP "CREATED:19960329T133000Z"
         `shouldBe` Right (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
