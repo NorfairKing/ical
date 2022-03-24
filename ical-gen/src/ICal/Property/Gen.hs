@@ -21,9 +21,11 @@ instance GenValid Version
 
 instance GenValid UID
 
+instance GenValid TZID
+
 instance GenValid DateTimeStamp
 
-instance GenValid TZID
+instance GenValid DateTimeStart
 
 propertySpec ::
   forall a.

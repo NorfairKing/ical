@@ -49,3 +49,10 @@ spec = do
   describe "dateTimeStampP" $ do
     -- TODO example-based test
     pure ()
+
+  describe "DateTimeStart" $ do
+    genValidSpec @DateTimeStart
+    propertySpec @DateTimeStart
+  describe "dateTimeStartP" $ do
+    -- TODO example-based test
+    pure ()

@@ -12,6 +12,7 @@
 
 module ICal.Property where
 
+import Control.Applicative
 import Data.Text (Text)
 import Data.Validity
 import Data.Validity.Text ()
@@ -158,3 +159,35 @@ tzIDP = fmap TZID . propertyWithNameP "TZID"
 
 tzIDB :: TZID -> ContentLine
 tzIDB = propertyWithNameB "TZID" . unTZID
+
+-- [section 3.8.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
+--
+-- @
+--     Property Name:  DTSTART
+--
+--     Purpose:  This property specifies when the calendar component begins.
+--
+--     Value Type:  The default value type is DATE-TIME.  The time value
+--        MUST be one of the forms defined for the DATE-TIME value type.
+--        The value type can be set to a DATE value type.
+-- @
+data DateTimeStart
+  = DateTimeStartDate !Date
+  | DateTimeStartDateTime !DateTime
+  deriving (Show, Eq, Generic)
+
+instance Validity DateTimeStart
+
+instance IsProperty DateTimeStart where
+  propertyP = dateTimeStartP
+  propertyB = dateTimeStartB
+
+dateTimeStartP :: ContentLine -> Either String DateTimeStart
+dateTimeStartP cl =
+  (DateTimeStartDate <$> propertyWithNameP "DTSTART" cl)
+    <|> (DateTimeStartDateTime <$> propertyWithNameP "DTSTART" cl)
+
+dateTimeStartB :: DateTimeStart -> ContentLine
+dateTimeStartB = \case
+  DateTimeStartDate date -> propertyWithNameB "DTSTART" date
+  DateTimeStartDateTime dateTime -> propertyWithNameB "DTSTART" dateTime
