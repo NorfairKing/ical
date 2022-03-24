@@ -129,8 +129,8 @@ vCalendarP = do
   calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
     contentLineName /= "BEGIN" && contentLineName /= "END"
 
-  calendarProdId <- parseFirst "PRODID" calPropLines
-  calendarVersion <- parseFirst "VERSION" calPropLines
+  calendarProdId <- parseFirst calPropLines
+  calendarVersion <- parseFirst calPropLines
 
   calendarMods <-
     many $
@@ -157,15 +157,19 @@ vCalendarB Calendar {..} =
         map componentSectionB calendarTimeZones
       ]
 
-parseFirst :: forall a. IsProperty a => Text -> [ContentLine] -> CP a
-parseFirst propertyName = go
+parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
+parseFirst = go
   where
+    name = propertyName (Proxy :: Proxy a)
     go :: [ContentLine] -> CP a
     go = \case
-      [] -> fail $ "Did not find required " <> T.unpack propertyName
-      (cl : cls) -> case propertyContentLineP cl of
-        Right result -> pure result
-        Left _ -> go cls
+      [] -> fail $ "Did not find required " <> show name
+      (cl : cls) ->
+        if contentLineName cl == name
+          then case propertyContentLineP cl of
+            Right result -> pure result
+            Left err -> fail err
+          else go cls
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
 parseFirstMaybe = go
@@ -173,9 +177,13 @@ parseFirstMaybe = go
     go :: [ContentLine] -> CP (Maybe a)
     go = \case
       [] -> pure Nothing
-      (cl : cls) -> case propertyContentLineP cl of
-        Right result -> pure (Just result)
-        Left _ -> go cls
+      -- TODO do better than a linear search?
+      (cl : cls) ->
+        if contentLineName cl == propertyName (Proxy :: Proxy a)
+          then case propertyContentLineP cl of
+            Right result -> pure (Just result)
+            Left err -> fail err
+          else go cls
 
 -- [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
 data Event = Event
@@ -216,8 +224,8 @@ vEventP :: CP Event
 vEventP = do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
-  eventUID <- parseFirst "UID" eventProperties
-  eventDateTimeStamp <- parseFirst "DTSTAMP" eventProperties
+  eventUID <- parseFirst eventProperties
+  eventDateTimeStamp <- parseFirst eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   pure Event {..}
