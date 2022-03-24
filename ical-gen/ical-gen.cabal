@@ -13,6 +13,7 @@ library
       ICal.Calendar.Gen
       ICal.ContentLine.Gen
       ICal.Parameter.Gen
+      ICal.Property.Gen
       ICal.PropertyType.Gen
       ICal.UnfoldedLine.Gen
   other-modules:
@@ -44,6 +45,7 @@ test-suite ical-test
       ICal.CalendarSpec
       ICal.ContentLineSpec
       ICal.ParameterSpec
+      ICal.PropertySpec
       ICal.PropertyTypeSpec
       ICal.UnfoldedLineSpec
       ICalSpec
