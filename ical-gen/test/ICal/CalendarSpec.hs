@@ -58,8 +58,8 @@ spec = do
     parameterSpec @TZIDParam
   describe "tzIDP" $ do
     it "works for these examples" $ do
-      tzIDParamP ["TZID:America/New_York"] `shouldBe` Right (TZIDParam "America/New_York")
-      tzIDParamP ["TZID:/example.org/America/New_York"] `shouldBe` Right (TZIDParam "/example.org/America/New_York")
+      tzIDParamP ["America/New_York"] `shouldBe` Right (TZIDParam "America/New_York")
+      tzIDParamP ["/example.org/America/New_York"] `shouldBe` Right (TZIDParam "/example.org/America/New_York")
 
   describe "DateTime" $ do
     genValidSpec @DateTime
