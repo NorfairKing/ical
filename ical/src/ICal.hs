@@ -1,7 +1,7 @@
 module ICal where
 
 import Data.ByteString (ByteString)
-import ICal.Calendar
+import ICal.Component
 import ICal.ContentLine
 import ICal.UnfoldedLine
 

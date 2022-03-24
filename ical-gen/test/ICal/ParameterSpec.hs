@@ -6,7 +6,6 @@
 
 module ICal.ParameterSpec where
 
-import ICal.Calendar.Gen ()
 import ICal.Parameter
 import ICal.Parameter.Gen
 import Test.Syd

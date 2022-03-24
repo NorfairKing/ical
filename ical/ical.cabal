@@ -11,7 +11,7 @@ build-type:     Simple
 library
   exposed-modules:
       ICal
-      ICal.Calendar
+      ICal.Component
       ICal.ContentLine
       ICal.Parameter
       ICal.Property

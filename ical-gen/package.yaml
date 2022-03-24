@@ -11,6 +11,7 @@ library:
   - QuickCheck
   - case-insensitive
   - containers
+  - dlist
   - genvalidity
   - genvalidity-bytestring
   - genvalidity-case-insensitive
@@ -18,6 +19,7 @@ library:
   - genvalidity-sydtest
   - genvalidity-text
   - genvalidity-time
+  - megaparsec
   - sydtest
   - text
   - time

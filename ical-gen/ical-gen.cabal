@@ -10,7 +10,7 @@ build-type:     Simple
 
 library
   exposed-modules:
-      ICal.Calendar.Gen
+      ICal.Component.Gen
       ICal.ContentLine.Gen
       ICal.Parameter.Gen
       ICal.Property.Gen
@@ -25,6 +25,7 @@ library
     , base >=4.7 && <5
     , case-insensitive
     , containers
+    , dlist
     , genvalidity
     , genvalidity-bytestring
     , genvalidity-case-insensitive
@@ -33,6 +34,7 @@ library
     , genvalidity-text
     , genvalidity-time
     , ical
+    , megaparsec
     , sydtest
     , text
     , time
@@ -42,7 +44,7 @@ test-suite ical-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ICal.CalendarSpec
+      ICal.ComponentSpec
       ICal.ContentLineSpec
       ICal.ParameterSpec
       ICal.PropertySpec

@@ -1,34 +1,29 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.CalendarSpec where
+module ICal.Component.Gen where
 
 import qualified Data.DList as DList
+import Data.GenValidity
+import Data.GenValidity.CaseInsensitive ()
+import Data.GenValidity.Text ()
+import Data.GenValidity.Time ()
 import qualified Data.Text as T
-import ICal.Calendar
-import ICal.Calendar.Gen ()
+import ICal.Component
 import ICal.ContentLine
+import ICal.Property.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd
 import Test.Syd.Validity
 import Text.Megaparsec
 
-spec :: Spec
-spec = do
-  describe "Event" $ do
-    genValidSpec @Event
-    componentSpec @TimeZone
+instance GenValid Calendar
 
-  describe "TimeZone" $ do
-    genValidSpec @TimeZone
-    componentSpec @TimeZone
+instance GenValid Event
 
-  describe "Calendar" $ do
-    genValidSpec @Calendar
-    componentSpec @Calendar
+instance GenValid TimeZone
 
 componentSpec ::
   forall a.
