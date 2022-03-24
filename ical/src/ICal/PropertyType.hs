@@ -34,11 +34,88 @@ class IsPropertyType propertyType where
   propertyTypeB :: propertyType -> ContentLineValue
 
 -- [section 3.3.11](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.11)
+-- @
+--     Value Name:  TEXT
 --
--- TODO text encoding
+--     Purpose:  This value type is used to identify values that contain
+--        human-readable text.
+--
+--     Format Definition:  This value type is defined by the following
+--        notation:
+--         text       = *(TSAFE-CHAR / ":" / DQUOTE / ESCAPED-CHAR)
+--            ; Folded according to description above
+--
+--         ESCAPED-CHAR = ("\\" / "\;" / "\," / "\N" / "\n")
+--            ; \\ encodes \, \N or \n encodes newline
+--            ; \; encodes ;, \, encodes ,
+--
+--         TSAFE-CHAR = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-5B /
+--                      %x5D-7E / NON-US-ASCII
+--            ; Any character except CONTROLs not needed by the current
+--            ; character set, DQUOTE, ";", ":", "\", ","
+--
+--     Description:  If the property permits, multiple TEXT values are
+--        specified by a COMMA-separated list of values.
+--
+--        The language in which the text is represented can be controlled by
+--        the "LANGUAGE" property parameter.
+--
+--        An intentional formatted text line break MUST only be included in
+--        a "TEXT" property value by representing the line break with the
+--        character sequence of BACKSLASH, followed by a LATIN SMALL LETTER
+--        N or a LATIN CAPITAL LETTER N, that is "\n" or "\N".
+--
+--        The "TEXT" property values may also contain special characters
+--        that are used to signify delimiters, such as a COMMA character for
+--        lists of values or a SEMICOLON character for structured values.
+--        In order to support the inclusion of these special characters in
+--        "TEXT" property values, they MUST be escaped with a BACKSLASH
+--        character.  A BACKSLASH character in a "TEXT" property value MUST
+--        be escaped with another BACKSLASH character.  A COMMA character in
+--        a "TEXT" property value MUST be escaped with a BACKSLASH
+--        character.  A SEMICOLON character in a "TEXT" property value MUST
+--        be escaped with a BACKSLASH character.  However, a COLON character
+--        in a "TEXT" property value SHALL NOT be escaped with a BACKSLASH
+--        character.
+--
+--     Example:  A multiple line value of:
+--
+--         Project XYZ Final Review
+--         Conference Room - 3B
+--         Come Prepared.
+--
+--        would be represented as:
+--
+--         Project XYZ Final Review\nConference Room - 3B\nCome Prepared.
+-- @
 instance IsPropertyType Text where
-  propertyTypeP = Right . contentLineValueRaw
-  propertyTypeB = mkSimpleContentLineValue
+  propertyTypeP = Right . unEscapeText . contentLineValueRaw
+  propertyTypeB = mkSimpleContentLineValue . escapeText
+
+-- FIXME this could probably go a LOT faster
+-- @
+--     ; \\ encodes \, \N or \n encodes newline
+--     ; \; encodes ;, \, encodes ,
+-- @
+escapeText :: Text -> Text
+escapeText =
+  T.replace "\n" "\\n"
+    . T.replace "," "\\,"
+    . T.replace ";" "\\;"
+    . T.replace "\\" "\\\\"
+
+-- FIXME this could probably go a LOT faster
+-- @
+--     ; \\ encodes \, \N or \n encodes newline
+--     ; \; encodes ;, \, encodes ,
+-- @
+unEscapeText :: Text -> Text
+unEscapeText =
+  T.replace "\\\\" "\\"
+    . T.replace "\\," ","
+    . T.replace "\\;" ";"
+    . T.replace "\\n" "\n"
+    . T.replace "\\N" "\n"
 
 -- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
 data DateTime

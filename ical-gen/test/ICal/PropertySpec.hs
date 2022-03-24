@@ -69,5 +69,5 @@ spec = do
     propertySpec @Description
     it "works for this example" $
       propertyContentLineP
-        "DESCRIPTION:Meeting to provide technical review for \"Phoenix\"\n design.\\nHappy Face Conference Room. Phoenix design team\nMUST attend this meeting.\\nRSVP to team leader."
+        "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
         `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
