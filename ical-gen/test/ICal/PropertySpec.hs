@@ -64,6 +64,14 @@ spec = do
       propertyContentLineP "CREATED:19960329T133000Z"
         `shouldBe` Right (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
 
+  describe "Summary" $ do
+    genValidSpec @Summary
+    propertySpec @Summary
+    it "works for this example" $
+      propertyContentLineP
+        "SUMMARY:Department Party"
+        `shouldBe` Right (Summary "Department Party")
+
   describe "Description" $ do
     genValidSpec @Description
     propertySpec @Description

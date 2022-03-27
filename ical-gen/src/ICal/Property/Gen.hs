@@ -30,6 +30,8 @@ instance GenValid DateTimeStart
 instance GenValid Created where
   genValid = Created <$> genImpreciseLocalTime
 
+instance GenValid Summary
+
 instance GenValid Description
 
 propertySpec ::
