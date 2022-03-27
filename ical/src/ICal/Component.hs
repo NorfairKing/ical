@@ -436,7 +436,8 @@ data Event = Event
     --     ; but MUST NOT occur more than once.
     --     ;
     -- @
-    eventCreated :: !(Maybe Created)
+    eventCreated :: !(Maybe Created),
+    eventDescription :: !(Maybe Description)
   }
   deriving (Show, Eq, Generic)
 
@@ -455,6 +456,7 @@ vEventP = do
   eventDateTimeStamp <- parseFirst eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
+  eventDescription <- parseFirstMaybe eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
@@ -463,7 +465,8 @@ vEventB Event {..} =
     [ propertyListB eventUID,
       propertyListB eventDateTimeStamp,
       propertyMListB eventDateTimeStart,
-      propertyMListB eventCreated
+      propertyMListB eventCreated,
+      propertyMListB eventDescription
     ]
 
 -- |
