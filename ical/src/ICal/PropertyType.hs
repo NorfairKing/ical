@@ -25,7 +25,10 @@ import ICal.ContentLine
 import ICal.Parameter
 import Text.Megaparsec
 
--- [section 3.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3)
+-- | Property type
+--
+-- === [section 3.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3)
+--
 -- @
 --     The properties in an iCalendar object are strongly typed.  The
 --     definition of each property restricts the value to be one of the
@@ -43,7 +46,10 @@ class IsPropertyType propertyType where
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
 
--- [section 3.3.11](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.11)
+-- | Text
+--
+-- === [section 3.3.11](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.11)
+--
 -- @
 --     Value Name:  TEXT
 --
@@ -102,6 +108,8 @@ instance IsPropertyType Text where
   propertyTypeP = Right . unEscapeText . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
+-- | Escape 'Text'
+--
 -- FIXME this could probably go a LOT faster
 -- @
 --     ; \\ encodes \, \N or \n encodes newline
@@ -114,6 +122,8 @@ escapeText =
     . T.replace ";" "\\;"
     . T.replace "\\" "\\\\"
 
+-- | Un-Escape 'Text'
+--
 -- FIXME this could probably go a LOT faster
 -- @
 --     ; \\ encodes \, \N or \n encodes newline
@@ -127,7 +137,9 @@ unEscapeText =
     . T.replace "\\n" "\n"
     . T.replace "\\N" "\n"
 
--- [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
+-- | Date Time
+--
+-- === [section 3.3.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.5)
 --
 -- @
 --     Value Name:  DATE-TIME
@@ -248,9 +260,21 @@ unEscapeText =
 --                                                   ; zone reference
 -- @
 data DateTime
-  = DateTimeFloating !Time.LocalTime
-  | DateTimeUTC !Time.LocalTime
-  | DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
+  = -- |
+    -- @
+    --     FORM #1: DATE WITH LOCAL TIME
+    -- @
+    DateTimeFloating !Time.LocalTime
+  | -- |
+    -- @
+    --     FORM #2: DATE WITH UTC TIME
+    -- @
+    DateTimeUTC !Time.LocalTime
+  | -- |
+    -- @
+    --     FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
+    -- @
+    DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
   deriving (Show, Eq, Generic)
 
 instance Validity DateTime where
@@ -321,7 +345,9 @@ dateTimeUTCFormatStr = "%Y%m%dT%H%M%SZ"
 dateTimeZonedFormatStr :: String
 dateTimeZonedFormatStr = "%Y%m%dT%H%M%S"
 
--- [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
+-- | Date
+--
+-- === [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
 --
 -- @
 --     Value Name:  DATE
@@ -373,7 +399,9 @@ dateB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLoca
 dateFormatStr :: String
 dateFormatStr = "%Y%m%d"
 
--- [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
+-- | Time
+--
+-- === [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
 --
 -- @
 --     Value Name:  TIME
@@ -471,9 +499,21 @@ dateFormatStr = "%Y%m%d"
 --         TZID=America/New_York:083000
 -- @
 data Time
-  = TimeFloating !Time.TimeOfDay
-  | TimeUTC !Time.TimeOfDay
-  | TimeZoned !TZIDParam !Time.TimeOfDay
+  = -- |
+    -- @
+    --     FORM #1 LOCAL TIME
+    -- @
+    TimeFloating !Time.TimeOfDay
+  | -- |
+    -- @
+    --     FORM #2: UTC TIME
+    -- @
+    TimeUTC !Time.TimeOfDay
+  | -- |
+    -- @
+    --     FORM #3: LOCAL TIME AND TIME ZONE REFERENCE
+    -- @
+    TimeZoned !TZIDParam !Time.TimeOfDay
   deriving (Show, Eq, Generic)
 
 instance Validity Time where
