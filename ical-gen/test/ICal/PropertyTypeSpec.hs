@@ -119,3 +119,14 @@ spec = do
       case timeP (mkSimpleContentLineValue "230000-0800") of
         Left _ -> pure ()
         Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
+
+  describe "RecurrenceRule" $ do
+    genValidSpec @RecurrenceRule
+    propertyTypeSpec @RecurrenceRule
+    let examples :: [(ContentLineValue, RecurrenceRule)]
+        examples = []
+    forM_ examples $ \(clv, recurrenceRule) -> do
+      it "can parse this example" $
+        propertyTypeP clv `shouldBe` Right recurrenceRule
+      it "can render this example" $
+        propertyTypeB recurrenceRule `shouldBe` clv

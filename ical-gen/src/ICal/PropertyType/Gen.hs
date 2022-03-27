@@ -36,6 +36,8 @@ instance GenValid DateTime where
         DateTimeZoned <$> genValid <*> pure lt
       ]
 
+instance GenValid RecurrenceRule
+
 genImpreciseLocalTime :: Gen LocalTime
 genImpreciseLocalTime = LocalTime <$> genValid <*> genImpreciseTimeOfDay
 
