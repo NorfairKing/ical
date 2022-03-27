@@ -36,7 +36,7 @@ import ICal.PropertyType
 --
 -- === Laws
 --
--- * The property roundtrips through 'ContentLine'.
+-- * The property roundtrips through 'ContentLineValue'.
 --
 -- >>> forAllValid $ \property -> propertyP (propertyB property) == Right property
 class IsProperty property where

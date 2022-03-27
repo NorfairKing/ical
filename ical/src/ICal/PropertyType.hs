@@ -39,6 +39,12 @@ import Text.Megaparsec
 --     alternate valid types, then it MUST be explicitly specified with the
 --     "VALUE" parameter.
 -- @
+--
+-- === Laws
+--
+-- * The property roundtrips through 'ContentLineValue'.
+--
+-- >>> forAllValid $ \property -> propertyTypeP (propertyTypeB property) == Right property
 class IsPropertyType propertyType where
   -- | Parser for the property type
   propertyTypeP :: ContentLineValue -> Either String propertyType
