@@ -56,6 +56,13 @@ propertyTypeSpec = do
   it "always renders to a valid content line" $
     forAllValid $ \propertyType ->
       shouldBeValid $ propertyTypeB (propertyType :: a)
+
+  it "parses only valid things" $
+    forAllValid $ \a ->
+      case propertyTypeP (propertyTypeB (a :: a)) of
+        Left _ -> pure ()
+        Right a' -> shouldBeValid (a' :: a)
+
   it "roundtrips through ContentLine" $
     forAllValid $ \propertyType ->
       let value = propertyTypeB (propertyType :: a)

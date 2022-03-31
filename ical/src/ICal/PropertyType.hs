@@ -42,6 +42,14 @@ import Text.Megaparsec
 --
 -- === Laws
 --
+-- * The 'ContentLineValue' that is built is valid:
+--
+-- >>> forAllValid $ \propertyType -> isValid (propertyTypeB propertyType)
+--
+-- * Anything parsed is valid:
+--
+-- >>> forAllValid $ \contentLineValue -> isValid (propertyTypeP contentlineValue)
+--
 -- * The property roundtrips through 'ContentLineValue'.
 --
 -- >>> forAllValid $ \property -> propertyTypeP (propertyTypeB property) == Right property
