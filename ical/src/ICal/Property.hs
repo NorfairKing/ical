@@ -652,3 +652,14 @@ instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
   propertyP = fmap Description . propertyTypeP
   propertyB = propertyTypeB . unDescription
+
+-- TODO description
+newtype TimeZoneName = TimeZoneName {unTimeZoneName :: Text}
+  deriving (Show, Eq, Generic)
+
+instance Validity TimeZoneName
+
+instance IsProperty TimeZoneName where
+  propertyName Proxy = "TZNAME"
+  propertyP = fmap TimeZoneName . propertyTypeP
+  propertyB = propertyTypeB . unTimeZoneName

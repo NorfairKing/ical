@@ -892,6 +892,9 @@ vEventB Event {..} =
 --
 -- @
 data TimeZone = TimeZone
+  { timeZoneId :: !TZID,
+    timeZoneName :: !(Maybe TimeZoneName)
+  }
   deriving (Show, Eq, Generic)
 
 instance Validity TimeZone
@@ -903,9 +906,17 @@ instance IsComponent TimeZone where
 
 vTimeZoneP :: CP TimeZone
 vTimeZoneP = do
-  _ <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
+  timezoneProperties <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VTIMEZONE"
-  pure TimeZone
+
+  timeZoneId <- parseFirst timezoneProperties
+  timeZoneName <- parseFirstMaybe timezoneProperties
+
+  pure TimeZone {..}
 
 vTimeZoneB :: TimeZone -> DList ContentLine
-vTimeZoneB _ = mempty
+vTimeZoneB TimeZone {..} =
+  mconcat
+    [ propertyListB timeZoneId,
+      propertyMListB timeZoneName
+    ]

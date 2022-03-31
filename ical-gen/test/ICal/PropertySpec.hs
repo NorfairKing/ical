@@ -79,3 +79,8 @@ spec = do
       propertyContentLineP
         "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
         `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
+
+  describe "TimeZoneName" $ do
+    genValidSpec @TimeZoneName
+    propertySpec @TimeZoneName
+    pending "works for this example"

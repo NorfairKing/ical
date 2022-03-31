@@ -34,6 +34,8 @@ instance GenValid Summary
 
 instance GenValid Description
 
+instance GenValid TimeZoneName
+
 propertySpec ::
   forall a.
   (Show a, Eq a, GenValid a, IsProperty a) =>
