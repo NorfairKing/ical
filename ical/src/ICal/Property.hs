@@ -36,6 +36,14 @@ import ICal.PropertyType
 --
 -- === Laws
 --
+-- * The 'ContentLineValue' that is built is valid:
+--
+-- >>> forAllValid $ \property -> isValid (propertyB property)
+--
+-- * Anything parsed is valid:
+--
+-- >>> forAllValid $ \contentLineValue -> isValid (propertyP contentlineValue)
+--
 -- * The property roundtrips through 'ContentLineValue'.
 --
 -- >>> forAllValid $ \property -> propertyP (propertyB property) == Right property

@@ -42,6 +42,13 @@ propertySpec = do
   it "always renders to a valid content line" $
     forAllValid $ \a ->
       shouldBeValid $ propertyB (a :: a)
+
+  it "parses only valid things" $
+    forAllValid $ \a ->
+      case propertyP (propertyB (a :: a)) of
+        Left _ -> pure ()
+        Right a' -> shouldBeValid (a' :: a)
+
   it "roundtrips through ContentLine" $
     forAllValid $ \a ->
       let rendered = propertyB (a :: a)

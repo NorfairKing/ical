@@ -70,7 +70,7 @@ instance TraversableStream [ContentLine] where
 --
 -- === Laws
 --
--- * The 'ContentLine' that is built is valid:
+-- * The '[ContentLine]' that is built is valid:
 --
 -- >>> forAllValid $ \component -> isValid (componentB component)
 --
