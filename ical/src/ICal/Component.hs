@@ -70,6 +70,14 @@ instance TraversableStream [ContentLine] where
 --
 -- === Laws
 --
+-- * The 'ContentLine' that is built is valid:
+--
+-- >>> forAllValid $ \component -> isValid (componentB component)
+--
+-- * Anything parsed is valid:
+--
+-- >>> forAllValid $ \contentLines -> isValid (parse componentP "" contentLines)
+--
 -- * The property roundtrips through '[ContentLine]'.
 --
 -- >>> forAllValid $ \component -> parse componentP "" (DList.toList (componentB component)) == Right component

@@ -13,6 +13,7 @@ import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import ICal.Component
 import ICal.ContentLine
+import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd
@@ -33,6 +34,13 @@ componentSpec = do
   it "renders to a valid list of ContentLines" $
     forAllValid $ \component ->
       shouldBeValid $ DList.toList $ componentB (component :: a)
+
+  it "parses only valid things" $
+    forAllValid $ \component ->
+      case parse componentP "test input" (DList.toList (componentB (component :: a))) of
+        Left _ -> pure ()
+        Right a -> shouldBeValid (a :: a)
+
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
       let rendered = DList.toList $ componentB (a :: a)
