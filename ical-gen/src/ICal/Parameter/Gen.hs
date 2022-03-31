@@ -23,6 +23,13 @@ parameterSpec = do
   it "always renders a valid parameter values" $
     forAllValid $ \parameter ->
       shouldBeValid $ parameterB (parameter :: a)
+
+  it "parses only valid things" $
+    forAllValid $ \a ->
+      case parameterP (parameterB (a :: a)) of
+        Left _ -> pure ()
+        Right a' -> shouldBeValid (a' :: a)
+
   it "roundtrips through parameter values" $
     forAllValid $ \parameter ->
       let values = parameterB (parameter :: a)

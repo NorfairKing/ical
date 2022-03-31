@@ -25,6 +25,21 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
 
+-- | Parameters
+--
+-- === Laws
+--
+-- * The 'NonEmpty ParamValue' that is built is valid:
+--
+-- >>> forAllValid $ \parameter -> isValid (parameterB parameter)
+--
+-- * Anything parsed is valid:
+--
+-- >>> forAllValid $ \paramValues -> isValid (parameterP paramValues)
+--
+-- * The parameter roundtrips through 'ContentLineValue'.
+--
+-- >>> forAllValid $ \parameter -> parameterP (parameterB parameter) == Right parameter
 class IsParameter param where
   -- Name of the parameter
   parameterName :: Proxy param -> ParamName
