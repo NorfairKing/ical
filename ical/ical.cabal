@@ -16,6 +16,8 @@ library
       ICal.Parameter
       ICal.Property
       ICal.PropertyType
+      ICal.PropertyType.Class
+      ICal.PropertyType.RecurrenceRule
       ICal.UnfoldedLine
   other-modules:
       Paths_ical

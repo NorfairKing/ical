@@ -12,7 +12,9 @@ import Data.Text (Text)
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
 import ICal.PropertyType
+import ICal.PropertyType.Class
 import ICal.PropertyType.Gen
+import ICal.PropertyType.RecurrenceRule
 import Test.Syd
 import Test.Syd.Validity
 
