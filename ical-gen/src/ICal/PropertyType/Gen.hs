@@ -13,6 +13,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Set as S
 import Data.Time (LocalTime (..), TimeOfDay (..))
+import ICal.Parameter
 import ICal.Parameter.Gen ()
 import ICal.PropertyType
 import ICal.PropertyType.Class
@@ -43,10 +44,6 @@ instance GenValid DateTime where
 
 -- | Until we have it in time and then in genvalidity-time
 instance GenValid Month where
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
-  genValid = genValidStructurallyWithoutExtraChecking
-
-instance GenValid Frequency where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = genValidStructurallyWithoutExtraChecking
 

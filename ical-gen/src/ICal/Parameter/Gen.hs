@@ -13,7 +13,13 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid TZIDParam
+instance GenValid TZIDParam where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
+
+instance GenValid Frequency where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
 parameterSpec ::
   forall a.

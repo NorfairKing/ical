@@ -41,7 +41,15 @@ lookupParam m = do
   pvs <- M.lookup name m
   pure $ parameterP pvs
 
-singleParamP :: (ParamValue -> Either String TZIDParam) -> NonEmpty ParamValue -> Either String TZIDParam
+requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String param
+requireParam m = case lookupParam m of
+  Nothing -> Left $ "Parameter not found: " <> show (parameterName (Proxy :: Proxy param))
+  Just errOrResult -> errOrResult
+
+paramMap :: forall param. IsParameter param => param -> Map ParamName (NonEmpty ParamValue)
+paramMap param = M.singleton (parameterName (Proxy :: Proxy param)) (parameterB param)
+
+singleParamP :: (ParamValue -> Either String a) -> NonEmpty ParamValue -> Either String a
 singleParamP func = \case
   value :| [] -> func value
   _ -> Left "Expected one parameter value, but got multiple."
@@ -65,3 +73,67 @@ tzIDParamP = singleParamP $ \case
 
 tzIDParamB :: TZIDParam -> NonEmpty ParamValue
 tzIDParamB = (:| []) . UnquotedParam . unTZIDParam
+
+-- | Frequency
+--
+-- Part of [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+--
+--
+-- @
+--     freq        = "SECONDLY" / "MINUTELY" / "HOURLY" / "DAILY"
+--                 / "WEEKLY" / "MONTHLY" / "YEARLY"
+-- @
+--
+-- @
+--     The FREQ rule part identifies the type of recurrence rule.  This
+--     rule part MUST be specified in the recurrence rule.  Valid values
+--     include SECONDLY, to specify repeating events based on an interval
+--     of a second or more; MINUTELY, to specify repeating events based
+--     on an interval of a minute or more; HOURLY, to specify repeating
+--     events based on an interval of an hour or more; DAILY, to specify
+--     repeating events based on an interval of a day or more; WEEKLY, to
+--     specify repeating events based on an interval of a week or more;
+--     MONTHLY, to specify repeating events based on an interval of a
+--     month or more; and YEARLY, to specify repeating events based on an
+--     interval of a year or more.
+-- @
+data Frequency
+  = Secondly
+  | Minutely
+  | Hourly
+  | Daily
+  | Weekly
+  | Monthly
+  | Yearly
+  deriving stock (Show, Eq, Ord, Generic, Enum, Bounded)
+
+instance Validity Frequency
+
+instance IsParameter Frequency where
+  parameterName Proxy = "FREQ"
+  parameterP = frequencyP
+  parameterB = frequencyB
+
+frequencyP :: NonEmpty ParamValue -> Either String Frequency
+frequencyP = singleParamP $ \case
+  UnquotedParam c -> case c of
+    "SECONDLY" -> Right Secondly
+    "MINUTELY" -> Right Minutely
+    "HOURLY" -> Right Hourly
+    "DAILY" -> Right Daily
+    "WEEKLY" -> Right Weekly
+    "MONTHLY" -> Right Monthly
+    "YEARLY" -> Right Yearly
+    _ -> Left $ "Unknown Frequency value: " <> show c
+  p -> Left $ "Expected Frequency to be unquoted, but was quoted: " <> show p
+
+frequencyB :: Frequency -> NonEmpty ParamValue
+frequencyB =
+  (:| []) . UnquotedParam . \case
+    Secondly -> "SECONDLY"
+    Minutely -> "MINUTELY"
+    Hourly -> "HOURLY"
+    Daily -> "DAILY"
+    Weekly -> "WEEKLY"
+    Monthly -> "MONTHLY"
+    Yearly -> "YEARLY"

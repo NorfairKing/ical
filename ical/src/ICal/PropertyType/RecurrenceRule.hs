@@ -16,6 +16,8 @@ import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 
 #if !MIN_VERSION_time(1,9,5)
@@ -518,32 +520,45 @@ instance Validity RecurrenceRule where
       ]
 
 instance IsPropertyType RecurrenceRule where
-  propertyTypeP = undefined
-  propertyTypeB = undefined
+  propertyTypeP = recurrenceRuleP
+  propertyTypeB = recurrenceRuleB
 
--- | Frequency
---
--- This rule part MUST be specified in the recurrence rule.  Valid
--- values include SECONDLY, to specify repeating events based on an
--- interval of a second or more; MINUTELY, to specify repeating events
--- based on an interval of a minute or more; HOURLY, to specify
--- repeating events based on an interval of an hour or more; DAILY, to
--- specify repeating events based on an interval of a day or more;
--- WEEKLY, to specify repeating events based on an interval of a week
--- or more; MONTHLY, to specify repeating events based on an interval
--- of a month or more; and YEARLY, to specify repeating events based on
--- an interval of a year or more.
-data Frequency
-  = Secondly
-  | Minutely
-  | Hourly
-  | Daily
-  | Weekly
-  | Monthly
-  | Yearly
-  deriving stock (Show, Eq, Ord, Generic, Enum, Bounded)
+recurrenceRuleB ::
+  RecurrenceRule -> ContentLineValue
+recurrenceRuleB RecurrenceRule {..} =
+  ContentLineValue
+    { contentLineValueRaw = "", -- TODO this should be empty I think
+      contentLineValueParams = paramMap recurrenceRuleFrequency
+    }
 
-instance Validity Frequency
+-- TODO comply with this:
+-- @
+--     Compliant applications MUST accept rule
+--     parts ordered in any sequence, but to ensure backward
+--     compatibility with applications that pre-date this revision of
+--     iCalendar the FREQ rule part MUST be the first rule part specified
+--     in a RECUR value.
+-- @
+
+recurrenceRuleP ::
+  ContentLineValue ->
+  Either String RecurrenceRule
+recurrenceRuleP ContentLineValue {..} = do
+  recurrenceRuleFrequency <- requireParam contentLineValueParams
+  -- TODO
+  recurrenceRuleInterval <- undefined
+  recurrenceRuleUntilCount <- undefined
+  recurrenceRuleBySecond <- undefined
+  recurrenceRuleByMinute <- undefined
+  recurrenceRuleByHour <- undefined
+  recurrenceRuleByDay <- undefined
+  recurrenceRuleByMonthDay <- undefined
+  recurrenceRuleByYearDay <- undefined
+  recurrenceRuleByWeekNo <- undefined
+  recurrenceRuleByMonth <- undefined
+  recurrenceRuleWeekStart <- undefined
+  recurrenceRuleBySetPos <- undefined
+  pure RecurrenceRule {..}
 
 -- | Interval
 --
