@@ -1,0 +1,282 @@
+version: 2.0.0
+value:
+- entry:
+    header: Ical
+    properties:
+      goal: have a better ical library that actually makes valid ical files and knows
+        about recurrence
+    state-history:
+    - state: TODO
+      time: 2022-03-17 08:23:27
+  forest:
+  - header: Implement line folding and unfolding
+    properties:
+      timewindow: 15m
+    state-history:
+    - state: DONE
+      time: 2022-03-19 14:16:46
+    - state: NEXT
+      time: 2022-03-17 08:23:14
+    tags:
+    - offline
+    - power
+  - entry:
+      header: implement content line parsing and rendering
+      state-history:
+      - state: DONE
+        time: 2022-03-19 21:56:22
+      - state: TODO
+        time: 2022-03-19 14:17:00
+      - state: NEXT
+        time: 2022-03-19 14:16:56
+    forest:
+    - header: Implement quoting
+      state-history:
+      - state: DONE
+        time: 2022-03-19 21:56:22
+      - state: NEXT
+        time: 2022-03-19 14:17:04
+  - header: types for all that require it
+    state-history:
+    - state: DONE
+      time: 2022-03-19 21:56:24
+    - state: TODO
+      time: 2022-03-19 14:51:20
+  - header: parse the x-name too into something separate
+    state-history:
+    - state: DONE
+      time: 2022-03-19 21:56:25
+    - state: TODO
+      time: 2022-03-19 14:25:49
+  - header: allow multiple parameter values for a parameter
+    state-history:
+    - state: DONE
+      time: 2022-03-19 21:56:28
+    - state: TODO
+      time: 2022-03-19 14:16:56
+  - header: check the spec for something I missed
+    contents: |-
+      add each part of the spec somewhere, if relevant
+      We can use code blocks:
+      https://haskell-haddock.readthedocs.io/en/latest/markup.html#code-blocks
+    state-history:
+    - state: DONE
+      time: 2022-03-20 18:22:33
+    - state: NEXT
+      time: 2022-03-19 21:58:09
+    - state: TODO
+      time: 2022-03-19 21:56:45
+  - header: See if I can parse a real calendar
+    state-history:
+    - state: DONE
+      time: 2022-03-20 22:01:32
+    - state: NEXT
+      time: 2022-03-20 18:22:47
+  - header: test all parsers separately
+    state-history:
+    - state: DONE
+      time: 2022-03-20 22:01:32
+    - state: TODO
+      time: 2022-03-19 14:51:21
+  - header: make a (gen)validity-case-insensitive and try it out
+    state-history:
+    - state: DONE
+      time: 2022-03-21 15:32:26
+    - state: NEXT
+      time: 2022-03-21 14:42:37
+  - header: make decorateText in validity-text
+    state-history:
+    - state: DONE
+      time: 2022-03-21 17:03:40
+    - state: NEXT
+      time: 2022-03-21 15:32:30
+    - state: TODO
+      time: 2022-03-21 15:27:24
+  - header: try it out in ical
+    properties:
+      timewindow: 15m
+    state-history:
+    - state: DONE
+      time: 2022-03-23 16:22:21
+    - state: NEXT
+      time: 2022-03-21 17:03:40
+    - state: TODO
+      time: 2022-03-21 15:32:30
+    tags:
+    - offline
+    - power
+  - header: try to parse a basic vcalendar
+    properties:
+      timewindow: 15m
+    state-history:
+    - state: DONE
+      time: 2022-03-23 16:22:25
+    - state: TODO
+      time: 2022-03-21 14:42:25
+    - state: NEXT
+      time: 2022-03-20 22:01:37
+    tags:
+    - offline
+    - power
+  - header: try to implement date parsing
+    properties:
+      timewindow: 15m
+    state-history:
+    - state: DONE
+      time: 2022-03-24 11:41:48
+    - state: NEXT
+      time: 2022-03-23 16:22:41
+    - state: TODO
+      time: 2022-03-23 16:22:39
+    tags:
+    - offline
+    - power
+  - header: fix the ContentlineValue parsing
+    properties:
+      timewindow: 60m
+    state-history:
+    - state: DONE
+      time: 2022-03-24 14:18:50
+    - state: NEXT
+      time: 2022-03-24 12:30:11
+    tags:
+    - offline
+    - power
+  - header: refactor out property type
+    state-history:
+    - state: DONE
+      time: 2022-03-24 14:51:38
+    - state: TODO
+      time: 2022-03-24 14:18:58
+  - header: refactor out property
+    state-history:
+    - state: DONE
+      time: 2022-03-24 14:58:54
+    - state: TODO
+      time: 2022-03-24 14:51:42
+  - header: refactor out component
+    state-history:
+    - state: DONE
+      time: 2022-03-24 14:58:54
+    - state: TODO
+      time: 2022-03-24 14:18:58
+  - header: begin and end properties
+    state-history:
+    - state: DONE
+      time: 2022-03-24 15:27:05
+    - state: NEXT
+      time: 2022-03-24 14:58:55
+    - state: TODO
+      time: 2022-03-24 14:18:49
+  - header: try to implement datetime parsing
+    state-history:
+    - state: DONE
+      time: 2022-03-24 15:27:05
+    - state: TODO
+      time: 2022-03-23 16:22:39
+  - header: implement DTSTART
+    state-history:
+    - state: DONE
+      time: 2022-03-24 15:40:37
+    - state: NEXT
+      time: 2022-03-24 15:27:30
+    - state: TODO
+      time: 2022-03-24 15:27:24
+  - header: add dtstart to event
+    properties:
+      timewindow: 15m
+    state-history:
+    - state: DONE
+      time: 2022-03-24 20:09:07
+    - state: NEXT
+      time: 2022-03-24 15:40:38
+    - state: TODO
+      time: 2022-03-24 15:27:30
+    tags:
+    - offline
+  - header: add created to event
+    state-history:
+    - state: DONE
+      time: 2022-03-24 21:38:45
+    - state: NEXT
+      time: 2022-03-24 20:10:05
+    - state: TODO
+      time: 2022-03-24 20:09:10
+  - header: refactor out the property name in IsProperty and only parse the value
+    state-history:
+    - state: DONE
+      time: 2022-03-24 21:38:48
+    - state: TODO
+      time: 2022-03-24 20:09:00
+  - header: simplify component parsing
+    state-history:
+    - state: DONE
+      time: 2022-03-24 21:51:28
+    - state: NEXT
+      time: 2022-03-24 21:38:51
+  - header: description property
+    state-history:
+    - state: DONE
+      time: 2022-03-24 22:05:40
+    - state: TODO
+      time: 2022-03-24 21:58:16
+  - header: remove all the extra function bindings
+    state-history:
+    - state: DONE
+      time: 2022-03-24 22:05:41
+    - state: TODO
+      time: 2022-03-24 21:58:13
+  - header: try to implement the text parsing and rendering
+    state-history:
+    - state: DONE
+      time: 2022-03-24 22:25:24
+    - state: TODO
+      time: 2022-03-24 22:05:46
+  - header: check that all the haddocks work and the spec has been filled in in the
+      right places
+    state-history:
+    - state: DONE
+      time: 2022-03-27 11:39:53
+    - state: NEXT
+      time: 2022-03-24 22:25:25
+    - state: TODO
+      time: 2022-03-24 22:00:04
+  - header: copy-paste the types code for recurrence rules from smos
+    properties:
+      timewindow: 30m
+    state-history:
+    - state: DONE
+      time: 2022-04-07 10:23:50
+    - state: NEXT
+      time: 2022-03-27 11:40:14
+    tags:
+    - offline
+    - power
+  - header: get the recurrence rules to roundtrip
+    properties:
+      timewindow: 60m
+    state-history:
+    - state: NEXT
+      time: 2022-04-28 10:52:22
+    - state: NEXT
+      time: 2022-04-07 10:24:35
+    - state: TODO
+      time: 2022-04-07 10:23:57
+    tags:
+    - power
+  - header: Make it possible to use content line values without raw values for rrules
+    state-history:
+    - state: TODO
+      time: 2022-04-07 10:24:11
+  - header: for properties, use the names that they have in the spec
+    state-history:
+    - state: TODO
+      time: 2022-04-07 10:24:24
+  - header: for parameters, use the names that they have in the spec
+    state-history:
+    - state: TODO
+      time: 2022-04-07 10:24:32
+  - header: 'Don''t require prodid: some people don''t make them'
+    state-history:
+    - state: TODO
+      time: 2022-04-07 10:24:12
