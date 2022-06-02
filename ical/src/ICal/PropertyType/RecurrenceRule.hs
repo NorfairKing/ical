@@ -639,7 +639,8 @@ instance Validity BySecond where
   validate s@(Second w) =
     mconcat
       [ genericValidate s,
-        declare "Valid values are 0 to 60." $ w >= 0 && w <= 60
+        declare "Valid values are 0 to 60." $
+          w >= 0 && w <= 60
       ]
 
 -- | A minute within an hour
@@ -652,7 +653,8 @@ instance Validity ByMinute where
   validate s@(Minute w) =
     mconcat
       [ genericValidate s,
-        declare "Valid values are 0 to 59." $ w >= 0 && w <= 59
+        declare "Valid values are 0 to 59." $
+          w >= 0 && w <= 59
       ]
 
 -- | An hour within a day
@@ -665,7 +667,8 @@ instance Validity ByHour where
   validate s@(Hour w) =
     mconcat
       [ genericValidate s,
-        declare "Valid values are 0 to 23." $ w >= 0 && w <= 23
+        declare "Valid values are 0 to 23." $
+          w >= 0 && w <= 23
       ]
 
 -- | The BYDAY rule part specifies a COMMA-separated list of days of the week;
@@ -709,7 +712,8 @@ instance Validity ByMonthDay where
   validate md@(MonthDay i) =
     mconcat
       [ genericValidate md,
-        declare "Valid values are 1 to 31 or -31 to -1." $ i /= 0 && i >= -31 && i <= 31
+        declare "Valid values are 1 to 31 or -31 to -1." $
+          i /= 0 && i >= -31 && i <= 31
       ]
 
 -- | A day within a year
@@ -724,7 +728,8 @@ instance Validity ByYearDay where
   validate md@(YearDay i) =
     mconcat
       [ genericValidate md,
-        declare "Valid values are 1 to 366 or -366 to -1." $ i /= 0 && i >= -366 && i <= 366
+        declare "Valid values are 1 to 366 or -366 to -1." $
+          i /= 0 && i >= -366 && i <= 366
       ]
 
 -- | A week within a year
@@ -748,7 +753,8 @@ instance Validity ByWeekNo where
   validate bwn@(WeekNo i) =
     mconcat
       [ genericValidate bwn,
-        declare "Valid values are 1 to 53 or -53 to -1." $ i /= 0 && i >= -53 && i <= 53
+        declare "Valid values are 1 to 53 or -53 to -1." $
+          i /= 0 && i >= -53 && i <= 53
       ]
 
 -- | A month within a year
@@ -783,7 +789,8 @@ instance Validity BySetPos where
   validate sp@(SetPos w) =
     mconcat
       [ genericValidate sp,
-        declare "The set position is not zero" $ w /= 0
+        declare "The set position is not zero" $
+          w /= 0
       ]
 
 -- A month within a year
