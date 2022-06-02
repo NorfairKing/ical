@@ -9,8 +9,13 @@
 
 module ICal.PropertyType.RecurrenceRule where
 
+import qualified Data.CaseInsensitive as CI
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe
+import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Data.Time
 import Data.Validity
 import Data.Validity.Containers ()
@@ -19,6 +24,7 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
+import Text.Read
 
 #if !MIN_VERSION_time(1,9,5)
 deriving instance Ord DayOfWeek -- Silly that this doesn't exist. We need to be able to put days in a set
@@ -545,10 +551,10 @@ recurrenceRuleP ::
   Either String RecurrenceRule
 recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleFrequency <- requireParam contentLineValueParams
+  recurrenceRuleInterval <- fromMaybe (Interval 1) <$> optionalParam contentLineValueParams
   -- TODO
-  recurrenceRuleInterval <- undefined
-  recurrenceRuleUntilCount <- undefined
-  recurrenceRuleBySecond <- undefined
+  recurrenceRuleUntilCount <- undefined -- requireParam contentLineValueParams
+  recurrenceRuleBySecond <- undefined -- fromMaybe S.empty <$> optionalParam contentLineValueParams
   recurrenceRuleByMinute <- undefined
   recurrenceRuleByHour <- undefined
   recurrenceRuleByDay <- undefined
@@ -574,6 +580,21 @@ newtype Interval = Interval {unInterval :: Word}
 
 instance Validity Interval where
   validate i@(Interval w) = mconcat [genericValidate i, declare "The interval is not zero" $ w /= 0]
+
+instance IsParameter Interval where
+  parameterName Proxy = "INTERVAL"
+  parameterP = intervalP
+  parameterB = intervalB
+
+intervalP :: NonEmpty ParamValue -> Either String Interval
+intervalP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "INTERVAL did not look like a positive integer: " <> show c
+    Just w -> Right $ Interval w
+  p -> Left $ "Expected INTERVAL to be unquoted, but was quoted: " <> show p
+
+intervalB :: Interval -> NonEmpty ParamValue
+intervalB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unInterval
 
 data UntilCount
   = -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.

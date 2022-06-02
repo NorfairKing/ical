@@ -41,6 +41,11 @@ lookupParam m = do
   pvs <- M.lookup name m
   pure $ parameterP pvs
 
+optionalParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String (Maybe param)
+optionalParam m =
+  let name = parameterName (Proxy :: Proxy param)
+   in mapM parameterP (M.lookup name m)
+
 requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String param
 requireParam m = case lookupParam m of
   Nothing -> Left $ "Parameter not found: " <> show (parameterName (Proxy :: Proxy param))

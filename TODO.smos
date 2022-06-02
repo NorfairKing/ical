@@ -252,10 +252,62 @@ value:
     tags:
     - offline
     - power
+  - header: Interval
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:53
+  - header: UntilCount
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:52
+  - header: BySecond
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:52
+  - header: ByMinute
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:51
+  - header: ByHour
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:51
+  - header: ByDay
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:51
+  - header: ByMonthDay
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:50
+  - header: ByYearDay
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:50
+  - header: ByWeakNo
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:50
+    - state: TODO
+      time: 2022-06-02 06:08:49
+  - header: ByMonth
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:49
+  - header: WeekStart
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:49
+  - header: BySetPos
+    state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:48
   - header: get the recurrence rules to roundtrip
     properties:
       timewindow: 60m
     state-history:
+    - state: TODO
+      time: 2022-06-02 06:08:07
     - state: NEXT
       time: 2022-04-28 10:52:22
     - state: NEXT

@@ -7,10 +7,13 @@
 module ICal.PropertyTypeSpec where
 
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
+import ICal.Parameter
+import ICal.Parameter.Gen
 import ICal.PropertyType
 import ICal.PropertyType.Class
 import ICal.PropertyType.Gen
@@ -121,6 +124,17 @@ spec = do
       case timeP (mkSimpleContentLineValue "230000-0800") of
         Left _ -> pure ()
         Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
+
+  describe "Interval" $ do
+    genValidSpec @Interval
+    parameterSpec @Interval
+    let examples :: [(NonEmpty ParamValue, Interval)]
+        examples = [(["1"], Interval 1)]
+    forM_ examples $ \(pvs, interval) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right interval
+      it "can render this example" $
+        parameterB interval `shouldBe` pvs
 
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
