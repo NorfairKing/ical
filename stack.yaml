@@ -4,18 +4,24 @@ packages:
 - ical-gen
 extra-deps:
 - github: NorfairKing/autodocodec
-  commit: 9880ec062f1166bdac50b8eb59c6dd010bc9af0c
+  commit: 479390d82e4fb2a404c497d6b9a9fec1505b1e5e
   subdirs:
   - autodocodec
   - autodocodec-schema
   - autodocodec-yaml
+- github: NorfairKing/safe-coloured-text
+  commit: 675cb01fce5f46718416d7746de5b856ed90a63f
+  subdirs:
+  - safe-coloured-text
+  - safe-coloured-text-layout
+  - safe-coloured-text-terminfo
 - github: NorfairKing/sydtest
-  commit: 3bbfe1fa6a1b8dd820b4a0efcbbf984433d8e94a
+  commit: 130de92053c1c3d60a8f45d509210415ffbea530
   subdirs:
   - sydtest
   - sydtest-discover
 - github: NorfairKing/validity
-  commit: 881216e49b53f9896b696b21129d0b51e4df5060
+  commit: d88be911a7e2a84f6c089e9269aaed8d10a74acd
   subdirs:
   - genvalidity
   - genvalidity-aeson
