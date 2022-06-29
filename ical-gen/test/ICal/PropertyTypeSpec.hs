@@ -180,6 +180,28 @@ spec = do
       it "can render this example" $
         parameterB byMonthDay `shouldBe` pvs
 
+  describe "ByYearDay" $ do
+    genValidSpec @ByYearDay
+    parameterSpec @ByYearDay
+    let examples :: [(NonEmpty ParamValue, ByYearDay)]
+        examples = [(["1"], ByYearDay 1)]
+    forM_ examples $ \(pvs, byYearDay) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byYearDay
+      it "can render this example" $
+        parameterB byYearDay `shouldBe` pvs
+
+  describe "ByWeekNo" $ do
+    genValidSpec @ByWeekNo
+    parameterSpec @ByWeekNo
+    let examples :: [(NonEmpty ParamValue, ByWeekNo)]
+        examples = [(["1"], ByWeekNo 1)]
+    forM_ examples $ \(pvs, byWeekNo) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byWeekNo
+      it "can render this example" $
+        parameterB byWeekNo `shouldBe` pvs
+
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule

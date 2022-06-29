@@ -769,7 +769,7 @@ instance IsParameter ByMonthDay where
 byMonthDayP :: NonEmpty ParamValue -> Either String ByMonthDay
 byMonthDayP = singleParamP $ \case
   UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYMONTHDAY did not look like a positive integer: " <> show c
+    Nothing -> Left $ "BYMONTHDAY did not look like an integer: " <> show c
     Just w -> Right $ ByMonthDay w
   p -> Left $ "Expected BYMONTHDAY to be unquoted, but was quoted: " <> show p
 
@@ -781,16 +781,31 @@ byMonthDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByMonthDay
 -- Valid values are 1 to 366 or -366 to -1.  For example, -1 represents the
 -- last day of the year (December 31st) and -306 represents the 306th to the
 -- last day of the year (March 1st).
-newtype ByYearDay = YearDay {unYearDay :: Int}
+newtype ByYearDay = ByYearDay {unByYearDay :: Int}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByYearDay where
-  validate md@(YearDay i) =
+  validate md@(ByYearDay i) =
     mconcat
       [ genericValidate md,
         declare "Valid values are 1 to 366 or -366 to -1." $
           i /= 0 && i >= -366 && i <= 366
       ]
+
+instance IsParameter ByYearDay where
+  parameterName Proxy = "BYYEARDAY"
+  parameterP = byYearDayP
+  parameterB = byYearDayB
+
+byYearDayP :: NonEmpty ParamValue -> Either String ByYearDay
+byYearDayP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYYEARDAY did not look like an integer: " <> show c
+    Just w -> Right $ ByYearDay w
+  p -> Left $ "Expected BYYEARDAY to be unquoted, but was quoted: " <> show p
+
+byYearDayB :: ByYearDay -> NonEmpty ParamValue
+byYearDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByYearDay
 
 -- | A week within a year
 --
@@ -806,16 +821,31 @@ instance Validity ByYearDay where
 --
 -- Note: Assuming a Monday week start, week 53 can only occur when Thursday is
 -- January 1 or if it is a leap year and Wednesday is January 1.
-newtype ByWeekNo = WeekNo {unWeekNo :: Int}
+newtype ByWeekNo = ByWeekNo {unByWeekNo :: Int}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByWeekNo where
-  validate bwn@(WeekNo i) =
+  validate bwn@(ByWeekNo i) =
     mconcat
       [ genericValidate bwn,
         declare "Valid values are 1 to 53 or -53 to -1." $
           i /= 0 && i >= -53 && i <= 53
       ]
+
+instance IsParameter ByWeekNo where
+  parameterName Proxy = "BYWEEKNO"
+  parameterP = byWeekNoP
+  parameterB = byWeekNoB
+
+byWeekNoP :: NonEmpty ParamValue -> Either String ByWeekNo
+byWeekNoP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYWEEKNO did not look like an integer: " <> show c
+    Just w -> Right $ ByWeekNo w
+  p -> Left $ "Expected BYWEEKNO to be unquoted, but was quoted: " <> show p
+
+byWeekNoB :: ByWeekNo -> NonEmpty ParamValue
+byWeekNoB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByWeekNo
 
 -- | A month within a year
 --
@@ -842,16 +872,31 @@ type ByMonth = Month
 -- integer.  If present, this indicates the nth occurrence of the
 -- specific occurrence within the set of occurrences specified by the
 -- rule.
-newtype BySetPos = SetPos {unSetPos :: Int}
+newtype BySetPos = BySetPos {unBySetPos :: Int}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity BySetPos where
-  validate sp@(SetPos w) =
+  validate sp@(BySetPos w) =
     mconcat
       [ genericValidate sp,
         declare "The set position is not zero" $
           w /= 0
       ]
+
+instance IsParameter BySetPos where
+  parameterName Proxy = "BYSETPOS"
+  parameterP = bySetPosP
+  parameterB = bySetPosB
+
+bySetPosP :: NonEmpty ParamValue -> Either String BySetPos
+bySetPosP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYSETPOS did not look like an integer: " <> show c
+    Just w -> Right $ BySetPos w
+  p -> Left $ "Expected BYSETPOS to be unquoted, but was quoted: " <> show p
+
+bySetPosB :: BySetPos -> NonEmpty ParamValue
+bySetPosB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unBySetPos
 
 -- A month within a year
 --

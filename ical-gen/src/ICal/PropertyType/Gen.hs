@@ -92,7 +92,7 @@ instance GenValid ByMonthDay where
 instance GenValid ByYearDay where
   shrinkValid = shrinkValidStructurally
   genValid =
-    YearDay
+    ByYearDay
       <$> oneof
         [ choose (1, 366),
           choose (-366, -1)
@@ -101,7 +101,7 @@ instance GenValid ByYearDay where
 instance GenValid ByWeekNo where
   shrinkValid = shrinkValidStructurally
   genValid =
-    WeekNo
+    ByWeekNo
       <$> oneof
         [ choose (1, 53),
           choose (-53, -1)
@@ -109,7 +109,15 @@ instance GenValid ByWeekNo where
 
 instance GenValid BySetPos where
   shrinkValid = shrinkValidStructurally
-  genValid = SetPos <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (-s, -1)])
+  genValid =
+    BySetPos
+      <$> sized
+        ( \s ->
+            oneof
+              [ max 1 <$> choose (1, s),
+                min (-1) <$> choose (-s, -1)
+              ]
+        )
 
 instance GenValid RecurrenceRule where
   shrinkValid = shrinkValidStructurally
