@@ -13,9 +13,7 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid TZIDParam where
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
-  genValid = genValidStructurallyWithoutExtraChecking
+instance GenValid TZIDParam
 
 instance GenValid Frequency where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

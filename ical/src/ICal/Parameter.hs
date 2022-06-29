@@ -12,7 +12,9 @@
 
 module ICal.Parameter where
 
+import Control.Monad
 import Data.CaseInsensitive (CI)
+import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -20,7 +22,7 @@ import Data.Proxy
 import Data.String
 import Data.Text (Text)
 import Data.Validity
-import Data.Validity.Text ()
+import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
@@ -64,7 +66,12 @@ newtype TZIDParam = TZIDParam {unTZIDParam :: CI Text}
   deriving stock (Eq, Generic)
   deriving newtype (Show, IsString, Read)
 
-instance Validity TZIDParam
+instance Validity TZIDParam where
+  validate p@(TZIDParam ci) =
+    mconcat
+      [ genericValidate p,
+        decorateText (CI.original ci) validateSafeChar
+      ]
 
 instance IsParameter TZIDParam where
   parameterName Proxy = "TZID"
@@ -72,9 +79,10 @@ instance IsParameter TZIDParam where
   parameterB = tzIDParamB
 
 tzIDParamP :: NonEmpty ParamValue -> Either String TZIDParam
-tzIDParamP = singleParamP $ \case
-  UnquotedParam c -> Right $ TZIDParam {unTZIDParam = c}
-  p -> Left $ "Expected TZIDParam to be unquoted, but was quoted: " <> show p
+tzIDParamP = singleParamP $
+  (prettyValidate <=<) $ \case
+    UnquotedParam c -> Right $ TZIDParam {unTZIDParam = c}
+    p -> Left $ "Expected TZIDParam to be unquoted, but was quoted: " <> show p
 
 tzIDParamB :: TZIDParam -> NonEmpty ParamValue
 tzIDParamB = (:| []) . UnquotedParam . unTZIDParam
