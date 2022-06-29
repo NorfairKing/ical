@@ -632,44 +632,89 @@ instance Validity UntilCount where
 -- | A second within a minute
 --
 -- Valid values are 0 to 60.
-newtype BySecond = Second {unSecond :: Word}
+newtype BySecond = BySecond {unBySecond :: Word}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity BySecond where
-  validate s@(Second w) =
+  validate s@(BySecond w) =
     mconcat
       [ genericValidate s,
         declare "Valid values are 0 to 60." $
           w >= 0 && w <= 60
       ]
 
+instance IsParameter BySecond where
+  parameterName Proxy = "BYSECOND"
+  parameterP = bySecondP
+  parameterB = bySecondB
+
+bySecondP :: NonEmpty ParamValue -> Either String BySecond
+bySecondP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYSECOND did not look like a positive integer: " <> show c
+    Just w -> Right $ BySecond w
+  p -> Left $ "Expected BYSECOND to be unquoted, but was quoted: " <> show p
+
+bySecondB :: BySecond -> NonEmpty ParamValue
+bySecondB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unBySecond
+
 -- | A minute within an hour
 --
 -- Valid values are 0 to 59.
-newtype ByMinute = Minute {unMinute :: Word}
+newtype ByMinute = ByMinute {unByMinute :: Word}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByMinute where
-  validate s@(Minute w) =
+  validate s@(ByMinute w) =
     mconcat
       [ genericValidate s,
         declare "Valid values are 0 to 59." $
           w >= 0 && w <= 59
       ]
 
+instance IsParameter ByMinute where
+  parameterName Proxy = "BYMINUTE"
+  parameterP = byMinuteP
+  parameterB = byMinuteB
+
+byMinuteP :: NonEmpty ParamValue -> Either String ByMinute
+byMinuteP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYMINUTE did not look like a positive integer: " <> show c
+    Just w -> Right $ ByMinute w
+  p -> Left $ "Expected BYMINUTE to be unquoted, but was quoted: " <> show p
+
+byMinuteB :: ByMinute -> NonEmpty ParamValue
+byMinuteB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByMinute
+
 -- | An hour within a day
 --
 -- Valid values are 0 to 23.
-newtype ByHour = Hour {unHour :: Word}
+newtype ByHour = ByHour {unByHour :: Word}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByHour where
-  validate s@(Hour w) =
+  validate s@(ByHour w) =
     mconcat
       [ genericValidate s,
         declare "Valid values are 0 to 23." $
           w >= 0 && w <= 23
       ]
+
+instance IsParameter ByHour where
+  parameterName Proxy = "BYHOUR"
+  parameterP = byHourP
+  parameterB = byHourB
+
+byHourP :: NonEmpty ParamValue -> Either String ByHour
+byHourP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYHOUR did not look like a positive integer: " <> show c
+    Just w -> Right $ ByHour w
+  p -> Left $ "Expected BYHOUR to be unquoted, but was quoted: " <> show p
+
+byHourB :: ByHour -> NonEmpty ParamValue
+byHourB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByHour
 
 -- | The BYDAY rule part specifies a COMMA-separated list of days of the week;
 --

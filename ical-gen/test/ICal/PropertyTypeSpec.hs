@@ -136,6 +136,39 @@ spec = do
       it "can render this example" $
         parameterB interval `shouldBe` pvs
 
+  describe "BySecond" $ do
+    genValidSpec @BySecond
+    parameterSpec @BySecond
+    let examples :: [(NonEmpty ParamValue, BySecond)]
+        examples = [(["1"], BySecond 1)]
+    forM_ examples $ \(pvs, bySecond) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right bySecond
+      it "can render this example" $
+        parameterB bySecond `shouldBe` pvs
+
+  describe "ByMinute" $ do
+    genValidSpec @ByMinute
+    parameterSpec @ByMinute
+    let examples :: [(NonEmpty ParamValue, ByMinute)]
+        examples = [(["1"], ByMinute 1)]
+    forM_ examples $ \(pvs, byMinute) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byMinute
+      it "can render this example" $
+        parameterB byMinute `shouldBe` pvs
+
+  describe "ByHour" $ do
+    genValidSpec @ByHour
+    parameterSpec @ByHour
+    let examples :: [(NonEmpty ParamValue, ByHour)]
+        examples = [(["1"], ByHour 1)]
+    forM_ examples $ \(pvs, byHour) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byHour
+      it "can render this example" $
+        parameterB byHour `shouldBe` pvs
+
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule

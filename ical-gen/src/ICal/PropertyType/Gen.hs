@@ -62,22 +62,22 @@ instance GenValid Interval where
 
 instance GenValid BySecond where
   shrinkValid = shrinkValidStructurally
-  genValid = Second <$> choose (0, 60)
+  genValid = BySecond <$> choose (0, 60)
 
 instance GenValid ByMinute where
   shrinkValid = shrinkValidStructurally
-  genValid = Minute <$> choose (0, 59)
+  genValid = ByMinute <$> choose (0, 59)
 
 instance GenValid ByHour where
   shrinkValid = shrinkValidStructurally
-  genValid = Hour <$> choose (0, 23)
+  genValid = ByHour <$> choose (0, 23)
 
 instance GenValid ByDay where
   shrinkValid = shrinkValidStructurally
   genValid =
     oneof
       [ Every <$> genValid,
-        Specific <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (- s, - 1)]) <*> genValid
+        Specific <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (-s, -1)]) <*> genValid
       ]
 
 instance GenValid ByMonthDay where
@@ -86,7 +86,7 @@ instance GenValid ByMonthDay where
     MonthDay
       <$> oneof
         [ choose (1, 31),
-          choose (-31, - 1)
+          choose (-31, -1)
         ]
 
 instance GenValid ByYearDay where
@@ -95,7 +95,7 @@ instance GenValid ByYearDay where
     YearDay
       <$> oneof
         [ choose (1, 366),
-          choose (-366, - 1)
+          choose (-366, -1)
         ]
 
 instance GenValid ByWeekNo where
@@ -104,12 +104,12 @@ instance GenValid ByWeekNo where
     WeekNo
       <$> oneof
         [ choose (1, 53),
-          choose (-53, - 1)
+          choose (-53, -1)
         ]
 
 instance GenValid BySetPos where
   shrinkValid = shrinkValidStructurally
-  genValid = SetPos <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (- s, - 1)])
+  genValid = SetPos <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (-s, -1)])
 
 instance GenValid RecurrenceRule where
   shrinkValid = shrinkValidStructurally
