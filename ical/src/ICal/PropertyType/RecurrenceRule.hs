@@ -750,16 +750,31 @@ instance Validity ByDay where
 --
 -- Valid values are 1 to 31 or -31 to -1.  For example, -10 represents the
 -- tenth to the last day of the month.
-newtype ByMonthDay = MonthDay {unMonthDay :: Int}
+newtype ByMonthDay = ByMonthDay {unByMonthDay :: Int}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByMonthDay where
-  validate md@(MonthDay i) =
+  validate md@(ByMonthDay i) =
     mconcat
       [ genericValidate md,
         declare "Valid values are 1 to 31 or -31 to -1." $
           i /= 0 && i >= -31 && i <= 31
       ]
+
+instance IsParameter ByMonthDay where
+  parameterName Proxy = "BYMONTHDAY"
+  parameterP = byMonthDayP
+  parameterB = byMonthDayB
+
+byMonthDayP :: NonEmpty ParamValue -> Either String ByMonthDay
+byMonthDayP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYMONTHDAY did not look like a positive integer: " <> show c
+    Just w -> Right $ ByMonthDay w
+  p -> Left $ "Expected BYMONTHDAY to be unquoted, but was quoted: " <> show p
+
+byMonthDayB :: ByMonthDay -> NonEmpty ParamValue
+byMonthDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByMonthDay
 
 -- | A day within a year
 --

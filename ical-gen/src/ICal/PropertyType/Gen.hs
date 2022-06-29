@@ -83,7 +83,7 @@ instance GenValid ByDay where
 instance GenValid ByMonthDay where
   shrinkValid = shrinkValidStructurally
   genValid =
-    MonthDay
+    ByMonthDay
       <$> oneof
         [ choose (1, 31),
           choose (-31, -1)

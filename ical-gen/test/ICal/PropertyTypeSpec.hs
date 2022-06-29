@@ -169,6 +169,17 @@ spec = do
       it "can render this example" $
         parameterB byHour `shouldBe` pvs
 
+  describe "ByMonthDay" $ do
+    genValidSpec @ByMonthDay
+    parameterSpec @ByMonthDay
+    let examples :: [(NonEmpty ParamValue, ByMonthDay)]
+        examples = [(["1"], ByMonthDay 1)]
+    forM_ examples $ \(pvs, byMonthDay) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byMonthDay
+      it "can render this example" $
+        parameterB byMonthDay `shouldBe` pvs
+
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule
