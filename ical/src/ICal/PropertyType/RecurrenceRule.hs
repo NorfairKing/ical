@@ -554,16 +554,16 @@ recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleInterval <- fromMaybe (Interval 1) <$> optionalParam contentLineValueParams
   -- TODO
   recurrenceRuleUntilCount <- undefined -- requireParam contentLineValueParams
-  recurrenceRuleBySecond <- undefined -- fromMaybe S.empty <$> optionalParam contentLineValueParams
-  recurrenceRuleByMinute <- undefined
-  recurrenceRuleByHour <- undefined
+  recurrenceRuleBySecond <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
+  recurrenceRuleByMinute <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
+  recurrenceRuleByHour <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByDay <- undefined
-  recurrenceRuleByMonthDay <- undefined
-  recurrenceRuleByYearDay <- undefined
-  recurrenceRuleByWeekNo <- undefined
-  recurrenceRuleByMonth <- undefined
+  recurrenceRuleByMonthDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
+  recurrenceRuleByYearDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
+  recurrenceRuleByWeekNo <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
+  recurrenceRuleByMonth <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleWeekStart <- undefined
-  recurrenceRuleBySetPos <- undefined
+  recurrenceRuleBySetPos <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   pure RecurrenceRule {..}
 
 -- | Interval

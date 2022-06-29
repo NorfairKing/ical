@@ -2,10 +2,8 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -16,9 +14,12 @@ import Control.Monad
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Proxy
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.String
 import Data.Text (Text)
 import Data.Validity
@@ -47,6 +48,17 @@ optionalParam :: forall param. IsParameter param => Map ParamName (NonEmpty Para
 optionalParam m =
   let name = parameterName (Proxy :: Proxy param)
    in mapM parameterP (M.lookup name m)
+
+optionalParamSet ::
+  forall param.
+  (Ord param, IsParameter param) =>
+  Map ParamName (NonEmpty ParamValue) ->
+  Either String (Maybe (Set param))
+optionalParamSet m =
+  let name = parameterName (Proxy :: Proxy param)
+   in mapM
+        (fmap S.fromList . mapM (parameterP . NE.singleton) . NE.toList)
+        (M.lookup name m)
 
 requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String param
 requireParam m = case lookupParam m of
