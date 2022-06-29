@@ -202,6 +202,28 @@ spec = do
       it "can render this example" $
         parameterB byWeekNo `shouldBe` pvs
 
+  describe "ByMonth" $ do
+    genValidSpec @ByMonth
+    parameterSpec @ByMonth
+    let examples :: [(NonEmpty ParamValue, ByMonth)]
+        examples = [(["1"], ByMonth January)]
+    forM_ examples $ \(pvs, byMonth) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byMonth
+      it "can render this example" $
+        parameterB byMonth `shouldBe` pvs
+
+  describe "BySetPos" $ do
+    genValidSpec @BySetPos
+    parameterSpec @BySetPos
+    let examples :: [(NonEmpty ParamValue, BySetPos)]
+        examples = [(["1"], BySetPos 1)]
+    forM_ examples $ \(pvs, bySetPos) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right bySetPos
+      it "can render this example" $
+        parameterB bySetPos `shouldBe` pvs
+
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule

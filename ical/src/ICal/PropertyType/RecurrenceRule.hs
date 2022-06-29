@@ -852,7 +852,25 @@ byWeekNoB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByWeekNo
 -- Valid values are 1 to 12.
 --
 -- In Haskell we represent these using a 'Month' value.
-type ByMonth = Month
+newtype ByMonth = ByMonth {unByMonth :: Month}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity ByMonth
+
+instance IsParameter ByMonth where
+  parameterName Proxy = "BYMONTH"
+  parameterP = byMonthP
+  parameterB = byMonthB
+
+byMonthP :: NonEmpty ParamValue -> Either String ByMonth
+byMonthP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) >>= monthNoToMonth of
+    Nothing -> Left $ "BYMONTH did not look like a positive integer: " <> show c
+    Just w -> Right $ ByMonth w
+  p -> Left $ "Expected BYMONTH to be unquoted, but was quoted: " <> show p
+
+byMonthB :: ByMonth -> NonEmpty ParamValue
+byMonthB = (:| []) . UnquotedParam . CI.mk . T.pack . show . monthToMonthNo . unByMonth
 
 -- | A position within the recurrence set
 --

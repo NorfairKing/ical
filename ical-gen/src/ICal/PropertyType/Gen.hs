@@ -107,6 +107,8 @@ instance GenValid ByWeekNo where
           choose (-53, -1)
         ]
 
+instance GenValid ByMonth
+
 instance GenValid BySetPos where
   shrinkValid = shrinkValidStructurally
   genValid =
