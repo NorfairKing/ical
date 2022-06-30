@@ -1,8 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -21,7 +19,9 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
-import ICal.PropertyType
+import ICal.PropertyType.Class
+import ICal.PropertyType.Date
+import ICal.PropertyType.DateTime
 
 -- |
 --

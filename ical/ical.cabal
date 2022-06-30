@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.7.
 --
 -- see: https://github.com/sol/hpack
 
@@ -16,6 +16,11 @@ library
       ICal.Parameter
       ICal.Property
       ICal.PropertyType
+      ICal.PropertyType.Class
+      ICal.PropertyType.Date
+      ICal.PropertyType.DateTime
+      ICal.PropertyType.RecurrenceRule
+      ICal.PropertyType.Time
       ICal.UnfoldedLine
   other-modules:
       Paths_ical

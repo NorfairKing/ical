@@ -1,6 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.Parameter.Gen where
@@ -14,6 +13,10 @@ import Test.Syd
 import Test.Syd.Validity
 
 instance GenValid TZIDParam
+
+instance GenValid Frequency where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
 parameterSpec ::
   forall a.

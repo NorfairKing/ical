@@ -70,22 +70,19 @@ parseUnfoldedLinesByteString = (left show . TE.decodeUtf8') >=> parseUnfoldedLin
 
 -- TODO we can probably do something more efficient here with megaparsec.
 parseUnfoldedLinesText :: Text -> Either String [UnfoldedLine]
-parseUnfoldedLinesText t =
-  if T.null t
-    then Right []
-    else
-      if T.takeEnd 2 t == "\r\n"
-        then
-          Right
-            . map UnfoldedLine
-            . init -- Ignore the last, empty, line
-            . T.splitOn "\r\n"
-            -- Replace a newline + tab character.
-            . T.replace "\r\n\t" ""
-            -- Replace a newline + space character.
-            . T.replace "\r\n " ""
-            $ t
-        else Left "Document did not end in a crlf."
+parseUnfoldedLinesText t
+  | T.null t = Right []
+  | T.takeEnd 2 t == "\r\n" =
+      Right
+        . map UnfoldedLine
+        . init -- Ignore the last, empty, line
+        . T.splitOn "\r\n"
+        -- Replace a newline + tab character.
+        . T.replace "\r\n\t" ""
+        -- Replace a newline + space character.
+        . T.replace "\r\n " ""
+        $ t
+  | otherwise = Left "Document did not end in a crlf."
 
 renderUnfoldedLinesText :: [UnfoldedLine] -> Text
 renderUnfoldedLinesText = LT.toStrict . LTB.toLazyText . unfoldedLinesB

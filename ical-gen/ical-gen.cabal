@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.7.
 --
 -- see: https://github.com/sol/hpack
 
@@ -48,6 +48,10 @@ test-suite ical-test
       ICal.ContentLineSpec
       ICal.ParameterSpec
       ICal.PropertySpec
+      ICal.PropertyType.DateSpec
+      ICal.PropertyType.DateTimeSpec
+      ICal.PropertyType.RecurrenceRuleSpec
+      ICal.PropertyType.TimeSpec
       ICal.PropertyTypeSpec
       ICal.UnfoldedLineSpec
       ICalSpec
