@@ -8,7 +8,7 @@ module ICal.PropertySpec where
 import Data.Time
 import ICal.Property
 import ICal.Property.Gen
-import ICal.PropertyType
+import ICal.PropertyType.DateTime
 import Test.Syd
 import Test.Syd.Validity
 

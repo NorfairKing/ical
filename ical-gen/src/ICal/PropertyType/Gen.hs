@@ -14,9 +14,9 @@ import qualified Data.Set as S
 import Data.Time (LocalTime (..), TimeOfDay (..))
 import ICal.Parameter
 import ICal.Parameter.Gen ()
-import ICal.PropertyType
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
+import ICal.PropertyType.DateTime
 import ICal.PropertyType.RecurrenceRule
 import ICal.PropertyType.Time
 import Test.QuickCheck
