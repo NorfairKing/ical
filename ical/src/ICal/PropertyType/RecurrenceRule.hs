@@ -556,7 +556,13 @@ recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleFrequency <- requireParam contentLineValueParams
   recurrenceRuleInterval <- fromMaybe (Interval 1) <$> optionalParam contentLineValueParams
   -- TODO
-  recurrenceRuleUntilCount <- undefined -- requireParam contentLineValueParams
+  mUntil <- optionalParam contentLineValueParams
+  mCount <- optionalParam contentLineValueParams
+  let recurrenceRuleUntilCount = case (mUntil, mCount) of
+        (Nothing, Nothing) -> Indefinitely
+        (Nothing, Just c) -> Count c
+        -- Don't reject invalid ical that defines both, but ignore the count.
+        (Just u, _) -> Until u
   recurrenceRuleBySecond <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByMinute <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByHour <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
@@ -614,23 +620,16 @@ data UntilCount
     -- sub-components the UNTIL rule part MUST always be specified as a date
     -- with UTC time.  If specified as a DATE-TIME value, then it MUST be
     -- specified in a UTC time format.
-    Until LocalTime
+    Until !Until
   | -- | The COUNT rule part defines the number of occurrences at which to range-bound the recurrence.
     --
     -- The "DTSTART" property value always counts as the first occurrence.
-    Count Word
+    Count !Count
   | -- | If [the UNTIL rule part is] not present, and the COUNT rule part is also not present, the "RRULE" is considered to repeat forever.
     Indefinitely
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity UntilCount where
-  validate uc =
-    mconcat
-      [ genericValidate uc,
-        case uc of
-          Until lt -> validateImpreciseLocalTime lt
-          _ -> valid
-      ]
+instance Validity UntilCount
 
 -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.
 --
@@ -682,6 +681,32 @@ untilB =
   (:| []) . UnquotedParam . CI.mk . \case
     UntilDate d -> renderDate d
     UntilDateTime lt -> renderDateTimeUTC lt
+
+newtype Count = Count_ {unCount :: Word}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Count where
+  validate s@(Count_ w) =
+    mconcat
+      [ genericValidate s,
+        declare "Valid values are 0 to 60." $
+          w >= 0 && w <= 60
+      ]
+
+instance IsParameter Count where
+  parameterName Proxy = "COUNT"
+  parameterP = countP
+  parameterB = countB
+
+countP :: NonEmpty ParamValue -> Either String Count
+countP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "COUNT did not look like a positive integer: " <> show c
+    Just w -> Right $ Count_ w
+  p -> Left $ "Expected COUNT to be unquoted, but was quoted: " <> show p
+
+countB :: Count -> NonEmpty ParamValue
+countB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unCount
 
 -- | A second within a minute
 --
@@ -799,6 +824,21 @@ instance Validity ByDay where
           Every _ -> valid
           Specific i _ -> declare "The specific weekday number is not zero" $ i /= 0
       ]
+
+instance IsParameter ByDay where
+  parameterName Proxy = "BYDAY"
+  parameterP = byDayP
+  parameterB = byDayB
+
+byDayP :: NonEmpty ParamValue -> Either String ByDay
+byDayP = singleParamP $ \case
+  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
+    Nothing -> Left $ "BYDAY did not look like an integer: " <> show c
+    Just w -> Right $ ByDay w
+  p -> Left $ "Expected BYDAY to be unquoted, but was quoted: " <> show p
+
+byDayB :: ByDay -> NonEmpty ParamValue
+byDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByDay
 
 -- | A day within a month
 --

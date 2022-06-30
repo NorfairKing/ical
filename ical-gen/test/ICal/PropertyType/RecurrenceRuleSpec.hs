@@ -8,10 +8,12 @@ module ICal.PropertyType.RecurrenceRuleSpec where
 
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.Parameter.Gen
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
 import Test.Syd
@@ -35,14 +37,27 @@ spec = do
     parameterSpec @Until
     let examples :: [(NonEmpty ParamValue, Until)]
         examples =
-          [ (["20220622"], UntilDate undefined),
-            (["20220622T124500"], UntilDateTime undefined)
+          [ (["20220622"], UntilDate $ Date $ fromGregorian 2022 06 22),
+            (["20220622T124500Z"], UntilDateTime $ LocalTime (fromGregorian 2022 06 22) (TimeOfDay 12 45 00))
           ]
     forM_ examples $ \(pvs, until_) -> do
       it "can parse this example" $
         parameterP pvs `shouldBe` Right until_
       it "can render this example" $
         parameterB until_ `shouldBe` pvs
+
+  describe "Count" $ do
+    genValidSpec @Count
+    parameterSpec @Count
+    let examples :: [(NonEmpty ParamValue, Count)]
+        examples =
+          [ (["1"], Count_ 1)
+          ]
+    forM_ examples $ \(pvs, count_) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right count_
+      it "can render this example" $
+        parameterB count_ `shouldBe` pvs
 
   describe "BySecond" $ do
     genValidSpec @BySecond
@@ -76,6 +91,21 @@ spec = do
         parameterP pvs `shouldBe` Right byHour
       it "can render this example" $
         parameterB byHour `shouldBe` pvs
+
+  describe "ByDay" $ do
+    genValidSpec @ByDay
+    parameterSpec @ByDay
+    let examples :: [(NonEmpty ParamValue, ByDay)]
+        examples =
+          [ (["SU"], Every Sunday),
+            (["-1MO"], Specific (-1) Monday),
+            (["2TU"], Specific 2 Tuesday)
+          ]
+    forM_ examples $ \(pvs, byDay) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right byDay
+      it "can render this example" $
+        parameterB byDay `shouldBe` pvs
 
   describe "ByMonthDay" $ do
     genValidSpec @ByMonthDay

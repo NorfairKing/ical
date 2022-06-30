@@ -48,14 +48,7 @@ instance GenValid Month where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = genValidStructurallyWithoutExtraChecking
 
-instance GenValid UntilCount where
-  shrinkValid = shrinkValidStructurally
-  genValid =
-    oneof
-      [ pure Indefinitely,
-        Count <$> sized (\s -> max 1 <$> choose (1, fromIntegral s)),
-        Until <$> genImpreciseLocalTime
-      ]
+instance GenValid UntilCount
 
 instance GenValid Interval where
   shrinkValid = shrinkValidStructurally
@@ -67,6 +60,8 @@ instance GenValid Until where
       [ UntilDate <$> genValid,
         UntilDateTime <$> genImpreciseLocalTime
       ]
+
+instance GenValid Count
 
 instance GenValid BySecond where
   shrinkValid = shrinkValidStructurally
