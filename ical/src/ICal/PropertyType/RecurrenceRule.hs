@@ -13,6 +13,7 @@ import Control.Applicative
 import Data.CaseInsensitive (CI (..))
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -474,7 +475,7 @@ data RecurrenceRule = RecurrenceRule
     -- default value is MO.
     --
     -- Note: We did not chose 'Maybe DayOfWeek' because that would have two ways to represent the default value.
-    recurrenceRuleWeekStart :: !DayOfWeek,
+    recurrenceRuleWeekStart :: !WeekStart,
     -- | The BYSETPOS rule part specifies a COMMA-separated list of values
     -- that corresponds to the nth occurrence within the set of recurrence
     -- instances specified by the rule.
@@ -534,14 +535,6 @@ instance IsPropertyType RecurrenceRule where
   propertyTypeP = recurrenceRuleP
   propertyTypeB = recurrenceRuleB
 
-recurrenceRuleB ::
-  RecurrenceRule -> ContentLineValue
-recurrenceRuleB RecurrenceRule {..} =
-  ContentLineValue
-    { contentLineValueRaw = "", -- TODO this should be empty I think
-      contentLineValueParams = paramMap recurrenceRuleFrequency
-    }
-
 -- TODO comply with this:
 -- @
 --     Compliant applications MUST accept rule
@@ -557,7 +550,6 @@ recurrenceRuleP ::
 recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleFrequency <- requireParam contentLineValueParams
   recurrenceRuleInterval <- fromMaybe (Interval 1) <$> optionalParam contentLineValueParams
-  -- TODO
   mUntil <- optionalParam contentLineValueParams
   mCount <- optionalParam contentLineValueParams
   let recurrenceRuleUntilCount = case (mUntil, mCount) of
@@ -568,14 +560,40 @@ recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleBySecond <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByMinute <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByHour <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByDay <- optionalParam contentLineValueParams
+  recurrenceRuleByDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByMonthDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByYearDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByWeekNo <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByMonth <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleWeekStart <- undefined
+  recurrenceRuleWeekStart <- fromMaybe (WeekStart Monday) <$> optionalParam contentLineValueParams
   recurrenceRuleBySetPos <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   pure RecurrenceRule {..}
+
+recurrenceRuleB ::
+  RecurrenceRule -> ContentLineValue
+recurrenceRuleB RecurrenceRule {..} =
+  ContentLineValue
+    { contentLineValueRaw = "", -- TODO this should be empty I think
+      contentLineValueParams =
+        M.unions
+          [ paramMap recurrenceRuleFrequency,
+            paramMap recurrenceRuleInterval,
+            case recurrenceRuleUntilCount of
+              Until u -> paramMap u
+              Count c -> paramMap c
+              Indefinitely -> M.empty,
+            setParamMap recurrenceRuleBySecond,
+            setParamMap recurrenceRuleByMinute,
+            setParamMap recurrenceRuleByHour,
+            setParamMap recurrenceRuleByDay,
+            setParamMap recurrenceRuleByMonthDay,
+            setParamMap recurrenceRuleByYearDay,
+            setParamMap recurrenceRuleByWeekNo,
+            setParamMap recurrenceRuleByMonth,
+            paramMap recurrenceRuleWeekStart,
+            setParamMap recurrenceRuleBySetPos
+          ]
+    }
 
 -- | Interval
 --
@@ -1051,6 +1069,31 @@ bySetPosP = singleParamP $ \case
 bySetPosB :: BySetPos -> NonEmpty ParamValue
 bySetPosB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unBySetPos
 
+-- | Week Start
+-- @
+--     The WKST rule part specifies the day on which the workweek starts.
+--     Valid values are MO, TU, WE, TH, FR, SA, and SU.  This is
+--     significant when a WEEKLY "RRULE" has an interval greater than 1,
+--     and a BYDAY rule part is specified.  This is also significant when
+--     in a YEARLY "RRULE" when a BYWEEKNO rule part is specified.  The
+--     default value is MO.
+-- @
+newtype WeekStart = WeekStart {unWeekStart :: DayOfWeek}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity WeekStart
+
+instance IsParameter WeekStart where
+  parameterName Proxy = "WKST"
+  parameterP = weekStartP
+  parameterB = weekStartB
+
+weekStartP :: NonEmpty ParamValue -> Either String WeekStart
+weekStartP = anySingleParamP $ fmap WeekStart <$> parseDayOfWeek . CI.mk
+
+weekStartB :: WeekStart -> NonEmpty ParamValue
+weekStartB = (:| []) . UnquotedParam . renderDayOfWeek . unWeekStart
+
 -- A month within a year
 --
 -- Until 'time' has this too'
@@ -1117,6 +1160,6 @@ makeRecurrenceRule freq =
       recurrenceRuleByYearDay = S.empty,
       recurrenceRuleByWeekNo = S.empty,
       recurrenceRuleByMonth = S.empty,
-      recurrenceRuleWeekStart = Monday,
+      recurrenceRuleWeekStart = WeekStart Monday,
       recurrenceRuleBySetPos = S.empty
     }

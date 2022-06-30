@@ -18,6 +18,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Proxy
+import Data.Semigroup
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.String
@@ -82,6 +83,11 @@ requireParam m = case lookupParam m of
 
 paramMap :: forall param. IsParameter param => param -> Map ParamName (NonEmpty ParamValue)
 paramMap param = M.singleton (parameterName (Proxy :: Proxy param)) (parameterB param)
+
+setParamMap :: forall param. IsParameter param => Set param -> Map ParamName (NonEmpty ParamValue)
+setParamMap params = case NE.nonEmpty (map parameterB (S.toList params)) of
+  Nothing -> M.empty
+  Just ne -> M.singleton (parameterName (Proxy :: Proxy param)) (sconcat ne)
 
 singleParamP :: (ParamValue -> Either String a) -> NonEmpty ParamValue -> Either String a
 singleParamP func = \case

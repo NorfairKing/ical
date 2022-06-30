@@ -117,6 +117,8 @@ instance GenValid ByWeekNo where
 
 instance GenValid ByMonth
 
+instance GenValid WeekStart
+
 instance GenValid BySetPos where
   shrinkValid = shrinkValidStructurally
   genValid =

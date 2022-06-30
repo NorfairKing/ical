@@ -254,54 +254,87 @@ value:
     - power
   - header: Interval
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:18
     - state: TODO
       time: 2022-06-02 06:08:53
   - header: UntilCount
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:18
     - state: TODO
       time: 2022-06-02 06:08:52
   - header: BySecond
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:18
     - state: TODO
       time: 2022-06-02 06:08:52
   - header: ByMinute
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:18
     - state: TODO
       time: 2022-06-02 06:08:51
   - header: ByHour
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:17
     - state: TODO
       time: 2022-06-02 06:08:51
   - header: ByDay
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:17
     - state: TODO
       time: 2022-06-02 06:08:51
   - header: ByMonthDay
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:17
     - state: TODO
       time: 2022-06-02 06:08:50
   - header: ByYearDay
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:17
     - state: TODO
       time: 2022-06-02 06:08:50
   - header: ByWeakNo
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:17
     - state: TODO
       time: 2022-06-02 06:08:50
     - state: TODO
       time: 2022-06-02 06:08:49
   - header: ByMonth
     state-history:
-    - state: TODO
-      time: 2022-06-02 06:08:49
-  - header: WeekStart
-    state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:16
     - state: TODO
       time: 2022-06-02 06:08:49
   - header: BySetPos
     state-history:
+    - state: DONE
+      time: 2022-06-30 16:31:15
     - state: TODO
       time: 2022-06-02 06:08:48
+  - header: WeekStart
+    state-history:
+    - state: DONE
+      time: 2022-06-30 16:46:38
+    - state: NEXT
+      time: 2022-06-30 16:31:20
+    - state: TODO
+      time: 2022-06-02 06:08:49
+  - header: A type for parameter values so that the set parsing and building is not
+      so janky
+    state-history:
+    - state: DONE
+      time: 2022-06-30 16:46:38
+    - state: TODO
+      time: 2022-06-30 16:31:09
   - header: get the recurrence rules to roundtrip
     properties:
       timewindow: 60m
