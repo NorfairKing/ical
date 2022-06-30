@@ -22,6 +22,7 @@ import ICal.ContentLine
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
+import ICal.PropertyType.RecurrenceRule
 
 -- |
 --
@@ -98,6 +99,11 @@ instance IsProperty End where
   propertyName Proxy = "END"
   propertyP = fmap End . propertyTypeP
   propertyB = propertyTypeB . unEnd
+
+instance IsProperty RecurrenceRule where
+  propertyName Proxy = "RRULE"
+  propertyP = recurrenceRuleP
+  propertyB = recurrenceRuleB
 
 -- |
 --

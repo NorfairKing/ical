@@ -19,6 +19,8 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Monoid
 import Data.Proxy
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -28,6 +30,7 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
+import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
@@ -117,6 +120,9 @@ propertyListB = DList.singleton . propertyContentLineB
 
 propertyMListB :: IsProperty property => Maybe property -> DList ContentLine
 propertyMListB = maybe DList.empty (DList.singleton . propertyContentLineB)
+
+propertySetB :: (Ord property, IsProperty property) => Set property -> DList ContentLine
+propertySetB = DList.fromList . map propertyContentLineB . S.toList
 
 -- |
 --
@@ -249,16 +255,29 @@ parseFirst = go
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
 parseFirstMaybe = go
   where
+    name = propertyName (Proxy :: Proxy a)
     go :: [ContentLine] -> CP (Maybe a)
     go = \case
       [] -> pure Nothing
       -- TODO do better than a linear search?
       (cl : cls) ->
-        if contentLineName cl == propertyName (Proxy :: Proxy a)
+        if contentLineName cl == name
           then case propertyContentLineP cl of
             Right result -> pure (Just result)
             Left err -> fail err
           else go cls
+
+parseSet ::
+  forall a.
+  (Ord a, IsProperty a) =>
+  [ContentLine] ->
+  CP (Set a)
+parseSet cls =
+  fmap S.fromList $
+    mapM (either fail pure . propertyContentLineP) $
+      filter ((== name) . contentLineName) cls
+  where
+    name = propertyName (Proxy :: Proxy a)
 
 -- |
 --
@@ -444,7 +463,15 @@ data Event = Event
     --     ;
     -- @
     eventCreated :: !(Maybe Created),
-    eventDescription :: !(Maybe Description)
+    eventDescription :: !(Maybe Description),
+    -- @
+    --     ;
+    --     ; The following is OPTIONAL,
+    --     ; but SHOULD NOT occur more than once.
+    --     ;
+    --     rrule /
+    -- @
+    eventRecurrenceRule :: !(Set RecurrenceRule)
   }
   deriving (Show, Eq, Generic)
 
@@ -464,6 +491,7 @@ vEventP = do
   eventDateTimeStart <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
+  eventRecurrenceRule <- parseSet eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
@@ -473,7 +501,8 @@ vEventB Event {..} =
       propertyListB eventDateTimeStamp,
       propertyMListB eventDateTimeStart,
       propertyMListB eventCreated,
-      propertyMListB eventDescription
+      propertyMListB eventDescription,
+      propertySetB eventRecurrenceRule
     ]
 
 -- |

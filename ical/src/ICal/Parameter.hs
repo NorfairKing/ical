@@ -78,8 +78,14 @@ optionalParamSet m =
 
 requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String param
 requireParam m = case lookupParam m of
-  Nothing -> Left $ "Parameter not found: " <> show (parameterName (Proxy :: Proxy param))
   Just errOrResult -> errOrResult
+  Nothing ->
+    Left $
+      unlines
+        [ "Parameter not found: " <> show (parameterName (Proxy :: Proxy param)),
+          "while looking through these parameters:",
+          show m
+        ]
 
 paramMap :: forall param. IsParameter param => param -> Map ParamName (NonEmpty ParamValue)
 paramMap param = M.singleton (parameterName (Proxy :: Proxy param)) (parameterB param)

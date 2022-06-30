@@ -335,6 +335,17 @@ value:
       time: 2022-06-30 16:46:38
     - state: TODO
       time: 2022-06-30 16:31:09
+  - header: Make it possible to use content line values without raw values for rrules
+    state-history:
+    - state: CANCELLED
+      time: 2022-06-30 20:23:15
+    - state: TODO
+      time: 2022-04-07 10:24:11
+  - header: Redo the recurrence rule parsing using the insight that we got from the
+      ContentLineValue test
+    state-history:
+    - state: NEXT
+      time: 2022-06-30 20:23:08
   - header: get the recurrence rules to roundtrip
     properties:
       timewindow: 60m
@@ -349,10 +360,6 @@ value:
       time: 2022-04-07 10:23:57
     tags:
     - power
-  - header: Make it possible to use content line values without raw values for rrules
-    state-history:
-    - state: TODO
-      time: 2022-04-07 10:24:11
   - header: for properties, use the names that they have in the spec
     state-history:
     - state: TODO

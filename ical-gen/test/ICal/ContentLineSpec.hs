@@ -128,6 +128,29 @@ spec = do
                       }
                 },
               "DESCRIPTION;ALTREP=\"cid:part1.0001@example.org\":The Fall'98 Wild Wizards Conference - - Las Vegas\\, NV\\, USA"
+            ), -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10
+            ( ContentLine
+                { contentLineName = "DTSTART",
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams =
+                          M.fromList
+                            [ ("TZID", [UnquotedParam "America/New_York"])
+                            ],
+                        contentLineValueRaw = "19970105T083000"
+                      }
+                },
+              "DTSTART;TZID=America/New_York:19970105T083000"
+            ),
+            ( ContentLine
+                { contentLineName = "RRULE",
+                  contentLineValue =
+                    ContentLineValue
+                      { contentLineValueParams = M.empty,
+                        contentLineValueRaw = "FREQ=YEARLY;INTERVAL=2;BYMONTH=1;BYDAY=SU;BYHOUR=8,9;BYMINUTE=30"
+                      }
+                },
+              "RRULE:FREQ=YEARLY;INTERVAL=2;BYMONTH=1;BYDAY=SU;BYHOUR=8,9;BYMINUTE=30"
             )
           ]
     forM_ examples $ \(contentLine, rendered) -> do
