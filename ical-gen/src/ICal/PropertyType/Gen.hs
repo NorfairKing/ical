@@ -80,7 +80,12 @@ instance GenValid ByDay where
   genValid =
     oneof
       [ Every <$> genValid,
-        Specific <$> sized (\s -> oneof [max 1 <$> choose (1, s), min (-1) <$> choose (-s, -1)]) <*> genValid
+        Specific
+          <$> oneof
+            [ max 1 <$> choose (1, 5),
+              min (-1) <$> choose (-5, -1)
+            ]
+          <*> genValid
       ]
 
 instance GenValid ByMonthDay where

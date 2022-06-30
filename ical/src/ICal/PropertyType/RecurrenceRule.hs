@@ -10,12 +10,14 @@
 module ICal.PropertyType.RecurrenceRule where
 
 import Control.Applicative
+import Data.CaseInsensitive (CI (..))
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time as Time
 import Data.Validity
@@ -566,7 +568,7 @@ recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleBySecond <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByMinute <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByHour <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByDay <- undefined
+  recurrenceRuleByDay <- optionalParam contentLineValueParams
   recurrenceRuleByMonthDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByYearDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
   recurrenceRuleByWeekNo <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
@@ -822,7 +824,11 @@ instance Validity ByDay where
       [ genericValidate bd,
         case bd of
           Every _ -> valid
-          Specific i _ -> declare "The specific weekday number is not zero" $ i /= 0
+          Specific i _ ->
+            mconcat
+              [ declare "The specific weekday number is not zero" $ i /= 0,
+                declare "The specific weekday number is between -5 and 5" $ i >= -5 && i <= 5
+              ]
       ]
 
 instance IsParameter ByDay where
@@ -831,14 +837,49 @@ instance IsParameter ByDay where
   parameterB = byDayB
 
 byDayP :: NonEmpty ParamValue -> Either String ByDay
-byDayP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYDAY did not look like an integer: " <> show c
-    Just w -> Right $ ByDay w
-  p -> Left $ "Expected BYDAY to be unquoted, but was quoted: " <> show p
+byDayP = anySingleParamP $ \t ->
+  let ci = CI.mk t
+   in case parseDayOfWeek ci of
+        Right dow -> pure $ Every dow
+        Left err -> case T.unpack t of
+          '-' : d : rest -> case readMaybe [d] of
+            Nothing -> undefined
+            Just i -> do
+              dow <- parseDayOfWeek (CI.mk (T.pack rest))
+              pure $ Specific (negate i) dow
+          d : rest -> case readMaybe [d] of
+            Nothing -> undefined
+            Just i -> do
+              dow <- parseDayOfWeek (CI.mk (T.pack rest))
+              pure $ Specific i dow
+          _ -> Left err
+
+parseDayOfWeek :: CI Text -> Either String DayOfWeek
+parseDayOfWeek = \case
+  "MO" -> Right Monday
+  "TU" -> Right Tuesday
+  "WE" -> Right Wednesday
+  "TH" -> Right Thursday
+  "FR" -> Right Friday
+  "SA" -> Right Saturday
+  "SU" -> Right Sunday
+  t -> Left $ unwords ["Unknown day of week:", show t]
+
+renderDayOfWeek :: DayOfWeek -> CI Text
+renderDayOfWeek = \case
+  Monday -> "MO"
+  Tuesday -> "TU"
+  Wednesday -> "WE"
+  Thursday -> "TH"
+  Friday -> "FR"
+  Saturday -> "SA"
+  Sunday -> "SU"
 
 byDayB :: ByDay -> NonEmpty ParamValue
-byDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByDay
+byDayB =
+  (:| []) . UnquotedParam . \case
+    Every dow -> renderDayOfWeek dow
+    Specific i dow -> CI.mk (T.pack (show i)) <> renderDayOfWeek dow
 
 -- | A day within a month
 --

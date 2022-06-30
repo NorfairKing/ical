@@ -8,7 +8,7 @@ module ICal.PropertyType.RecurrenceRuleSpec where
 
 import Control.Monad
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
+import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.Parameter.Gen
