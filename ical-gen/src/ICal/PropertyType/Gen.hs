@@ -18,6 +18,7 @@ import ICal.PropertyType
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType.Time
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity

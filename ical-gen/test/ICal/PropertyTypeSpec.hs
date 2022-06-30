@@ -83,33 +83,6 @@ spec = do
         Left _ -> pure ()
         Right _ -> expectationFailure "Should have failed to parse."
 
-  describe "Time" $ do
-    genValidSpec @Time
-    propertyTypeSpec @Time
-  describe "timeP" $ do
-    let examples :: [(Time, ContentLineValue)]
-        examples =
-          [ (TimeFloating $ TimeOfDay 23 00 00, mkSimpleContentLineValue "230000"),
-            (TimeUTC $ TimeOfDay 07 00 00, mkSimpleContentLineValue "070000Z"),
-            ( TimeZoned "America/New_York" (TimeOfDay 08 30 00),
-              ContentLineValue
-                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
-                  contentLineValueRaw = "083000"
-                }
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(time, text) -> do
-        it "renders this example time correctly" $
-          timeB time `shouldBe` text
-        it "parses this example text correctly" $
-          timeP text `shouldBe` Right time
-
-    it "fails to parse this counterexample from the spec" $
-      case timeP (mkSimpleContentLineValue "230000-0800") of
-        Left _ -> pure ()
-        Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time
-
   describe "Interval" $ do
     genValidSpec @Interval
     parameterSpec @Interval

@@ -49,6 +49,7 @@ test-suite ical-test
       ICal.ParameterSpec
       ICal.PropertySpec
       ICal.PropertyType.DateSpec
+      ICal.PropertyType.TimeSpec
       ICal.PropertyTypeSpec
       ICal.UnfoldedLineSpec
       ICalSpec
