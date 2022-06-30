@@ -83,21 +83,6 @@ spec = do
         Left _ -> pure ()
         Right _ -> expectationFailure "Should have failed to parse."
 
-  describe "Date" $ do
-    genValidSpec @Date
-    propertyTypeSpec @Date
-  describe "dateP" $ do
-    let examples :: [(Date, ContentLineValue)]
-        examples =
-          [ (Date $ fromGregorian 1997 07 14, mkSimpleContentLineValue "19970714")
-          ]
-    describe "examples" $
-      forM_ examples $ \(date, text) -> do
-        it "renders this example date correctly" $
-          dateB date `shouldBe` text
-        it "parses this example text correctly" $
-          dateP text `shouldBe` Right date
-
   describe "Time" $ do
     genValidSpec @Time
     propertyTypeSpec @Time

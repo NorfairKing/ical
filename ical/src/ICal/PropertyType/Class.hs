@@ -7,6 +7,7 @@
 
 module ICal.PropertyType.Class where
 
+import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time as Time
@@ -143,3 +144,11 @@ validateImpreciseTimeOfDay tod =
   declare "The number of seconds is integer" $
     let sec = Time.todSec tod
      in ceiling sec == (floor sec :: Int)
+
+proxyOf :: a -> Proxy a
+proxyOf _ = Proxy
+
+parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
+parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
+  Nothing -> Left $ "Could not parse time value: " <> s
+  Just t -> Right t

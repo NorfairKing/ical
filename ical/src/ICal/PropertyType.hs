@@ -11,7 +11,6 @@
 module ICal.PropertyType where
 
 import qualified Data.Map as M
-import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -226,60 +225,6 @@ dateTimeUTCFormatStr = "%Y%m%dT%H%M%SZ"
 dateTimeZonedFormatStr :: String
 dateTimeZonedFormatStr = "%Y%m%dT%H%M%S"
 
--- | Date
---
--- === [section 3.3.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.4)
---
--- @
---     Value Name:  DATE
---
---     Purpose:  This value type is used to identify values that contain a
---        calendar date.
---
---     Format Definition:  This value type is defined by the following
---        notation:
---
---         date               = date-value
---
---         date-value         = date-fullyear date-month date-mday
---         date-fullyear      = 4DIGIT
---         date-month         = 2DIGIT        ;01-12
---         date-mday          = 2DIGIT        ;01-28, 01-29, 01-30, 01-31
---                                            ;based on month/year
---
---     Description:  If the property permits, multiple "date" values are
---        specified as a COMMA-separated list of values.  The format for the
---        value type is based on the [ISO.8601.2004] complete
---        representation, basic format for a calendar date.  The textual
---        format specifies a four-digit year, two-digit month, and two-digit
---        day of the month.  There are no separator characters between the
---        year, month, and day component text.
---
---        No additional content value encoding (i.e., BACKSLASH character
---        encoding, see Section 3.3.11) is defined for this value type.
---
---     Example:  The following represents July 14, 1997:
---
---         19970714
--- @
-newtype Date = Date {unDate :: Time.Day}
-  deriving (Show, Eq, Generic)
-
-instance Validity Date
-
-instance IsPropertyType Date where
-  propertyTypeP = dateP
-  propertyTypeB = dateB
-
-dateP :: ContentLineValue -> Either String Date
-dateP = fmap Date . parseTimeEither dateFormatStr . T.unpack . contentLineValueRaw
-
-dateB :: Date -> ContentLineValue
-dateB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
-
-dateFormatStr :: String
-dateFormatStr = "%Y%m%d"
-
 -- | Time
 --
 -- === [section 3.3.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.12)
@@ -431,14 +376,6 @@ timeB =
         { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (tzIDParamB tzidParam),
           contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale timeZonedFormatStr tod
         }
-
-proxyOf :: a -> Proxy a
-proxyOf _ = Proxy
-
-parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
-parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
-  Nothing -> Left $ "Could not parse time value: " <> s
-  Just t -> Right t
 
 timeFloatingFormatStr :: String
 timeFloatingFormatStr = "%H%M%S"

@@ -21,6 +21,7 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.PropertyType
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
 
 -- |
 --

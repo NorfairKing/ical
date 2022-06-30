@@ -16,6 +16,7 @@ import ICal.Parameter
 import ICal.Parameter.Gen ()
 import ICal.PropertyType
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
 import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck
 import Test.Syd
