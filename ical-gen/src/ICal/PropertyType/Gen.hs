@@ -61,6 +61,13 @@ instance GenValid Interval where
   shrinkValid = shrinkValidStructurally
   genValid = Interval <$> sized (\s -> max 1 <$> choose (1, fromIntegral s)) -- no point in generating huge words
 
+instance GenValid Until where
+  genValid =
+    oneof
+      [ UntilDate <$> genValid,
+        UntilDateTime <$> genImpreciseLocalTime
+      ]
+
 instance GenValid BySecond where
   shrinkValid = shrinkValidStructurally
   genValid = BySecond <$> choose (0, 60)

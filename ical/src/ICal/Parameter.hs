@@ -88,9 +88,14 @@ singleParamP func = \case
   value :| [] -> func value
   _ -> Left "Expected one parameter value, but got multiple."
 
+anySingleParamP :: (Text -> Either String a) -> NonEmpty ParamValue -> Either String a
+anySingleParamP func = singleParamP $ \case
+  UnquotedParam c -> func (CI.foldedCase c)
+  QuotedParam t -> func t
+
 -- [section 3.2.19](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)
 newtype TZIDParam = TZIDParam {unTZIDParam :: CI Text}
-  deriving stock (Eq, Generic)
+  deriving stock (Eq, Ord, Generic)
   deriving newtype (Show, IsString, Read)
 
 instance Validity TZIDParam where

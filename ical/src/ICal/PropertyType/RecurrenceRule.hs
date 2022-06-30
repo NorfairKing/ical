@@ -9,6 +9,7 @@
 
 module ICal.PropertyType.RecurrenceRule where
 
+import Control.Applicative
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
@@ -16,7 +17,7 @@ import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Data.Time
+import Data.Time as Time
 import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
@@ -24,6 +25,8 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
+import ICal.PropertyType.DateTime
 import Text.Read
 
 #if !MIN_VERSION_time(1,9,5)
@@ -631,37 +634,54 @@ instance Validity UntilCount where
 
 -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.
 --
--- If the value specified by UNTIL is synchronized with the specified
--- recurrence, this DATE or DATE-TIME becomes the last instance of the
--- recurrence.  The value of the UNTIL rule part MUST have the same value
--- type as the "DTSTART" property.  Furthermore, if the "DTSTART" property
--- is specified as a date with local time, then the UNTIL rule part MUST
--- also be specified as a date with local time.  If the "DTSTART" property
--- is specified as a date with UTC time or a date with local time and time
--- zone reference, then the UNTIL rule part MUST be specified as a date
--- with UTC time.  In the case of the "STANDARD" and "DAYLIGHT"
--- sub-components the UNTIL rule part MUST always be specified as a date
--- with UTC time.  If specified as a DATE-TIME value, then it MUST be
--- specified in a UTC time format.
---
--- TODO
--- data Until
---   = UntilDate !Date
---   | UntilDateTime !DateTime
---   deriving (Show, Eq, Ord, Generic)
---
--- instance Validity Until
---
--- instance IsParameter Until where
---   parameterName Proxy = "UNTIL"
---   parameterP = untilP
---   parameterB = untilB
---
--- untilP :: NonEmpty ParamValue -> Either String Until
--- untilP = singleParamP $ undefined
---
--- untilB :: Until -> NonEmpty ParamValue
--- untilB = undefined
+-- @
+--     If the value specified by UNTIL is synchronized with the specified
+--     recurrence, this DATE or DATE-TIME becomes the last instance of the
+--     recurrence.  The value of the UNTIL rule part MUST have the same value
+--     type as the "DTSTART" property.  Furthermore, if the "DTSTART" property
+--     is specified as a date with local time, then the UNTIL rule part MUST
+--     also be specified as a date with local time.  If the "DTSTART" property
+--     is specified as a date with UTC time or a date with local time and time
+--     zone reference, then the UNTIL rule part MUST be specified as a date
+--     with UTC time.  In the case of the "STANDARD" and "DAYLIGHT"
+--     sub-components the UNTIL rule part MUST always be specified as a date
+--     with UTC time.  If specified as a DATE-TIME value, then it MUST be
+--     specified in a UTC time format.
+-- @
+data Until
+  = UntilDate !Date
+  | -- |
+    -- @
+    --     with UTC time.  If specified as a DATE-TIME value, then it MUST be
+    --     specified in a UTC time format.
+    -- @
+    UntilDateTime !Time.LocalTime
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Until where
+  validate u =
+    mconcat
+      [ genericValidate u,
+        case u of
+          UntilDate _ -> valid
+          UntilDateTime lt -> validateImpreciseLocalTime lt
+      ]
+
+instance IsParameter Until where
+  parameterName Proxy = "UNTIL"
+  parameterP = untilP
+  parameterB = untilB
+
+untilP :: NonEmpty ParamValue -> Either String Until
+untilP = anySingleParamP $ \t ->
+  (UntilDate <$> parseDate t) -- TODO
+    <|> (UntilDateTime <$> parseDateTimeUTC t)
+
+untilB :: Until -> NonEmpty ParamValue
+untilB =
+  (:| []) . UnquotedParam . CI.mk . \case
+    UntilDate d -> renderDate d
+    UntilDateTime lt -> renderDateTimeUTC lt
 
 -- | A second within a minute
 --

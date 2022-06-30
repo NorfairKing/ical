@@ -11,6 +11,7 @@
 module ICal.PropertyType.DateTime where
 
 import qualified Data.Map as M
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -160,7 +161,7 @@ data DateTime
     --     FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
     -- @
     DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DateTime where
   validate dt =
@@ -193,8 +194,7 @@ dateTimeFloatingP ContentLineValue {..} =
 
 dateTimeUTCP :: ContentLineValue -> Either String Time.LocalTime
 dateTimeUTCP ContentLineValue {..} =
-  let s = T.unpack contentLineValueRaw
-   in parseTimeEither dateTimeUTCFormatStr s
+  parseDateTimeUTC contentLineValueRaw
 
 dateTimeB :: DateTime -> ContentLineValue
 dateTimeB =
@@ -207,7 +207,7 @@ dateTimeFloatingB :: Time.LocalTime -> ContentLineValue
 dateTimeFloatingB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
 
 dateTimeUTCB :: Time.LocalTime -> ContentLineValue
-dateTimeUTCB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr
+dateTimeUTCB = mkSimpleContentLineValue . renderDateTimeUTC
 
 dateTimeZonedB :: TZIDParam -> Time.LocalTime -> ContentLineValue
 dateTimeZonedB tzidParam lt =
@@ -218,6 +218,12 @@ dateTimeZonedB tzidParam lt =
 
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
+
+parseDateTimeUTC :: Text -> Either String Time.LocalTime
+parseDateTimeUTC = parseTimeEither dateTimeUTCFormatStr . T.unpack
+
+renderDateTimeUTC :: Time.LocalTime -> Text
+renderDateTimeUTC = T.pack . Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr
 
 dateTimeUTCFormatStr :: String
 dateTimeUTCFormatStr = "%Y%m%dT%H%M%SZ"

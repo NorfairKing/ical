@@ -30,6 +30,20 @@ spec = do
       it "can render this example" $
         parameterB interval `shouldBe` pvs
 
+  describe "Until" $ do
+    genValidSpec @Until
+    parameterSpec @Until
+    let examples :: [(NonEmpty ParamValue, Until)]
+        examples =
+          [ (["20220622"], UntilDate undefined),
+            (["20220622T124500"], UntilDateTime undefined)
+          ]
+    forM_ examples $ \(pvs, until_) -> do
+      it "can parse this example" $
+        parameterP pvs `shouldBe` Right until_
+      it "can render this example" $
+        parameterB until_ `shouldBe` pvs
+
   describe "BySecond" $ do
     genValidSpec @BySecond
     parameterSpec @BySecond

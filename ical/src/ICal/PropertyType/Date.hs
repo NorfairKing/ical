@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.Date where
 
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -54,7 +55,7 @@ import ICal.PropertyType.Class
 --         19970714
 -- @
 newtype Date = Date {unDate :: Time.Day}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Date
 
@@ -63,10 +64,16 @@ instance IsPropertyType Date where
   propertyTypeB = dateB
 
 dateP :: ContentLineValue -> Either String Date
-dateP = fmap Date . parseTimeEither dateFormatStr . T.unpack . contentLineValueRaw
+dateP = parseDate . contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
-dateB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
+dateB = mkSimpleContentLineValue . renderDate
+
+parseDate :: Text -> Either String Date
+parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack
+
+renderDate :: Date -> Text
+renderDate = T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate
 
 dateFormatStr :: String
 dateFormatStr = "%Y%m%d"
