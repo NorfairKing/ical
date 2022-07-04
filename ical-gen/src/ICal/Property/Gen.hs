@@ -33,6 +33,8 @@ instance GenValid Summary
 
 instance GenValid Description
 
+instance GenValid DateTimeEnd
+
 instance GenValid TimeZoneName
 
 propertySpec ::

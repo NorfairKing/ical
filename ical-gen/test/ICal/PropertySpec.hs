@@ -8,6 +8,7 @@ module ICal.PropertySpec where
 import Data.Time
 import ICal.Property
 import ICal.Property.Gen
+import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import Test.Syd
 import Test.Syd.Validity
@@ -78,6 +79,26 @@ spec = do
       propertyContentLineP
         "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
         `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
+
+  describe "DateTimeEnd" $ do
+    genValidSpec @DateTimeEnd
+    propertySpec @DateTimeEnd
+    -- From the spec:
+    -- @
+    --     Example:  The following is an example of this property:
+    --
+    --         DTEND:19960401T150000Z
+    --
+    --         DTEND;VALUE=DATE:19980704
+    -- @
+    it "works for this example" $
+      propertyContentLineP
+        "DTEND:19960401T150000Z"
+        `shouldBe` Right (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
+    it "works for this example" $
+      propertyContentLineP
+        "DTEND;VALUE=DATE:19980704"
+        `shouldBe` Right (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
 
   describe "TimeZoneName" $ do
     genValidSpec @TimeZoneName

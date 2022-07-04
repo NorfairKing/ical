@@ -443,6 +443,7 @@ data Event = Event
   { -- @
     --     ; The following are REQUIRED,
     --     ; but MUST NOT occur more than once.
+    --     dtstamp / uid /
     -- @
     eventUID :: !UID,
     eventDateTimeStamp :: !DateTimeStamp,
@@ -454,6 +455,7 @@ data Event = Event
     --     ; is OPTIONAL; in any case, it MUST NOT occur
     --     ; more than once.
     --     ;
+    --     dtstart /
     -- @
     eventDateTimeStart :: !(Maybe DateTimeStart),
     -- @
@@ -461,10 +463,30 @@ data Event = Event
     --     ; The following are OPTIONAL,
     --     ; but MUST NOT occur more than once.
     --     ;
+    --     class / created / description / geo /
+    --     last-mod / location / organizer / priority /
+    --     seq / status / summary / transp /
+    --     url / recurid /
     -- @
     eventCreated :: !(Maybe Created),
     eventDescription :: !(Maybe Description),
+    -- @
+    --     ;
+    --     ; The following is OPTIONAL,
+    --     ; but SHOULD NOT occur more than once.
+    --     ;
+    --     rrule /
+    -- @
     eventRecurrenceRules :: !(Set RecurrenceRule)
+    -- @
+    --   ;
+    --   ; Either 'dtend' or 'duration' MAY appear in
+    --   ; a 'eventprop', but 'dtend' and 'duration'
+    --   ; MUST NOT occur in the same 'eventprop'.
+    --   ;
+    --   dtend / duration /
+    -- @
+    -- eventDateTimeEndDuration :: Maybe (Either DateTimeEnd Duration)
   }
   deriving (Show, Eq, Generic)
 
