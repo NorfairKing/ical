@@ -10,6 +10,7 @@ import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
+import ICal.PropertyType.Duration
 import Test.Syd
 import Test.Syd.Validity
 
@@ -100,7 +101,31 @@ spec = do
         "DTEND;VALUE=DATE:19980704"
         `shouldBe` Right (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
 
+  describe "Duration" $ do
+    genValidSpec @Duration
+    propertySpec @Duration
+    -- From the spec:
+    -- @
+    --     Example:  The following is an example of this property that specifies
+    --        an interval of time of one hour and zero minutes and zero seconds:
+    --
+    --         DURATION:PT1H0M0S
+    --
+    --        The following is an example of this property that specifies an
+    --        interval of time of 15 minutes.
+    --
+    --         DURATION:PT15M
+    -- @
+    it "works for this example" $
+      propertyContentLineP
+        "DURATION:PT1H0M0S"
+        `shouldBe` Right (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
+    it "works for this example" $
+      propertyContentLineP
+        "DURATION:PT1H0M0S"
+        `shouldBe` Right (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
+
   describe "TimeZoneName" $ do
-    genValidSpec @TimeZoneName
+    xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName
     propertySpec @TimeZoneName
     pending "works for this example"

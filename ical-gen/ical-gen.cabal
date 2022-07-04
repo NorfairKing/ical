@@ -51,6 +51,7 @@ test-suite ical-test
       ICal.PropertySpec
       ICal.PropertyType.DateSpec
       ICal.PropertyType.DateTimeSpec
+      ICal.PropertyType.DurationSpec
       ICal.PropertyType.RecurrenceRuleSpec
       ICal.PropertyType.TimeSpec
       ICal.PropertyTypeSpec

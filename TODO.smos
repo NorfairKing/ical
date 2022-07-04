@@ -366,6 +366,8 @@ value:
     - power
   - header: make DateTimeEnd
     state-history:
+    - state: DONE
+      time: 2022-07-04 15:36:53
     - state: TODO
       time: 2022-07-04 15:31:23
   - header: make Duration
