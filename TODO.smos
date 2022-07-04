@@ -372,10 +372,14 @@ value:
       time: 2022-07-04 15:31:23
   - header: make Duration
     state-history:
+    - state: DONE
+      time: 2022-07-04 22:09:13
     - state: TODO
       time: 2022-07-04 15:31:23
   - header: add EndDuration to the event
     state-history:
+    - state: DONE
+      time: 2022-07-04 22:09:13
     - state: TODO
       time: 2022-07-04 15:31:29
   - header: make the untilcount an either

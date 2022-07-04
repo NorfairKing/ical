@@ -14,6 +14,7 @@ import ICal.Component
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
+import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd

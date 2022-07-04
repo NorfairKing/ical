@@ -30,6 +30,7 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
+import ICal.PropertyType.Duration
 import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
 import Text.Megaparsec
@@ -477,7 +478,7 @@ data Event = Event
     --     ;
     --     rrule /
     -- @
-    eventRecurrenceRules :: !(Set RecurrenceRule)
+    eventRecurrenceRules :: !(Set RecurrenceRule),
     -- @
     --   ;
     --   ; Either 'dtend' or 'duration' MAY appear in
@@ -486,7 +487,7 @@ data Event = Event
     --   ;
     --   dtend / duration /
     -- @
-    -- eventDateTimeEndDuration :: Maybe (Either DateTimeEnd Duration)
+    eventDateTimeEndDuration :: Maybe (Either DateTimeEnd Duration)
   }
   deriving (Show, Eq, Generic)
 
@@ -507,6 +508,12 @@ vEventP = do
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
   eventRecurrenceRules <- parseSet eventProperties
+  mEnd <- parseFirstMaybe eventProperties
+  mDuration <- parseFirstMaybe eventProperties
+  let eventDateTimeEndDuration = case (mEnd, mDuration) of
+        (Nothing, Nothing) -> Nothing
+        (Nothing, Just d) -> Just (Right d)
+        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
@@ -517,7 +524,12 @@ vEventB Event {..} =
       propertyMListB eventDateTimeStart,
       propertyMListB eventCreated,
       propertyMListB eventDescription,
-      propertySetB eventRecurrenceRules
+      propertySetB eventRecurrenceRules,
+      case eventDateTimeEndDuration of
+        Nothing -> mempty
+        Just endOrDuration -> case endOrDuration of
+          Left e -> propertyListB e
+          Right d -> propertyListB d
     ]
 
 -- |
