@@ -11,6 +11,7 @@ import ICal.Property.Gen
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
+import ICal.PropertyType.Duration.Gen ()
 import Test.Syd
 import Test.Syd.Validity
 
@@ -119,11 +120,29 @@ spec = do
     it "works for this example" $
       propertyContentLineP
         "DURATION:PT1H0M0S"
-        `shouldBe` Right (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
+        `shouldBe` Right
+          ( DurationTime
+              ( DurTime
+                  { durTimeSign = Positive,
+                    durTimeHour = 1,
+                    durTimeMinute = 0,
+                    durTimeSecond = 0
+                  }
+              )
+          )
     it "works for this example" $
       propertyContentLineP
-        "DURATION:PT1H0M0S"
-        `shouldBe` Right (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
+        "DURATION:PT15M"
+        `shouldBe` Right
+          ( DurationTime
+              ( DurTime
+                  { durTimeSign = Positive,
+                    durTimeHour = 0,
+                    durTimeMinute = 15,
+                    durTimeSecond = 0
+                  }
+              )
+          )
 
   describe "TimeZoneName" $ do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName

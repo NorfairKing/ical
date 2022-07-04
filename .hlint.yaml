@@ -1,2 +1,3 @@
 - ignore: { name: "Redundant if" }
 - ignore: { name: "Use list comprehension" }
+- ignore: { name: "Use tuple-section" }

@@ -1,7 +1,23 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module ICal.PropertyType.Duration where
 
-import Data.Time
+import Control.Arrow (left)
+import Control.Monad
+import Data.Data
+import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Validity
+import Data.Void
+import GHC.Generics (Generic)
+import ICal.ContentLine
 import ICal.PropertyType.Class
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer
 
 -- | Duration
 --
@@ -60,6 +76,157 @@ import ICal.PropertyType.Class
 --
 --         P7W
 -- @
-newtype Duration = Duration {unDuration :: NominalDiffTime}
+data Duration
+  = DurationDate !DurDate
+  | DurationTime !DurTime
+  | DurationWeek !DurWeek
+  deriving (Show, Eq, Ord, Generic, Typeable)
 
-instance IsPropertyType Duration
+instance Validity Duration
+
+instance IsPropertyType Duration where
+  propertyTypeP = durationP
+  propertyTypeB = durationB
+
+data DurDate = DurDate
+  { durDateSign :: !Sign,
+    durDateDay :: !Word,
+    durDateHour :: !Word,
+    durDateMinute :: !Word,
+    durDateSecond :: !Word
+  }
+  deriving (Show, Eq, Ord, Generic, Typeable)
+
+instance Validity DurDate
+
+data DurTime = DurTime
+  { durTimeSign :: !Sign,
+    durTimeHour :: !Word,
+    durTimeMinute :: !Word,
+    durTimeSecond :: !Word
+  }
+  deriving (Show, Eq, Ord, Generic, Typeable)
+
+instance Validity DurTime
+
+data DurWeek = DurWeek
+  { durWeekSign :: !Sign,
+    durWeekWeek :: !Word
+  }
+  deriving (Show, Eq, Ord, Generic, Typeable)
+
+instance Validity DurWeek
+
+data Sign = Positive | Negative
+  deriving (Show, Eq, Ord, Generic, Typeable)
+
+instance Validity Sign
+
+durationP :: ContentLineValue -> Either String Duration
+durationP = parseDuration . contentLineValueRaw
+
+durationB :: Duration -> ContentLineValue
+durationB = mkSimpleContentLineValue . renderDuration
+
+-- @
+--         dur-value  = (["+"] / "-") "P" (dur-date / dur-time / dur-week)
+--
+--         dur-date   = dur-day [dur-time]
+--         dur-time   = "T" (dur-hour / dur-minute / dur-second)
+--         dur-week   = 1*DIGIT "W"
+--         dur-hour   = 1*DIGIT "H" [dur-minute]
+--         dur-minute = 1*DIGIT "M" [dur-second]
+--         dur-second = 1*DIGIT "S"
+--         dur-day    = 1*DIGIT "D"
+-- @
+renderDuration :: Duration -> Text
+renderDuration =
+  T.pack . concat . \case
+    DurationDate DurDate {..} ->
+      [ renderSign durDateSign,
+        ['P'],
+        digitB 'D' durDateDay,
+        ['T'],
+        digitB 'H' durDateHour,
+        digitB 'M' durDateMinute,
+        digitB 'S' durDateSecond
+      ]
+    DurationTime DurTime {..} ->
+      [ renderSign durTimeSign,
+        ['P', 'T'],
+        digitB 'H' durTimeHour,
+        digitB 'M' durTimeMinute,
+        digitB 'S' durTimeSecond
+      ]
+    DurationWeek DurWeek {..} ->
+      [ renderSign durWeekSign,
+        ['P'],
+        digitB 'W' durWeekWeek
+      ]
+  where
+    digitB :: Char -> Word -> String
+    digitB c w = show w ++ [c]
+
+renderSign :: Sign -> [Char]
+renderSign = \case
+  Positive -> []
+  Negative -> "-"
+
+parseDuration :: Text -> Either String Duration
+parseDuration = left errorBundlePretty . parse go ""
+  where
+    go :: Parsec Void Text Duration
+    go = do
+      sign <-
+        fromMaybe Positive
+          <$> optional ((Positive <$ char '+') <|> (Negative <$ char '-'))
+      void $ char 'P'
+      let digitP :: Char -> Parsec Void Text Word
+          digitP c = do
+            d <- decimal
+            void $ char c
+            pure d
+      let durSecondP = digitP 'S'
+      let durMinuteP = do
+            m <- digitP 'M'
+            s <- fromMaybe 0 <$> optional durSecondP
+            pure (m, s)
+      let durHourP = do
+            h <- digitP 'H'
+            (m, s) <- fromMaybe (0, 0) <$> optional durMinuteP
+            pure (h, m, s)
+      let durTimeP = do
+            void $ char 'T'
+            (h, m, s) <-
+              try durHourP
+                <|> try ((\(m, s) -> (0, m, s)) <$> durMinuteP)
+                <|> ((\s -> (0, 0, s)) <$> durSecondP)
+            pure
+              DurTime
+                { durTimeSign = sign,
+                  durTimeHour = h,
+                  durTimeMinute = m,
+                  durTimeSecond = s
+                }
+      let durDayP = digitP 'D'
+      let durDateP = do
+            d <- durDayP
+            DurTime {..} <- durTimeP
+            pure
+              DurDate
+                { durDateSign = durTimeSign,
+                  durDateDay = d,
+                  durDateHour = durTimeHour,
+                  durDateMinute = durTimeMinute,
+                  durDateSecond = durTimeSecond
+                }
+      let durWeekP = do
+            w <- digitP 'W'
+            pure
+              DurWeek
+                { durWeekSign = sign,
+                  durWeekWeek = w
+                }
+      try (DurationDate <$> durDateP)
+        <|> try (DurationTime <$> durTimeP)
+        <|> (DurationWeek <$> durWeekP)
