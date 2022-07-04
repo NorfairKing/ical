@@ -386,6 +386,90 @@ value:
     state-history:
     - state: TODO
       time: 2022-07-04 15:31:02
+  - entry:
+      header: Needed for use in social-dance.today
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    forest:
+    - header: dtstamp
+      state-history:
+      - state: DONE
+        time: 2022-07-04 22:13:14
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: uid
+      state-history:
+      - state: DONE
+        time: 2022-07-04 22:13:14
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: class
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: dtstart
+      state-history:
+      - state: DONE
+        time: 2022-07-04 22:13:22
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: created
+      state-history:
+      - state: DONE
+        time: 2022-07-04 22:13:25
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: description
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: geo
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: last-mod
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: location
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: status
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: summary
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: transparency
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+    - header: url
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:13:11
+  - entry:
+      header: Needed for use in smos
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:16:15
+    forest:
+    - header: ical-recurrence
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:16:41
+    - header: description
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:20:26
+    - header: summary
+      state-history:
+      - state: TODO
+        time: 2022-07-04 22:20:25
   - header: for properties, use the names that they have in the spec
     state-history:
     - state: TODO

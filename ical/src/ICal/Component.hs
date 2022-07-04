@@ -480,14 +480,23 @@ data Event = Event
     -- @
     eventRecurrenceRules :: !(Set RecurrenceRule),
     -- @
-    --   ;
-    --   ; Either 'dtend' or 'duration' MAY appear in
-    --   ; a 'eventprop', but 'dtend' and 'duration'
-    --   ; MUST NOT occur in the same 'eventprop'.
-    --   ;
-    --   dtend / duration /
+    --     ;
+    --     ; Either 'dtend' or 'duration' MAY appear in
+    --     ; a 'eventprop', but 'dtend' and 'duration'
+    --     ; MUST NOT occur in the same 'eventprop'.
+    --     ;
+    --     dtend / duration /
     -- @
     eventDateTimeEndDuration :: Maybe (Either DateTimeEnd Duration)
+    -- @
+    --     ;
+    --     ; The following are OPTIONAL,
+    --     ; and MAY occur more than once.
+    --     ;
+    --     attach / attendee / categories / comment /
+    --     contact / exdate / rstatus / related /
+    --     resources / rdate / x-prop / iana-prop
+    --     ;
   }
   deriving (Show, Eq, Generic)
 
