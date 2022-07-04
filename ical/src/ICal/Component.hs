@@ -30,7 +30,6 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
-import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
@@ -463,15 +462,7 @@ data Event = Event
     --     ;
     -- @
     eventCreated :: !(Maybe Created),
-    eventDescription :: !(Maybe Description),
-    -- @
-    --     ;
-    --     ; The following is OPTIONAL,
-    --     ; but SHOULD NOT occur more than once.
-    --     ;
-    --     rrule /
-    -- @
-    eventRecurrenceRule :: !(Set RecurrenceRule)
+    eventDescription :: !(Maybe Description)
   }
   deriving (Show, Eq, Generic)
 
@@ -491,7 +482,6 @@ vEventP = do
   eventDateTimeStart <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
-  eventRecurrenceRule <- parseSet eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
@@ -501,8 +491,7 @@ vEventB Event {..} =
       propertyListB eventDateTimeStamp,
       propertyMListB eventDateTimeStart,
       propertyMListB eventCreated,
-      propertyMListB eventDescription,
-      propertySetB eventRecurrenceRule
+      propertyMListB eventDescription
     ]
 
 -- |
