@@ -14,10 +14,6 @@ import Test.Syd.Validity
 
 instance GenValid TZIDParam
 
-instance GenValid Frequency where
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
-  genValid = genValidStructurallyWithoutExtraChecking
-
 parameterSpec ::
   forall a.
   (Show a, Eq a, GenValid a, IsParameter a) =>
