@@ -120,7 +120,7 @@ propertyListB = DList.singleton . propertyContentLineB
 propertyMListB :: IsProperty property => Maybe property -> DList ContentLine
 propertyMListB = maybe DList.empty (DList.singleton . propertyContentLineB)
 
-propertySetB :: (Ord property, IsProperty property) => Set property -> DList ContentLine
+propertySetB :: IsProperty property => Set property -> DList ContentLine
 propertySetB = DList.fromList . map propertyContentLineB . S.toList
 
 -- |

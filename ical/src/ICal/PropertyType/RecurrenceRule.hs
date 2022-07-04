@@ -1,19 +1,21 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.PropertyType.RecurrenceRule where
 
 import Control.Applicative
+import Control.Monad
 import Data.CaseInsensitive (CI (..))
 import qualified Data.CaseInsensitive as CI
-import Data.List.NonEmpty (NonEmpty (..))
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -26,7 +28,6 @@ import Data.Validity.Containers ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
-import ICal.Parameter
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
@@ -535,6 +536,55 @@ instance IsPropertyType RecurrenceRule where
   propertyTypeP = recurrenceRuleP
   propertyTypeB = recurrenceRuleB
 
+recurrenceRuleP ::
+  ContentLineValue ->
+  Either String RecurrenceRule
+recurrenceRuleP ContentLineValue {..} = do
+  -- contentLineValueParams are ignored
+  let parts = T.splitOn ";" contentLineValueRaw
+  tups <- forM parts $ \partText -> case T.splitOn "=" partText of
+    [] -> Left "Could not parse recurrence rule part."
+    (k : vs) -> pure (k, T.intercalate "=" vs)
+  let parsePart :: forall part. IsRecurrenceRulePart part => Either String part
+      parsePart =
+        let name = recurrenceRulePartName (Proxy :: Proxy part)
+         in case lookup name tups of
+              Nothing -> Left $ "Recurrence rule part not found: " <> show name
+              Just val -> recurrenceRulePartP val
+      parseMPart :: forall part. IsRecurrenceRulePart part => Either String (Maybe part)
+      parseMPart =
+        let name = recurrenceRulePartName (Proxy :: Proxy part)
+         in mapM recurrenceRulePartP (lookup name tups)
+
+      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Either String part
+      parseDPart defaultValue = fromMaybe defaultValue <$> parseMPart
+
+      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Either String (Set part)
+      parseSetPart = parseDPart S.empty
+
+  recurrenceRuleFrequency <- parsePart
+  recurrenceRuleInterval <- parseDPart (Interval 1)
+  mUntil <- parseMPart
+  mCount <- parseMPart
+  let recurrenceRuleUntilCount = case (mUntil, mCount) of
+        (Nothing, Nothing) -> Indefinitely
+        (Nothing, Just c) -> Count c
+        -- Don't reject invalid ical that defines both, but ignore the count.
+        (Just u, _) -> Until u
+
+  recurrenceRuleBySecond <- parseSetPart
+  recurrenceRuleByMinute <- parseSetPart
+  recurrenceRuleByHour <- parseSetPart
+  recurrenceRuleByDay <- parseSetPart
+  recurrenceRuleByMonthDay <- parseSetPart
+  recurrenceRuleByYearDay <- parseSetPart
+  recurrenceRuleByWeekNo <- parseSetPart
+  recurrenceRuleByMonth <- parseSetPart
+  recurrenceRuleWeekStart <- parseDPart (WeekStart Monday)
+  recurrenceRuleBySetPos <- parseSetPart
+
+  pure RecurrenceRule {..}
+
 -- TODO comply with this:
 -- @
 --     Compliant applications MUST accept rule
@@ -543,61 +593,55 @@ instance IsPropertyType RecurrenceRule where
 --     iCalendar the FREQ rule part MUST be the first rule part specified
 --     in a RECUR value.
 -- @
-
-recurrenceRuleP ::
-  ContentLineValue ->
-  Either String RecurrenceRule
-recurrenceRuleP ContentLineValue {..} = do
-  recurrenceRuleFrequency <- requireParam contentLineValueParams
-  recurrenceRuleInterval <- fromMaybe (Interval 1) <$> optionalParam contentLineValueParams
-  mUntil <- optionalParam contentLineValueParams
-  mCount <- optionalParam contentLineValueParams
-  let recurrenceRuleUntilCount = case (mUntil, mCount) of
-        (Nothing, Nothing) -> Indefinitely
-        (Nothing, Just c) -> Count c
-        -- Don't reject invalid ical that defines both, but ignore the count.
-        (Just u, _) -> Until u
-  recurrenceRuleBySecond <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByMinute <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByHour <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByMonthDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByYearDay <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByWeekNo <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleByMonth <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  recurrenceRuleWeekStart <- fromMaybe (WeekStart Monday) <$> optionalParam contentLineValueParams
-  recurrenceRuleBySetPos <- fromMaybe S.empty <$> optionalParamSet contentLineValueParams
-  pure RecurrenceRule {..}
-
 recurrenceRuleB ::
   RecurrenceRule -> ContentLineValue
 recurrenceRuleB RecurrenceRule {..} =
-  ContentLineValue
-    { contentLineValueRaw = "", -- TODO this should be empty I think
-      contentLineValueParams =
-        M.unions
-          [ paramMap recurrenceRuleFrequency,
-            paramMap recurrenceRuleInterval,
+  let tup :: forall part. IsRecurrenceRulePart part => part -> (Text, Text)
+      tup part = (recurrenceRulePartName (Proxy :: Proxy part), recurrenceRulePartB part)
+      dTup :: forall part. (Eq part, IsRecurrenceRulePart part) => part -> part -> [(Text, Text)]
+      dTup defaultValue p = if p == defaultValue then [] else [tup p]
+      setTup :: forall part. IsRecurrenceRulePart (Set part) => Set part -> [(Text, Text)]
+      setTup set = if S.null set then [] else [tup set]
+      tups :: [(Text, Text)]
+      tups =
+        concat
+          [ [tup recurrenceRuleFrequency],
+            dTup (Interval 1) recurrenceRuleInterval,
             case recurrenceRuleUntilCount of
-              Until u -> paramMap u
-              Count c -> paramMap c
-              Indefinitely -> M.empty,
-            setParamMap recurrenceRuleBySecond,
-            setParamMap recurrenceRuleByMinute,
-            setParamMap recurrenceRuleByHour,
-            setParamMap recurrenceRuleByDay,
-            setParamMap recurrenceRuleByMonthDay,
-            setParamMap recurrenceRuleByYearDay,
-            setParamMap recurrenceRuleByWeekNo,
-            setParamMap recurrenceRuleByMonth,
-            paramMap recurrenceRuleWeekStart,
-            setParamMap recurrenceRuleBySetPos
+              Until u -> [tup u]
+              Count c -> [tup c]
+              Indefinitely -> [],
+            setTup recurrenceRuleBySecond,
+            setTup recurrenceRuleByMinute,
+            setTup recurrenceRuleByHour,
+            setTup recurrenceRuleByDay,
+            setTup recurrenceRuleByMonthDay,
+            setTup recurrenceRuleByYearDay,
+            setTup recurrenceRuleByWeekNo,
+            setTup recurrenceRuleByMonth,
+            dTup (WeekStart Monday) recurrenceRuleWeekStart,
+            setTup recurrenceRuleBySetPos
           ]
-    }
+      parts :: [Text]
+      parts = map (\(k, v) -> k <> "=" <> v) tups
+   in mkSimpleContentLineValue $ T.intercalate ";" parts
 
-class RecurrenceRulePart part where
+class IsRecurrenceRulePart part where
+  recurrenceRulePartName :: Proxy part -> Text
   recurrenceRulePartP :: Text -> Either String part
   recurrenceRulePartB :: part -> Text
+
+setP :: Ord part => (Text -> Either String part) -> Text -> Either String (Set part)
+setP parser t =
+  if T.null t
+    then Right S.empty
+    else S.fromList <$> mapM parser (T.splitOn "," t)
+
+setB :: (part -> Text) -> Set part -> Text
+setB renderer set =
+  if S.null set
+    then ""
+    else T.intercalate "," (map renderer (S.toList set))
 
 -- | Frequency
 --
@@ -634,34 +678,31 @@ data Frequency
 
 instance Validity Frequency
 
-instance IsParameter Frequency where
-  parameterName Proxy = "FREQ"
-  parameterP = frequencyP
-  parameterB = frequencyB
+instance IsRecurrenceRulePart Frequency where
+  recurrenceRulePartName Proxy = "FREQ"
+  recurrenceRulePartP = frequencyP
+  recurrenceRulePartB = frequencyB
 
-frequencyP :: NonEmpty ParamValue -> Either String Frequency
-frequencyP = singleParamP $ \case
-  UnquotedParam c -> case c of
-    "SECONDLY" -> Right Secondly
-    "MINUTELY" -> Right Minutely
-    "HOURLY" -> Right Hourly
-    "DAILY" -> Right Daily
-    "WEEKLY" -> Right Weekly
-    "MONTHLY" -> Right Monthly
-    "YEARLY" -> Right Yearly
-    _ -> Left $ "Unknown Frequency value: " <> show c
-  p -> Left $ "Expected Frequency to be unquoted, but was quoted: " <> show p
+frequencyP :: Text -> Either String Frequency
+frequencyP = \case
+  "SECONDLY" -> Right Secondly
+  "MINUTELY" -> Right Minutely
+  "HOURLY" -> Right Hourly
+  "DAILY" -> Right Daily
+  "WEEKLY" -> Right Weekly
+  "MONTHLY" -> Right Monthly
+  "YEARLY" -> Right Yearly
+  t -> Left $ "Unknown Frequency value: " <> show t
 
-frequencyB :: Frequency -> NonEmpty ParamValue
-frequencyB =
-  (:| []) . UnquotedParam . \case
-    Secondly -> "SECONDLY"
-    Minutely -> "MINUTELY"
-    Hourly -> "HOURLY"
-    Daily -> "DAILY"
-    Weekly -> "WEEKLY"
-    Monthly -> "MONTHLY"
-    Yearly -> "YEARLY"
+frequencyB :: Frequency -> Text
+frequencyB = \case
+  Secondly -> "SECONDLY"
+  Minutely -> "MINUTELY"
+  Hourly -> "HOURLY"
+  Daily -> "DAILY"
+  Weekly -> "WEEKLY"
+  Monthly -> "MONTHLY"
+  Yearly -> "YEARLY"
 
 -- | Interval
 --
@@ -678,20 +719,19 @@ newtype Interval = Interval {unInterval :: Word}
 instance Validity Interval where
   validate i@(Interval w) = mconcat [genericValidate i, declare "The interval is not zero" $ w /= 0]
 
-instance IsParameter Interval where
-  parameterName Proxy = "INTERVAL"
-  parameterP = intervalP
-  parameterB = intervalB
+instance IsRecurrenceRulePart Interval where
+  recurrenceRulePartName Proxy = "INTERVAL"
+  recurrenceRulePartP = intervalP
+  recurrenceRulePartB = intervalB
 
-intervalP :: NonEmpty ParamValue -> Either String Interval
-intervalP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "INTERVAL did not look like a positive integer: " <> show c
+intervalP :: Text -> Either String Interval
+intervalP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "INTERVAL did not look like a positive integer: " <> show t
     Just w -> Right $ Interval w
-  p -> Left $ "Expected INTERVAL to be unquoted, but was quoted: " <> show p
 
-intervalB :: Interval -> NonEmpty ParamValue
-intervalB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unInterval
+intervalB :: Interval -> Text
+intervalB = T.pack . show . unInterval
 
 data UntilCount
   = -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.
@@ -754,21 +794,20 @@ instance Validity Until where
           UntilDateTime lt -> validateImpreciseLocalTime lt
       ]
 
-instance IsParameter Until where
-  parameterName Proxy = "UNTIL"
-  parameterP = untilP
-  parameterB = untilB
+instance IsRecurrenceRulePart Until where
+  recurrenceRulePartName Proxy = "UNTIL"
+  recurrenceRulePartP = untilP
+  recurrenceRulePartB = untilB
 
-untilP :: NonEmpty ParamValue -> Either String Until
-untilP = anySingleParamP $ \t ->
-  (UntilDate <$> parseDate t) -- TODO
+untilP :: Text -> Either String Until
+untilP t =
+  (UntilDate <$> parseDate t)
     <|> (UntilDateTime <$> parseDateTimeUTC t)
 
-untilB :: Until -> NonEmpty ParamValue
-untilB =
-  (:| []) . UnquotedParam . CI.mk . \case
-    UntilDate d -> renderDate d
-    UntilDateTime lt -> renderDateTimeUTC lt
+untilB :: Until -> Text
+untilB = \case
+  UntilDate d -> renderDate d
+  UntilDateTime lt -> renderDateTimeUTC lt
 
 newtype Count = Count_ {unCount :: Word}
   deriving (Show, Eq, Ord, Generic)
@@ -781,20 +820,19 @@ instance Validity Count where
           w >= 0 && w <= 60
       ]
 
-instance IsParameter Count where
-  parameterName Proxy = "COUNT"
-  parameterP = countP
-  parameterB = countB
+instance IsRecurrenceRulePart Count where
+  recurrenceRulePartName Proxy = "COUNT"
+  recurrenceRulePartP = countP
+  recurrenceRulePartB = countB
 
-countP :: NonEmpty ParamValue -> Either String Count
-countP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "COUNT did not look like a positive integer: " <> show c
+countP :: Text -> Either String Count
+countP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "COUNT did not look like a positive integer: " <> show t
     Just w -> Right $ Count_ w
-  p -> Left $ "Expected COUNT to be unquoted, but was quoted: " <> show p
 
-countB :: Count -> NonEmpty ParamValue
-countB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unCount
+countB :: Count -> Text
+countB = T.pack . show . unCount
 
 -- | A second within a minute
 --
@@ -810,20 +848,19 @@ instance Validity BySecond where
           w >= 0 && w <= 60
       ]
 
-instance IsParameter BySecond where
-  parameterName Proxy = "BYSECOND"
-  parameterP = bySecondP
-  parameterB = bySecondB
+instance IsRecurrenceRulePart (Set BySecond) where
+  recurrenceRulePartName Proxy = "BYSECOND"
+  recurrenceRulePartP = setP bySecondP
+  recurrenceRulePartB = setB bySecondB
 
-bySecondP :: NonEmpty ParamValue -> Either String BySecond
-bySecondP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYSECOND did not look like a positive integer: " <> show c
+bySecondP :: Text -> Either String BySecond
+bySecondP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYSECOND did not look like a positive integer: " <> show t
     Just w -> Right $ BySecond w
-  p -> Left $ "Expected BYSECOND to be unquoted, but was quoted: " <> show p
 
-bySecondB :: BySecond -> NonEmpty ParamValue
-bySecondB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unBySecond
+bySecondB :: BySecond -> Text
+bySecondB = T.pack . show . unBySecond
 
 -- | A minute within an hour
 --
@@ -839,20 +876,19 @@ instance Validity ByMinute where
           w >= 0 && w <= 59
       ]
 
-instance IsParameter ByMinute where
-  parameterName Proxy = "BYMINUTE"
-  parameterP = byMinuteP
-  parameterB = byMinuteB
+instance IsRecurrenceRulePart (Set ByMinute) where
+  recurrenceRulePartName Proxy = "BYMINUTE"
+  recurrenceRulePartP = setP byMinuteP
+  recurrenceRulePartB = setB byMinuteB
 
-byMinuteP :: NonEmpty ParamValue -> Either String ByMinute
-byMinuteP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYMINUTE did not look like a positive integer: " <> show c
+byMinuteP :: Text -> Either String ByMinute
+byMinuteP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYMINUTE did not look like a positive integer: " <> show t
     Just w -> Right $ ByMinute w
-  p -> Left $ "Expected BYMINUTE to be unquoted, but was quoted: " <> show p
 
-byMinuteB :: ByMinute -> NonEmpty ParamValue
-byMinuteB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByMinute
+byMinuteB :: ByMinute -> Text
+byMinuteB = T.pack . show . unByMinute
 
 -- | An hour within a day
 --
@@ -868,20 +904,19 @@ instance Validity ByHour where
           w >= 0 && w <= 23
       ]
 
-instance IsParameter ByHour where
-  parameterName Proxy = "BYHOUR"
-  parameterP = byHourP
-  parameterB = byHourB
+instance IsRecurrenceRulePart (Set ByHour) where
+  recurrenceRulePartName Proxy = "BYHOUR"
+  recurrenceRulePartP = setP byHourP
+  recurrenceRulePartB = setB byHourB
 
-byHourP :: NonEmpty ParamValue -> Either String ByHour
-byHourP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYHOUR did not look like a positive integer: " <> show c
+byHourP :: Text -> Either String ByHour
+byHourP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYHOUR did not look like a positive integer: " <> show t
     Just w -> Right $ ByHour w
-  p -> Left $ "Expected BYHOUR to be unquoted, but was quoted: " <> show p
 
-byHourB :: ByHour -> NonEmpty ParamValue
-byHourB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByHour
+byHourB :: ByHour -> Text
+byHourB = T.pack . show . unByHour
 
 -- | The BYDAY rule part specifies a COMMA-separated list of days of the week;
 --
@@ -917,13 +952,13 @@ instance Validity ByDay where
               ]
       ]
 
-instance IsParameter ByDay where
-  parameterName Proxy = "BYDAY"
-  parameterP = byDayP
-  parameterB = byDayB
+instance IsRecurrenceRulePart (Set ByDay) where
+  recurrenceRulePartName Proxy = "BYDAY"
+  recurrenceRulePartP = setP byDayP
+  recurrenceRulePartB = setB byDayB
 
-byDayP :: NonEmpty ParamValue -> Either String ByDay
-byDayP = anySingleParamP $ \t ->
+byDayP :: Text -> Either String ByDay
+byDayP t =
   let ci = CI.mk t
    in case parseDayOfWeek ci of
         Right dow -> pure $ Every dow
@@ -961,9 +996,9 @@ renderDayOfWeek = \case
   Saturday -> "SA"
   Sunday -> "SU"
 
-byDayB :: ByDay -> NonEmpty ParamValue
+byDayB :: ByDay -> Text
 byDayB =
-  (:| []) . UnquotedParam . \case
+  CI.original . \case
     Every dow -> renderDayOfWeek dow
     Specific i dow -> CI.mk (T.pack (show i)) <> renderDayOfWeek dow
 
@@ -982,20 +1017,19 @@ instance Validity ByMonthDay where
           i /= 0 && i >= -31 && i <= 31
       ]
 
-instance IsParameter ByMonthDay where
-  parameterName Proxy = "BYMONTHDAY"
-  parameterP = byMonthDayP
-  parameterB = byMonthDayB
+instance IsRecurrenceRulePart (Set ByMonthDay) where
+  recurrenceRulePartName Proxy = "BYMONTHDAY"
+  recurrenceRulePartP = setP byMonthDayP
+  recurrenceRulePartB = setB byMonthDayB
 
-byMonthDayP :: NonEmpty ParamValue -> Either String ByMonthDay
-byMonthDayP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYMONTHDAY did not look like an integer: " <> show c
+byMonthDayP :: Text -> Either String ByMonthDay
+byMonthDayP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYMONTHDAY did not look like an integer: " <> show t
     Just w -> Right $ ByMonthDay w
-  p -> Left $ "Expected BYMONTHDAY to be unquoted, but was quoted: " <> show p
 
-byMonthDayB :: ByMonthDay -> NonEmpty ParamValue
-byMonthDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByMonthDay
+byMonthDayB :: ByMonthDay -> Text
+byMonthDayB = T.pack . show . unByMonthDay
 
 -- | A day within a year
 --
@@ -1013,20 +1047,19 @@ instance Validity ByYearDay where
           i /= 0 && i >= -366 && i <= 366
       ]
 
-instance IsParameter ByYearDay where
-  parameterName Proxy = "BYYEARDAY"
-  parameterP = byYearDayP
-  parameterB = byYearDayB
+instance IsRecurrenceRulePart (Set ByYearDay) where
+  recurrenceRulePartName Proxy = "BYYEARDAY"
+  recurrenceRulePartP = setP byYearDayP
+  recurrenceRulePartB = setB byYearDayB
 
-byYearDayP :: NonEmpty ParamValue -> Either String ByYearDay
-byYearDayP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYYEARDAY did not look like an integer: " <> show c
+byYearDayP :: Text -> Either String ByYearDay
+byYearDayP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYYEARDAY did not look like an integer: " <> show t
     Just w -> Right $ ByYearDay w
-  p -> Left $ "Expected BYYEARDAY to be unquoted, but was quoted: " <> show p
 
-byYearDayB :: ByYearDay -> NonEmpty ParamValue
-byYearDayB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByYearDay
+byYearDayB :: ByYearDay -> Text
+byYearDayB = T.pack . show . unByYearDay
 
 -- | A week within a year
 --
@@ -1053,20 +1086,19 @@ instance Validity ByWeekNo where
           i /= 0 && i >= -53 && i <= 53
       ]
 
-instance IsParameter ByWeekNo where
-  parameterName Proxy = "BYWEEKNO"
-  parameterP = byWeekNoP
-  parameterB = byWeekNoB
+instance IsRecurrenceRulePart (Set ByWeekNo) where
+  recurrenceRulePartName Proxy = "BYWEEKNO"
+  recurrenceRulePartP = setP byWeekNoP
+  recurrenceRulePartB = setB byWeekNoB
 
-byWeekNoP :: NonEmpty ParamValue -> Either String ByWeekNo
-byWeekNoP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYWEEKNO did not look like an integer: " <> show c
+byWeekNoP :: Text -> Either String ByWeekNo
+byWeekNoP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYWEEKNO did not look like an integer: " <> show t
     Just w -> Right $ ByWeekNo w
-  p -> Left $ "Expected BYWEEKNO to be unquoted, but was quoted: " <> show p
 
-byWeekNoB :: ByWeekNo -> NonEmpty ParamValue
-byWeekNoB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unByWeekNo
+byWeekNoB :: ByWeekNo -> Text
+byWeekNoB = T.pack . show . unByWeekNo
 
 -- | A month within a year
 --
@@ -1078,20 +1110,18 @@ newtype ByMonth = ByMonth {unByMonth :: Month}
 
 instance Validity ByMonth
 
-instance IsParameter ByMonth where
-  parameterName Proxy = "BYMONTH"
-  parameterP = byMonthP
-  parameterB = byMonthB
+instance IsRecurrenceRulePart (Set ByMonth) where
+  recurrenceRulePartName Proxy = "BYMONTH"
+  recurrenceRulePartP = setP byMonthP
+  recurrenceRulePartB = setB byMonthB
 
-byMonthP :: NonEmpty ParamValue -> Either String ByMonth
-byMonthP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) >>= monthNoToMonth of
-    Nothing -> Left $ "BYMONTH did not look like a positive integer: " <> show c
-    Just w -> Right $ ByMonth w
-  p -> Left $ "Expected BYMONTH to be unquoted, but was quoted: " <> show p
+byMonthP :: Text -> Either String ByMonth
+byMonthP t = case readMaybe (T.unpack t) >>= monthNoToMonth of
+  Nothing -> Left $ "BYMONTH did not look like a positive integer: " <> show t
+  Just w -> Right $ ByMonth w
 
-byMonthB :: ByMonth -> NonEmpty ParamValue
-byMonthB = (:| []) . UnquotedParam . CI.mk . T.pack . show . monthToMonthNo . unByMonth
+byMonthB :: ByMonth -> Text
+byMonthB = T.pack . show . monthToMonthNo . unByMonth
 
 -- | A position within the recurrence set
 --
@@ -1122,20 +1152,19 @@ instance Validity BySetPos where
           w /= 0
       ]
 
-instance IsParameter BySetPos where
-  parameterName Proxy = "BYSETPOS"
-  parameterP = bySetPosP
-  parameterB = bySetPosB
+instance IsRecurrenceRulePart (Set BySetPos) where
+  recurrenceRulePartName Proxy = "BYSETPOS"
+  recurrenceRulePartP = setP bySetPosP
+  recurrenceRulePartB = setB bySetPosB
 
-bySetPosP :: NonEmpty ParamValue -> Either String BySetPos
-bySetPosP = singleParamP $ \case
-  UnquotedParam c -> case readMaybe (T.unpack (CI.foldedCase c)) of
-    Nothing -> Left $ "BYSETPOS did not look like an integer: " <> show c
+bySetPosP :: Text -> Either String BySetPos
+bySetPosP t =
+  case readMaybe (T.unpack t) of
+    Nothing -> Left $ "BYSETPOS did not look like an integer: " <> show t
     Just w -> Right $ BySetPos w
-  p -> Left $ "Expected BYSETPOS to be unquoted, but was quoted: " <> show p
 
-bySetPosB :: BySetPos -> NonEmpty ParamValue
-bySetPosB = (:| []) . UnquotedParam . CI.mk . T.pack . show . unBySetPos
+bySetPosB :: BySetPos -> Text
+bySetPosB = T.pack . show . unBySetPos
 
 -- | Week Start
 -- @
@@ -1151,16 +1180,16 @@ newtype WeekStart = WeekStart {unWeekStart :: DayOfWeek}
 
 instance Validity WeekStart
 
-instance IsParameter WeekStart where
-  parameterName Proxy = "WKST"
-  parameterP = weekStartP
-  parameterB = weekStartB
+instance IsRecurrenceRulePart WeekStart where
+  recurrenceRulePartName Proxy = "WKST"
+  recurrenceRulePartP = weekStartP
+  recurrenceRulePartB = weekStartB
 
-weekStartP :: NonEmpty ParamValue -> Either String WeekStart
-weekStartP = anySingleParamP $ fmap WeekStart <$> parseDayOfWeek . CI.mk
+weekStartP :: Text -> Either String WeekStart
+weekStartP = fmap WeekStart <$> parseDayOfWeek . CI.mk
 
-weekStartB :: WeekStart -> NonEmpty ParamValue
-weekStartB = (:| []) . UnquotedParam . renderDayOfWeek . unWeekStart
+weekStartB :: WeekStart -> Text
+weekStartB = CI.foldedCase . renderDayOfWeek . unWeekStart
 
 -- A month within a year
 --

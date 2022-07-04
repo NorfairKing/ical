@@ -7,15 +7,15 @@
 module ICal.PropertyType.RecurrenceRuleSpec where
 
 import Control.Monad
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.Set (Set)
+import Data.Text (Text)
 import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian)
 import ICal.ContentLine
-import ICal.Parameter
-import ICal.Parameter.Gen
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType.RecurrenceRule.Gen
 import Test.Syd
 import Test.Syd.Validity
 
@@ -23,150 +23,160 @@ spec :: Spec
 spec = do
   describe "Interval" $ do
     genValidSpec @Interval
-    parameterSpec @Interval
-    let examples :: [(NonEmpty ParamValue, Interval)]
-        examples = [(["1"], Interval 1)]
+    recurrenceRulePartSpec @Interval
+    let examples :: [(Text, Interval)]
+        examples = [("1", Interval 1)]
     forM_ examples $ \(pvs, interval) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right interval
+        recurrenceRulePartP pvs `shouldBe` Right interval
       it "can render this example" $
-        parameterB interval `shouldBe` pvs
+        recurrenceRulePartB interval `shouldBe` pvs
 
   describe "Until" $ do
     genValidSpec @Until
-    parameterSpec @Until
-    let examples :: [(NonEmpty ParamValue, Until)]
+    recurrenceRulePartSpec @Until
+    let examples :: [(Text, Until)]
         examples =
-          [ (["20220622"], UntilDate $ Date $ fromGregorian 2022 06 22),
-            (["20220622T124500Z"], UntilDateTime $ LocalTime (fromGregorian 2022 06 22) (TimeOfDay 12 45 00))
+          [ ("20220622", UntilDate $ Date $ fromGregorian 2022 06 22),
+            ("20220622T124500Z", UntilDateTime $ LocalTime (fromGregorian 2022 06 22) (TimeOfDay 12 45 00))
           ]
     forM_ examples $ \(pvs, until_) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right until_
+        recurrenceRulePartP pvs `shouldBe` Right until_
       it "can render this example" $
-        parameterB until_ `shouldBe` pvs
+        recurrenceRulePartB until_ `shouldBe` pvs
 
   describe "Count" $ do
     genValidSpec @Count
-    parameterSpec @Count
-    let examples :: [(NonEmpty ParamValue, Count)]
-        examples =
-          [ (["1"], Count_ 1)
-          ]
+    recurrenceRulePartSpec @Count
+    let examples :: [(Text, Count)]
+        examples = [("1", Count_ 1)]
     forM_ examples $ \(pvs, count_) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right count_
+        recurrenceRulePartP pvs `shouldBe` Right count_
       it "can render this example" $
-        parameterB count_ `shouldBe` pvs
+        recurrenceRulePartB count_ `shouldBe` pvs
 
   describe "BySecond" $ do
     genValidSpec @BySecond
-    parameterSpec @BySecond
-    let examples :: [(NonEmpty ParamValue, BySecond)]
-        examples = [(["1"], BySecond 1)]
+    recurrenceRulePartSpec @(Set BySecond)
+    let examples :: [(Text, Set BySecond)]
+        examples = [("1", [BySecond 1])]
     forM_ examples $ \(pvs, bySecond) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right bySecond
+        recurrenceRulePartP pvs `shouldBe` Right bySecond
       it "can render this example" $
-        parameterB bySecond `shouldBe` pvs
+        recurrenceRulePartB bySecond `shouldBe` pvs
 
   describe "ByMinute" $ do
     genValidSpec @ByMinute
-    parameterSpec @ByMinute
-    let examples :: [(NonEmpty ParamValue, ByMinute)]
-        examples = [(["1"], ByMinute 1)]
+    recurrenceRulePartSpec @(Set ByMinute)
+    let examples :: [(Text, Set ByMinute)]
+        examples = [("1", [ByMinute 1])]
     forM_ examples $ \(pvs, byMinute) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byMinute
+        recurrenceRulePartP pvs `shouldBe` Right byMinute
       it "can render this example" $
-        parameterB byMinute `shouldBe` pvs
+        recurrenceRulePartB byMinute `shouldBe` pvs
 
   describe "ByHour" $ do
     genValidSpec @ByHour
-    parameterSpec @ByHour
-    let examples :: [(NonEmpty ParamValue, ByHour)]
-        examples = [(["1"], ByHour 1)]
+    recurrenceRulePartSpec @(Set ByHour)
+    let examples :: [(Text, Set ByHour)]
+        examples = [("1", [ByHour 1])]
     forM_ examples $ \(pvs, byHour) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byHour
+        recurrenceRulePartP pvs `shouldBe` Right byHour
       it "can render this example" $
-        parameterB byHour `shouldBe` pvs
+        recurrenceRulePartB byHour `shouldBe` pvs
 
   describe "ByDay" $ do
     genValidSpec @ByDay
-    parameterSpec @ByDay
-    let examples :: [(NonEmpty ParamValue, ByDay)]
+    recurrenceRulePartSpec @(Set ByDay)
+    let examples :: [(Text, Set ByDay)]
         examples =
-          [ (["SU"], Every Sunday),
-            (["-1MO"], Specific (-1) Monday),
-            (["2TU"], Specific 2 Tuesday)
+          [ ("SU", [Every Sunday]),
+            ("-1MO", [Specific (-1) Monday]),
+            ("2TU", [Specific 2 Tuesday])
           ]
     forM_ examples $ \(pvs, byDay) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byDay
+        recurrenceRulePartP pvs `shouldBe` Right byDay
       it "can render this example" $
-        parameterB byDay `shouldBe` pvs
+        recurrenceRulePartB byDay `shouldBe` pvs
 
   describe "ByMonthDay" $ do
     genValidSpec @ByMonthDay
-    parameterSpec @ByMonthDay
-    let examples :: [(NonEmpty ParamValue, ByMonthDay)]
-        examples = [(["1"], ByMonthDay 1)]
+    recurrenceRulePartSpec @(Set ByMonthDay)
+    let examples :: [(Text, Set ByMonthDay)]
+        examples = [("1", [ByMonthDay 1])]
     forM_ examples $ \(pvs, byMonthDay) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byMonthDay
+        recurrenceRulePartP pvs `shouldBe` Right byMonthDay
       it "can render this example" $
-        parameterB byMonthDay `shouldBe` pvs
+        recurrenceRulePartB byMonthDay `shouldBe` pvs
 
   describe "ByYearDay" $ do
     genValidSpec @ByYearDay
-    parameterSpec @ByYearDay
-    let examples :: [(NonEmpty ParamValue, ByYearDay)]
-        examples = [(["1"], ByYearDay 1)]
+    recurrenceRulePartSpec @(Set ByYearDay)
+    let examples :: [(Text, Set ByYearDay)]
+        examples = [("1", [ByYearDay 1])]
     forM_ examples $ \(pvs, byYearDay) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byYearDay
+        recurrenceRulePartP pvs `shouldBe` Right byYearDay
       it "can render this example" $
-        parameterB byYearDay `shouldBe` pvs
+        recurrenceRulePartB byYearDay `shouldBe` pvs
 
   describe "ByWeekNo" $ do
     genValidSpec @ByWeekNo
-    parameterSpec @ByWeekNo
-    let examples :: [(NonEmpty ParamValue, ByWeekNo)]
-        examples = [(["1"], ByWeekNo 1)]
+    recurrenceRulePartSpec @(Set ByWeekNo)
+    let examples :: [(Text, Set ByWeekNo)]
+        examples = [("1", [ByWeekNo 1])]
     forM_ examples $ \(pvs, byWeekNo) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byWeekNo
+        recurrenceRulePartP pvs `shouldBe` Right byWeekNo
       it "can render this example" $
-        parameterB byWeekNo `shouldBe` pvs
+        recurrenceRulePartB byWeekNo `shouldBe` pvs
 
   describe "ByMonth" $ do
     genValidSpec @ByMonth
-    parameterSpec @ByMonth
-    let examples :: [(NonEmpty ParamValue, ByMonth)]
-        examples = [(["1"], ByMonth January)]
+    recurrenceRulePartSpec @(Set ByMonth)
+    let examples :: [(Text, Set ByMonth)]
+        examples = [("1", [ByMonth January])]
     forM_ examples $ \(pvs, byMonth) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right byMonth
+        recurrenceRulePartP pvs `shouldBe` Right byMonth
       it "can render this example" $
-        parameterB byMonth `shouldBe` pvs
+        recurrenceRulePartB byMonth `shouldBe` pvs
 
   describe "BySetPos" $ do
     genValidSpec @BySetPos
-    parameterSpec @BySetPos
-    let examples :: [(NonEmpty ParamValue, BySetPos)]
-        examples = [(["1"], BySetPos 1)]
+    recurrenceRulePartSpec @(Set BySetPos)
+    let examples :: [(Text, Set BySetPos)]
+        examples = [("1", [BySetPos 1])]
     forM_ examples $ \(pvs, bySetPos) -> do
       it "can parse this example" $
-        parameterP pvs `shouldBe` Right bySetPos
+        recurrenceRulePartP pvs `shouldBe` Right bySetPos
       it "can render this example" $
-        parameterB bySetPos `shouldBe` pvs
+        recurrenceRulePartB bySetPos `shouldBe` pvs
 
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule
     let examples :: [(ContentLineValue, RecurrenceRule)]
-        examples = []
+        examples =
+          [ ( mkSimpleContentLineValue "FREQ=YEARLY;INTERVAL=2;BYMINUTE=30;BYHOUR=8,9;BYDAY=SU;BYMONTH=1",
+              ( (makeRecurrenceRule Yearly)
+                  { recurrenceRuleFrequency = Yearly,
+                    recurrenceRuleInterval = Interval {unInterval = 2},
+                    recurrenceRuleByMinute = [ByMinute {unByMinute = 30}],
+                    recurrenceRuleByHour = [ByHour {unByHour = 8}, ByHour {unByHour = 9}],
+                    recurrenceRuleByDay = [Every Sunday],
+                    recurrenceRuleByMonth = [ByMonth {unByMonth = January}]
+                  }
+              )
+            )
+          ]
     forM_ examples $ \(clv, recurrenceRule) -> do
       it "can parse this example" $
         propertyTypeP clv `shouldBe` Right recurrenceRule

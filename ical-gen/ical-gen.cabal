@@ -15,6 +15,7 @@ library
       ICal.Parameter.Gen
       ICal.Property.Gen
       ICal.PropertyType.Gen
+      ICal.PropertyType.RecurrenceRule.Gen
       ICal.UnfoldedLine.Gen
   other-modules:
       Paths_ical_gen

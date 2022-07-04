@@ -2,6 +2,11 @@ resolver: lts-19.6
 packages:
 - ical
 - ical-gen
+
+# These are duplicated in nix/overlay.nix
+ghc-options:
+  "$locals": -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Widentities -Wredundant-constraints -Wcpp-undef
+
 extra-deps:
 - github: NorfairKing/autodocodec
   commit: 479390d82e4fb2a404c497d6b9a9fec1505b1e5e
