@@ -101,6 +101,19 @@ spec = do
               }
           )
 
+  describe "LastModified" $ do
+    genValidSpec @LastModified
+    propertySpec @LastModified
+    -- From the spec:
+    -- @
+    --     Example:  The following is an example of this property:
+    --
+    --         LAST-MODIFIED:19960817T133000Z
+    -- @
+    it "works for this example" $
+      propertyContentLineP "LAST-MODIFIED:19960817T133000Z"
+        `shouldBe` Right (LastModified (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00)))
+
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd

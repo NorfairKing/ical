@@ -388,6 +388,10 @@ value:
       time: 2022-07-05 10:45:27
     - state: TODO
       time: 2022-07-04 15:31:02
+  - header: Refactor the example-based tests to not use `shouldBe` Right
+    state-history:
+    - state: TODO
+      time: 2022-07-05 10:57:07
   - entry:
       header: Needed for use in social-dance.today
       state-history:
@@ -460,10 +464,6 @@ value:
       state-history:
       - state: TODO
         time: 2022-07-04 22:13:11
-  - header: Refactor the example-based tests to not use `shouldBe` Right
-    state-history:
-    - state: TODO
-      time: 2022-07-05 10:57:07
   - entry:
       header: Needed for use in smos
       state-history:

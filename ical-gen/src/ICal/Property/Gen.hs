@@ -42,6 +42,9 @@ instance GenValid GeographicPosition where
       <$> choose (-90, 90)
       <*> choose (-360, 360) -- Could have any value that's not written in scientific notation. This is probably good enough.
 
+instance GenValid LastModified where
+  genValid = LastModified <$> genImpreciseLocalTime
+
 instance GenValid DateTimeEnd
 
 instance GenValid TimeZoneName
