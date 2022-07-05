@@ -392,6 +392,10 @@ value:
     state-history:
     - state: TODO
       time: 2022-07-05 10:57:07
+  - header: Fix up the docs indentations
+    state-history:
+    - state: TODO
+      time: 2022-07-05 13:05:31
   - entry:
       header: Needed for use in social-dance.today
       state-history:
@@ -442,6 +446,8 @@ value:
         time: 2022-07-04 22:13:11
     - header: last-mod
       state-history:
+      - state: DONE
+        time: 2022-07-05 12:59:37
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: location

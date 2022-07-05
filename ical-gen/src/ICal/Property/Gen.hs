@@ -45,6 +45,8 @@ instance GenValid GeographicPosition where
 instance GenValid LastModified where
   genValid = LastModified <$> genImpreciseLocalTime
 
+instance GenValid Location
+
 instance GenValid DateTimeEnd
 
 instance GenValid TimeZoneName

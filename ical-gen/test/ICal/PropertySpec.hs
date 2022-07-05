@@ -13,7 +13,7 @@ import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import ICal.PropertyType.Duration.Gen ()
 import Test.Syd
-import Test.Syd.Validity
+import Test.Syd.Validity hiding (Location)
 
 spec :: Spec
 spec = do
@@ -113,6 +113,26 @@ spec = do
     it "works for this example" $
       propertyContentLineP "LAST-MODIFIED:19960817T133000Z"
         `shouldBe` Right (LastModified (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00)))
+
+  describe "Location" $ do
+    genValidSpec @Location
+    propertySpec @Location
+    it "works for these examples" $ do
+      -- From the spec:
+      -- @
+      -- Example:  The following are some examples of this property:
+      --
+      --     LOCATION:Conference Room - F123\, Bldg. 002
+      --
+      --     LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
+      --      Conference Room - F123\, Bldg. 002
+      -- @
+      propertyContentLineP
+        "LOCATION:Conference Room - F123\\, Bldg. 002"
+        `shouldBe` Right (Location "Conference Room - F123, Bldg. 002")
+      propertyContentLineP
+        "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
+        `shouldBe` Right (Location "Conference Room - F123, Bldg. 002")
 
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
