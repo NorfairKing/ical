@@ -472,6 +472,7 @@ data Event = Event
     eventClassification :: !(Maybe Classification),
     eventCreated :: !(Maybe Created),
     eventDescription :: !(Maybe Description),
+    eventGeographicPosition :: !(Maybe GeographicPosition),
     -- @
     --     ;
     --     ; The following is OPTIONAL,
@@ -518,6 +519,7 @@ vEventP = do
   eventClassification <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
+  eventGeographicPosition <- parseFirstMaybe eventProperties
   eventRecurrenceRules <- parseSet eventProperties
   mEnd <- parseFirstMaybe eventProperties
   mDuration <- parseFirstMaybe eventProperties
@@ -536,6 +538,7 @@ vEventB Event {..} =
       propertyMListB eventClassification,
       propertyMListB eventCreated,
       propertyMListB eventDescription,
+      propertyMListB eventGeographicPosition,
       propertySetB eventRecurrenceRules,
       case eventDateTimeEndDuration of
         Nothing -> mempty

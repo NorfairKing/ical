@@ -11,6 +11,7 @@ import Data.GenValidity.Time ()
 import ICal.Parameter.Gen ()
 import ICal.Property
 import ICal.PropertyType.Gen
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
@@ -34,6 +35,12 @@ instance GenValid Created where
 instance GenValid Summary
 
 instance GenValid Description
+
+instance GenValid GeographicPosition where
+  genValid =
+    GeographicPosition
+      <$> choose (-90, 90)
+      <*> choose (-360, 360) -- Could have any value that's not written in scientific notation. This is probably good enough.
 
 instance GenValid DateTimeEnd
 

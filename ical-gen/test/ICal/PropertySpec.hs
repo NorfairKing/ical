@@ -89,6 +89,18 @@ spec = do
         "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
         `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
 
+  describe "GeographicPosition" $ do
+    genValidSpec @GeographicPosition
+    propertySpec @GeographicPosition
+    it "works for this example" $
+      propertyContentLineP "GEO:37.386013;-122.082932"
+        `shouldBe` Right
+          ( GeographicPosition
+              { geographicPositionLat = 37.386013,
+                geographicPositionLon = -122.082932
+              }
+          )
+
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd

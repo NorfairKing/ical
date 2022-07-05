@@ -426,10 +426,14 @@ value:
         time: 2022-07-04 22:13:11
     - header: description
       state-history:
+      - state: DONE
+        time: 2022-07-05 11:24:28
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: geo
       state-history:
+      - state: DONE
+        time: 2022-07-05 11:50:00
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: last-mod
