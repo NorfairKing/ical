@@ -50,12 +50,12 @@ spec = do
     genValidSpec @Count
     recurrenceRulePartSpec @Count
     let examples :: [(Text, Count)]
-        examples = [("1", Count_ 1)]
-    forM_ examples $ \(pvs, count_) -> do
+        examples = [("1", Count 1)]
+    forM_ examples $ \(pvs, count) -> do
       it "can parse this example" $
-        recurrenceRulePartP pvs `shouldBe` Right count_
+        recurrenceRulePartP pvs `shouldBe` Right count
       it "can render this example" $
-        recurrenceRulePartB count_ `shouldBe` pvs
+        recurrenceRulePartB count `shouldBe` pvs
 
   describe "BySecond" $ do
     genValidSpec @BySecond

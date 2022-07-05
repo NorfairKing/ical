@@ -413,7 +413,7 @@ data RecurrenceRule = RecurrenceRule
     -- > "The UNTIL or COUNT rule parts are OPTIONAL, but they MUST NOT occur in the same 'recur'."
     --
     -- See 'UntilCount'
-    recurrenceRuleUntilCount :: !UntilCount,
+    recurrenceRuleUntilCount :: !(Maybe (Either Until Count)),
     -- | The BYSECOND rule part specifies a COMMA-separated list of seconds within a minute.
     --
     -- See 'BySecond'
@@ -567,10 +567,10 @@ recurrenceRuleP ContentLineValue {..} = do
   mUntil <- parseMPart
   mCount <- parseMPart
   let recurrenceRuleUntilCount = case (mUntil, mCount) of
-        (Nothing, Nothing) -> Indefinitely
-        (Nothing, Just c) -> Count c
+        (Nothing, Nothing) -> Nothing
+        (Nothing, Just c) -> Just (Left c)
         -- Don't reject invalid ical that defines both, but ignore the count.
-        (Just u, _) -> Until u
+        (Just u, _) -> Just (Right u)
 
   recurrenceRuleBySecond <- parseSetPart
   recurrenceRuleByMinute <- parseSetPart
@@ -608,9 +608,9 @@ recurrenceRuleB RecurrenceRule {..} =
           [ [tup recurrenceRuleFrequency],
             dTup (Interval 1) recurrenceRuleInterval,
             case recurrenceRuleUntilCount of
-              Until u -> [tup u]
-              Count c -> [tup c]
-              Indefinitely -> [],
+              Just (Left u) -> [tup u]
+              Just (Right c) -> [tup c]
+              Nothing -> [],
             setTup recurrenceRuleBySecond,
             setTup recurrenceRuleByMinute,
             setTup recurrenceRuleByHour,
@@ -733,32 +733,6 @@ intervalP t =
 intervalB :: Interval -> Text
 intervalB = T.pack . show . unInterval
 
-data UntilCount
-  = -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.
-    --
-    -- If the value specified by UNTIL is synchronized with the specified
-    -- recurrence, this DATE or DATE-TIME becomes the last instance of the
-    -- recurrence.  The value of the UNTIL rule part MUST have the same value
-    -- type as the "DTSTART" property.  Furthermore, if the "DTSTART" property
-    -- is specified as a date with local time, then the UNTIL rule part MUST
-    -- also be specified as a date with local time.  If the "DTSTART" property
-    -- is specified as a date with UTC time or a date with local time and time
-    -- zone reference, then the UNTIL rule part MUST be specified as a date
-    -- with UTC time.  In the case of the "STANDARD" and "DAYLIGHT"
-    -- sub-components the UNTIL rule part MUST always be specified as a date
-    -- with UTC time.  If specified as a DATE-TIME value, then it MUST be
-    -- specified in a UTC time format.
-    Until !Until
-  | -- | The COUNT rule part defines the number of occurrences at which to range-bound the recurrence.
-    --
-    -- The "DTSTART" property value always counts as the first occurrence.
-    Count !Count
-  | -- | If [the UNTIL rule part is] not present, and the COUNT rule part is also not present, the "RRULE" is considered to repeat forever.
-    Indefinitely
-  deriving stock (Show, Eq, Ord, Generic)
-
-instance Validity UntilCount
-
 -- | The UNTIL rule part defines a DATE or DATE-TIME value that bounds the recurrence rule in an inclusive manner.
 --
 -- @
@@ -809,11 +783,11 @@ untilB = \case
   UntilDate d -> renderDate d
   UntilDateTime lt -> renderDateTimeUTC lt
 
-newtype Count = Count_ {unCount :: Word}
+newtype Count = Count {unCount :: Word}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Count where
-  validate s@(Count_ w) =
+  validate s@(Count w) =
     mconcat
       [ genericValidate s,
         declare "Valid values are 0 to 60." $
@@ -829,7 +803,7 @@ countP :: Text -> Either String Count
 countP t =
   case readMaybe (T.unpack t) of
     Nothing -> Left $ "COUNT did not look like a positive integer: " <> show t
-    Just w -> Right $ Count_ w
+    Just w -> Right $ Count w
 
 countB :: Count -> Text
 countB = T.pack . show . unCount
@@ -1248,7 +1222,7 @@ makeRecurrenceRule freq =
   RecurrenceRule
     { recurrenceRuleFrequency = freq,
       recurrenceRuleInterval = Interval 1,
-      recurrenceRuleUntilCount = Indefinitely,
+      recurrenceRuleUntilCount = Nothing,
       recurrenceRuleBySecond = S.empty,
       recurrenceRuleByMinute = S.empty,
       recurrenceRuleByHour = S.empty,

@@ -22,8 +22,6 @@ instance GenValid Month where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = genValidStructurallyWithoutExtraChecking
 
-instance GenValid UntilCount
-
 instance GenValid Frequency where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = genValidStructurallyWithoutExtraChecking
