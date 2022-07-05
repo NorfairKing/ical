@@ -833,8 +833,8 @@ instance IsProperty RecurrenceRule where
 --     GEO:37.386013;-122.082932
 -- @
 data GeographicPosition = GeographicPosition
-  { geographicPositionLat :: !Float,
-    geographicPositionLon :: !Float
+  { geographicPositionLat :: !Double,
+    geographicPositionLon :: !Double
   }
   deriving (Show, Eq, Generic)
 
@@ -853,7 +853,7 @@ instance IsProperty GeographicPosition where
   propertyB = geographicPositionB
 
 geographicPositionB :: GeographicPosition -> ContentLineValue
-geographicPositionB = propertyTypeB . renderGeographicPosition
+geographicPositionB = mkSimpleContentLineValue . renderGeographicPosition
 
 geographicPositionP :: ContentLineValue -> Either String GeographicPosition
 geographicPositionP = propertyTypeP >=> parseGeographicPosition
@@ -868,7 +868,7 @@ parseGeographicPosition t = case T.splitOn ";" t of
 renderGeographicPosition :: GeographicPosition -> Text
 renderGeographicPosition GeographicPosition {..} =
   T.pack $
-    unwords
+    concat
       [ show geographicPositionLat,
         ";",
         show geographicPositionLon

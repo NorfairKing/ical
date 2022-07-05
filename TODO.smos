@@ -396,6 +396,8 @@ value:
       time: 2022-07-05 13:05:31
   - header: Refactor the example-based tests to not use `shouldBe` Right
     state-history:
+    - state: DONE
+      time: 2022-07-05 13:35:36
     - state: TODO
       time: 2022-07-05 10:57:07
   - entry:

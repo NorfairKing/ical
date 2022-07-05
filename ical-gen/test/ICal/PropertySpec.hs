@@ -6,6 +6,8 @@
 module ICal.PropertySpec where
 
 import Data.Time
+import GHC.Stack (HasCallStack, withFrozenCallStack)
+import ICal.ContentLine
 import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType.Date
@@ -17,184 +19,190 @@ import Test.Syd.Validity hiding (Location)
 
 spec :: Spec
 spec = do
+  let parseSpec :: (HasCallStack, Show a, Eq a, IsProperty a) => ContentLine -> a -> Spec
+      parseSpec cl v =
+        it ("works for the example of " <> show cl) $
+          case propertyContentLineP cl of
+            Left err -> expectationFailure err
+            Right v' -> v' `shouldBe` v
+      renderSpec :: (HasCallStack, Show a, IsProperty a) => ContentLine -> a -> Spec
+      renderSpec cl v =
+        it ("can render the example of " <> show v) $
+          propertyContentLineB v `shouldBe` cl
+      exampleSpec :: (HasCallStack, Show a, Eq a, IsProperty a) => ContentLine -> a -> Spec
+      exampleSpec cl v = withFrozenCallStack $ do
+        parseSpec cl v
+        renderSpec cl v
+
   describe "ProdId" $ do
     genValidSpec @ProdId
     propertySpec @ProdId
-    it "works for this example" $
-      propertyContentLineP "PRODID:Example" `shouldBe` Right (ProdId "Example")
+    exampleSpec "PRODID:Example" (ProdId "Example")
 
   describe "Version" $ do
     genValidSpec @Version
     propertySpec @Version
-    it "works for this example" $
-      propertyContentLineP "VERSION:2.0" `shouldBe` Right (Version "2.0")
+    exampleSpec "VERSION:2.0" (Version "2.0")
 
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID
-    it "works for this example" $
-      propertyContentLineP "UID:19960401T080045Z-4000F192713-0052@example.com" `shouldBe` Right (UID "19960401T080045Z-4000F192713-0052@example.com")
+    exampleSpec
+      "UID:19960401T080045Z-4000F192713-0052@example.com"
+      (UID "19960401T080045Z-4000F192713-0052@example.com")
 
   describe "TZID" $ do
     genValidSpec @TZID
     propertySpec @TZID
-    it "works for these examples" $ do
-      propertyContentLineP "TZID:America/New_York" `shouldBe` Right (TZID "America/New_York")
-      propertyContentLineP "TZID:America/Los_Angeles" `shouldBe` Right (TZID "America/Los_Angeles")
-      propertyContentLineP "TZID:/example.org/America/New_York" `shouldBe` Right (TZID "/example.org/America/New_York")
+    exampleSpec "TZID:America/New_York" (TZID "America/New_York")
+    exampleSpec "TZID:America/Los_Angeles" (TZID "America/Los_Angeles")
+    exampleSpec "TZID:/example.org/America/New_York" (TZID "/example.org/America/New_York")
 
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
-    it "works for these examplse" $ do
-      propertyContentLineP "DTSTAMP:19971210T080000Z"
-        `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
-      propertyContentLineP "DTSTAMP:18581117T000000Z"
-        `shouldBe` Right (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00))))
+    exampleSpec
+      "DTSTAMP:19971210T080000Z"
+      (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
+    exampleSpec
+      "DTSTAMP:18581117T000000Z"
+      (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
-    it "works for this example" $
-      propertyContentLineP "DTSTART:19980118T073000Z"
-        `shouldBe` Right (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
+    exampleSpec
+      "DTSTART:19980118T073000Z"
+      (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
 
   describe "Classification" $ do
     genValidSpec @Classification
     propertySpec @Classification
-    it "works for this example" $
-      propertyContentLineP "CLASS:PUBLIC"
-        `shouldBe` Right ClassificationPublic
+    exampleSpec
+      "CLASS:PUBLIC"
+      ClassificationPublic
 
   describe "Created" $ do
     genValidSpec @Created
     propertySpec @Created
-    it "works for this example" $
-      propertyContentLineP "CREATED:19960329T133000Z"
-        `shouldBe` Right (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
+    exampleSpec
+      "CREATED:19960329T133000Z"
+      (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
 
   describe "Summary" $ do
     genValidSpec @Summary
     propertySpec @Summary
-    it "works for this example" $
-      propertyContentLineP
-        "SUMMARY:Department Party"
-        `shouldBe` Right (Summary "Department Party")
+    exampleSpec
+      "SUMMARY:Department Party"
+      (Summary "Department Party")
 
   describe "Description" $ do
     genValidSpec @Description
     propertySpec @Description
-    it "works for this example" $
-      propertyContentLineP
-        "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
-        `shouldBe` Right (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
+    exampleSpec
+      "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
+      (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
 
   describe "GeographicPosition" $ do
     genValidSpec @GeographicPosition
     propertySpec @GeographicPosition
-    it "works for this example" $
-      propertyContentLineP "GEO:37.386013;-122.082932"
-        `shouldBe` Right
-          ( GeographicPosition
-              { geographicPositionLat = 37.386013,
-                geographicPositionLon = -122.082932
-              }
-          )
+    exampleSpec
+      "GEO:37.386013;-122.082932"
+      ( GeographicPosition
+          { geographicPositionLat = 37.386013,
+            geographicPositionLon = -122.082932
+          }
+      )
 
   describe "LastModified" $ do
     genValidSpec @LastModified
     propertySpec @LastModified
     -- From the spec:
     -- @
-    --     Example:  The following is an example of this property:
+    -- Example:  The following is an example of this property:
     --
-    --         LAST-MODIFIED:19960817T133000Z
+    --     LAST-MODIFIED:19960817T133000Z
     -- @
-    it "works for this example" $
-      propertyContentLineP "LAST-MODIFIED:19960817T133000Z"
-        `shouldBe` Right (LastModified (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00)))
+    exampleSpec
+      "LAST-MODIFIED:19960817T133000Z"
+      (LastModified (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00)))
 
   describe "Location" $ do
     genValidSpec @Location
     propertySpec @Location
-    it "works for these examples" $ do
-      -- From the spec:
-      -- @
-      -- Example:  The following are some examples of this property:
-      --
-      --     LOCATION:Conference Room - F123\, Bldg. 002
-      --
-      --     LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
-      --      Conference Room - F123\, Bldg. 002
-      -- @
-      propertyContentLineP
-        "LOCATION:Conference Room - F123\\, Bldg. 002"
-        `shouldBe` Right (Location "Conference Room - F123, Bldg. 002")
-      propertyContentLineP
+    -- From the spec:
+    -- @
+    -- Example:  The following are some examples of this property:
+    --
+    --     LOCATION:Conference Room - F123\, Bldg. 002
+    --
+    --     LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
+    --      Conference Room - F123\, Bldg. 002
+    -- @
+    exampleSpec
+      "LOCATION:Conference Room - F123\\, Bldg. 002"
+      (Location "Conference Room - F123, Bldg. 002")
+    xdescribe "not implemented yet" $
+      exampleSpec
         "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
-        `shouldBe` Right (Location "Conference Room - F123, Bldg. 002")
+        (Location "Conference Room - F123, Bldg. 002")
 
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd
     -- From the spec:
     -- @
-    --     Example:  The following is an example of this property:
+    -- Example:  The following is an example of this property:
     --
-    --         DTEND:19960401T150000Z
+    --     DTEND:19960401T150000Z
     --
-    --         DTEND;VALUE=DATE:19980704
+    --     DTEND;VALUE=DATE:19980704
     -- @
-    it "works for this example" $
-      propertyContentLineP
-        "DTEND:19960401T150000Z"
-        `shouldBe` Right (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
-    it "works for this example" $
-      propertyContentLineP
+    exampleSpec
+      "DTEND:19960401T150000Z"
+      (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
+    xdescribe "not implemented yet" $
+      exampleSpec
         "DTEND;VALUE=DATE:19980704"
-        `shouldBe` Right (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
+        (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
 
   describe "Duration" $ do
     genValidSpec @Duration
     propertySpec @Duration
     -- From the spec:
     -- @
-    --     Example:  The following is an example of this property that specifies
-    --        an interval of time of one hour and zero minutes and zero seconds:
+    -- Example:  The following is an example of this property that specifies
+    --    an interval of time of one hour and zero minutes and zero seconds:
     --
-    --         DURATION:PT1H0M0S
+    --     DURATION:PT1H0M0S
     --
-    --        The following is an example of this property that specifies an
-    --        interval of time of 15 minutes.
+    --    The following is an example of this property that specifies an
+    --    interval of time of 15 minutes.
     --
-    --         DURATION:PT15M
+    --     DURATION:PT15M
     -- @
-    it "works for this example" $
-      propertyContentLineP
-        "DURATION:PT1H0M0S"
-        `shouldBe` Right
-          ( DurationTime
-              ( DurTime
-                  { durTimeSign = Positive,
-                    durTimeHour = 1,
-                    durTimeMinute = 0,
-                    durTimeSecond = 0
-                  }
-              )
+    parseSpec
+      "DURATION:PT1H0M0S"
+      ( DurationTime
+          ( DurTime
+              { durTimeSign = Positive,
+                durTimeHour = 1,
+                durTimeMinute = 0,
+                durTimeSecond = 0
+              }
           )
-    it "works for this example" $
-      propertyContentLineP
-        "DURATION:PT15M"
-        `shouldBe` Right
-          ( DurationTime
-              ( DurTime
-                  { durTimeSign = Positive,
-                    durTimeHour = 0,
-                    durTimeMinute = 15,
-                    durTimeSecond = 0
-                  }
-              )
+      )
+    exampleSpec
+      "DURATION:PT15M"
+      ( DurationTime
+          ( DurTime
+              { durTimeSign = Positive,
+                durTimeHour = 0,
+                durTimeMinute = 15,
+                durTimeSecond = 0
+              }
           )
+      )
 
   describe "TimeZoneName" $ do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName

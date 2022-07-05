@@ -25,13 +25,13 @@ spec = do
   describe "durationP" $ do
     -- From the spec:
     -- @
-    --     Example:  A duration of 15 days, 5 hours, and 20 seconds would be:
+    -- Example:  A duration of 15 days, 5 hours, and 20 seconds would be:
     --
-    --         P15DT5H0M20S
+    --     P15DT5H0M20S
     --
-    --        A duration of 7 weeks would be:
+    --    A duration of 7 weeks would be:
     --
-    --         P7W
+    --     P7W
     -- @
     let examples :: [(Duration, ContentLineValue)]
         examples =

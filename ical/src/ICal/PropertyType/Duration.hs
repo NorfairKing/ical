@@ -147,16 +147,12 @@ renderDuration =
         ['P'],
         digitB 'D' durDateDay,
         ['T'],
-        digitB 'H' durDateHour,
-        digitB 'M' durDateMinute,
-        digitB 'S' durDateSecond
+        hms durDateHour durDateMinute durDateSecond
       ]
     DurationTime DurTime {..} ->
       [ renderSign durTimeSign,
         ['P', 'T'],
-        digitB 'H' durTimeHour,
-        digitB 'M' durTimeMinute,
-        digitB 'S' durTimeSecond
+        hms durTimeHour durTimeMinute durTimeSecond
       ]
     DurationWeek DurWeek {..} ->
       [ renderSign durWeekSign,
@@ -164,6 +160,14 @@ renderDuration =
         digitB 'W' durWeekWeek
       ]
   where
+    hms :: Word -> Word -> Word -> String
+    hms h m s =
+      concat $
+        concat
+          [ [digitB 'H' h | h > 0 || (m <= 0 && s <= 0)],
+            [digitB 'M' m | m > 0 || (h > 0 && s > 0)],
+            [digitB 'S' s | s > 0]
+          ]
     digitB :: Char -> Word -> String
     digitB c w = show w ++ [c]
 
