@@ -462,6 +462,8 @@ value:
         time: 2022-07-04 22:13:11
     - header: status
       state-history:
+      - state: DONE
+        time: 2022-07-05 16:16:04
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: summary

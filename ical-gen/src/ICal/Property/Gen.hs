@@ -47,6 +47,8 @@ instance GenValid LastModified where
 
 instance GenValid Location
 
+instance GenValid Status
+
 instance GenValid DateTimeEnd
 
 instance GenValid TimeZoneName

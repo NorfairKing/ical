@@ -147,6 +147,18 @@ spec = do
         "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
         (Location "Conference Room - F123, Bldg. 002")
 
+  describe "Status" $ do
+    genValidSpec @Status
+    propertySpec @Status
+    -- From the spec:
+    -- @
+    -- Example:  The following is an example of this property for a "VEVENT"
+    --    calendar component:
+    --
+    --     STATUS:TENTATIVE
+    -- @
+    exampleSpec "STATUS:TENTATIVE" StatusTentative
+
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd
