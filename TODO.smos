@@ -384,6 +384,8 @@ value:
       time: 2022-07-04 15:31:29
   - header: make the untilcount an either
     state-history:
+    - state: DONE
+      time: 2022-07-05 10:45:27
     - state: TODO
       time: 2022-07-04 15:31:02
   - entry:
@@ -406,6 +408,8 @@ value:
         time: 2022-07-04 22:13:11
     - header: class
       state-history:
+      - state: DONE
+        time: 2022-07-05 10:59:07
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: dtstart
@@ -452,6 +456,10 @@ value:
       state-history:
       - state: TODO
         time: 2022-07-04 22:13:11
+  - header: Refactor the example-based tests to not use `shouldBe` Right
+    state-history:
+    - state: TODO
+      time: 2022-07-05 10:57:07
   - entry:
       header: Needed for use in smos
       state-history:

@@ -26,6 +26,8 @@ instance GenValid DateTimeStamp
 
 instance GenValid DateTimeStart
 
+instance GenValid Classification
+
 instance GenValid Created where
   genValid = Created <$> genImpreciseLocalTime
 

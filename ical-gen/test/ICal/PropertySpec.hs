@@ -59,6 +59,13 @@ spec = do
       propertyContentLineP "DTSTART:19980118T073000Z"
         `shouldBe` Right (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
 
+  describe "Classification" $ do
+    genValidSpec @Classification
+    propertySpec @Classification
+    it "works for this example" $
+      propertyContentLineP "CLASS:PUBLIC"
+        `shouldBe` Right ClassificationPublic
+
   describe "Created" $ do
     genValidSpec @Created
     propertySpec @Created

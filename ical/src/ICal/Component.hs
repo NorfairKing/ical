@@ -469,6 +469,7 @@ data Event = Event
     --     seq / status / summary / transp /
     --     url / recurid /
     -- @
+    eventClassification :: !(Maybe Classification),
     eventCreated :: !(Maybe Created),
     eventDescription :: !(Maybe Description),
     -- @
@@ -514,6 +515,7 @@ vEventP = do
   eventUID <- parseFirst eventProperties
   eventDateTimeStamp <- parseFirst eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
+  eventClassification <- parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
   eventRecurrenceRules <- parseSet eventProperties
@@ -531,6 +533,7 @@ vEventB Event {..} =
     [ propertyListB eventUID,
       propertyListB eventDateTimeStamp,
       propertyMListB eventDateTimeStart,
+      propertyMListB eventClassification,
       propertyMListB eventCreated,
       propertyMListB eventDescription,
       propertySetB eventRecurrenceRules,
