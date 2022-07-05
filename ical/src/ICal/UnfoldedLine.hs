@@ -22,42 +22,42 @@ import GHC.Generics (Generic)
 -- | An unfolded line of text, the required newlines are already stripped.
 --
 -- @
---     Lines of text SHOULD NOT be longer than 75 octets, excluding the line
---     break.  Long content lines SHOULD be split into a multiple line
---     representations using a line "folding" technique.  That is, a long
---     line can be split between any two characters by inserting a CRLF
---     immediately followed by a single linear white-space character (i.e.,
---     SPACE or HTAB).  Any sequence of CRLF followed immediately by a
---     single linear white-space character is ignored (i.e., removed) when
---     processing the content type.
+-- Lines of text SHOULD NOT be longer than 75 octets, excluding the line
+-- break.  Long content lines SHOULD be split into a multiple line
+-- representations using a line "folding" technique.  That is, a long
+-- line can be split between any two characters by inserting a CRLF
+-- immediately followed by a single linear white-space character (i.e.,
+-- SPACE or HTAB).  Any sequence of CRLF followed immediately by a
+-- single linear white-space character is ignored (i.e., removed) when
+-- processing the content type.
 --
---     For example, the line:
+-- For example, the line:
 --
---       DESCRIPTION:This is a long description that exists on a long line.
+--   DESCRIPTION:This is a long description that exists on a long line.
 --
---     Can be represented as:
+-- Can be represented as:
 --
---       DESCRIPTION:This is a lo
---        ng description
---         that exists on a long line.
+--   DESCRIPTION:This is a lo
+--    ng description
+--     that exists on a long line.
 --
---     The process of moving from this folded multiple-line representation
---     to its single-line representation is called "unfolding".  Unfolding
---     is accomplished by removing the CRLF and the linear white-space
---     character that immediately follows.
+-- The process of moving from this folded multiple-line representation
+-- to its single-line representation is called "unfolding".  Unfolding
+-- is accomplished by removing the CRLF and the linear white-space
+-- character that immediately follows.
 --
---     When parsing a content line, folded lines MUST first be unfolded
---     according to the unfolding procedure described above.
+-- When parsing a content line, folded lines MUST first be unfolded
+-- according to the unfolding procedure described above.
 --
---         Note: It is possible for very simple implementations to generate
---         improperly folded lines in the middle of a UTF-8 multi-octet
---         sequence.  For this reason, implementations need to unfold lines
---         in such a way to properly restore the original sequence.
+--     Note: It is possible for very simple implementations to generate
+--     improperly folded lines in the middle of a UTF-8 multi-octet
+--     sequence.  For this reason, implementations need to unfold lines
+--     in such a way to properly restore the original sequence.
 --
 --
---     The content information associated with an iCalendar object is
---     formatted using a syntax similar to that defined by [RFC2425].  That
---     is, the content information consists of CRLF-separated content lines.
+-- The content information associated with an iCalendar object is
+-- formatted using a syntax similar to that defined by [RFC2425].  That
+-- is, the content information consists of CRLF-separated content lines.
 -- @
 newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
   deriving stock (Eq, Generic)

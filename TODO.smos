@@ -388,14 +388,16 @@ value:
       time: 2022-07-05 10:45:27
     - state: TODO
       time: 2022-07-04 15:31:02
+  - header: Fix up the docs indentations
+    state-history:
+    - state: DONE
+      time: 2022-07-05 13:19:39
+    - state: TODO
+      time: 2022-07-05 13:05:31
   - header: Refactor the example-based tests to not use `shouldBe` Right
     state-history:
     - state: TODO
       time: 2022-07-05 10:57:07
-  - header: Fix up the docs indentations
-    state-history:
-    - state: TODO
-      time: 2022-07-05 13:05:31
   - entry:
       header: Needed for use in social-dance.today
       state-history:
@@ -452,6 +454,8 @@ value:
         time: 2022-07-04 22:13:11
     - header: location
       state-history:
+      - state: DONE
+        time: 2022-07-05 13:08:18
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: status
