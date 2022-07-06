@@ -13,14 +13,11 @@ import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Validity.URI ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import qualified Network.URI as Network
-
-instance Validity Network.URIAuth
-
-instance Validity Network.URI
 
 -- | URI
 --

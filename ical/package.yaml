@@ -19,5 +19,6 @@ library:
   - validity-bytestring
   - validity-case-insensitive
   - validity-containers
+  - validity-network-uri
   - validity-text
   - validity-time

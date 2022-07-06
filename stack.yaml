@@ -26,7 +26,7 @@ extra-deps:
   - sydtest
   - sydtest-discover
 - github: NorfairKing/validity
-  commit: d88be911a7e2a84f6c089e9269aaed8d10a74acd
+  commit: 4ce0cd2f4ccdfa9f552eedf0c656dbc53cd4fa86
   subdirs:
   - genvalidity
   - genvalidity-aeson
@@ -34,6 +34,7 @@ extra-deps:
   - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-criterion
+  - genvalidity-network-uri
   - genvalidity-path
   - genvalidity-persistent
   - genvalidity-property
@@ -53,6 +54,7 @@ extra-deps:
   - validity-bytestring
   - validity-case-insensitive
   - validity-containers
+  - validity-network-uri
   - validity-path
   - validity-persistent
   - validity-primitive
