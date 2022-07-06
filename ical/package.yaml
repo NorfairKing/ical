@@ -12,6 +12,7 @@ library:
   - containers
   - dlist
   - megaparsec
+  - network-uri
   - text
   - time
   - validity

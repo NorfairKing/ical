@@ -15,6 +15,8 @@ import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Time
+import ICal.PropertyType.URI
+import qualified Network.URI as Network
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -48,6 +50,14 @@ genImpreciseTimeOfDay =
     <$> choose (0, 23)
     <*> choose (0, 59)
     <*> (fromIntegral <$> (choose (0, 60) :: Gen Int))
+
+instance GenValid Network.URIAuth where
+  genValid = Network.rectifyAuth <$> genValidStructurally
+
+instance GenValid Network.URI where
+  genValid = Network.rectify <$> genValidStructurally
+
+instance GenValid URI
 
 propertyTypeSpec ::
   forall a.

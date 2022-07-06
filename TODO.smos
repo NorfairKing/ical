@@ -400,6 +400,14 @@ value:
       time: 2022-07-05 13:35:36
     - state: TODO
       time: 2022-07-05 10:57:07
+  - header: make a validity-uri
+    state-history:
+    - state: TODO
+      time: 2022-07-06 00:04:31
+  - header: make a genvalidity-uri
+    state-history:
+    - state: TODO
+      time: 2022-07-06 00:04:32
   - entry:
       header: Needed for use in social-dance.today
       state-history:
@@ -468,6 +476,8 @@ value:
         time: 2022-07-04 22:13:11
     - header: summary
       state-history:
+      - state: DONE
+        time: 2022-07-05 23:45:46
       - state: TODO
         time: 2022-07-04 22:13:11
     - header: transparency

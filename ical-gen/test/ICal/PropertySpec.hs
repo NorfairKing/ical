@@ -14,6 +14,8 @@ import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import ICal.PropertyType.Duration.Gen ()
+import ICal.PropertyType.URI
+import qualified Network.URI as Network
 import Test.Syd
 import Test.Syd.Validity hiding (Location)
 
@@ -215,6 +217,20 @@ spec = do
               }
           )
       )
+
+  describe "URL" $ do
+    genValidSpec @URL
+    propertySpec @URL
+    -- From the spec:
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     URL:http://example.com/pub/calendars/jsmith/mytime.ics
+    -- @
+    uri <- liftIO $ maybe (expectationFailure "could not parse URI") pure $ Network.parseURI "http://example.com/pub/calendars/jsmith/mytime.ics"
+    exampleSpec
+      "URL:http://example.com/pub/calendars/jsmith/mytime.ics"
+      (URL (URI uri))
 
   describe "TimeZoneName" $ do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName

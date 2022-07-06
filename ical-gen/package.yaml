@@ -20,6 +20,7 @@ library:
   - genvalidity-text
   - genvalidity-time
   - megaparsec
+  - network-uri
   - sydtest
   - text
   - time
@@ -42,6 +43,7 @@ tests:
     - genvalidity-sydtest
     - ical-gen
     - megaparsec
+    - network-uri
     - pretty-show
     - sydtest
     - text

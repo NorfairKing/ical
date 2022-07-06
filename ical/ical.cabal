@@ -22,6 +22,7 @@ library
       ICal.PropertyType.Duration
       ICal.PropertyType.RecurrenceRule
       ICal.PropertyType.Time
+      ICal.PropertyType.URI
       ICal.UnfoldedLine
   other-modules:
       Paths_ical
@@ -34,6 +35,7 @@ library
     , containers
     , dlist
     , megaparsec
+    , network-uri
     , text
     , time
     , validity
