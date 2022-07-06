@@ -236,3 +236,25 @@ spec = do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName
     propertySpec @TimeZoneName
     pending "works for this example"
+
+  describe "Transparency" $ do
+    genValidSpec @Transparency
+    propertySpec @Transparency
+    -- From the spec:
+    -- @
+    -- Example:  The following is an example of this property for an event
+    --    that is transparent or does not block on free/busy time searches:
+    --
+    --     TRANSP:TRANSPARENT
+    --
+    --    The following is an example of this property for an event that is
+    --    opaque or blocks on free/busy time searches:
+    --
+    --     TRANSP:OPAQUE
+    -- @
+    exampleSpec
+      "TRANSP:TRANSPARENT"
+      TransparencyTransparent
+    exampleSpec
+      "TRANSP:OPAQUE"
+      TransparencyOpaque

@@ -1226,6 +1226,85 @@ instance IsProperty Duration where
   propertyP = durationP
   propertyB = durationB
 
+-- | Time Transparency
+--
+-- === [section 3.8.2.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.7)
+--
+-- @
+-- Property Name:  TRANSP
+--
+-- Purpose:  This property defines whether or not an event is
+--    transparent to busy time searches.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property can be specified once in a "VEVENT"
+--    calendar component.
+--
+-- Description:  Time Transparency is the characteristic of an event
+--    that determines whether it appears to consume time on a calendar.
+--    Events that consume actual time for the individual or resource
+--    associated with the calendar SHOULD be recorded as OPAQUE,
+--    allowing them to be detected by free/busy time searches.  Other
+--    events, which do not take up the individual's (or resource's) time
+--    SHOULD be recorded as TRANSPARENT, making them invisible to free/
+--    busy time searches.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     transp     = "TRANSP" transparam ":" transvalue CRLF
+--
+--     transparam = *(";" other-param)
+--
+--     transvalue = "OPAQUE"
+--                 ;Blocks or opaque on busy time searches.
+--                 / "TRANSPARENT"
+--                 ;Transparent on busy time searches.
+--     ;Default value is OPAQUE
+--
+-- Example:  The following is an example of this property for an event
+--    that is transparent or does not block on free/busy time searches:
+--
+--     TRANSP:TRANSPARENT
+--
+--    The following is an example of this property for an event that is
+--    opaque or blocks on free/busy time searches:
+--
+--     TRANSP:OPAQUE
+-- @
+data Transparency
+  = TransparencyTransparent
+  | TransparencyOpaque
+  deriving (Show, Eq, Generic)
+
+instance Validity Transparency
+
+instance IsProperty Transparency where
+  propertyName Proxy = "TRANSP"
+  propertyP = transparencyP
+  propertyB = transparencyB
+
+transparencyB :: Transparency -> ContentLineValue
+transparencyB = propertyTypeB . renderTransparency
+
+transparencyP :: ContentLineValue -> Either String Transparency
+transparencyP = propertyTypeP >=> parseTransparency
+
+parseTransparency :: Text -> Either String Transparency
+parseTransparency = \case
+  "TRANSPARENT" -> Right TransparencyTransparent
+  "OPAQUE" -> Right TransparencyOpaque
+  t -> Left $ "Unknown transparency:" <> show t
+
+renderTransparency :: Transparency -> Text
+renderTransparency = \case
+  TransparencyTransparent -> "TRANSPARENT"
+  TransparencyOpaque -> "OPAQUE"
+
 -- | Uniform Resource Locator
 --
 -- === [section 3.8.2.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.5)

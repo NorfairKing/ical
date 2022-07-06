@@ -96,15 +96,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "validity": {
-        "branch": "master",
+        "branch": "development",
         "description": "Validity and validity-based testing",
         "homepage": "https://www.youtube.com/watch?v=eIs9qNh17SM",
         "owner": "NorfairKing",
         "repo": "validity",
-        "rev": "d88be911a7e2a84f6c089e9269aaed8d10a74acd",
-        "sha256": "088zl9vp7579qj1gqh1j8kb0035zjjp41k1yiww58x57pym200g7",
+        "rev": "4ce0cd2f4ccdfa9f552eedf0c656dbc53cd4fa86",
+        "sha256": "14s0i4zsm8f7gqhcf4kjg5ksqfxmxqxg0i2mkf7692sg78c22y2j",
         "type": "tarball",
-        "url": "https://github.com/NorfairKing/validity/archive/d88be911a7e2a84f6c089e9269aaed8d10a74acd.tar.gz",
+        "url": "https://github.com/NorfairKing/validity/archive/4ce0cd2f4ccdfa9f552eedf0c656dbc53cd4fa86.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

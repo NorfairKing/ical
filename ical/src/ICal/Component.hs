@@ -477,6 +477,7 @@ data Event = Event
     eventLocation :: !(Maybe Location),
     eventStatus :: !(Maybe Status),
     eventSummary :: !(Maybe Summary),
+    eventTransparency :: !(Maybe Transparency),
     eventURL :: !(Maybe URL),
     -- @
     -- ;
@@ -530,6 +531,7 @@ vEventP = do
   eventLocation <- parseFirstMaybe eventProperties
   eventStatus <- parseFirstMaybe eventProperties
   eventSummary <- parseFirstMaybe eventProperties
+  eventTransparency <- parseFirstMaybe eventProperties
   eventURL <- parseFirstMaybe eventProperties
   eventRecurrenceRules <- parseSet eventProperties
   mEnd <- parseFirstMaybe eventProperties
@@ -554,6 +556,7 @@ vEventB Event {..} =
       propertyMListB eventLocation,
       propertyMListB eventStatus,
       propertyMListB eventSummary,
+      propertyMListB eventTransparency,
       propertyMListB eventURL,
       propertySetB eventRecurrenceRules,
       case eventDateTimeEndDuration of

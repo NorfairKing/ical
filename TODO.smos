@@ -402,10 +402,14 @@ value:
       time: 2022-07-05 10:57:07
   - header: make a validity-uri
     state-history:
+    - state: DONE
+      time: 2022-07-06 15:47:09
     - state: TODO
       time: 2022-07-06 00:04:31
   - header: make a genvalidity-uri
     state-history:
+    - state: DONE
+      time: 2022-07-06 15:47:08
     - state: TODO
       time: 2022-07-06 00:04:32
   - entry:
@@ -480,11 +484,13 @@ value:
         time: 2022-07-05 23:45:46
       - state: TODO
         time: 2022-07-04 22:13:11
-    - header: transparency
+    - header: url
       state-history:
+      - state: DONE
+        time: 2022-07-06 15:47:11
       - state: TODO
         time: 2022-07-04 22:13:11
-    - header: url
+    - header: transparency
       state-history:
       - state: TODO
         time: 2022-07-04 22:13:11

@@ -55,6 +55,8 @@ instance GenValid DateTimeEnd
 
 instance GenValid TimeZoneName
 
+instance GenValid Transparency
+
 propertySpec ::
   forall a.
   (Show a, Eq a, GenValid a, IsProperty a) =>
