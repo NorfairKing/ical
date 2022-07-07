@@ -1,4 +1,10 @@
-module ICal where
+module ICal
+  ( module ICal,
+    module ICal.PropertyType,
+    module ICal.Property,
+    module ICal.Component,
+  )
+where
 
 import Control.Arrow (left)
 import Data.ByteString (ByteString)
@@ -7,6 +13,8 @@ import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import ICal.Component
 import ICal.ContentLine
+import ICal.Property
+import ICal.PropertyType
 import ICal.UnfoldedLine
 
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
