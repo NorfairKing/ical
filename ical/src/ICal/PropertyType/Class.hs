@@ -134,6 +134,9 @@ unEscapeText =
     . T.replace "\\n" "\n"
     . T.replace "\\N" "\n"
 
+validateImpreciseUTCTime :: Time.UTCTime -> Validation
+validateImpreciseUTCTime = validateImpreciseLocalTime . Time.utcToLocalTime Time.utc
+
 validateImpreciseLocalTime :: Time.LocalTime -> Validation
 validateImpreciseLocalTime lt =
   let tod = Time.localTimeOfDay lt

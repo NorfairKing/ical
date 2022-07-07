@@ -73,7 +73,7 @@ optionalParamSet ::
 optionalParamSet m =
   let name = parameterName (Proxy :: Proxy param)
    in mapM
-        (fmap S.fromList . mapM (parameterP . NE.singleton) . NE.toList)
+        (fmap S.fromList . mapM (parameterP . (:| [])) . NE.toList)
         (M.lookup name m)
 
 requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Either String param

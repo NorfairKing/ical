@@ -415,6 +415,8 @@ value:
   - entry:
       header: Needed for use in social-dance.today
       state-history:
+      - state: DONE
+        time: 2022-07-07 07:41:08
       - state: TODO
         time: 2022-07-04 22:13:11
     forest:
@@ -492,8 +494,54 @@ value:
         time: 2022-07-04 22:13:11
     - header: transparency
       state-history:
+      - state: DONE
+        time: 2022-07-07 07:41:08
       - state: TODO
         time: 2022-07-04 22:13:11
+  - entry:
+      header: Functions to add
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:00
+    forest:
+    - header: Render to Text
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:00
+    - header: Render to ByteString (if the spec specifies an encoding)
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:00
+    - header: Parse from Text
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:00
+    - header: Parse from ByteString (if the spec specifies an encoding)
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:00
+  - header: Do a coverage analysis
+    state-history:
+    - state: TODO
+      time: 2022-07-07 07:43:02
+  - entry:
+      header: Tests to write
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:04
+    forest:
+    - header: Calendar roundtrip
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:04
+    - header: Calendar golden test
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:04
+    - header: Event golden test
+      state-history:
+      - state: TODO
+        time: 2022-07-07 07:43:04
   - entry:
       header: Needed for use in smos
       state-history:

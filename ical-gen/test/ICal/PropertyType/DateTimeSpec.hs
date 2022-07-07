@@ -8,7 +8,7 @@ module ICal.PropertyType.DateTimeSpec where
 
 import Control.Monad
 import qualified Data.Map as M
-import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
+import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal.ContentLine
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Gen
@@ -25,9 +25,9 @@ spec = do
     let examples :: [(DateTime, ContentLineValue)]
         examples =
           [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), mkSimpleContentLineValue "19980118T230000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), mkSimpleContentLineValue "19980119T070000Z"),
+            (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), mkSimpleContentLineValue "19980119T070000Z"),
             (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), mkSimpleContentLineValue "19970714T133000"),
-            (DateTimeUTC $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), mkSimpleContentLineValue "19970714T173000Z"),
+            (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), mkSimpleContentLineValue "19970714T173000Z"),
             ( DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00),
               ContentLineValue
                 { contentLineValueParams = M.singleton "TZID" ["America/New_York"],

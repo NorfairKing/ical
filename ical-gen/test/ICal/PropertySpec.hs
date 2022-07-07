@@ -65,17 +65,17 @@ spec = do
     propertySpec @DateTimeStamp
     exampleSpec
       "DTSTAMP:19971210T080000Z"
-      (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00))))
+      (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00)))))
     exampleSpec
       "DTSTAMP:18581117T000000Z"
-      (DateTimeStamp (DateTimeUTC (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00))))
+      (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
     exampleSpec
       "DTSTART:19980118T073000Z"
-      (DateTimeStartDateTime (DateTimeUTC (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00))))
+      (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
   describe "Classification" $ do
     genValidSpec @Classification
@@ -89,7 +89,7 @@ spec = do
     propertySpec @Created
     exampleSpec
       "CREATED:19960329T133000Z"
-      (Created (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00)))
+      (Created (localTimeToUTC utc (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00))))
 
   describe "Summary" $ do
     genValidSpec @Summary
@@ -127,7 +127,7 @@ spec = do
     -- @
     exampleSpec
       "LAST-MODIFIED:19960817T133000Z"
-      (LastModified (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00)))
+      (LastModified (localTimeToUTC utc (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00))))
 
   describe "Location" $ do
     genValidSpec @Location
@@ -174,7 +174,7 @@ spec = do
     -- @
     exampleSpec
       "DTEND:19960401T150000Z"
-      (DateTimeEndDateTime (DateTimeUTC (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00))))
+      (DateTimeEndDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
     xdescribe "not implemented yet" $
       exampleSpec
         "DTEND;VALUE=DATE:19980704"

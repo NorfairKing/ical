@@ -34,7 +34,7 @@ instance GenValid Until where
   genValid =
     oneof
       [ UntilDate <$> genValid,
-        UntilDateTime <$> genImpreciseLocalTime
+        UntilDateTime <$> genImpreciseUTCTime
       ]
 
 instance GenValid Count

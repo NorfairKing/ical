@@ -9,7 +9,7 @@ import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
-import Data.Time (LocalTime (..), TimeOfDay (..))
+import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime, localTimeToUTC, utc)
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
 import ICal.PropertyType.Class
@@ -33,13 +33,15 @@ instance GenValid Time where
       ]
 
 instance GenValid DateTime where
-  genValid = do
-    lt <- genImpreciseLocalTime
+  genValid =
     oneof
-      [ pure $ DateTimeFloating lt,
-        pure $ DateTimeUTC lt,
-        DateTimeZoned <$> genValid <*> pure lt
+      [ DateTimeFloating <$> genImpreciseLocalTime,
+        DateTimeUTC <$> genImpreciseUTCTime,
+        DateTimeZoned <$> genValid <*> genImpreciseLocalTime
       ]
+
+genImpreciseUTCTime :: Gen UTCTime
+genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime
 
 genImpreciseLocalTime :: Gen LocalTime
 genImpreciseLocalTime = LocalTime <$> genValid <*> genImpreciseTimeOfDay

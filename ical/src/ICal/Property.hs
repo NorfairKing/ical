@@ -217,6 +217,10 @@ versionP = fmap Version . propertyTypeP
 versionB :: Version -> ContentLineValue
 versionB = propertyTypeB . unVersion
 
+-- | The current version
+version20 :: Version
+version20 = Version "2.0"
+
 -- |
 --
 -- === [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
@@ -606,14 +610,14 @@ renderClassification = \case
 -- Because the spec says "The value MUST bespecified as a date with UTC time.",
 -- we will just store the 'LocalTime' (in the utc timezone) instead of a
 -- 'DateTime'
-newtype Created = Created {unCreated :: Time.LocalTime}
+newtype Created = Created {unCreated :: Time.UTCTime}
   deriving (Show, Eq, Generic)
 
 instance Validity Created where
   validate c@Created {..} =
     mconcat
       [ genericValidate c,
-        validateImpreciseLocalTime unCreated
+        validateImpreciseUTCTime unCreated
       ]
 
 instance IsProperty Created where
@@ -911,18 +915,14 @@ renderGeographicPosition GeographicPosition {..} =
 --
 --     LAST-MODIFIED:19960817T133000Z
 -- @
---
--- Because the spec says "The value MUST bespecified as a date with UTC time.",
--- we will just store the 'LocalTime' (in the utc timezone) instead of a
--- 'DateTime'
-newtype LastModified = LastModified {unLastModified :: Time.LocalTime}
+newtype LastModified = LastModified {unLastModified :: Time.UTCTime}
   deriving (Show, Eq, Generic)
 
 instance Validity LastModified where
   validate c@LastModified {..} =
     mconcat
       [ genericValidate c,
-        validateImpreciseLocalTime unLastModified
+        validateImpreciseUTCTime unLastModified
       ]
 
 instance IsProperty LastModified where

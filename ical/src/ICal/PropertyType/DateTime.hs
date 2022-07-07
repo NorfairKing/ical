@@ -155,7 +155,7 @@ data DateTime
     -- @
     -- FORM #2: DATE WITH UTC TIME
     -- @
-    DateTimeUTC !Time.LocalTime
+    DateTimeUTC !Time.UTCTime
   | -- |
     -- @
     -- FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
@@ -167,11 +167,10 @@ instance Validity DateTime where
   validate dt =
     mconcat
       [ genericValidate dt,
-        let lt = case dt of
-              DateTimeFloating l -> l
-              DateTimeUTC l -> l
-              DateTimeZoned _ l -> l
-         in validateImpreciseLocalTime lt
+        case dt of
+          DateTimeFloating l -> validateImpreciseLocalTime l
+          DateTimeUTC u -> validateImpreciseUTCTime u
+          DateTimeZoned _ l -> validateImpreciseLocalTime l
       ]
 
 instance IsPropertyType DateTime where
@@ -192,7 +191,7 @@ dateTimeFloatingP ContentLineValue {..} =
   let s = T.unpack contentLineValueRaw
    in parseTimeEither dateTimeFloatingFormatStr s
 
-dateTimeUTCP :: ContentLineValue -> Either String Time.LocalTime
+dateTimeUTCP :: ContentLineValue -> Either String Time.UTCTime
 dateTimeUTCP ContentLineValue {..} =
   parseDateTimeUTC contentLineValueRaw
 
@@ -206,7 +205,7 @@ dateTimeB =
 dateTimeFloatingB :: Time.LocalTime -> ContentLineValue
 dateTimeFloatingB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
 
-dateTimeUTCB :: Time.LocalTime -> ContentLineValue
+dateTimeUTCB :: Time.UTCTime -> ContentLineValue
 dateTimeUTCB = mkSimpleContentLineValue . renderDateTimeUTC
 
 dateTimeZonedB :: TZIDParam -> Time.LocalTime -> ContentLineValue
@@ -219,10 +218,10 @@ dateTimeZonedB tzidParam lt =
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
 
-parseDateTimeUTC :: Text -> Either String Time.LocalTime
+parseDateTimeUTC :: Text -> Either String Time.UTCTime
 parseDateTimeUTC = parseTimeEither dateTimeUTCFormatStr . T.unpack
 
-renderDateTimeUTC :: Time.LocalTime -> Text
+renderDateTimeUTC :: Time.UTCTime -> Text
 renderDateTimeUTC = T.pack . Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr
 
 dateTimeUTCFormatStr :: String

@@ -198,13 +198,13 @@ data Calendar = Calendar
 
 instance Validity Calendar
 
-iCalendarP :: CP [Calendar]
-iCalendarP = many componentSectionP
-
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
   componentP = vCalendarP
   componentB = vCalendarB
+
+iCalendarP :: CP [Calendar]
+iCalendarP = many componentSectionP
 
 vCalendarP :: CP Calendar
 vCalendarP = do
@@ -228,6 +228,9 @@ vCalendarP = do
       calendarMod = appEndo $ mconcat $ map Endo calendarMods
   pure $ calendarMod $ Calendar {..}
 
+iCalendarB :: [Calendar] -> DList ContentLine
+iCalendarB = foldMap vCalendarB
+
 vCalendarB :: Calendar -> DList ContentLine
 vCalendarB Calendar {..} =
   mconcat $
@@ -238,6 +241,15 @@ vCalendarB Calendar {..} =
         map componentSectionB calendarEvents,
         map componentSectionB calendarTimeZones
       ]
+
+makeCalendar :: ProdId -> Calendar
+makeCalendar prodId =
+  Calendar
+    { calendarProdId = prodId,
+      calendarVersion = version20,
+      calendarEvents = [],
+      calendarTimeZones = []
+    }
 
 parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
 parseFirst = go
@@ -565,6 +577,26 @@ vEventB Event {..} =
           Left e -> propertyListB e
           Right d -> propertyListB d
     ]
+
+makeEvent :: UID -> DateTimeStamp -> Event
+makeEvent uid dateTimeStamp =
+  Event
+    { eventUID = uid,
+      eventDateTimeStamp = dateTimeStamp,
+      eventDateTimeStart = Nothing,
+      eventClassification = Nothing,
+      eventCreated = Nothing,
+      eventDescription = Nothing,
+      eventGeographicPosition = Nothing,
+      eventLastModified = Nothing,
+      eventLocation = Nothing,
+      eventStatus = Nothing,
+      eventSummary = Nothing,
+      eventTransparency = Nothing,
+      eventURL = Nothing,
+      eventRecurrenceRules = S.empty,
+      eventDateTimeEndDuration = Nothing
+    }
 
 -- |
 --

@@ -756,7 +756,7 @@ data Until
     -- with UTC time.  If specified as a DATE-TIME value, then it MUST be
     -- specified in a UTC time format.
     -- @
-    UntilDateTime !Time.LocalTime
+    UntilDateTime !Time.UTCTime
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Until where
@@ -765,7 +765,7 @@ instance Validity Until where
       [ genericValidate u,
         case u of
           UntilDate _ -> valid
-          UntilDateTime lt -> validateImpreciseLocalTime lt
+          UntilDateTime ut -> validateImpreciseUTCTime ut
       ]
 
 instance IsRecurrenceRulePart Until where

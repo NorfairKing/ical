@@ -30,7 +30,7 @@ instance GenValid DateTimeStart
 instance GenValid Classification
 
 instance GenValid Created where
-  genValid = Created <$> genImpreciseLocalTime
+  genValid = Created <$> genImpreciseUTCTime
 
 instance GenValid Summary
 
@@ -43,7 +43,7 @@ instance GenValid GeographicPosition where
       <*> choose (-360, 360) -- Could have any value that's not written in scientific notation. This is probably good enough.
 
 instance GenValid LastModified where
-  genValid = LastModified <$> genImpreciseLocalTime
+  genValid = LastModified <$> genImpreciseUTCTime
 
 instance GenValid Location
 
