@@ -24,16 +24,17 @@ spec = do
 
     -- Test based on this part of the spec:
     --
+    -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
     -- @
-    --     For example, the line:
+    -- For example, the line:
     --
-    --       DESCRIPTION:This is a long description that exists on a long line.
+    --   DESCRIPTION:This is a long description that exists on a long line.
     --
-    --     Can be represented as:
+    -- Can be represented as:
     --
-    --       DESCRIPTION:This is a lo
-    --        ng description
-    --         that exists on a long line.
+    --   DESCRIPTION:This is a lo
+    --    ng description
+    --     that exists on a long line.
     -- @
     it "parses these two into the same unfolded lines:" $ do
       let line1 = "DESCRIPTION:This is a long description that exists on a long line.\r\n"
@@ -54,13 +55,14 @@ spec = do
               "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
             ]
         )
+
   -- Test based on this coment in the spec:
   --
   -- @
-  --     Note: It is possible for very simple implementations to generate
-  --     improperly folded lines in the middle of a UTF-8 multi-octet
-  --     sequence.  For this reason, implementations need to unfold lines
-  --     in such a way to properly restore the original sequence.
+  -- Note: It is possible for very simple implementations to generate
+  -- improperly folded lines in the middle of a UTF-8 multi-octet
+  -- sequence.  For this reason, implementations need to unfold lines
+  -- in such a way to properly restore the original sequence.
   -- @
   pending "that multi-octet UTF-8 sequences are preserved correctly"
 

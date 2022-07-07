@@ -8,6 +8,11 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- @
+-- The property value component of a content line has a format that is
+-- property specific.  Refer to the section describing each property for
+-- a definition of this format.
+-- @
 module ICal.Property where
 
 import Control.Applicative

@@ -69,10 +69,29 @@ parseUnfoldedLines t
       Right
         . map UnfoldedLine
         . init -- Ignore the last, empty, line
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545)
+        -- @
+        -- Content lines are delimited by a line break,
+        -- which is a CRLF sequence (CR character followed by LF character).
+        -- @
         . T.splitOn "\r\n"
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+        -- @
+        -- Any sequence of CRLF followed immediately by a
+        -- single linear white-space character is ignored (i.e., removed) when
+        -- processing the content type.
+        -- @
         -- Replace a newline + tab character.
         . T.replace "\r\n\t" ""
         -- Replace a newline + space character.
+        --
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+        -- @
+        -- The process of moving from this folded multiple-line representation
+        -- to its single-line representation is called "unfolding".  Unfolding
+        -- is accomplished by removing the CRLF and the linear white-space
+        -- character that immediately follows.
+        -- @
         . T.replace "\r\n " ""
         $ t
   | otherwise = Left "Document did not end in a crlf."
@@ -86,10 +105,17 @@ unfoldedLinesB = foldMap unfoldedLineB
 unfoldedLineB :: UnfoldedLine -> Text.Builder
 unfoldedLineB = go . unUnfoldedLine
   where
+    -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+    -- @
+    -- Lines of text SHOULD NOT be longer than 75 octets, excluding the line
+    -- break.  Long content lines SHOULD be split into a multiple line
+    -- representations using a line "folding" technique.  That is, a long
+    -- line can be split between any two characters by inserting a CRLF
+    -- immediately followed by a single linear white-space character (i.e.,
+    -- SPACE or HTAB).
+    -- @
     go t =
       if T.length t < maxLineLen
         then LTB.fromText t <> LTB.fromString "\r\n"
         else LTB.fromText (T.take maxLineLen t) <> LTB.fromString "\r\n " <> go (T.drop maxLineLen t)
-    -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-    -- "Lines of text SHOULD NOT be longer than 75 octets, excluding the line breaks."
     maxLineLen = 73 -- Just to be sure

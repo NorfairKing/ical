@@ -206,15 +206,16 @@ instance IsString ParamValue where
           then QuotedParam t
           else UnquotedParam (CI.mk t)
 
-renderContentLine :: ContentLine -> Text
-renderContentLine = renderContentLines . (: [])
-
 renderContentLines :: [ContentLine] -> Text
 renderContentLines = renderUnfoldedLines . map renderContentLineToUnfoldedLine
 
 parseContentLines :: Text -> Either String [ContentLine]
 parseContentLines = parseUnfoldedLines >=> mapM parseContentLineFromUnfoldedLine
 
+-- @
+-- When parsing a content line, folded lines MUST first be unfolded
+-- according to the unfolding procedure described above.
+-- @
 parseContentLineFromUnfoldedLine :: UnfoldedLine -> Either String ContentLine
 parseContentLineFromUnfoldedLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
 
@@ -435,15 +436,6 @@ paramValueB = \case
         LTB.fromText t,
         LTB.singleton '"'
       ]
-
-quoteIfNecessary :: Text -> Text
-quoteIfNecessary t =
-  if haveToQuoteText t
-    then quoteText t
-    else t
-
-quoteText :: Text -> Text
-quoteText t = "\"" <> t <> "\""
 
 haveToQuoteText :: Text -> Bool
 haveToQuoteText = T.any haveToQuoteChar

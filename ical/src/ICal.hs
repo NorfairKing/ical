@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ICal
   ( module ICal,
     module ICal.PropertyType,
@@ -16,6 +18,18 @@ import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine
+
+-- | MIME Content type
+--
+-- @
+-- The iCalendar format is suitable as an exchange format between
+-- applications or systems.  The format is defined in terms of a MIME
+-- content type.
+-- @
+--
+-- > icalContentType = "text/calendar"
+icalContentType :: ByteString
+icalContentType = "text/calendar"
 
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
 --
