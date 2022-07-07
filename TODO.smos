@@ -501,23 +501,33 @@ value:
   - entry:
       header: Functions to add
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:01
       - state: TODO
         time: 2022-07-07 07:43:00
     forest:
     - header: Render to Text
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:27:59
       - state: TODO
         time: 2022-07-07 07:43:00
     - header: Render to ByteString (if the spec specifies an encoding)
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:00
       - state: TODO
         time: 2022-07-07 07:43:00
     - header: Parse from Text
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:00
       - state: TODO
         time: 2022-07-07 07:43:00
     - header: Parse from ByteString (if the spec specifies an encoding)
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:00
       - state: TODO
         time: 2022-07-07 07:43:00
   - header: Do a coverage analysis
@@ -532,6 +542,8 @@ value:
     forest:
     - header: Calendar roundtrip
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:06
       - state: TODO
         time: 2022-07-07 07:43:04
     - header: Calendar golden test
@@ -554,10 +566,14 @@ value:
         time: 2022-07-04 22:16:41
     - header: description
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:12
       - state: TODO
         time: 2022-07-04 22:20:26
     - header: summary
       state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:12
       - state: TODO
         time: 2022-07-04 22:20:25
   - header: for properties, use the names that they have in the spec

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -149,7 +150,7 @@ validateImpreciseTimeOfDay tod =
      in ceiling sec == (floor sec :: Int)
 
 proxyOf :: a -> Proxy a
-proxyOf _ = Proxy
+proxyOf !_ = Proxy
 
 parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
 parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
