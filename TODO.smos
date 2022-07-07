@@ -530,13 +530,11 @@ value:
         time: 2022-07-07 09:28:00
       - state: TODO
         time: 2022-07-07 07:43:00
-  - header: Do a coverage analysis
-    state-history:
-    - state: TODO
-      time: 2022-07-07 07:43:02
   - entry:
       header: Tests to write
       state-history:
+      - state: DONE
+        time: 2022-07-07 13:19:15
       - state: TODO
         time: 2022-07-07 07:43:04
     forest:
@@ -548,12 +546,14 @@ value:
         time: 2022-07-07 07:43:04
     - header: Calendar golden test
       state-history:
+      - state: DONE
+        time: 2022-07-07 13:19:13
       - state: TODO
         time: 2022-07-07 07:43:04
-    - header: Event golden test
-      state-history:
-      - state: TODO
-        time: 2022-07-07 07:43:04
+  - header: Do a coverage analysis
+    state-history:
+    - state: TODO
+      time: 2022-07-07 07:43:02
   - entry:
       header: Needed for use in smos
       state-history:
