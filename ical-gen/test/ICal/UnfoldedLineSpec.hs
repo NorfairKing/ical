@@ -2,7 +2,9 @@
 
 module ICal.UnfoldedLineSpec where
 
+import Control.Arrow (left)
 import qualified Data.ByteString as SB
+import qualified Data.Text.Encoding as TE
 import ICal.UnfoldedLine
 import ICal.UnfoldedLine.Gen ()
 import Test.Syd
@@ -10,19 +12,14 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
-  describe "parseUnfoldedLinesByteString" $
-    it "roundtrips with renderUnfoldedLinesByteString" $
-      forAllValid $ \unfoldedLines ->
-        parseUnfoldedLinesByteString (renderUnfoldedLinesByteString unfoldedLines)
-          `shouldBe` Right unfoldedLines
-  describe "parseUnfoldedLinesText" $ do
+  describe "parseUnfoldedLines" $ do
     it "parses empty text as no lines" $
-      parseUnfoldedLinesText "" `shouldBe` Right []
+      parseUnfoldedLines "" `shouldBe` Right []
     it "parses an empty line as such" $
-      parseUnfoldedLinesText "\r\n" `shouldBe` Right [""]
+      parseUnfoldedLines "\r\n" `shouldBe` Right [""]
     it "roundtrips with renderUnfoldedLinesText" $
       forAllValid $ \unfoldedLines ->
-        parseUnfoldedLinesText (renderUnfoldedLinesText unfoldedLines)
+        parseUnfoldedLines (renderUnfoldedLines unfoldedLines)
           `shouldBe` Right unfoldedLines
 
     -- Test based on this part of the spec:
@@ -41,16 +38,16 @@ spec = do
     it "parses these two into the same unfolded lines:" $ do
       let line1 = "DESCRIPTION:This is a long description that exists on a long line.\r\n"
       let line2 = "DESCRIPTION:This is a lo\r\n ng description\r\n  that exists on a long line.\r\n"
-      parseUnfoldedLinesText line1 `shouldBe` parseUnfoldedLinesText line2
+      parseUnfoldedLines line1 `shouldBe` parseUnfoldedLines line2
   describe "renderUnfoldedLinesText" $ do
     it "renders no lines as nothing" $
-      renderUnfoldedLinesText [] `shouldBe` ""
+      renderUnfoldedLines [] `shouldBe` ""
     it "renders an empty line as such" $
-      renderUnfoldedLinesText [""] `shouldBe` "\r\n"
+      renderUnfoldedLines [""] `shouldBe` "\r\n"
     it "produces the same folded line as before" $
       pureGoldenTextFile
         "test_resources/unfolded-lines.txt"
-        ( renderUnfoldedLinesText
+        ( renderUnfoldedLines
             [ "", -- empty line
               "This is rather a short line.",
               "This is a very long line which definitely contains more than seventy five characters.",
@@ -71,6 +68,6 @@ spec = do
   scenarioDirRecur "test_resources/calendars" $ \calFile ->
     it "can parse and unfold every line" $ do
       contents <- SB.readFile calFile
-      case parseUnfoldedLinesByteString contents of
+      case parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
         Left err -> expectationFailure err
         Right unfoldedLines -> shouldBeValid unfoldedLines

@@ -46,7 +46,7 @@ componentSpec = do
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
       let rendered = DList.toList $ componentB (a :: a)
-          renderedText = renderUnfoldedLinesText $ map renderContentLine rendered
+          renderedText = renderUnfoldedLines $ map renderContentLineToUnfoldedLine rendered
           ctx =
             unlines
               [ -- "Internal representation:",

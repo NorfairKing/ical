@@ -4,11 +4,13 @@
 
 module ICal.ContentLineSpec where
 
+import Control.Arrow (left)
 import Control.Monad
 import qualified Data.ByteString as SB
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
@@ -46,17 +48,17 @@ spec = do
     genValidSpec @ContentLine
     it "roundtrips ContentLines" $ parserBuilderRoundtrip contentLineP contentLineB
 
-  describe "parseContentLine" $
-    it "roundtrips with renderContentLine" $
+  describe "parseContentLineFromUnfoldedLine" $
+    it "roundtrips with renderContentLineToUnfoldedLine" $
       forAllValid $ \contentLine ->
-        case parseContentLine (renderContentLine contentLine) of
+        case parseContentLineFromUnfoldedLine (renderContentLineToUnfoldedLine contentLine) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
 
-  describe "parseContentLinesText" $
-    it "roundtrips with renderContentLinesText" $
+  describe "parseContentLines" $
+    it "roundtrips with renderContentLines" $
       forAllValid $ \contentLines ->
-        case parseContentLinesText (renderContentLinesText contentLines) of
+        case parseContentLines (renderContentLines contentLines) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLines
 
@@ -155,12 +157,14 @@ spec = do
           ]
     forM_ examples $ \(contentLine, rendered) -> do
       it "renders this example correctly" $
-        let actualRendered = renderContentLine contentLine
-         in case (,) <$> parseContentLine actualRendered <*> parseContentLine (UnfoldedLine rendered) of
+        let actualRendered = renderContentLineToUnfoldedLine contentLine
+         in case (,)
+              <$> parseContentLineFromUnfoldedLine actualRendered
+              <*> parseContentLineFromUnfoldedLine (UnfoldedLine rendered) of
               Left err -> expectationFailure err
               Right (actual, expected) -> actual `shouldBe` expected
       it "parses this example correctly" $
-        case parseContentLine (UnfoldedLine rendered) of
+        case parseContentLineFromUnfoldedLine (UnfoldedLine rendered) of
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
 
@@ -168,7 +172,7 @@ spec = do
     scenarioDirRecur "test_resources/calendars" $ \calFile ->
       it "can parse and unfold every line" $ do
         contents <- SB.readFile calFile
-        case parseContentLinesByteString contents of
+        case parseContentLines =<< left show (TE.decodeUtf8' contents) of
           Left err -> expectationFailure err
           Right contentLines -> shouldBeValid contentLines
 

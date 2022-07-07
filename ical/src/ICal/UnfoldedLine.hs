@@ -5,13 +5,9 @@
 
 module ICal.UnfoldedLine where
 
-import Control.Arrow (left)
-import Control.Monad
-import Data.ByteString (ByteString)
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
@@ -65,12 +61,9 @@ newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
 
 instance Validity UnfoldedLine -- TODO: requirement that it's a single line?
 
-parseUnfoldedLinesByteString :: ByteString -> Either String [UnfoldedLine]
-parseUnfoldedLinesByteString = (left show . TE.decodeUtf8') >=> parseUnfoldedLinesText
-
 -- TODO we can probably do something more efficient here with megaparsec.
-parseUnfoldedLinesText :: Text -> Either String [UnfoldedLine]
-parseUnfoldedLinesText t
+parseUnfoldedLines :: Text -> Either String [UnfoldedLine]
+parseUnfoldedLines t
   | T.null t = Right []
   | T.takeEnd 2 t == "\r\n" =
       Right
@@ -84,11 +77,8 @@ parseUnfoldedLinesText t
         $ t
   | otherwise = Left "Document did not end in a crlf."
 
-renderUnfoldedLinesText :: [UnfoldedLine] -> Text
-renderUnfoldedLinesText = LT.toStrict . LTB.toLazyText . unfoldedLinesB
-
-renderUnfoldedLinesByteString :: [UnfoldedLine] -> ByteString
-renderUnfoldedLinesByteString = TE.encodeUtf8 . renderUnfoldedLinesText
+renderUnfoldedLines :: [UnfoldedLine] -> Text
+renderUnfoldedLines = LT.toStrict . LTB.toLazyText . unfoldedLinesB
 
 unfoldedLinesB :: [UnfoldedLine] -> Text.Builder
 unfoldedLinesB = foldMap unfoldedLineB

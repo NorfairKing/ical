@@ -39,14 +39,18 @@ parseICalendarFromContentLines :: [ContentLine] -> Either String [Calendar]
 parseICalendarFromContentLines contentLines =
   left errorBundlePretty $ parse iCalendarP "" contentLines
 
+parseVCalendarFromContentLines :: [ContentLine] -> Either String Calendar
+parseVCalendarFromContentLines contentLines =
+  left errorBundlePretty $ parse componentSectionP "" contentLines
+
 type CP = Parsec Void [ContentLine]
 
 instance VisualStream [ContentLine] where
   showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
   showTokens Proxy =
     T.unpack
-      . renderUnfoldedLinesText
-      . map renderContentLine
+      . renderUnfoldedLines
+      . map renderContentLineToUnfoldedLine
       . NE.toList
 
 instance TraversableStream [ContentLine] where
@@ -67,7 +71,13 @@ instance TraversableStream [ContentLine] where
             }
      in case newInput of
           [] -> (Nothing, newState)
-          (cl : _) -> (Just $ T.unpack $ renderUnfoldedLinesText [renderContentLine cl], newState)
+          (cl : _) -> (Just $ T.unpack $ renderUnfoldedLines [renderContentLineToUnfoldedLine cl], newState)
+
+iCalendarP :: CP [Calendar]
+iCalendarP = many componentSectionP
+
+iCalendarB :: [Calendar] -> DList ContentLine
+iCalendarB = foldMap componentSectionB
 
 -- |
 --
@@ -200,47 +210,38 @@ instance Validity Calendar
 
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
-  componentP = vCalendarP
-  componentB = vCalendarB
+  componentP :: CP Calendar
+  componentP = do
+    calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
+      contentLineName /= "BEGIN" && contentLineName /= "END"
 
-iCalendarP :: CP [Calendar]
-iCalendarP = many componentSectionP
+    calendarProdId <- parseFirst calPropLines
+    calendarVersion <- parseFirst calPropLines
 
-vCalendarP :: CP Calendar
-vCalendarP = do
-  calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
-    contentLineName /= "BEGIN" && contentLineName /= "END"
+    calendarMods <-
+      many $
+        msum
+          [ (\event c -> c {calendarEvents = event : calendarEvents c})
+              <$> componentSectionP,
+            (\timeZone c -> c {calendarTimeZones = timeZone : calendarTimeZones c})
+              <$> componentSectionP
+          ]
+    let calendarEvents = []
+    let calendarTimeZones = []
+    let calendarMod :: Calendar -> Calendar
+        calendarMod = appEndo $ mconcat $ map Endo calendarMods
+    pure $ calendarMod $ Calendar {..}
 
-  calendarProdId <- parseFirst calPropLines
-  calendarVersion <- parseFirst calPropLines
-
-  calendarMods <-
-    many $
-      msum
-        [ (\event c -> c {calendarEvents = event : calendarEvents c})
-            <$> componentSectionP,
-          (\timeZone c -> c {calendarTimeZones = timeZone : calendarTimeZones c})
-            <$> componentSectionP
+  componentB :: Calendar -> DList ContentLine
+  componentB Calendar {..} =
+    mconcat $
+      concat
+        [ [ propertyListB calendarProdId,
+            propertyListB calendarVersion
+          ],
+          map componentSectionB calendarEvents,
+          map componentSectionB calendarTimeZones
         ]
-  let calendarEvents = []
-  let calendarTimeZones = []
-  let calendarMod :: Calendar -> Calendar
-      calendarMod = appEndo $ mconcat $ map Endo calendarMods
-  pure $ calendarMod $ Calendar {..}
-
-iCalendarB :: [Calendar] -> DList ContentLine
-iCalendarB = foldMap vCalendarB
-
-vCalendarB :: Calendar -> DList ContentLine
-vCalendarB Calendar {..} =
-  mconcat $
-    concat
-      [ [ propertyListB calendarProdId,
-          propertyListB calendarVersion
-        ],
-        map componentSectionB calendarEvents,
-        map componentSectionB calendarTimeZones
-      ]
 
 makeCalendar :: ProdId -> Calendar
 makeCalendar prodId =

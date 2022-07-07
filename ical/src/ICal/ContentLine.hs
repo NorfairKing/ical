@@ -9,7 +9,6 @@ module ICal.ContentLine where
 
 import Control.Arrow (left)
 import Control.Monad
-import Data.ByteString (ByteString)
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Char as Char
@@ -207,23 +206,20 @@ instance IsString ParamValue where
           then QuotedParam t
           else UnquotedParam (CI.mk t)
 
-renderContentLineText :: ContentLine -> Text
-renderContentLineText = renderContentLinesText . (: [])
+renderContentLine :: ContentLine -> Text
+renderContentLine = renderContentLines . (: [])
 
-renderContentLinesText :: [ContentLine] -> Text
-renderContentLinesText = renderUnfoldedLinesText . map renderContentLine
+renderContentLines :: [ContentLine] -> Text
+renderContentLines = renderUnfoldedLines . map renderContentLineToUnfoldedLine
 
-parseContentLinesText :: Text -> Either String [ContentLine]
-parseContentLinesText = parseUnfoldedLinesText >=> mapM parseContentLine
+parseContentLines :: Text -> Either String [ContentLine]
+parseContentLines = parseUnfoldedLines >=> mapM parseContentLineFromUnfoldedLine
 
-parseContentLinesByteString :: ByteString -> Either String [ContentLine]
-parseContentLinesByteString = parseUnfoldedLinesByteString >=> mapM parseContentLine
+parseContentLineFromUnfoldedLine :: UnfoldedLine -> Either String ContentLine
+parseContentLineFromUnfoldedLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
 
-parseContentLine :: UnfoldedLine -> Either String ContentLine
-parseContentLine (UnfoldedLine t) = left errorBundlePretty $ parse contentLineP "" t
-
-renderContentLine :: ContentLine -> UnfoldedLine
-renderContentLine =
+renderContentLineToUnfoldedLine :: ContentLine -> UnfoldedLine
+renderContentLineToUnfoldedLine =
   UnfoldedLine . LT.toStrict . LTB.toLazyText . contentLineB
 
 type P = Parsec Void Text
