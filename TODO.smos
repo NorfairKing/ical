@@ -550,6 +550,12 @@ value:
         time: 2022-07-07 13:19:13
       - state: TODO
         time: 2022-07-07 07:43:04
+  - header: fixup validity, this was not a bug
+    properties:
+      url: https://github.com/haskell/network-uri/commit/52ea071facb7c78cace8763ee0db5cdd12d669c9
+    state-history:
+    - state: TODO
+      time: 2022-07-08 06:51:11
   - header: Do a coverage analysis
     state-history:
     - state: TODO
