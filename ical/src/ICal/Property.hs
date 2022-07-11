@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -17,6 +18,7 @@ module ICal.Property where
 
 import Control.Applicative
 import Control.Monad
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -484,8 +486,8 @@ instance IsProperty DateTimeStart where
     (DateTimeStartDate <$> propertyTypeP cl)
       <|> (DateTimeStartDateTime <$> propertyTypeP cl)
   propertyB = \case
-    DateTimeStartDate date -> propertyTypeB date
-    DateTimeStartDateTime dateTime -> propertyTypeB dateTime
+    DateTimeStartDate date -> (propertyTypeB date) {contentLineValueParams = M.singleton "VALUE" ["DATE"]}
+    DateTimeStartDateTime dateTime -> (propertyTypeB dateTime) {contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]}
 
 -- | Classification
 --
@@ -878,9 +880,9 @@ parseGeographicPosition t = case T.splitOn ";" t of
 renderGeographicPosition :: GeographicPosition -> Text
 renderGeographicPosition GeographicPosition {..} =
   T.pack $
-    concat
+    (concat :: [String] -> String)
       [ show geographicPositionLat,
-        ";",
+        ";" :: String,
         show geographicPositionLon
       ]
 

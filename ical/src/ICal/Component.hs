@@ -466,8 +466,8 @@ data Event = Event
     -- ; but MUST NOT occur more than once.
     -- dtstamp / uid /
     -- @
-    eventUID :: !UID,
     eventDateTimeStamp :: !DateTimeStamp,
+    eventUID :: !UID,
     -- @
     -- ;
     -- ; The following is REQUIRED if the component
@@ -540,8 +540,8 @@ vEventP :: CP Event
 vEventP = do
   eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
     not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
-  eventUID <- parseFirst eventProperties
   eventDateTimeStamp <- parseFirst eventProperties
+  eventUID <- parseFirst eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
   -- @
   -- ;Default is PUBLIC
@@ -571,8 +571,8 @@ vEventP = do
 vEventB :: Event -> DList ContentLine
 vEventB Event {..} =
   mconcat
-    [ propertyListB eventUID,
-      propertyListB eventDateTimeStamp,
+    [ propertyListB eventDateTimeStamp,
+      propertyListB eventUID,
       propertyMListB eventDateTimeStart,
       -- @
       -- ;Default is PUBLIC
