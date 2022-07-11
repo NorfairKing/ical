@@ -17,6 +17,7 @@ import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Maybe
 import Data.Monoid
 import Data.Proxy
 import Data.Set (Set)
@@ -132,6 +133,12 @@ propertyListB = DList.singleton . propertyContentLineB
 propertyMListB :: IsProperty property => Maybe property -> DList ContentLine
 propertyMListB = maybe DList.empty (DList.singleton . propertyContentLineB)
 
+propertyDListB :: (Eq property, IsProperty property) => property -> property -> DList ContentLine
+propertyDListB defaultValue value =
+  if value == defaultValue
+    then mempty
+    else propertyListB value
+
 propertySetB :: IsProperty property => Set property -> DList ContentLine
 propertySetB = DList.fromList . map propertyContentLineB . S.toList
 
@@ -199,8 +206,8 @@ propertySetB = DList.fromList . map propertyContentLineB . S.toList
 -- drop any components as that can lead to user data loss.
 -- @
 data Calendar = Calendar
-  { calendarProdId :: !ProdId,
-    calendarVersion :: !Version,
+  { calendarVersion :: !Version,
+    calendarProdId :: !ProdId,
     calendarEvents :: ![Event],
     calendarTimeZones :: ![TimeZone]
   }
@@ -215,8 +222,8 @@ instance IsComponent Calendar where
     calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
       contentLineName /= "BEGIN" && contentLineName /= "END"
 
-    calendarProdId <- parseFirst calPropLines
     calendarVersion <- parseFirst calPropLines
+    calendarProdId <- parseFirst calPropLines
 
     calendarMods <-
       many $
@@ -236,8 +243,8 @@ instance IsComponent Calendar where
   componentB Calendar {..} =
     mconcat $
       concat
-        [ [ propertyListB calendarProdId,
-            propertyListB calendarVersion
+        [ [ propertyListB calendarVersion,
+            propertyListB calendarProdId
           ],
           map componentSectionB calendarEvents,
           map componentSectionB calendarTimeZones
@@ -482,7 +489,7 @@ data Event = Event
     -- seq / status / summary / transp /
     -- url / recurid /
     -- @
-    eventClassification :: !(Maybe Classification),
+    eventClassification :: !Classification,
     eventCreated :: !(Maybe Created),
     eventDescription :: !(Maybe Description),
     eventGeographicPosition :: !(Maybe GeographicPosition),
@@ -536,7 +543,10 @@ vEventP = do
   eventUID <- parseFirst eventProperties
   eventDateTimeStamp <- parseFirst eventProperties
   eventDateTimeStart <- parseFirstMaybe eventProperties
-  eventClassification <- parseFirstMaybe eventProperties
+  -- @
+  -- ;Default is PUBLIC
+  -- @
+  eventClassification <- fromMaybe ClassificationPublic <$> parseFirstMaybe eventProperties
   eventCreated <- parseFirstMaybe eventProperties
   eventDescription <- parseFirstMaybe eventProperties
   eventGeographicPosition <- parseFirstMaybe eventProperties
@@ -561,7 +571,10 @@ vEventB Event {..} =
     [ propertyListB eventUID,
       propertyListB eventDateTimeStamp,
       propertyMListB eventDateTimeStart,
-      propertyMListB eventClassification,
+      -- @
+      -- ;Default is PUBLIC
+      -- @
+      propertyDListB ClassificationPublic eventClassification,
       propertyMListB eventCreated,
       propertyMListB eventDescription,
       propertyMListB eventGeographicPosition,
@@ -585,7 +598,7 @@ makeEvent uid dateTimeStamp =
     { eventUID = uid,
       eventDateTimeStamp = dateTimeStamp,
       eventDateTimeStart = Nothing,
-      eventClassification = Nothing,
+      eventClassification = ClassificationPublic,
       eventCreated = Nothing,
       eventDescription = Nothing,
       eventGeographicPosition = Nothing,
