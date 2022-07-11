@@ -208,6 +208,7 @@ propertySetB = DList.fromList . map propertyContentLineB . S.toList
 data Calendar = Calendar
   { calendarVersion :: !Version,
     calendarProdId :: !ProdId,
+    calendarCalendarScale :: !CalendarScale,
     calendarEvents :: ![Event],
     calendarTimeZones :: ![TimeZone]
   }
@@ -224,6 +225,11 @@ instance IsComponent Calendar where
 
     calendarVersion <- parseFirst calPropLines
     calendarProdId <- parseFirst calPropLines
+
+    -- @
+    -- The default value is "GREGORIAN".
+    -- @
+    calendarCalendarScale <- fromMaybe CalendarScaleGregorian <$> parseFirstMaybe calPropLines
 
     calendarMods <-
       many $
@@ -244,7 +250,11 @@ instance IsComponent Calendar where
     mconcat $
       concat
         [ [ propertyListB calendarVersion,
-            propertyListB calendarProdId
+            propertyListB calendarProdId,
+            -- @
+            -- The default value is "GREGORIAN".
+            -- @
+            propertyDListB CalendarScaleGregorian calendarCalendarScale
           ],
           map componentSectionB calendarEvents,
           map componentSectionB calendarTimeZones
@@ -255,6 +265,10 @@ makeCalendar prodId =
   Calendar
     { calendarProdId = prodId,
       calendarVersion = version20,
+      -- @
+      -- The default value is "GREGORIAN".
+      -- @
+      calendarCalendarScale = CalendarScaleGregorian,
       calendarEvents = [],
       calendarTimeZones = []
     }

@@ -73,8 +73,11 @@ spec = do
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
-    exampleSpec
+    parseSpec
       "DTSTART:19980118T073000Z"
+      (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
+    renderSpec
+      "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
   describe "Classification" $ do

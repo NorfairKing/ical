@@ -118,4 +118,4 @@ unfoldedLineB = go . unUnfoldedLine
       if T.length t < maxLineLen
         then LTB.fromText t <> LTB.fromString "\r\n"
         else LTB.fromText (T.take maxLineLen t) <> LTB.fromString "\r\n " <> go (T.drop maxLineLen t)
-    maxLineLen = 75
+    maxLineLen = 73

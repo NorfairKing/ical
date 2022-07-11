@@ -19,6 +19,8 @@ instance GenValid ProdId
 
 instance GenValid Version
 
+instance GenValid CalendarScale
+
 instance GenValid UID
 
 instance GenValid TZID
