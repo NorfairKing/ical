@@ -497,7 +497,7 @@ data Event = Event
     eventLocation :: !(Maybe Location),
     eventStatus :: !(Maybe Status),
     eventSummary :: !(Maybe Summary),
-    eventTransparency :: !(Maybe Transparency),
+    eventTransparency :: !Transparency,
     eventURL :: !(Maybe URL),
     -- @
     -- ;
@@ -554,7 +554,10 @@ vEventP = do
   eventLocation <- parseFirstMaybe eventProperties
   eventStatus <- parseFirstMaybe eventProperties
   eventSummary <- parseFirstMaybe eventProperties
-  eventTransparency <- parseFirstMaybe eventProperties
+  -- @
+  -- ;Default value is OPAQUE
+  -- @
+  eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
   eventURL <- parseFirstMaybe eventProperties
   eventRecurrenceRules <- parseSet eventProperties
   mEnd <- parseFirstMaybe eventProperties
@@ -582,7 +585,10 @@ vEventB Event {..} =
       propertyMListB eventLocation,
       propertyMListB eventStatus,
       propertyMListB eventSummary,
-      propertyMListB eventTransparency,
+      -- @
+      -- ;Default value is OPAQUE
+      -- @
+      propertyDListB TransparencyOpaque eventTransparency,
       propertyMListB eventURL,
       propertySetB eventRecurrenceRules,
       case eventDateTimeEndDuration of
@@ -598,6 +604,9 @@ makeEvent uid dateTimeStamp =
     { eventUID = uid,
       eventDateTimeStamp = dateTimeStamp,
       eventDateTimeStart = Nothing,
+      -- @
+      -- ;Default is PUBLIC
+      -- @
       eventClassification = ClassificationPublic,
       eventCreated = Nothing,
       eventDescription = Nothing,
@@ -606,7 +615,10 @@ makeEvent uid dateTimeStamp =
       eventLocation = Nothing,
       eventStatus = Nothing,
       eventSummary = Nothing,
-      eventTransparency = Nothing,
+      -- @
+      -- ;Default value is OPAQUE
+      -- @
+      eventTransparency = TransparencyOpaque,
       eventURL = Nothing,
       eventRecurrenceRules = S.empty,
       eventDateTimeEndDuration = Nothing
