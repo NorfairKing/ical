@@ -20,6 +20,7 @@ library
       ICal.PropertyType.Date
       ICal.PropertyType.DateTime
       ICal.PropertyType.Duration
+      ICal.PropertyType.FloatingPoint
       ICal.PropertyType.RecurrenceRule
       ICal.PropertyType.Time
       ICal.PropertyType.URI

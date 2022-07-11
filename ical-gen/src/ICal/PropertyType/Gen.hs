@@ -15,11 +15,14 @@ import ICal.Parameter.Gen ()
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
+import ICal.PropertyType.FloatingPoint
 import ICal.PropertyType.Time
 import ICal.PropertyType.URI
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
+
+instance GenValid FloatingPoint
 
 instance GenValid Date
 

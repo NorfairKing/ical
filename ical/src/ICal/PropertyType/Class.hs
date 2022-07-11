@@ -1,10 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.PropertyType.Class where
 
@@ -103,7 +104,9 @@ class IsPropertyType propertyType where
 --     Project XYZ Final Review\nConference Room - 3B\nCome Prepared.
 -- @
 instance IsPropertyType Text where
+  propertyTypeP :: ContentLineValue -> Either String Text
   propertyTypeP = Right . unEscapeText . contentLineValueRaw
+  propertyTypeB :: Text -> ContentLineValue
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
 -- | Escape 'Text'

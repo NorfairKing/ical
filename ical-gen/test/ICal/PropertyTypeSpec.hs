@@ -30,6 +30,7 @@ spec = do
           propertyTypeB text `shouldBe` clv
         it "parses this example text correctly" $
           propertyTypeP clv `shouldBe` Right text
+
   describe "escapeText" $ do
     it "escapes this diverse example correctly" $
       escapeText "hello world\n\\,;," `shouldBe` "hello world\\n\\\\\\,\\;\\,"
