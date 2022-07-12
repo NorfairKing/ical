@@ -49,3 +49,22 @@ tests:
     - sydtest
     - text
     - time
+
+  ical-integration-test:
+    main: Spec.hs
+    source-dirs: integration-test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - bytestring
+    - genvalidity-sydtest
+    - ical
+    - ical-gen
+    - path
+    - path-io
+    - process
+    - sydtest
+    - text

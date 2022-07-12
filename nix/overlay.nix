@@ -29,11 +29,10 @@ with final.haskell.lib;
             })
         );
     in
-    final.lib.genAttrs [
-      "ical"
-      "ical-gen"
-    ]
-      icalPkg;
+    {
+      ical = icalPkg "ical";
+      ical-gen = addBuildDepend (icalPkg "ical-gen") final.vcal;
+    };
 
   icalRelease =
     final.symlinkJoin {
