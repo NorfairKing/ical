@@ -26,7 +26,7 @@ extra-deps:
   - sydtest
   - sydtest-discover
 - github: NorfairKing/validity
-  commit: 4ce0cd2f4ccdfa9f552eedf0c656dbc53cd4fa86
+  commit: 8373ac5f0f02ad66f1b83c9bf572290430e84062
   subdirs:
   - genvalidity
   - genvalidity-aeson

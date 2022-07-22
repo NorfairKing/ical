@@ -13,7 +13,7 @@ import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
-import Data.Validity.URI ()
+import Data.Validity.URI
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.PropertyType.Class
@@ -68,7 +68,7 @@ uriB :: URI -> ContentLineValue
 uriB = mkSimpleContentLineValue . renderURI
 
 parseURI :: Text -> Either String URI
-parseURI = fmap URI . maybe (Left "Unparseable URI") Right . Network.parseURI . T.unpack
+parseURI = fmap URI . maybe (Left "Unparseable URI") Right . Network.parseURIReference . T.unpack
 
 renderURI :: URI -> Text
-renderURI = T.pack . show . unURI
+renderURI = T.pack . dangerousURIToString . unURI

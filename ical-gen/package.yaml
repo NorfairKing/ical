@@ -49,6 +49,7 @@ tests:
     - sydtest
     - text
     - time
+    - validity-network-uri
 
   ical-integration-test:
     main: Spec.hs

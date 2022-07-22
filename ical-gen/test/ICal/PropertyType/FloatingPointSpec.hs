@@ -20,7 +20,7 @@ spec = do
     let examples :: [(FloatingPoint, ContentLineValue)]
         examples =
           [ (FloatingPoint 7.8000, mkSimpleContentLineValue "7.8"),
-            (FloatingPoint (1E65), mkSimpleContentLineValue "100000000000000000000000000000000000000000000000000000000000000000.0"),
+            (FloatingPoint 1E65, mkSimpleContentLineValue "100000000000000000000000000000000000000000000000000000000000000000.0"),
             -- From the spec:
             -- @
             -- Example:

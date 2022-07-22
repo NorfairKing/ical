@@ -108,4 +108,5 @@ test-suite ical-test
     , sydtest
     , text
     , time
+    , validity-network-uri
   default-language: Haskell2010
