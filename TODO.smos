@@ -550,6 +550,11 @@ value:
         time: 2022-07-07 13:19:13
       - state: TODO
         time: 2022-07-07 07:43:04
+  - header: Support that google sometimes has a UNTIL that only specifies a DATE while
+      DTSTART specifies a DATETIME
+    state-history:
+    - state: TODO
+      time: 2022-07-26 13:14:08
   - header: Do end-to-end tests with other programs
     state-history:
     - state: TODO
