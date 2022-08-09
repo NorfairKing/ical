@@ -4,10 +4,11 @@
 , pre-commit ? import ./nix/pre-commit.nix { inherit sources; }
 }:
 pkgs.haskell.lib.buildStackProject {
-  name = "autodocodec-shell";
+  name = "ical-shell";
   buildInputs = with pkgs; [
     (import sources.niv { }).niv
     vcal
+    icalInterops.python-echo
     zlib
   ] ++ pre-commit.tools;
   shellHook = pre-commit.run.shellHook;

@@ -48,6 +48,7 @@ test-suite ical-integration-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      PythonInteropSpec
       VCalSpec
       Paths_ical_gen
   hs-source-dirs:

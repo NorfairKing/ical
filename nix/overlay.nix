@@ -31,8 +31,15 @@ with final.haskell.lib;
     in
     {
       ical = icalPkg "ical";
-      ical-gen = addBuildDepend (icalPkg "ical-gen") final.vcal;
+      ical-gen = addBuildDepends (icalPkg "ical-gen") [
+        final.vcal
+        final.icalInterops.python
+      ];
     };
+
+  icalInterops = {
+    python-echo = final.callPackage ../interop/python { };
+  };
 
   icalRelease =
     final.symlinkJoin {
