@@ -560,37 +560,36 @@ instance IsComponent Event where
   componentB = vEventB
 
 vEventP :: CP Event
-vEventP =
-  runPermutation $
-    Event
-      <$> toPermutation parseProperty
-      <*> toPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      -- @
-      -- ;Default is PUBLIC
-      -- @
-      <*> toPermutationWithDefault ClassificationPublic parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      <*> toOptionalPermutation parseProperty
-      -- @
-      -- ;Default value is OPAQUE
-      -- @
-      <*> (fromMaybe TransparencyOpaque <$> toOptionalPermutation parseProperty)
-      <*> toOptionalPermutation parseProperty
-      <*> (S.fromList <$> permutationList parseProperty)
-      <*> ( let func mEnd mDuration = case (mEnd, mDuration) of
-                  (Nothing, Nothing) -> Nothing
-                  (Nothing, Just d) -> Just (Right d)
-                  (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
-             in func
-                  <$> toOptionalPermutation parseProperty
-                  <*> toOptionalPermutation parseProperty
-          )
+vEventP = do
+  eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
+    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
+  eventDateTimeStamp <- parseFirst eventProperties
+  eventUID <- parseFirst eventProperties
+  eventDateTimeStart <- parseFirstMaybe eventProperties
+  -- @
+  -- ;Default is PUBLIC
+  -- @
+  eventClassification <- fromMaybe ClassificationPublic <$> parseFirstMaybe eventProperties
+  eventCreated <- parseFirstMaybe eventProperties
+  eventDescription <- parseFirstMaybe eventProperties
+  eventGeographicPosition <- parseFirstMaybe eventProperties
+  eventLastModified <- parseFirstMaybe eventProperties
+  eventLocation <- parseFirstMaybe eventProperties
+  eventStatus <- parseFirstMaybe eventProperties
+  eventSummary <- parseFirstMaybe eventProperties
+  -- @
+  -- ;Default value is OPAQUE
+  -- @
+  eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
+  eventURL <- parseFirstMaybe eventProperties
+  eventRecurrenceRules <- parseSet eventProperties
+  mEnd <- parseFirstMaybe eventProperties
+  mDuration <- parseFirstMaybe eventProperties
+  let eventDateTimeEndDuration = case (mEnd, mDuration) of
+        (Nothing, Nothing) -> Nothing
+        (Nothing, Just d) -> Just (Right d)
+        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
+  pure Event {..}
 
 permutationList :: MonadPlus m => m a -> Permutation m [a]
 permutationList p = toPermutationWithDefault [] ((:) <$> p <*> some p)
