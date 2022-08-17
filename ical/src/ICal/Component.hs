@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -6,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -14,7 +16,6 @@ module ICal.Component where
 import Control.Applicative.Permutations
 import Control.Arrow (left)
 import Control.Monad
-import qualified Control.Monad.Combinators.NonEmpty as NonEmpty
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
@@ -324,15 +325,83 @@ parseSet cls =
     name = propertyName (Proxy :: Proxy a)
 
 parseSubcomponent :: forall a. (IsComponent a) => [ContentLine] -> CP a
-parseSubcomponent = undefined
+parseSubcomponent = go1
   where
+    go1 :: [ContentLine] -> CP a
+    go1 = \case
+      [] -> fail "No subcomponent found."
+      (cl : rest) ->
+        let isBegin ContentLine {..} = contentLineName == "BEGIN" && (contentLineValueRaw contentLineValue == name)
+            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == name)
+         in if isBegin cl
+              then go2 $ takeWhile (not . isEnd) rest
+              else go1 rest
+    go2 :: [ContentLine] -> CP a
+    go2 cls = case parse componentP "subcomponent" cls of
+      Left err -> fail $ show err
+      Right a -> pure a
+
     name = componentName (Proxy :: Proxy a)
 
 parseManySubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP [a]
-parseManySubcomponents = undefined
+parseManySubcomponents = go1
+  where
+    go1 :: [ContentLine] -> CP [a]
+    go1 = \case
+      [] -> pure []
+      (cl : rest) ->
+        let isBegin ContentLine {..} = contentLineName == "BEGIN" && (contentLineValueRaw contentLineValue == name)
+            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == name)
+         in if isBegin cl
+              then
+                let (subComponentLines, restAfterSubcomponent) = break isEnd rest
+                 in (:) <$> go2 subComponentLines <*> go1 restAfterSubcomponent
+              else go1 rest
+    go2 :: [ContentLine] -> CP a
+    go2 cls = case parse componentP "subcomponent" cls of
+      Left err -> fail $ show err
+      Right a -> pure a
+
+    name = componentName (Proxy :: Proxy a)
+
+parseManySubcomponents2 :: forall a b. (IsComponent a, IsComponent b) => [ContentLine] -> CP [Either a b]
+parseManySubcomponents2 = go1
+  where
+    go1 :: [ContentLine] -> CP [Either a b]
+    go1 = \case
+      [] -> pure []
+      (cl : rest) ->
+        let isBegin ContentLine {..} =
+              contentLineName == "BEGIN"
+                && ( contentLineValueRaw contentLineValue == nameA
+                       || contentLineValueRaw contentLineValue == nameB
+                   )
+            isEnd :: forall c. IsComponent c => ContentLine -> Bool
+            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == componentName (Proxy :: Proxy c))
+         in if isBegin cl
+              then
+                if contentLineValueRaw (contentLineValue cl) == nameA
+                  then
+                    let (subComponentLines, restAfterSubcomponent) = break (isEnd @a) rest
+                     in (:) <$> (Left <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
+                  else
+                    let (subComponentLines, restAfterSubcomponent) = break (isEnd @b) rest
+                     in (:) <$> (Right <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
+              else go1 rest
+    go2 :: forall c. IsComponent c => [ContentLine] -> CP c
+    go2 cls = case parse componentP "subcomponent" cls of
+      Left err -> fail $ show err
+      Right a -> pure a
+
+    nameA = componentName (Proxy :: Proxy a)
+    nameB = componentName (Proxy :: Proxy b)
 
 parseSomeSubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP (NonEmpty a)
-parseSomeSubcomponents = undefined
+parseSomeSubcomponents cls = do
+  cs <- parseManySubcomponents cls
+  case NE.nonEmpty cs of
+    Nothing -> fail "expected at least one subcompent"
+    Just ne -> pure ne
 
 -- |
 --
@@ -1119,9 +1188,9 @@ vTimeZoneP = do
     not $
       contentLineName == "END" && (contentLineValueRaw contentLineValue == "VTIMEZONE")
   timeZoneId <- parseFirst timeZoneProperties
-  standards <- parseManySubcomponents timeZoneProperties
-  daylights <- parseManySubcomponents timeZoneProperties
-  timeZoneObservances <- case NE.nonEmpty (map StandardObservance standards ++ map DaylightObservance daylights) of
+  eithers <- parseManySubcomponents2 timeZoneProperties
+  let os = map (either StandardObservance DaylightObservance) eithers
+  timeZoneObservances <- case NE.nonEmpty os of
     Nothing -> fail "Must have at least one standardc or daylightc"
     Just ne -> pure ne
   pure TimeZone {..}
@@ -1202,6 +1271,3 @@ observanceB Observance {..} =
     [ propertySetB observanceComment,
       propertySetB observanceTimeZoneName
     ]
-
-toOptionalPermutation :: CP a -> Permutation CP (Maybe a)
-toOptionalPermutation p = toPermutation (optional (try p))
