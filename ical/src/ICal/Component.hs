@@ -1241,6 +1241,20 @@ instance IsComponent Daylight where
 
 data Observance = Observance
   { -- @
+    -- ; The following are REQUIRED,
+    -- ; but MUST NOT occur more than once.
+    -- ;
+    -- dtstart / tzoffsetto / tzoffsetfrom /
+    -- @
+    observanceDateTimeStart :: !DateTimeStart,
+    -- @
+    -- ; The following is OPTIONAL,
+    -- ; but SHOULD NOT occur more than once.
+    -- ;
+    -- rrule /
+    -- @
+    observanceRecurrenceRule :: !(Set RecurrenceRule),
+    -- @
     -- ; The following are OPTIONAL,
     -- ; and MAY occur more than once.
     -- ;
@@ -1261,6 +1275,8 @@ observanceP = do
         && ( contentLineValueRaw contentLineValue == "STANDARD"
                || contentLineValueRaw contentLineValue == "DAYLIGHT"
            )
+  observanceDateTimeStart <- parseFirst observanceProperties
+  observanceRecurrenceRule <- parseSet observanceProperties
   observanceComment <- parseSet observanceProperties
   observanceTimeZoneName <- parseSet observanceProperties
   pure Observance {..}
@@ -1268,6 +1284,8 @@ observanceP = do
 observanceB :: Observance -> DList ContentLine
 observanceB Observance {..} =
   mconcat
-    [ propertySetB observanceComment,
+    [ propertyListB observanceDateTimeStart,
+      propertySetB observanceRecurrenceRule,
+      propertySetB observanceComment,
       propertySetB observanceTimeZoneName
     ]
