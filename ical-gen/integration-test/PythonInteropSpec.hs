@@ -9,15 +9,14 @@ import Path.IO
 import System.Exit
 import System.Process
 import Test.Syd
-import Test.Syd.Path
 import Test.Syd.Validity
 
 spec :: Spec
 spec =
   modifyMaxSize (* 10) $
-    tempDirSpec "ical-integration-test" $
-      it "produces calendars that the python library can parse" $ \tdir ->
-        forAllValid $ \calendar -> do
+    it "produces calendars that the python library can parse" $
+      forAllValid $ \calendar ->
+        withSystemTempDir "ical-integration-test" $ \tdir -> do
           calendarFile <- resolveFile tdir "calendar.ics"
           SB.writeFile (fromAbsFile calendarFile) (renderICalendarByteString [calendar])
           let cp = proc "python-echo" [fromAbsFile calendarFile]

@@ -11,8 +11,10 @@
 
 module ICal.Component where
 
+import Control.Applicative.Permutations
 import Control.Arrow (left)
 import Control.Monad
+import qualified Control.Monad.Combinators.NonEmpty as NonEmpty
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
@@ -117,6 +119,13 @@ sectionP name parser = do
 
 parseGivenProperty :: IsProperty property => property -> CP ()
 parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenProperty
+
+parseProperty :: IsProperty property => CP property
+parseProperty = do
+  contentLine <- anySingle
+  case propertyContentLineP contentLine of
+    Left err -> fail err
+    Right p -> pure p
 
 componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
 componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
@@ -551,36 +560,40 @@ instance IsComponent Event where
   componentB = vEventB
 
 vEventP :: CP Event
-vEventP = do
-  eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
-  eventDateTimeStamp <- parseFirst eventProperties
-  eventUID <- parseFirst eventProperties
-  eventDateTimeStart <- parseFirstMaybe eventProperties
-  -- @
-  -- ;Default is PUBLIC
-  -- @
-  eventClassification <- fromMaybe ClassificationPublic <$> parseFirstMaybe eventProperties
-  eventCreated <- parseFirstMaybe eventProperties
-  eventDescription <- parseFirstMaybe eventProperties
-  eventGeographicPosition <- parseFirstMaybe eventProperties
-  eventLastModified <- parseFirstMaybe eventProperties
-  eventLocation <- parseFirstMaybe eventProperties
-  eventStatus <- parseFirstMaybe eventProperties
-  eventSummary <- parseFirstMaybe eventProperties
-  -- @
-  -- ;Default value is OPAQUE
-  -- @
-  eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
-  eventURL <- parseFirstMaybe eventProperties
-  eventRecurrenceRules <- parseSet eventProperties
-  mEnd <- parseFirstMaybe eventProperties
-  mDuration <- parseFirstMaybe eventProperties
-  let eventDateTimeEndDuration = case (mEnd, mDuration) of
-        (Nothing, Nothing) -> Nothing
-        (Nothing, Just d) -> Just (Right d)
-        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
-  pure Event {..}
+vEventP =
+  runPermutation $
+    Event
+      <$> toPermutation parseProperty
+      <*> toPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      -- @
+      -- ;Default is PUBLIC
+      -- @
+      <*> toPermutationWithDefault ClassificationPublic parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      <*> toOptionalPermutation parseProperty
+      -- @
+      -- ;Default value is OPAQUE
+      -- @
+      <*> (fromMaybe TransparencyOpaque <$> toOptionalPermutation parseProperty)
+      <*> toOptionalPermutation parseProperty
+      <*> (S.fromList <$> permutationList parseProperty)
+      <*> ( let func mEnd mDuration = case (mEnd, mDuration) of
+                  (Nothing, Nothing) -> Nothing
+                  (Nothing, Just d) -> Just (Right d)
+                  (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
+             in func
+                  <$> toOptionalPermutation parseProperty
+                  <*> toOptionalPermutation parseProperty
+          )
+
+permutationList :: MonadPlus m => m a -> Permutation m [a]
+permutationList p = toPermutationWithDefault [] ((:) <$> p <*> some p)
 
 vEventB :: Event -> DList ContentLine
 vEventB Event {..} =
@@ -1052,8 +1065,34 @@ makeEvent uid dateTimeStamp =
 --     END:VTIMEZONE
 -- @
 data TimeZone = TimeZone
-  { timeZoneId :: !TZID,
-    timeZoneName :: !(Maybe TimeZoneName)
+  { -- @
+    -- ; 'tzid' is REQUIRED, but MUST NOT occur more
+    -- ; than once.
+    -- ;
+    -- tzid /
+    -- @
+    timeZoneId :: !TZID,
+    -- @
+    -- ; 'last-mod' and 'tzurl' are OPTIONAL,
+    -- ; but MUST NOT occur more than once.
+    -- ;
+    -- last-mod / tzurl /
+    -- @
+    -- TODO
+    -- @
+    -- ; One of 'standardc' or 'daylightc' MUST occur
+    -- ; and each MAY occur more than once.
+    -- ;
+    -- standardc / daylightc /
+    -- @
+    -- API Note: The order does not matter but duplicates are allowed so we cannot use a set.
+    timeZoneObservances :: !(NonEmpty TimeZoneObservance)
+    -- @
+    -- ; The following are OPTIONAL,
+    -- ; and MAY occur more than once.
+    -- ;
+    -- x-prop / iana-prop
+    -- @
   }
   deriving (Show, Eq, Generic)
 
@@ -1065,18 +1104,80 @@ instance IsComponent TimeZone where
   componentB = vTimeZoneB
 
 vTimeZoneP :: CP TimeZone
-vTimeZoneP = do
-  timezoneProperties <- takeWhileP (Just "timezoneProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VTIMEZONE"
-
-  timeZoneId <- parseFirst timezoneProperties
-  timeZoneName <- parseFirstMaybe timezoneProperties
-
-  pure TimeZone {..}
+vTimeZoneP =
+  runPermutation $
+    TimeZone
+      <$> toPermutation parseProperty
+      <*> toPermutation (NonEmpty.some timeZoneObservanceP)
 
 vTimeZoneB :: TimeZone -> DList ContentLine
 vTimeZoneB TimeZone {..} =
   mconcat
     [ propertyListB timeZoneId,
-      propertyMListB timeZoneName
+      foldMap timeZoneObservanceB timeZoneObservances
     ]
+
+data TimeZoneObservance
+  = StandardObservance !Standard
+  | DaylightObservance !Daylight
+  deriving (Show, Eq, Generic)
+
+instance Validity TimeZoneObservance
+
+timeZoneObservanceP :: CP TimeZoneObservance
+timeZoneObservanceP =
+  StandardObservance <$> componentSectionP
+    <|> DaylightObservance <$> componentSectionP
+
+timeZoneObservanceB :: TimeZoneObservance -> DList ContentLine
+timeZoneObservanceB = \case
+  StandardObservance s -> componentSectionB s
+  DaylightObservance d -> componentSectionB d
+
+newtype Standard = Standard {unStandard :: Observance}
+  deriving (Show, Eq, Generic)
+
+instance Validity Standard
+
+instance IsComponent Standard where
+  componentName Proxy = "STANDARD"
+  componentP = Standard <$> observanceP
+  componentB = observanceB . unStandard
+
+newtype Daylight = Daylight {unDaylight :: Observance}
+  deriving (Show, Eq, Generic)
+
+instance Validity Daylight
+
+instance IsComponent Daylight where
+  componentName Proxy = "DAYLIGHT"
+  componentP = Daylight <$> observanceP
+  componentB = observanceB . unDaylight
+
+data Observance = Observance
+  { -- @
+    -- ; The following are OPTIONAL,
+    -- ; and MAY occur more than once.
+    -- ;
+    -- comment / rdate / tzname / x-prop / iana-prop
+    -- @
+    observanceTimeZoneName :: !(Maybe TimeZoneName)
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity Observance
+
+observanceP :: CP Observance
+observanceP =
+  runPermutation $
+    Observance
+      <$> toOptionalPermutation parseProperty
+
+observanceB :: Observance -> DList ContentLine
+observanceB Observance {..} =
+  mconcat
+    [ propertyMListB observanceTimeZoneName
+    ]
+
+toOptionalPermutation :: CP a -> Permutation CP (Maybe a)
+toOptionalPermutation p = toPermutation (optional (try p))

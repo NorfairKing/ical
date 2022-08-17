@@ -12,6 +12,14 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "Standard" $ do
+    genValidSpec @Standard
+    componentSpec @Standard
+
+  describe "Daylight" $ do
+    genValidSpec @Daylight
+    componentSpec @Daylight
+
   describe "TimeZone" $ do
     genValidSpec @TimeZone
     componentSpec @TimeZone

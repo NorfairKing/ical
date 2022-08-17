@@ -13,6 +13,7 @@ library:
   - dlist
   - megaparsec
   - network-uri
+  - parser-combinators
   - text
   - time
   - validity
