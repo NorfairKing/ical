@@ -323,6 +323,17 @@ parseSet cls =
   where
     name = propertyName (Proxy :: Proxy a)
 
+parseSubcomponent :: forall a. (IsComponent a) => [ContentLine] -> CP a
+parseSubcomponent = undefined
+  where
+    name = componentName (Proxy :: Proxy a)
+
+parseManySubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP [a]
+parseManySubcomponents = undefined
+
+parseSomeSubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP (NonEmpty a)
+parseSomeSubcomponents = undefined
+
 -- |
 --
 -- === [section 3.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1)
@@ -1103,11 +1114,17 @@ instance IsComponent TimeZone where
   componentB = vTimeZoneB
 
 vTimeZoneP :: CP TimeZone
-vTimeZoneP =
-  runPermutation $
-    TimeZone
-      <$> toPermutation parseProperty
-      <*> toPermutation (NonEmpty.some timeZoneObservanceP)
+vTimeZoneP = do
+  timeZoneProperties <- takeWhileP (Just "timeZoneProperties") $ \ContentLine {..} ->
+    not $
+      contentLineName == "END" && (contentLineValueRaw contentLineValue == "VTIMEZONE")
+  timeZoneId <- parseFirst timeZoneProperties
+  standards <- parseManySubcomponents timeZoneProperties
+  daylights <- parseManySubcomponents timeZoneProperties
+  timeZoneObservances <- case NE.nonEmpty (map StandardObservance standards ++ map DaylightObservance daylights) of
+    Nothing -> fail "Must have at least one standardc or daylightc"
+    Just ne -> pure ne
+  pure TimeZone {..}
 
 vTimeZoneB :: TimeZone -> DList ContentLine
 vTimeZoneB TimeZone {..} =
@@ -1160,22 +1177,30 @@ data Observance = Observance
     -- ;
     -- comment / rdate / tzname / x-prop / iana-prop
     -- @
-    observanceTimeZoneName :: !(Maybe TimeZoneName)
+    observanceComment :: !(Set Comment),
+    observanceTimeZoneName :: !(Set TimeZoneName)
   }
   deriving (Show, Eq, Generic)
 
 instance Validity Observance
 
 observanceP :: CP Observance
-observanceP =
-  runPermutation $
-    Observance
-      <$> toOptionalPermutation parseProperty
+observanceP = do
+  observanceProperties <- takeWhileP (Just "observanceProperties") $ \ContentLine {..} ->
+    not $
+      contentLineName == "END"
+        && ( contentLineValueRaw contentLineValue == "STANDARD"
+               || contentLineValueRaw contentLineValue == "DAYLIGHT"
+           )
+  observanceComment <- parseSet observanceProperties
+  observanceTimeZoneName <- parseSet observanceProperties
+  pure Observance {..}
 
 observanceB :: Observance -> DList ContentLine
 observanceB Observance {..} =
   mconcat
-    [ propertyMListB observanceTimeZoneName
+    [ propertySetB observanceComment,
+      propertySetB observanceTimeZoneName
     ]
 
 toOptionalPermutation :: CP a -> Permutation CP (Maybe a)

@@ -55,9 +55,11 @@ instance GenValid URL
 
 instance GenValid DateTimeEnd
 
+instance GenValid Transparency
+
 instance GenValid TimeZoneName
 
-instance GenValid Transparency
+instance GenValid Comment
 
 propertySpec ::
   forall a.
@@ -66,17 +68,17 @@ propertySpec ::
 propertySpec = do
   it "always renders to a valid content line" $
     forAllValid $ \a ->
-      shouldBeValid $ propertyB (a :: a)
+      shouldBeValid $ propertyContentLineB (a :: a)
 
   it "parses only valid things" $
     forAllValid $ \a ->
-      case propertyP (propertyB (a :: a)) of
+      case propertyContentLineP (propertyContentLineB (a :: a)) of
         Left _ -> pure ()
         Right a' -> shouldBeValid (a' :: a)
 
   it "roundtrips through ContentLine" $
     forAllValid $ \a ->
-      let rendered = propertyB (a :: a)
-       in case propertyP rendered of
+      let rendered = propertyContentLineB (a :: a)
+       in case propertyContentLineP rendered of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` a

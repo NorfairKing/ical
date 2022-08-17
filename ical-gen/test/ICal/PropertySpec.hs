@@ -240,6 +240,13 @@ spec = do
     propertySpec @TimeZoneName
     pending "works for this example"
 
+  describe "Comment" $ do
+    genValidSpec @Comment
+    propertySpec @Comment
+    exampleSpec
+      "COMMENT:The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact\\, the venue for the meeting ought to be at their site. - - John"
+      (Comment "The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact, the venue for the meeting ought to be at their site. - - John")
+
   describe "Transparency" $ do
     genValidSpec @Transparency
     propertySpec @Transparency
