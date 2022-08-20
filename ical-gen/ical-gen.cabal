@@ -84,6 +84,7 @@ test-suite ical-test
       ICal.PropertyType.RecurrenceRuleSpec
       ICal.PropertyType.TimeSpec
       ICal.PropertyType.URISpec
+      ICal.PropertyType.UTCOffsetSpec
       ICal.PropertyTypeSpec
       ICal.UnfoldedLineSpec
       ICalSpec

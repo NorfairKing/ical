@@ -15,6 +15,7 @@ import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.URI
+import ICal.PropertyType.UTCOffset
 import qualified Network.URI as Network
 import Test.Syd
 import Test.Syd.Validity hiding (Location)
@@ -239,6 +240,32 @@ spec = do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName
     propertySpec @TimeZoneName
     pending "works for this example"
+
+  describe "TimeZoneOffsetFrom" $ do
+    genValidSpec @TimeZoneOffsetFrom
+    propertySpec @TimeZoneOffsetFrom
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --     TZOFFSETFROM:-0500
+    --
+    --     TZOFFSETFROM:+1345
+    -- @
+    -- @
+    exampleSpec "TZOFFSETFROM:-0500" (TimeZoneOffsetFrom (UTCOffset (-18000)))
+    exampleSpec "TZOFFSETFROM:+1345" (TimeZoneOffsetFrom (UTCOffset 49500))
+
+  describe "TimeZoneOffsetTo" $ do
+    genValidSpec @TimeZoneOffsetTo
+    propertySpec @TimeZoneOffsetTo
+    -- Example:  The following are examples of this property:
+    --
+    --     TZOFFSETTO:-0400
+    --
+    --     TZOFFSETTO:+1245
+    -- @
+    exampleSpec "TZOFFSETTO:-0400" (TimeZoneOffsetTo (UTCOffset (-14400)))
+    exampleSpec "TZOFFSETTO:+1245" (TimeZoneOffsetTo (UTCOffset 45900))
 
   describe "Comment" $ do
     genValidSpec @Comment

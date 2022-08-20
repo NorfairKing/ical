@@ -24,6 +24,7 @@ library
       ICal.PropertyType.RecurrenceRule
       ICal.PropertyType.Time
       ICal.PropertyType.URI
+      ICal.PropertyType.UTCOffset
       ICal.UnfoldedLine
   other-modules:
       Paths_ical

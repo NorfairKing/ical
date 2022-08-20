@@ -10,6 +10,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
 import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime, localTimeToUTC, utc)
+import GHC.Stack
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
 import ICal.PropertyType.Class
@@ -18,6 +19,7 @@ import ICal.PropertyType.DateTime
 import ICal.PropertyType.FloatingPoint
 import ICal.PropertyType.Time
 import ICal.PropertyType.URI
+import ICal.PropertyType.UTCOffset
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -58,11 +60,16 @@ genImpreciseTimeOfDay =
 
 instance GenValid URI
 
+instance GenValid UTCOffset where
+  genValid =
+    let inclusiveBound = utcOffsetAbsBound - 1
+     in UTCOffset <$> choose (-inclusiveBound, inclusiveBound)
+
 propertyTypeSpec ::
   forall a.
-  (Show a, Eq a, GenValid a, IsPropertyType a) =>
+  (HasCallStack, Show a, Eq a, GenValid a, IsPropertyType a) =>
   Spec
-propertyTypeSpec = do
+propertyTypeSpec = withFrozenCallStack $ do
   it "always renders to a valid content line" $
     forAllValid $ \propertyType ->
       shouldBeValid $ propertyTypeB (propertyType :: a)
@@ -76,6 +83,6 @@ propertyTypeSpec = do
   it "roundtrips through ContentLine" $
     forAllValid $ \propertyType ->
       let value = propertyTypeB (propertyType :: a)
-       in case propertyTypeP value of
+       in context (show value) $ case propertyTypeP value of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` propertyType

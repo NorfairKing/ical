@@ -8,6 +8,7 @@ import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import GHC.Stack
 import ICal.Parameter.Gen ()
 import ICal.Property
 import ICal.PropertyType.Gen
@@ -61,11 +62,15 @@ instance GenValid TimeZoneName
 
 instance GenValid Comment
 
+instance GenValid TimeZoneOffsetFrom
+
+instance GenValid TimeZoneOffsetTo
+
 propertySpec ::
   forall a.
-  (Show a, Eq a, GenValid a, IsProperty a) =>
+  (HasCallStack, Show a, Eq a, GenValid a, IsProperty a) =>
   Spec
-propertySpec = do
+propertySpec = withFrozenCallStack $ do
   it "always renders to a valid content line" $
     forAllValid $ \a ->
       shouldBeValid $ propertyContentLineB (a :: a)
@@ -79,6 +84,6 @@ propertySpec = do
   it "roundtrips through ContentLine" $
     forAllValid $ \a ->
       let rendered = propertyContentLineB (a :: a)
-       in case propertyContentLineP rendered of
+       in context (show rendered) $ case propertyContentLineP rendered of
             Left err -> expectationFailure err
             Right actual -> actual `shouldBe` a
