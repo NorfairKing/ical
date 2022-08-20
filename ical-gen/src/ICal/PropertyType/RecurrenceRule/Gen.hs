@@ -56,13 +56,17 @@ instance GenValid ByDay where
   genValid =
     oneof
       [ Every <$> genValid,
-        Specific
-          <$> oneof
-            [ max 1 <$> choose (1, 5),
-              min (-1) <$> choose (-5, -1)
-            ]
-          <*> genValid
+        genSpecificByDay
       ]
+
+genSpecificByDay :: Gen ByDay
+genSpecificByDay =
+  Specific
+    <$> oneof
+      [ max 1 <$> choose (1, 5),
+        min (-1) <$> choose (-5, -1)
+      ]
+    <*> genValid
 
 instance GenValid ByMonthDay where
   shrinkValid = shrinkValidStructurally
@@ -119,8 +123,8 @@ instance GenValid RecurrenceRule where
     recurrenceRuleByDay <-
       genSetOf
         ( case recurrenceRuleFrequency of
-            Monthly -> Every <$> genValid
-            Yearly -> Every <$> genValid
+            Monthly -> genSpecificByDay
+            Yearly -> genSpecificByDay
             _ -> genValid
         )
     recurrenceRuleByMonthDay <- case recurrenceRuleFrequency of

@@ -1247,6 +1247,8 @@ data Observance = Observance
     -- dtstart / tzoffsetto / tzoffsetfrom /
     -- @
     observanceDateTimeStart :: !DateTimeStart,
+    observanceTimeZoneOffsetTo :: !TimeZoneOffsetTo,
+    observanceTimeZoneOffsetFrom :: !TimeZoneOffsetFrom,
     -- @
     -- ; The following is OPTIONAL,
     -- ; but SHOULD NOT occur more than once.
@@ -1276,6 +1278,8 @@ observanceP = do
                || contentLineValueRaw contentLineValue == "DAYLIGHT"
            )
   observanceDateTimeStart <- parseFirst observanceProperties
+  observanceTimeZoneOffsetTo <- parseFirst observanceProperties
+  observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
   observanceRecurrenceRule <- parseSet observanceProperties
   observanceComment <- parseSet observanceProperties
   observanceTimeZoneName <- parseSet observanceProperties
@@ -1285,6 +1289,8 @@ observanceB :: Observance -> DList ContentLine
 observanceB Observance {..} =
   mconcat
     [ propertyListB observanceDateTimeStart,
+      propertyListB observanceTimeZoneOffsetTo,
+      propertyListB observanceTimeZoneOffsetFrom,
       propertySetB observanceRecurrenceRule,
       propertySetB observanceComment,
       propertySetB observanceTimeZoneName
