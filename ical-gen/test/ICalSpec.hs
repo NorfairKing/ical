@@ -104,12 +104,13 @@ spec = do
       Right iCalendar -> iCalendar `shouldBe` expectedICal
 
   -- Tests based on example calendars
-  scenarioDirRecur "test_resources/calendars" $ \calFile ->
+  scenarioDirRecur "test_resources/calendars" $ \calFile -> do
     it "can parse this calendar" $ do
       contents <- SB.readFile calFile
       case parseICalendarByteString contents of
         Left err -> expectationFailure err
         Right contentLines -> shouldBeValid contentLines
+    pending "roundtrip test"
 
   describe "renderVCalendar" $
     it "roundtrips with parseVCalendar" $

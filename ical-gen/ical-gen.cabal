@@ -86,6 +86,7 @@ test-suite ical-test
       ICal.PropertyType.URISpec
       ICal.PropertyType.UTCOffsetSpec
       ICal.PropertyTypeSpec
+      ICal.TimeZoneSpec
       ICal.UnfoldedLineSpec
       ICalSpec
       Paths_ical_gen

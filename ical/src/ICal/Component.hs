@@ -44,8 +44,10 @@ parseICalendarFromContentLines contentLines =
   left errorBundlePretty $ parse iCalendarP "" contentLines
 
 parseVCalendarFromContentLines :: [ContentLine] -> Either String Calendar
-parseVCalendarFromContentLines contentLines =
-  left errorBundlePretty $ parse componentSectionP "" contentLines
+parseVCalendarFromContentLines = parseComponentFromContentLines
+
+parseComponentFromContentLines :: IsComponent component => [ContentLine] -> Either String component
+parseComponentFromContentLines = left errorBundlePretty . parse componentSectionP ""
 
 type CP = Parsec Void [ContentLine]
 
