@@ -33,7 +33,7 @@ with final.haskell.lib;
       ical = icalPkg "ical";
       ical-gen = addBuildDepends (icalPkg "ical-gen") [
         final.vcal
-        final.icalInterops.python
+        final.icalInterops.python-echo
       ];
     };
 
