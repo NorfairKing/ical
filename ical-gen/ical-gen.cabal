@@ -25,6 +25,7 @@ library
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , case-insensitive
     , containers
     , dlist

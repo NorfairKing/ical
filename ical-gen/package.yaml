@@ -9,6 +9,7 @@ library:
   source-dirs: src
   dependencies:
   - QuickCheck
+  - bytestring
   - case-insensitive
   - containers
   - dlist
