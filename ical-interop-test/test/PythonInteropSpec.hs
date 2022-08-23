@@ -13,7 +13,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec =
-  modifyMaxSize (* 10) $
+  modifyMaxSize (* 3) . modifyMaxSuccess (`div` 10) $
     xdescribe "does not pass yet" $
       it "produces calendars that the python library can parse" $
         forAllValid $ \calendar ->

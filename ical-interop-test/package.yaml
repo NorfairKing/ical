@@ -1,4 +1,4 @@
-name: ical-gen
+name: ical-interop-test
 version: 0.0.0.0
 
 dependencies:
@@ -28,7 +28,7 @@ library:
   - time
 
 tests:
-  ical-test:
+  ical-interop-test:
     main: Spec.hs
     source-dirs: test
     build-tools: sydtest-discover
@@ -37,17 +37,12 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - QuickCheck
     - bytestring
-    - containers
-    - dlist
-    - genvalidity
     - genvalidity-sydtest
+    - ical
     - ical-gen
-    - megaparsec
-    - network-uri
-    - pretty-show
+    - path
+    - path-io
+    - process
     - sydtest
     - text
-    - time
-    - validity-network-uri

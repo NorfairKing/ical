@@ -31,7 +31,8 @@ with final.haskell.lib;
     in
     {
       ical = icalPkg "ical";
-      ical-gen = addBuildDepends (icalPkg "ical-gen") [
+      ical-gen = icalPkg "ical-gen";
+      ical-interop-test = addBuildDepends (icalPkg "ical-interop-test") [
         final.vcal
         final.icalInterops.python-echo
       ];
