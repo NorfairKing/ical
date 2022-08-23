@@ -76,6 +76,7 @@ test-suite ical-test
   other-modules:
       ICal.ComponentSpec
       ICal.ContentLineSpec
+      ICal.EventSpec
       ICal.ParameterSpec
       ICal.PropertySpec
       ICal.PropertyType.DateSpec

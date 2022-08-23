@@ -21,7 +21,6 @@ import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe
-import Data.Monoid
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -233,7 +232,7 @@ instance IsComponent Calendar where
   componentP :: CP Calendar
   componentP = do
     calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
-      contentLineName /= "BEGIN" && contentLineName /= "END"
+      not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VCALENDAR"
 
     calendarVersion <- parseFirst calPropLines
     calendarProdId <- parseFirst calPropLines
@@ -243,19 +242,10 @@ instance IsComponent Calendar where
     -- @
     calendarCalendarScale <- fromMaybe CalendarScaleGregorian <$> parseFirstMaybe calPropLines
 
-    calendarMods <-
-      many $
-        msum
-          [ (\event c -> c {calendarEvents = event : calendarEvents c})
-              <$> componentSectionP,
-            (\timeZone c -> c {calendarTimeZones = timeZone : calendarTimeZones c})
-              <$> componentSectionP
-          ]
-    let calendarEvents = []
-    let calendarTimeZones = []
-    let calendarMod :: Calendar -> Calendar
-        calendarMod = appEndo $ mconcat $ map Endo calendarMods
-    pure $ calendarMod $ Calendar {..}
+    calendarTimeZones <- parseManySubcomponents calPropLines
+    calendarEvents <- parseManySubcomponents calPropLines
+
+    pure $ Calendar {..}
 
   componentB :: Calendar -> DList ContentLine
   componentB Calendar {..} =
