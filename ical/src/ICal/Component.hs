@@ -26,6 +26,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
@@ -33,6 +34,8 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
+import ICal.PropertyType.Class
+import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
@@ -1238,7 +1241,7 @@ data Observance = Observance
     -- ;
     -- dtstart / tzoffsetto / tzoffsetfrom /
     -- @
-    observanceDateTimeStart :: !DateTimeStart,
+    observanceDateTimeStart :: !Time.LocalTime,
     observanceTimeZoneOffsetTo :: !TimeZoneOffsetTo,
     observanceTimeZoneOffsetFrom :: !TimeZoneOffsetFrom,
     -- @
@@ -1259,7 +1262,12 @@ data Observance = Observance
   }
   deriving (Show, Eq, Generic)
 
-instance Validity Observance
+instance Validity Observance where
+  validate o@Observance {..} =
+    mconcat
+      [ genericValidate o,
+        validateImpreciseLocalTime observanceDateTimeStart
+      ]
 
 observanceP :: CP Observance
 observanceP = do
@@ -1269,7 +1277,19 @@ observanceP = do
         && ( contentLineValueRaw contentLineValue == "STANDARD"
                || contentLineValueRaw contentLineValue == "DAYLIGHT"
            )
-  observanceDateTimeStart <- parseFirst observanceProperties
+  -- @
+  -- The mandatory "DTSTART" property gives the effective onset date
+  -- and local time for the time zone sub-component definition.
+  -- "DTSTART" in this usage MUST be specified as a date with a local
+  -- time value.
+  -- @
+  dtstart <- parseFirst observanceProperties
+  observanceDateTimeStart <- case dtstart of
+    DateTimeStartDate _ -> fail "DTSTART must be specified as a datetime, not a date."
+    DateTimeStartDateTime dt -> case dt of
+      DateTimeFloating lt -> pure lt
+      _ -> fail "DTSTART must be specified as a date with a local time value."
+
   observanceTimeZoneOffsetTo <- parseFirst observanceProperties
   observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
   observanceRecurrenceRule <- parseSet observanceProperties
@@ -1280,7 +1300,7 @@ observanceP = do
 observanceB :: Observance -> DList ContentLine
 observanceB Observance {..} =
   mconcat
-    [ propertyListB observanceDateTimeStart,
+    [ propertyListB (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
       propertyListB observanceTimeZoneOffsetTo,
       propertyListB observanceTimeZoneOffsetFrom,
       propertySetB observanceRecurrenceRule,

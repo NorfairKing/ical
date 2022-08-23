@@ -18,9 +18,10 @@ import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration.Gen ()
-import ICal.PropertyType.Gen ()
+import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 import Text.Megaparsec
@@ -29,7 +30,15 @@ instance GenValid Calendar
 
 instance GenValid Event
 
-instance GenValid Observance
+instance GenValid Observance where
+  genValid = (`suchThat` isValid) $ do
+    Observance
+      <$> genImpreciseLocalTime
+      <*> genValid
+      <*> genValid
+      <*> genValid
+      <*> genValid
+      <*> genValid
 
 instance GenValid TimeZoneObservance
 
