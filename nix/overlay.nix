@@ -39,7 +39,7 @@ with final.haskell.lib;
     };
 
   icalInterops = {
-    python-echo = final.callPackage ../interop/python { };
+    python-echo = final.callPackage ../ical-interop-test/interop-packages/python { };
   };
 
   icalRelease =
