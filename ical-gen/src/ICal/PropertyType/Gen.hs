@@ -1,5 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.PropertyType.Gen where
@@ -9,7 +11,8 @@ import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
-import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime, localTimeToUTC, utc)
+import Data.Maybe
+import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime, localTimeToUTC, utc, utcToLocalTime)
 import GHC.Stack
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
@@ -24,9 +27,13 @@ import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid FloatingPoint
+instance GenValid FloatingPoint where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Date
+instance GenValid Date where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid Time where
   genValid = do
@@ -36,6 +43,10 @@ instance GenValid Time where
         pure $ TimeUTC lt,
         TimeZoned <$> genValid <*> pure lt
       ]
+  shrinkValid = \case
+    TimeFloating tod -> TimeFloating <$> shrinkImpreciseTimeOfDay tod
+    TimeUTC tod -> TimeUTC <$> shrinkImpreciseTimeOfDay tod
+    TimeZoned tzid tod -> TimeZoned <$> shrinkValid tzid <*> shrinkImpreciseTimeOfDay tod
 
 instance GenValid DateTime where
   genValid =
@@ -44,12 +55,28 @@ instance GenValid DateTime where
         DateTimeUTC <$> genImpreciseUTCTime,
         DateTimeZoned <$> genValid <*> genImpreciseLocalTime
       ]
+  shrinkValid = \case
+    DateTimeFloating lt -> DateTimeFloating <$> shrinkImpreciseLocalTime lt
+    DateTimeUTC ut -> DateTimeUTC <$> shrinkImpreciseUTCTime ut
+    DateTimeZoned tzid lt -> DateTimeZoned <$> shrinkValid tzid <*> shrinkImpreciseLocalTime lt
 
 genImpreciseUTCTime :: Gen UTCTime
 genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime
 
+shrinkImpreciseUTCTime :: UTCTime -> [UTCTime]
+shrinkImpreciseUTCTime =
+  fmap (localTimeToUTC utc)
+    . shrinkImpreciseLocalTime
+    . utcToLocalTime utc
+
 genImpreciseLocalTime :: Gen LocalTime
 genImpreciseLocalTime = LocalTime <$> genValid <*> genImpreciseTimeOfDay
+
+shrinkImpreciseLocalTime :: LocalTime -> [LocalTime]
+shrinkImpreciseLocalTime (LocalTime d tod) =
+  LocalTime
+    <$> shrinkValid d
+    <*> shrinkImpreciseTimeOfDay tod
 
 genImpreciseTimeOfDay :: Gen TimeOfDay
 genImpreciseTimeOfDay =
@@ -58,12 +85,34 @@ genImpreciseTimeOfDay =
     <*> choose (0, 59)
     <*> (fromIntegral <$> (choose (0, 60) :: Gen Int))
 
-instance GenValid URI
+shrinkImpreciseTimeOfDay :: TimeOfDay -> [TimeOfDay]
+shrinkImpreciseTimeOfDay (TimeOfDay h m s) =
+  TimeOfDay
+    <$> shrinkRange (0, 23) h
+    <*> shrinkRange (0, 59) m
+    <*> (fromIntegral @Int <$> shrinkRange (0, 60) (round s))
+
+shrinkRange :: (Ord a, GenValid a) => (a, a) -> a -> [a]
+shrinkRange (lower, upper) =
+  mapMaybe (clampMaybe lower upper) . shrinkValid
+
+clampMaybe :: Ord a => a -> a -> a -> Maybe a
+clampMaybe lower upper value =
+  if lower <= value && value <= upper
+    then Just value
+    else Nothing
+
+instance GenValid URI where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid UTCOffset where
   genValid =
     let inclusiveBound = utcOffsetAbsBound - 1
      in UTCOffset <$> choose (-inclusiveBound, inclusiveBound)
+  shrinkValid =
+    let inclusiveBound = utcOffsetAbsBound - 1
+     in fmap UTCOffset . shrinkRange (-inclusiveBound, inclusiveBound) . unUTCOffset
 
 propertyTypeSpec ::
   forall a.

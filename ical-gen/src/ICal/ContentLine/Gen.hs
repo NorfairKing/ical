@@ -12,9 +12,13 @@ import qualified Data.Text as T
 import ICal.ContentLine
 import Test.QuickCheck
 
-instance GenValid ContentLine
+instance GenValid ContentLine where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ContentLineValue
+instance GenValid ContentLineValue where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid ContentLineName where
   genValid =
@@ -22,6 +26,7 @@ instance GenValid ContentLineName where
       [ ContentLineNameIANA . CI.mk <$> genTextBy genNameChar,
         ContentLineNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
       ]
+  shrinkValid = error "ContentLineName"
 
 instance GenValid ParamName where
   genValid =
@@ -29,6 +34,7 @@ instance GenValid ParamName where
       [ ParamNameIANA . CI.mk <$> genTextBy genNameChar,
         ParamNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
       ]
+  shrinkValid = error "ParamName"
 
 genNonEmptyTextBy :: Gen Char -> Gen Text
 genNonEmptyTextBy gen = genTextBy gen `suchThat` (not . T.null)
@@ -42,6 +48,7 @@ instance GenValid ParamValue where
       [ UnquotedParam . CI.mk <$> genTextBy genSafeChar,
         QuotedParam <$> genTextBy genQSafeChar
       ]
+  shrinkValid = error "ParamValue"
 
 genQSafeChar :: Gen Char
 genQSafeChar = genValid `suchThat` (validationIsValid . validateQSafeChar)
@@ -51,6 +58,7 @@ genSafeChar = genValid `suchThat` (validationIsValid . validateSafeChar)
 
 instance GenValid VendorId where
   genValid = VendorId . CI.mk . T.pack <$> genAtLeastNOf 3 genVendorIdChar
+  shrinkValid = error "VendorId"
 
 genAtLeastNOf :: Int -> Gen a -> Gen [a]
 genAtLeastNOf i g

@@ -1,4 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -26,9 +28,31 @@ import Test.Syd
 import Test.Syd.Validity
 import Text.Megaparsec
 
-instance GenValid Calendar
+instance GenValid Calendar where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Event
+instance GenValid Event where
+  genValid = genValidStructurallyWithoutExtraChecking
+
+  -- Shrink piecewise
+  shrinkValid Event {..} =
+    Event
+      <$> shrinkValid eventDateTimeStamp
+      <*> shrinkValid eventUID
+      <*> shrinkValid eventDateTimeStart
+      <*> shrinkValid eventClassification
+      <*> shrinkValid eventCreated
+      <*> shrinkValid eventDescription
+      <*> shrinkValid eventGeographicPosition
+      <*> shrinkValid eventLastModified
+      <*> shrinkValid eventLocation
+      <*> shrinkValid eventStatus
+      <*> shrinkValid eventSummary
+      <*> shrinkValid eventTransparency
+      <*> shrinkValid eventURL
+      <*> shrinkValid eventRecurrenceRules
+      <*> shrinkValid eventDateTimeEndDuration
 
 instance GenValid Observance where
   genValid = (`suchThat` isValid) $ do
@@ -40,13 +64,34 @@ instance GenValid Observance where
       <*> genValid
       <*> genValid
 
-instance GenValid TimeZoneObservance
+  -- Not shrinking piecewise but that's ok here for now.
+  shrinkValid Observance {..} =
+    Observance
+      <$> shrinkImpreciseLocalTime observanceDateTimeStart
+      <*> shrinkValid observanceTimeZoneOffsetTo
+      <*> shrinkValid observanceTimeZoneOffsetFrom
+      <*> shrinkValid observanceRecurrenceRule
+      <*> shrinkValid observanceComment
+      <*> shrinkValid observanceTimeZoneName
 
-instance GenValid Standard
+instance GenValid TimeZoneObservance where
+  shrinkValid = \case
+    StandardObservance s -> StandardObservance <$> shrinkValid s
+    DaylightObservance d@(Daylight o) ->
+      StandardObservance (Standard o) :
+      (DaylightObservance <$> shrinkValid d)
 
-instance GenValid Daylight
+instance GenValid Standard where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid TimeZone
+instance GenValid Daylight where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid TimeZone where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 componentScenarioDir ::
   forall a.

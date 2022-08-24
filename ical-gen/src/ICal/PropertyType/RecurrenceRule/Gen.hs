@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -27,7 +28,7 @@ instance GenValid Frequency where
   genValid = genValidStructurallyWithoutExtraChecking
 
 instance GenValid Interval where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap Interval . shrinkValid . unInterval
   genValid = Interval <$> sized (\s -> max 1 <$> choose (1, fromIntegral s)) -- no point in generating huge words
 
 instance GenValid Until where
@@ -40,19 +41,24 @@ instance GenValid Until where
 instance GenValid Count
 
 instance GenValid BySecond where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap BySecond . shrinkRange (0, 60) . unBySecond
   genValid = BySecond <$> choose (0, 60)
 
 instance GenValid ByMinute where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap ByMinute . shrinkRange (0, 59) . unByMinute
   genValid = ByMinute <$> choose (0, 59)
 
 instance GenValid ByHour where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap ByHour . shrinkRange (0, 23) . unByHour
   genValid = ByHour <$> choose (0, 23)
 
 instance GenValid ByDay where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = \case
+    Every i -> Every <$> shrinkValid i
+    Specific i dow ->
+      Specific
+        <$> shrinkRange2 (-5, -1) (1, 5) i
+        <*> shrinkValid dow
   genValid =
     oneof
       [ Every <$> genValid,
@@ -63,13 +69,13 @@ genSpecificByDay :: Gen ByDay
 genSpecificByDay =
   Specific
     <$> oneof
-      [ max 1 <$> choose (1, 5),
-        min (-1) <$> choose (-5, -1)
+      [ choose (1, 5),
+        choose (-5, -1)
       ]
     <*> genValid
 
 instance GenValid ByMonthDay where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap ByMonthDay . shrinkRange2 (-31, -1) (1, 31) . unByMonthDay
   genValid =
     ByMonthDay
       <$> oneof
@@ -78,7 +84,7 @@ instance GenValid ByMonthDay where
         ]
 
 instance GenValid ByYearDay where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap ByYearDay . shrinkRange2 (-366, -1) (1, 366) . unByYearDay
   genValid =
     ByYearDay
       <$> oneof
@@ -87,7 +93,7 @@ instance GenValid ByYearDay where
         ]
 
 instance GenValid ByWeekNo where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid = fmap ByWeekNo . shrinkRange2 (-53, -1) (1, 53) . unByWeekNo
   genValid =
     ByWeekNo
       <$> oneof
@@ -95,9 +101,13 @@ instance GenValid ByWeekNo where
           choose (-53, -1)
         ]
 
-instance GenValid ByMonth
+instance GenValid ByMonth where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
-instance GenValid WeekStart
+instance GenValid WeekStart where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
 instance GenValid BySetPos where
   shrinkValid = shrinkValidStructurally
@@ -106,13 +116,35 @@ instance GenValid BySetPos where
       <$> sized
         ( \s ->
             oneof
-              [ max 1 <$> choose (1, s),
-                min (-1) <$> choose (-s, -1)
+              [ choose (1, s),
+                choose (-s, -1)
               ]
         )
 
+shrinkRange2 :: (Ord a, GenValid a) => (a, a) -> (a, a) -> a -> [a]
+shrinkRange2 t1@(lower1, upper1) t2 value =
+  if lower1 <= value && value <= upper1
+    then shrinkRange t1 value
+    else shrinkRange t2 value
+
 instance GenValid RecurrenceRule where
-  shrinkValid = shrinkValidStructurally
+  shrinkValid RecurrenceRule {..} =
+    -- Piecewise shrinking because it's faster
+    filter isValid $
+      RecurrenceRule
+        <$> shrinkValid recurrenceRuleFrequency
+        <*> shrinkValid recurrenceRuleInterval
+        <*> shrinkValid recurrenceRuleUntilCount
+        <*> shrinkValid recurrenceRuleBySecond
+        <*> shrinkValid recurrenceRuleByMinute
+        <*> shrinkValid recurrenceRuleByHour
+        <*> shrinkValid recurrenceRuleByDay
+        <*> shrinkValid recurrenceRuleByMonthDay
+        <*> shrinkValid recurrenceRuleByYearDay
+        <*> shrinkValid recurrenceRuleByWeekNo
+        <*> shrinkValid recurrenceRuleByMonth
+        <*> shrinkValid recurrenceRuleWeekStart
+        <*> shrinkValid recurrenceRuleBySetPos
   genValid = do
     recurrenceRuleFrequency <- genValid
     recurrenceRuleInterval <- genValid

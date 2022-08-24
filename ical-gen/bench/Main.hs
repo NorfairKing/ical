@@ -15,6 +15,9 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import ICal
 import ICal.Component.Gen ()
+import ICal.Property.Gen ()
+import ICal.PropertyType.Gen ()
+import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck
 import Test.QuickCheck.Gen (Gen (..))
 import Test.QuickCheck.Random (mkQCGen)
@@ -24,14 +27,18 @@ main = do
   Criterion.defaultMain
     [ bgroup
         "generators"
-        [ genValidBench @TimeZone,
+        [ genValidBench @RecurrenceRule,
+          genValidBench @Observance,
+          genValidBench @TimeZone,
           genValidBench @Event,
           genValidBench @Calendar,
           genValidBench @ICalendar
         ],
       bgroup
         "shrinkers"
-        [ shrinkValidBench @TimeZone,
+        [ shrinkValidBench @RecurrenceRule,
+          shrinkValidBench @Observance,
+          shrinkValidBench @TimeZone,
           shrinkValidBench @Event,
           shrinkValidBench @Calendar,
           shrinkValidBench @ICalendar
@@ -56,7 +63,7 @@ nameOf =
         else s
 
 withArgs :: (NFData arg, GenValid arg) => (Vector arg -> Benchmark) -> Benchmark
-withArgs = env (pure (generateDeterministically $ V.replicateM 100 genValid))
+withArgs = env (pure (generateDeterministically $ V.replicateM 10 genValid))
 
 generateDeterministically :: Gen a -> a
 generateDeterministically (MkGen f) = f seed size

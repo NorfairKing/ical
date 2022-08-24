@@ -16,55 +16,96 @@ import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid ProdId
+instance GenValid ProdId where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Version
+instance GenValid Version where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid CalendarScale
+instance GenValid CalendarScale where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid UID
+instance GenValid UID where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid TZID
+instance GenValid TZID where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid DateTimeStamp
+instance GenValid DateTimeStamp where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid DateTimeStart
+instance GenValid DateTimeStart where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Classification
+instance GenValid Classification where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid Created where
   genValid = Created <$> genImpreciseUTCTime
+  shrinkValid = fmap Created . shrinkImpreciseUTCTime . unCreated
 
-instance GenValid Summary
+instance GenValid Summary where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Description
+instance GenValid Description where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid GeographicPosition where
   genValid =
     GeographicPosition
       <$> choose (-90, 90)
       <*> choose (-360, 360) -- Could have any value that's not written in scientific notation. This is probably good enough.
+  shrinkValid = error "GeographicPosition"
 
 instance GenValid LastModified where
   genValid = LastModified <$> genImpreciseUTCTime
+  shrinkValid = fmap LastModified . shrinkImpreciseUTCTime . unLastModified
 
-instance GenValid Location
+instance GenValid Location where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Status
+instance GenValid Status where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid URL
+instance GenValid URL where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid DateTimeEnd
+instance GenValid DateTimeEnd where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Transparency
+instance GenValid Transparency where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid TimeZoneName
+instance GenValid TimeZoneName where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Comment
+instance GenValid Comment where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid TimeZoneOffsetFrom
+instance GenValid TimeZoneOffsetFrom where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid TimeZoneOffsetTo
+instance GenValid TimeZoneOffsetTo where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 propertySpec ::
   forall a.
