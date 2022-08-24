@@ -65,7 +65,10 @@ instance GenValid GeographicPosition where
     GeographicPosition
       <$> choose (-90, 90)
       <*> choose (-360, 360) -- Could have any value that's not written in scientific notation. This is probably good enough.
-  shrinkValid = error "GeographicPosition"
+  shrinkValid (GeographicPosition lat lon) =
+    GeographicPosition
+      <$> shrinkRange (-90, 90) lat
+      <*> shrinkRange (-360, 360) lon
 
 instance GenValid LastModified where
   genValid = LastModified <$> genImpreciseUTCTime

@@ -23,7 +23,6 @@ import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
-import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 import Text.Megaparsec
@@ -55,7 +54,7 @@ instance GenValid Event where
       <*> shrinkValid eventDateTimeEndDuration
 
 instance GenValid Observance where
-  genValid = (`suchThat` isValid) $ do
+  genValid =
     Observance
       <$> genImpreciseLocalTime
       <*> genValid

@@ -57,8 +57,12 @@ instance GenValid DateTime where
       ]
   shrinkValid = \case
     DateTimeFloating lt -> DateTimeFloating <$> shrinkImpreciseLocalTime lt
-    DateTimeUTC ut -> DateTimeUTC <$> shrinkImpreciseUTCTime ut
-    DateTimeZoned tzid lt -> DateTimeZoned <$> shrinkValid tzid <*> shrinkImpreciseLocalTime lt
+    DateTimeUTC ut ->
+      DateTimeFloating (utcToLocalTime utc ut) :
+      (DateTimeUTC <$> shrinkImpreciseUTCTime ut)
+    DateTimeZoned tzid lt ->
+      DateTimeFloating lt :
+      (DateTimeZoned <$> shrinkValid tzid <*> shrinkImpreciseLocalTime lt)
 
 genImpreciseUTCTime :: Gen UTCTime
 genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime

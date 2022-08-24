@@ -616,7 +616,7 @@ data Event = Event
     -- ;
     -- dtend / duration /
     -- @
-    eventDateTimeEndDuration :: Maybe (Either DateTimeEnd Duration)
+    eventDateTimeEndDuration :: !(Maybe (Either DateTimeEnd Duration))
     -- @
     -- ;
     -- ; The following are OPTIONAL,

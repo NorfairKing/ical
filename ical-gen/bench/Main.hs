@@ -16,6 +16,7 @@ import qualified Data.Vector as V
 import ICal
 import ICal.Component.Gen ()
 import ICal.Property.Gen ()
+import ICal.PropertyType.Duration
 import ICal.PropertyType.Gen ()
 import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck
@@ -36,12 +37,28 @@ main = do
         ],
       bgroup
         "shrinkers"
-        [ shrinkValidBench @RecurrenceRule,
-          shrinkValidBench @Observance,
-          shrinkValidBench @TimeZone,
+        [ --
+          shrinkValidBench @DateTimeStamp,
+          shrinkValidBench @UID,
+          shrinkValidBench @DateTimeStart,
+          shrinkValidBench @Classification,
+          shrinkValidBench @Created,
+          shrinkValidBench @Description,
+          shrinkValidBench @GeographicPosition,
+          shrinkValidBench @LastModified,
+          shrinkValidBench @Location,
+          shrinkValidBench @Status,
+          shrinkValidBench @Summary,
+          shrinkValidBench @Transparency,
+          shrinkValidBench @URL,
+          shrinkValidBench @DateTimeEnd,
+          shrinkValidBench @Duration,
+          shrinkValidBench @RecurrenceRule,
           shrinkValidBench @Event,
-          shrinkValidBench @Calendar,
-          shrinkValidBench @ICalendar
+          shrinkValidBench @Observance,
+          shrinkValidBench @TimeZone
+          -- shrinkValidBench @Calendar,
+          -- shrinkValidBench @ICalendar
         ]
     ]
 
