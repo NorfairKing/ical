@@ -11,8 +11,7 @@ import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
-import Data.Maybe
-import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime, localTimeToUTC, utc, utcToLocalTime)
+import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime (..), localTimeToUTC, utc, utcToLocalTime)
 import GHC.Stack
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
@@ -45,8 +44,16 @@ instance GenValid Time where
       ]
   shrinkValid = \case
     TimeFloating tod -> TimeFloating <$> shrinkImpreciseTimeOfDay tod
-    TimeUTC tod -> TimeUTC <$> shrinkImpreciseTimeOfDay tod
-    TimeZoned tzid tod -> TimeZoned <$> shrinkValid tzid <*> shrinkImpreciseTimeOfDay tod
+    TimeUTC tod ->
+      TimeFloating tod :
+      (TimeUTC <$> shrinkImpreciseTimeOfDay tod)
+    TimeZoned tzid tod ->
+      TimeFloating tod :
+      TimeUTC tod :
+      ( do
+          (tzid', tod') <- shrinkTuple shrinkValid shrinkImpreciseTimeOfDay (tzid, tod)
+          pure (TimeZoned tzid' tod')
+      )
 
 instance GenValid DateTime where
   genValid =
@@ -62,25 +69,31 @@ instance GenValid DateTime where
       (DateTimeUTC <$> shrinkImpreciseUTCTime ut)
     DateTimeZoned tzid lt ->
       DateTimeFloating lt :
-      (DateTimeZoned <$> shrinkValid tzid <*> shrinkImpreciseLocalTime lt)
+      DateTimeUTC (localTimeToUTC utc lt) :
+      ( do
+          (tzid', lt') <- shrinkTuple shrinkValid shrinkImpreciseLocalTime (tzid, lt)
+          pure (DateTimeZoned tzid' lt')
+      )
 
 genImpreciseUTCTime :: Gen UTCTime
 genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime
 
 shrinkImpreciseUTCTime :: UTCTime -> [UTCTime]
-shrinkImpreciseUTCTime =
-  fmap (localTimeToUTC utc)
-    . shrinkImpreciseLocalTime
-    . utcToLocalTime utc
+shrinkImpreciseUTCTime (UTCTime d dt) = do
+  (d', dt') <-
+    shrinkTuple
+      shrinkValid
+      (fmap (fromIntegral @Int) . shrinkValid . floor)
+      (d, dt)
+  pure (UTCTime d' dt')
 
 genImpreciseLocalTime :: Gen LocalTime
 genImpreciseLocalTime = LocalTime <$> genValid <*> genImpreciseTimeOfDay
 
 shrinkImpreciseLocalTime :: LocalTime -> [LocalTime]
-shrinkImpreciseLocalTime (LocalTime d tod) =
-  LocalTime
-    <$> shrinkValid d
-    <*> shrinkImpreciseTimeOfDay tod
+shrinkImpreciseLocalTime (LocalTime d tod) = do
+  (d', tod') <- shrinkTuple shrinkValid shrinkImpreciseTimeOfDay (d, tod)
+  pure $ LocalTime d' tod'
 
 genImpreciseTimeOfDay :: Gen TimeOfDay
 genImpreciseTimeOfDay =
@@ -90,15 +103,37 @@ genImpreciseTimeOfDay =
     <*> (fromIntegral <$> (choose (0, 60) :: Gen Int))
 
 shrinkImpreciseTimeOfDay :: TimeOfDay -> [TimeOfDay]
-shrinkImpreciseTimeOfDay (TimeOfDay h m s) =
-  TimeOfDay
-    <$> shrinkRange (0, 23) h
-    <*> shrinkRange (0, 59) m
-    <*> (fromIntegral @Int <$> shrinkRange (0, 60) (round s))
+shrinkImpreciseTimeOfDay (TimeOfDay h m s) = do
+  (h', (m', s')) <-
+    shrinkTuple
+      (shrinkRangeDown (0, 23))
+      ( shrinkTuple
+          (shrinkRangeDown (0, 59))
+          (fmap (fromIntegral @Int) . shrinkRangeDown (0, 60) . floor)
+      )
+      (h, (m, s))
+  pure $ TimeOfDay h' m' s'
 
-shrinkRange :: (Ord a, GenValid a) => (a, a) -> a -> [a]
-shrinkRange (lower, upper) =
-  mapMaybe (clampMaybe lower upper) . shrinkValid
+-- | Shrink in two bounds, towards the upper in the first and towards the lower in the second
+shrinkRange2 :: (Ord a) => (a, a) -> (a, a) -> a -> [a]
+shrinkRange2 t1@(_, upper1) t2@(lower2, _) value
+  | value <= upper1 = shrinkRangeUp t1 value
+  | value >= lower2 = shrinkRangeDown t2 value
+  | otherwise = []
+
+-- Shrink towards the lower bound
+shrinkRangeDown :: (Ord a) => (a, a) -> a -> [a]
+shrinkRangeDown (lower, upper) value
+  | value <= lower = []
+  | value > upper = [upper]
+  | otherwise = [lower] -- Could maybe have more than this
+
+-- Shrink towards the upper bound
+shrinkRangeUp :: (Ord a) => (a, a) -> a -> [a]
+shrinkRangeUp (lower, upper) value
+  | value >= upper = []
+  | value < lower = [lower]
+  | otherwise = [upper] -- Could maybe have more than this
 
 clampMaybe :: Ord a => a -> a -> a -> Maybe a
 clampMaybe lower upper value =
@@ -116,7 +151,7 @@ instance GenValid UTCOffset where
      in UTCOffset <$> choose (-inclusiveBound, inclusiveBound)
   shrinkValid =
     let inclusiveBound = utcOffsetAbsBound - 1
-     in fmap UTCOffset . shrinkRange (-inclusiveBound, inclusiveBound) . unUTCOffset
+     in fmap UTCOffset . shrinkRange2 (-inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
 
 propertyTypeSpec ::
   forall a.

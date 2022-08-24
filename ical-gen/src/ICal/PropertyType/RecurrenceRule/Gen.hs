@@ -41,15 +41,15 @@ instance GenValid Until where
 instance GenValid Count
 
 instance GenValid BySecond where
-  shrinkValid = fmap BySecond . shrinkRange (0, 60) . unBySecond
+  shrinkValid = fmap BySecond . shrinkRangeDown (0, 60) . unBySecond
   genValid = BySecond <$> choose (0, 60)
 
 instance GenValid ByMinute where
-  shrinkValid = fmap ByMinute . shrinkRange (0, 59) . unByMinute
+  shrinkValid = fmap ByMinute . shrinkRangeDown (0, 59) . unByMinute
   genValid = ByMinute <$> choose (0, 59)
 
 instance GenValid ByHour where
-  shrinkValid = fmap ByHour . shrinkRange (0, 23) . unByHour
+  shrinkValid = fmap ByHour . shrinkRangeDown (0, 23) . unByHour
   genValid = ByHour <$> choose (0, 23)
 
 instance GenValid ByDay where
@@ -120,12 +120,6 @@ instance GenValid BySetPos where
                 choose (-s, -1)
               ]
         )
-
-shrinkRange2 :: (Ord a, GenValid a) => (a, a) -> (a, a) -> a -> [a]
-shrinkRange2 t1@(lower1, upper1) t2 value =
-  if lower1 <= value && value <= upper1
-    then shrinkRange t1 value
-    else shrinkRange t2 value
 
 instance GenValid RecurrenceRule where
   shrinkValid RecurrenceRule {..} =

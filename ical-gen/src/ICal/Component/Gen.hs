@@ -15,6 +15,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import Debug.Trace
 import ICal.Component
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
@@ -35,23 +36,27 @@ instance GenValid Event where
   genValid = genValidStructurallyWithoutExtraChecking
 
   -- Shrink piecewise
-  shrinkValid Event {..} =
-    Event
-      <$> shrinkValid eventDateTimeStamp
-      <*> shrinkValid eventUID
-      <*> shrinkValid eventDateTimeStart
-      <*> shrinkValid eventClassification
-      <*> shrinkValid eventCreated
-      <*> shrinkValid eventDescription
-      <*> shrinkValid eventGeographicPosition
-      <*> shrinkValid eventLastModified
-      <*> shrinkValid eventLocation
-      <*> shrinkValid eventStatus
-      <*> shrinkValid eventSummary
-      <*> shrinkValid eventTransparency
-      <*> shrinkValid eventURL
-      <*> shrinkValid eventRecurrenceRules
-      <*> shrinkValid eventDateTimeEndDuration
+  shrinkValid -- shrinkValidStructurallyWithoutExtraFiltering
+    e@Event {..} =
+      let shrinkValidTraced :: (Show a, GenValid a) => a -> [a]
+          shrinkValidTraced = traceShowId . shrinkValid . traceShowId
+       in traceShowId . traceShow e $
+            Event
+              <$> shrinkValidTraced eventDateTimeStamp
+              <*> shrinkValidTraced eventUID
+              <*> shrinkValidTraced eventDateTimeStart
+              <*> shrinkValidTraced eventClassification
+              <*> shrinkValidTraced eventCreated
+              <*> shrinkValidTraced eventDescription
+              <*> shrinkValidTraced eventGeographicPosition
+              <*> shrinkValidTraced eventLastModified
+              <*> shrinkValidTraced eventLocation
+              <*> shrinkValidTraced eventStatus
+              <*> shrinkValidTraced eventSummary
+              <*> shrinkValidTraced eventTransparency
+              <*> shrinkValidTraced eventURL
+              <*> shrinkValidTraced eventRecurrenceRules
+              <*> shrinkValidTraced eventDateTimeEndDuration
 
 instance GenValid Observance where
   genValid =

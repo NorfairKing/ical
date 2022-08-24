@@ -17,7 +17,7 @@ import ICal
 import ICal.Component.Gen ()
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration
-import ICal.PropertyType.Gen ()
+import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck
 import Test.QuickCheck.Gen (Gen (..))
@@ -38,6 +38,9 @@ main = do
       bgroup
         "shrinkers"
         [ --
+          shrinkerBench "shrinkImpreciseTimeOfDay" shrinkImpreciseTimeOfDay,
+          shrinkerBench "shrinkImpreciseLocalTime" shrinkImpreciseLocalTime,
+          shrinkerBench "shrinkImpreciseUTCTime" shrinkImpreciseUTCTime,
           shrinkValidBench @DateTimeStamp,
           shrinkValidBench @UID,
           shrinkValidBench @DateTimeStart,
@@ -64,10 +67,16 @@ main = do
 
 shrinkValidBench :: forall a. (Typeable a, NFData a, GenValid a) => Benchmark
 shrinkValidBench =
+  shrinkerBench
+    ("shrinkValid " <> nameOf @a)
+    (shrinkValid @a)
+
+shrinkerBench :: forall a. (NFData a, GenValid a) => String -> (a -> [a]) -> Benchmark
+shrinkerBench name shrinker =
   withArgs $ \args ->
     bench
-      ("shrinkValid " <> nameOf @a)
-      (nf (V.map (listToMaybe . shrinkValid)) (args :: Vector a))
+      name
+      (nf (V.map (listToMaybe . shrinker)) (args :: Vector a))
 
 nameOf ::
   forall a.
