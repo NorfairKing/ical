@@ -27,6 +27,26 @@ library:
   - text
   - time
 
+benchmarks:
+  ical-bench:
+    main: Main.hs
+    source-dirs: bench/
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    dependencies:
+    - QuickCheck
+    - criterion
+    - deepseq
+    - genvalidity
+    - genvalidity-criterion
+    - genvalidity-vector
+    - ical
+    - ical-gen
+    - vector
+
 tests:
   ical-test:
     main: Spec.hs

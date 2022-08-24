@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.Date where
 
+import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -58,6 +59,8 @@ newtype Date = Date {unDate :: Time.Day}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Date
+
+instance NFData Date
 
 instance IsPropertyType Date where
   propertyTypeP = dateP

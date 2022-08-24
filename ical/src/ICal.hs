@@ -31,6 +31,8 @@ import ICal.UnfoldedLine
 icalContentType :: ByteString
 icalContentType = "text/calendar"
 
+type ICalendar = [Calendar]
+
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
 --
 -- UTF8 is the default character encoding according to the spec:
@@ -45,13 +47,13 @@ icalContentType = "text/calendar"
 -- The "charset" Content-Type parameter MUST be used in MIME transports
 -- to specify the charset being used.
 -- @
-parseICalendarByteString :: ByteString -> Either String [Calendar]
+parseICalendarByteString :: ByteString -> Either String ICalendar
 parseICalendarByteString contents = do
   textContents <- left show $ TE.decodeUtf8' contents
   parseICalendar textContents
 
 -- | Parse a VCALENDAR stream
-parseICalendar :: Text -> Either String [Calendar]
+parseICalendar :: Text -> Either String ICalendar
 parseICalendar contents = do
   unfoldedLines <- parseUnfoldedLines contents
   contentLines <- mapM parseContentLineFromUnfoldedLine unfoldedLines
@@ -78,11 +80,11 @@ parseVCalendar contents = do
 -- The "charset" Content-Type parameter MUST be used in MIME transports
 -- to specify the charset being used.
 -- @
-renderICalendarByteString :: [Calendar] -> ByteString
+renderICalendarByteString :: ICalendar -> ByteString
 renderICalendarByteString = TE.encodeUtf8 . renderICalendar
 
 -- | Render a VCALENDAR stream
-renderICalendar :: [Calendar] -> Text
+renderICalendar :: ICalendar -> Text
 renderICalendar =
   renderContentLines
     . DList.toList

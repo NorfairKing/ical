@@ -17,6 +17,7 @@
 module ICal.Property where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad
 import qualified Data.Map as M
 import Data.Proxy
@@ -98,6 +99,8 @@ newtype Begin = Begin {unBegin :: Text}
 
 instance Validity Begin
 
+instance NFData Begin
+
 instance IsProperty Begin where
   propertyName Proxy = "BEGIN"
   propertyP = fmap Begin . propertyTypeP
@@ -107,6 +110,8 @@ newtype End = End {unEnd :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity End
+
+instance NFData End
 
 instance IsProperty End where
   propertyName Proxy = "END"
@@ -161,6 +166,8 @@ newtype ProdId = ProdId {unProdId :: Text}
 
 instance Validity ProdId
 
+instance NFData ProdId
+
 instance IsProperty ProdId where
   propertyName Proxy = "PRODID"
   propertyP = fmap ProdId . propertyTypeP
@@ -213,6 +220,8 @@ newtype Version = Version {unVersion :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity Version
+
+instance NFData Version
 
 instance IsProperty Version where
   propertyName Proxy = "VERSION"
@@ -271,6 +280,8 @@ data CalendarScale
   deriving (Show, Eq, Generic)
 
 instance Validity CalendarScale
+
+instance NFData CalendarScale
 
 instance IsProperty CalendarScale where
   propertyName Proxy = "CALSCALE"
@@ -357,6 +368,8 @@ newtype UID = UID {unUID :: Text}
 
 instance Validity UID
 
+instance NFData UID
+
 instance IsProperty UID where
   propertyName Proxy = "UID"
   propertyP = fmap UID . propertyTypeP
@@ -420,6 +433,8 @@ newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
 
 instance Validity DateTimeStamp
 
+instance NFData DateTimeStamp
+
 instance IsProperty DateTimeStamp where
   propertyName Proxy = "DTSTAMP"
   propertyP = fmap DateTimeStamp . propertyTypeP
@@ -456,6 +471,8 @@ newtype TZID = TZID {unTZID :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity TZID
+
+instance NFData TZID
 
 instance IsProperty TZID where
   propertyName Proxy = "TZID"
@@ -535,6 +552,8 @@ data DateTimeStart
 
 instance Validity DateTimeStart
 
+instance NFData DateTimeStart
+
 instance IsProperty DateTimeStart where
   propertyName Proxy = "DTSTART"
   propertyP cl =
@@ -608,6 +627,8 @@ data Classification
   deriving (Show, Eq, Generic)
 
 instance Validity Classification
+
+instance NFData Classification
 
 instance IsProperty Classification where
   propertyName Proxy = "CLASS"
@@ -686,6 +707,8 @@ instance Validity Created where
         validateImpreciseUTCTime unCreated
       ]
 
+instance NFData Created
+
 instance IsProperty Created where
   propertyName Proxy = "CREATED"
   propertyP = fmap Created . dateTimeUTCP
@@ -743,6 +766,8 @@ newtype Summary = Summary {unSummary :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity Summary
+
+instance NFData Summary
 
 instance IsProperty Summary where
   propertyName Proxy = "SUMMARY"
@@ -809,6 +834,8 @@ newtype Description = Description {unDescription :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity Description
+
+instance NFData Description
 
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
@@ -918,6 +945,8 @@ instance Validity GeographicPosition where
         validateNotInfinite geographicPositionLon
       ]
 
+instance NFData GeographicPosition
+
 instance IsProperty GeographicPosition where
   propertyName Proxy = "GEO"
   propertyP = geographicPositionP
@@ -991,6 +1020,8 @@ instance Validity LastModified where
         validateImpreciseUTCTime unLastModified
       ]
 
+instance NFData LastModified
+
 instance IsProperty LastModified where
   propertyName Proxy = "LAST-MODIFIED"
   propertyP = fmap LastModified . dateTimeUTCP
@@ -1055,6 +1086,8 @@ newtype Location = Location {unLocation :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity Location
+
+instance NFData Location
 
 instance IsProperty Location where
   propertyName Proxy = "LOCATION"
@@ -1139,6 +1172,8 @@ data Status
   deriving (Show, Eq, Generic)
 
 instance Validity Status
+
+instance NFData Status
 
 instance IsProperty Status where
   propertyName Proxy = "STATUS"
@@ -1231,6 +1266,8 @@ data DateTimeEnd
   deriving (Show, Eq, Generic)
 
 instance Validity DateTimeEnd
+
+instance NFData DateTimeEnd
 
 instance IsProperty DateTimeEnd where
   propertyName Proxy = "DTEND"
@@ -1349,6 +1386,8 @@ data Transparency
 
 instance Validity Transparency
 
+instance NFData Transparency
+
 instance IsProperty Transparency where
   propertyName Proxy = "TRANSP"
   propertyP = transparencyP
@@ -1412,6 +1451,8 @@ newtype URL = URL {unURL :: URI}
 
 instance Validity URL
 
+instance NFData URL
+
 instance IsProperty URL where
   propertyName Proxy = "URL"
   propertyP = fmap URL . propertyTypeP
@@ -1422,6 +1463,8 @@ newtype TimeZoneName = TimeZoneName {unTimeZoneName :: Text}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZoneName
+
+instance NFData TimeZoneName
 
 instance IsProperty TimeZoneName where
   propertyName Proxy = "TZNAME"
@@ -1477,6 +1520,8 @@ newtype Comment = Comment {unComment :: Text}
 
 instance Validity Comment
 
+instance NFData Comment
+
 instance IsProperty Comment where
   propertyName Proxy = "COMMENT"
   propertyP = fmap Comment . propertyTypeP
@@ -1530,6 +1575,8 @@ newtype TimeZoneOffsetFrom = TimeZoneOffsetFrom {unTimeZoneOffsetFrom :: UTCOffs
 
 instance Validity TimeZoneOffsetFrom
 
+instance NFData TimeZoneOffsetFrom
+
 instance IsProperty TimeZoneOffsetFrom where
   propertyName Proxy = "TZOFFSETFROM"
   propertyP = fmap TimeZoneOffsetFrom . propertyTypeP
@@ -1579,6 +1626,8 @@ newtype TimeZoneOffsetTo = TimeZoneOffsetTo {unTimeZoneOffsetTo :: UTCOffset}
   deriving (Show, Eq, Generic)
 
 instance Validity TimeZoneOffsetTo
+
+instance NFData TimeZoneOffsetTo
 
 instance IsProperty TimeZoneOffsetTo where
   propertyName Proxy = "TZOFFSETTO"

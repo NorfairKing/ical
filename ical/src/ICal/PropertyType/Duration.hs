@@ -5,6 +5,7 @@
 module ICal.PropertyType.Duration where
 
 import Control.Arrow (left)
+import Control.DeepSeq
 import Control.Monad
 import Data.Data
 import Data.Maybe
@@ -84,6 +85,8 @@ data Duration
 
 instance Validity Duration
 
+instance NFData Duration
+
 instance IsPropertyType Duration where
   propertyTypeP = durationP
   propertyTypeB = durationB
@@ -99,6 +102,8 @@ data DurDate = DurDate
 
 instance Validity DurDate
 
+instance NFData DurDate
+
 data DurTime = DurTime
   { durTimeSign :: !Sign,
     durTimeHour :: !Word,
@@ -109,6 +114,8 @@ data DurTime = DurTime
 
 instance Validity DurTime
 
+instance NFData DurTime
+
 data DurWeek = DurWeek
   { durWeekSign :: !Sign,
     durWeekWeek :: !Word
@@ -117,10 +124,14 @@ data DurWeek = DurWeek
 
 instance Validity DurWeek
 
+instance NFData DurWeek
+
 data Sign = Positive | Negative
   deriving (Show, Eq, Ord, Generic, Typeable)
 
 instance Validity Sign
+
+instance NFData Sign
 
 durationP :: ContentLineValue -> Either String Duration
 durationP = parseDuration . contentLineValueRaw

@@ -35,6 +35,7 @@ library
     , bytestring
     , case-insensitive
     , containers
+    , deepseq
     , dlist
     , megaparsec
     , network-uri

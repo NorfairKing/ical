@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
@@ -13,6 +14,7 @@
 module ICal.PropertyType.RecurrenceRule where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI (..))
 import qualified Data.CaseInsensitive as CI
@@ -40,6 +42,9 @@ deriving instance Ord DayOfWeek -- Silly that this doesn't exist. We need to be 
 deriving instance Generic DayOfWeek
 
 deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
+
+instance NFData DayOfWeek where
+  rnf !_ = ()
 
 -- | Recurrence Rule
 --
@@ -532,6 +537,8 @@ instance Validity RecurrenceRule where
                 ]
       ]
 
+instance NFData RecurrenceRule
+
 instance IsPropertyType RecurrenceRule where
   propertyTypeP = recurrenceRuleP
   propertyTypeB = recurrenceRuleB
@@ -678,6 +685,8 @@ data Frequency
 
 instance Validity Frequency
 
+instance NFData Frequency
+
 instance IsRecurrenceRulePart Frequency where
   recurrenceRulePartName Proxy = "FREQ"
   recurrenceRulePartP = frequencyP
@@ -718,6 +727,8 @@ newtype Interval = Interval {unInterval :: Word}
 
 instance Validity Interval where
   validate i@(Interval w) = mconcat [genericValidate i, declare "The interval is not zero" $ w /= 0]
+
+instance NFData Interval
 
 instance IsRecurrenceRulePart Interval where
   recurrenceRulePartName Proxy = "INTERVAL"
@@ -768,6 +779,8 @@ instance Validity Until where
           UntilDateTime ut -> validateImpreciseUTCTime ut
       ]
 
+instance NFData Until
+
 instance IsRecurrenceRulePart Until where
   recurrenceRulePartName Proxy = "UNTIL"
   recurrenceRulePartP = untilP
@@ -793,6 +806,8 @@ instance Validity Count where
         declare "Valid values are 0 to 60." $
           w >= 0 && w <= 60
       ]
+
+instance NFData Count
 
 instance IsRecurrenceRulePart Count where
   recurrenceRulePartName Proxy = "COUNT"
@@ -822,6 +837,8 @@ instance Validity BySecond where
           w >= 0 && w <= 60
       ]
 
+instance NFData BySecond
+
 instance IsRecurrenceRulePart (Set BySecond) where
   recurrenceRulePartName Proxy = "BYSECOND"
   recurrenceRulePartP = setP bySecondP
@@ -850,6 +867,8 @@ instance Validity ByMinute where
           w >= 0 && w <= 59
       ]
 
+instance NFData ByMinute
+
 instance IsRecurrenceRulePart (Set ByMinute) where
   recurrenceRulePartName Proxy = "BYMINUTE"
   recurrenceRulePartP = setP byMinuteP
@@ -877,6 +896,8 @@ instance Validity ByHour where
         declare "Valid values are 0 to 23." $
           w >= 0 && w <= 23
       ]
+
+instance NFData ByHour
 
 instance IsRecurrenceRulePart (Set ByHour) where
   recurrenceRulePartName Proxy = "BYHOUR"
@@ -925,6 +946,8 @@ instance Validity ByDay where
                 declare "The specific weekday number is between -5 and 5" $ i >= -5 && i <= 5
               ]
       ]
+
+instance NFData ByDay
 
 instance IsRecurrenceRulePart (Set ByDay) where
   recurrenceRulePartName Proxy = "BYDAY"
@@ -991,6 +1014,8 @@ instance Validity ByMonthDay where
           i /= 0 && i >= -31 && i <= 31
       ]
 
+instance NFData ByMonthDay
+
 instance IsRecurrenceRulePart (Set ByMonthDay) where
   recurrenceRulePartName Proxy = "BYMONTHDAY"
   recurrenceRulePartP = setP byMonthDayP
@@ -1020,6 +1045,8 @@ instance Validity ByYearDay where
         declare "Valid values are 1 to 366 or -366 to -1." $
           i /= 0 && i >= -366 && i <= 366
       ]
+
+instance NFData ByYearDay
 
 instance IsRecurrenceRulePart (Set ByYearDay) where
   recurrenceRulePartName Proxy = "BYYEARDAY"
@@ -1060,6 +1087,8 @@ instance Validity ByWeekNo where
           i /= 0 && i >= -53 && i <= 53
       ]
 
+instance NFData ByWeekNo
+
 instance IsRecurrenceRulePart (Set ByWeekNo) where
   recurrenceRulePartName Proxy = "BYWEEKNO"
   recurrenceRulePartP = setP byWeekNoP
@@ -1083,6 +1112,8 @@ newtype ByMonth = ByMonth {unByMonth :: Month}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ByMonth
+
+instance NFData ByMonth
 
 instance IsRecurrenceRulePart (Set ByMonth) where
   recurrenceRulePartName Proxy = "BYMONTH"
@@ -1126,6 +1157,8 @@ instance Validity BySetPos where
           w /= 0
       ]
 
+instance NFData BySetPos
+
 instance IsRecurrenceRulePart (Set BySetPos) where
   recurrenceRulePartName Proxy = "BYSETPOS"
   recurrenceRulePartP = setP bySetPosP
@@ -1153,6 +1186,8 @@ newtype WeekStart = WeekStart {unWeekStart :: DayOfWeek}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity WeekStart
+
+instance NFData WeekStart
 
 instance IsRecurrenceRulePart WeekStart where
   recurrenceRulePartName Proxy = "WKST"
@@ -1185,6 +1220,8 @@ data Month
 
 instance Validity Month where
   validate = trivialValidation
+
+instance NFData Month
 
 monthToMonthNo :: Month -> Int
 monthToMonthNo = \case

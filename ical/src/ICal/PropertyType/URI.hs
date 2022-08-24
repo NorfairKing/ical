@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.URI where
 
+import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -56,6 +57,8 @@ newtype URI = URI {unURI :: Network.URI} -- Consider not making this a newtype.
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity URI
+
+instance NFData URI
 
 instance IsPropertyType URI where
   propertyTypeP = uriP

@@ -3,6 +3,7 @@
 
 module ICal.PropertyType.UTCOffset where
 
+import Control.DeepSeq
 import Data.Int
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -62,6 +63,8 @@ instance Validity UTCOffset where
 
 utcOffsetAbsBound :: Int32
 utcOffsetAbsBound = ((24 * 60) + 60) * 60 + 60
+
+instance NFData UTCOffset
 
 instance IsPropertyType UTCOffset where
   propertyTypeP = utcOffsetP

@@ -10,6 +10,7 @@
 
 module ICal.PropertyType.Time where
 
+import Control.DeepSeq
 import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -149,6 +150,8 @@ instance Validity Time where
               TimeZoned _ t -> t
          in validateImpreciseTimeOfDay tod
       ]
+
+instance NFData Time
 
 instance IsPropertyType Time where
   propertyTypeP = timeP

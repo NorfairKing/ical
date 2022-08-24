@@ -10,6 +10,7 @@
 
 module ICal.Parameter where
 
+import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
@@ -116,6 +117,8 @@ instance Validity TZIDParam where
       [ genericValidate p,
         decorateText (CI.original ci) validateSafeChar
       ]
+
+instance NFData TZIDParam
 
 instance IsParameter TZIDParam where
   parameterName Proxy = "TZID"

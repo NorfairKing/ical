@@ -15,6 +15,7 @@ module ICal.Component where
 
 import Control.Applicative.Permutations
 import Control.Arrow (left)
+import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
@@ -229,6 +230,8 @@ data Calendar = Calendar
   deriving (Show, Eq, Generic)
 
 instance Validity Calendar
+
+instance NFData Calendar
 
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
@@ -628,6 +631,8 @@ data Event = Event
   deriving (Show, Eq, Generic)
 
 instance Validity Event
+
+instance NFData Event
 
 instance IsComponent Event where
   componentName Proxy = "VEVENT"
@@ -1172,6 +1177,8 @@ data TimeZone = TimeZone
 
 instance Validity TimeZone
 
+instance NFData TimeZone
+
 instance IsComponent TimeZone where
   componentName Proxy = "VTIMEZONE"
   componentP = vTimeZoneP
@@ -1204,6 +1211,8 @@ data TimeZoneObservance
 
 instance Validity TimeZoneObservance
 
+instance NFData TimeZoneObservance
+
 timeZoneObservanceP :: CP TimeZoneObservance
 timeZoneObservanceP =
   StandardObservance <$> componentSectionP
@@ -1219,6 +1228,8 @@ newtype Standard = Standard {unStandard :: Observance}
 
 instance Validity Standard
 
+instance NFData Standard
+
 instance IsComponent Standard where
   componentName Proxy = "STANDARD"
   componentP = Standard <$> observanceP
@@ -1228,6 +1239,8 @@ newtype Daylight = Daylight {unDaylight :: Observance}
   deriving (Show, Eq, Generic)
 
 instance Validity Daylight
+
+instance NFData Daylight
 
 instance IsComponent Daylight where
   componentName Proxy = "DAYLIGHT"
@@ -1268,6 +1281,8 @@ instance Validity Observance where
       [ genericValidate o,
         validateImpreciseLocalTime observanceDateTimeStart
       ]
+
+instance NFData Observance
 
 observanceP :: CP Observance
 observanceP = do

@@ -10,6 +10,7 @@
 
 module ICal.PropertyType.DateTime where
 
+import Control.DeepSeq
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -172,6 +173,8 @@ instance Validity DateTime where
           DateTimeUTC u -> validateImpreciseUTCTime u
           DateTimeZoned _ l -> validateImpreciseLocalTime l
       ]
+
+instance NFData DateTime
 
 instance IsPropertyType DateTime where
   propertyTypeP = dateTimeP
