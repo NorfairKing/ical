@@ -1,6 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -15,7 +14,6 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Debug.Trace
 import ICal.Component
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
@@ -35,28 +33,52 @@ instance GenValid Calendar where
 instance GenValid Event where
   genValid = genValidStructurallyWithoutExtraChecking
 
-  -- Shrink piecewise
-  shrinkValid -- shrinkValidStructurallyWithoutExtraFiltering
-    e@Event {..} =
-      let shrinkValidTraced :: (Show a, GenValid a) => a -> [a]
-          shrinkValidTraced = traceShowId . shrinkValid . traceShowId
-       in traceShowId . traceShow e $
-            Event
-              <$> shrinkValidTraced eventDateTimeStamp
-              <*> shrinkValidTraced eventUID
-              <*> shrinkValidTraced eventDateTimeStart
-              <*> shrinkValidTraced eventClassification
-              <*> shrinkValidTraced eventCreated
-              <*> shrinkValidTraced eventDescription
-              <*> shrinkValidTraced eventGeographicPosition
-              <*> shrinkValidTraced eventLastModified
-              <*> shrinkValidTraced eventLocation
-              <*> shrinkValidTraced eventStatus
-              <*> shrinkValidTraced eventSummary
-              <*> shrinkValidTraced eventTransparency
-              <*> shrinkValidTraced eventURL
-              <*> shrinkValidTraced eventRecurrenceRules
-              <*> shrinkValidTraced eventDateTimeEndDuration
+  shrinkValid (Event mp u rt cn cd d gp lm l ss sy t mu rrs med) = do
+    (mp', (((u', rt'), ((cn', cd'), (d', gp'))), (((lm', l'), (ss', sy')), ((t', mu'), (rrs', med'))))) <-
+      shrinkTuple
+        shrinkValid
+        ( shrinkTuple
+            ( shrinkTuple
+                ( shrinkTuple
+                    shrinkValid
+                    shrinkValid
+                )
+                ( shrinkTuple
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                )
+            )
+            ( shrinkTuple
+                ( shrinkTuple
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                )
+                ( shrinkTuple
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                    ( shrinkTuple
+                        shrinkValid
+                        shrinkValid
+                    )
+                )
+            )
+        )
+        (mp, (((u, rt), ((cn, cd), (d, gp))), (((lm, l), (ss, sy)), ((t, mu), (rrs, med)))))
+    pure (Event mp' u' rt' cn' cd' d' gp' lm' l' ss' sy' t' mu' rrs' med')
 
 instance GenValid Observance where
   genValid =
@@ -68,15 +90,22 @@ instance GenValid Observance where
       <*> genValid
       <*> genValid
 
-  -- Not shrinking piecewise but that's ok here for now.
-  shrinkValid Observance {..} =
-    Observance
-      <$> shrinkImpreciseLocalTime observanceDateTimeStart
-      <*> shrinkValid observanceTimeZoneOffsetTo
-      <*> shrinkValid observanceTimeZoneOffsetFrom
-      <*> shrinkValid observanceRecurrenceRule
-      <*> shrinkValid observanceComment
-      <*> shrinkValid observanceTimeZoneName
+  shrinkValid (Observance start to from rules comments name) = do
+    ((start', to'), ((from', rules'), (comments', name'))) <-
+      shrinkTuple
+        (shrinkTuple shrinkImpreciseLocalTime shrinkValid)
+        ( shrinkTuple
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+        )
+        ((start, to), ((from, rules), (comments, name)))
+    pure (Observance start' to' from' rules' comments' name')
 
 instance GenValid TimeZoneObservance where
   shrinkValid = \case

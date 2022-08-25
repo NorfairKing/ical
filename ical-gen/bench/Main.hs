@@ -17,8 +17,11 @@ import ICal
 import ICal.Component.Gen ()
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration
+import ICal.PropertyType.FloatingPoint
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType.URI
+import ICal.PropertyType.UTCOffset
 import Test.QuickCheck
 import Test.QuickCheck.Gen (Gen (..))
 import Test.QuickCheck.Random (mkQCGen)
@@ -41,6 +44,12 @@ main = do
           shrinkerBench "shrinkImpreciseTimeOfDay" shrinkImpreciseTimeOfDay,
           shrinkerBench "shrinkImpreciseLocalTime" shrinkImpreciseLocalTime,
           shrinkerBench "shrinkImpreciseUTCTime" shrinkImpreciseUTCTime,
+          shrinkValidBench @FloatingPoint,
+          shrinkValidBench @Time,
+          shrinkValidBench @Date,
+          shrinkValidBench @DateTime,
+          shrinkValidBench @URI,
+          shrinkValidBench @UTCOffset,
           shrinkValidBench @DateTimeStamp,
           shrinkValidBench @UID,
           shrinkValidBench @DateTimeStart,
@@ -59,9 +68,9 @@ main = do
           shrinkValidBench @RecurrenceRule,
           shrinkValidBench @Event,
           shrinkValidBench @Observance,
-          shrinkValidBench @TimeZone
-          -- shrinkValidBench @Calendar,
-          -- shrinkValidBench @ICalendar
+          shrinkValidBench @TimeZone,
+          shrinkValidBench @Calendar,
+          shrinkValidBench @ICalendar
         ]
     ]
 

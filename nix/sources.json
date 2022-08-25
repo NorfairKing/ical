@@ -101,10 +101,10 @@
         "homepage": "https://www.youtube.com/watch?v=eIs9qNh17SM",
         "owner": "NorfairKing",
         "repo": "validity",
-        "rev": "8373ac5f0f02ad66f1b83c9bf572290430e84062",
-        "sha256": "04rs2hq9xz9y8w5zpc15zazm8dcbkd5kryh4cy7yww187jgp0saq",
+        "rev": "94c6fd18725c63523a49734a5a417a268be2dae2",
+        "sha256": "1pr406kyiqfmsraxhi5dxki1q4rq7l07g3dj3hvhp7hmyjn6f23m",
         "type": "tarball",
-        "url": "https://github.com/NorfairKing/validity/archive/8373ac5f0f02ad66f1b83c9bf572290430e84062.tar.gz",
+        "url": "https://github.com/NorfairKing/validity/archive/94c6fd18725c63523a49734a5a417a268be2dae2.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

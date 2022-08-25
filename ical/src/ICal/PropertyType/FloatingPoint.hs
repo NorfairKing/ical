@@ -4,6 +4,7 @@
 
 module ICal.PropertyType.FloatingPoint where
 
+import Control.DeepSeq
 import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
@@ -51,6 +52,8 @@ instance Validity FloatingPoint where
         validateNotNaN unFloatingPoint,
         validateNotInfinite unFloatingPoint
       ]
+
+instance NFData FloatingPoint
 
 instance IsPropertyType FloatingPoint where
   propertyTypeP :: ContentLineValue -> Either String FloatingPoint
