@@ -27,8 +27,8 @@ import Test.Syd
 import Test.Syd.Validity
 
 instance GenValid FloatingPoint where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurally
+  shrinkValid = shrinkValidStructurally
 
 instance GenValid Date where
   genValid = genValidStructurallyWithoutExtraChecking

@@ -10,7 +10,7 @@ ghc-options:
 
 extra-deps:
 - github: NorfairKing/autodocodec
-  commit: 479390d82e4fb2a404c497d6b9a9fec1505b1e5e
+  commit: 98135d2b24c4c52f56f53c6650a169aeec61c7f1
   subdirs:
   - autodocodec
   - autodocodec-schema
@@ -22,12 +22,12 @@ extra-deps:
   - safe-coloured-text-layout
   - safe-coloured-text-terminfo
 - github: NorfairKing/sydtest
-  commit: 130de92053c1c3d60a8f45d509210415ffbea530
+  commit: 9db39de44641f28a2c26de80fcfe08616fcf3054
   subdirs:
   - sydtest
   - sydtest-discover
 - github: NorfairKing/validity
-  commit: 94c6fd18725c63523a49734a5a417a268be2dae2
+  commit: 2e9198bdaaa8c80a5dbe2b7b860b5c26558c6374
   subdirs:
   - genvalidity
   - genvalidity-aeson

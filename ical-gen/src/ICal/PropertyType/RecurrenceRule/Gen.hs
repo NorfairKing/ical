@@ -29,7 +29,7 @@ instance GenValid Frequency where
 
 instance GenValid Interval where
   shrinkValid = fmap Interval . shrinkValid . unInterval
-  genValid = Interval <$> sized (\s -> max 1 <$> choose (1, fromIntegral s)) -- no point in generating huge words
+  genValid = Interval <$> sized (\s -> choose (1, max 1 (fromIntegral s))) -- no point in generating huge intervals
 
 instance GenValid Until where
   genValid =
@@ -116,8 +116,8 @@ instance GenValid BySetPos where
       <$> sized
         ( \s ->
             oneof
-              [ choose (1, s),
-                choose (-s, -1)
+              [ choose (1, max 1 s),
+                choose (min (-1) (-s), -1)
               ]
         )
 

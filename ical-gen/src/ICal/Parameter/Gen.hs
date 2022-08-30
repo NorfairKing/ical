@@ -1,4 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -13,8 +15,15 @@ import Test.Syd
 import Test.Syd.Validity
 
 instance GenValid TZIDParam where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurally
+
+  -- Shrink to 'UTC' and to a few given timezones before that.
+  shrinkValid = \case
+    TZIDParam "UTC" -> []
+    TZIDParam "A" -> [TZIDParam "UTC"]
+    TZIDParam "B" -> [TZIDParam "UTC", TZIDParam "A"]
+    TZIDParam "C" -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B"]
+    TZIDParam _ -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B", TZIDParam "C"]
 
 parameterSpec ::
   forall a.

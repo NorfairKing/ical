@@ -23,18 +23,18 @@ instance GenValid ContentLineValue where
 instance GenValid ContentLineName where
   genValid =
     oneof
-      [ ContentLineNameIANA . CI.mk <$> genTextBy genNameChar,
+      [ ContentLineNameIANA . CI.mk <$> genNonEmptyTextBy genNameChar,
         ContentLineNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
       ]
-  shrinkValid = error "ContentLineName"
+  shrinkValid = shrinkValidStructurally
 
 instance GenValid ParamName where
   genValid =
     oneof
-      [ ParamNameIANA . CI.mk <$> genTextBy genNameChar,
+      [ ParamNameIANA . CI.mk <$> genNonEmptyTextBy genNameChar,
         ParamNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
       ]
-  shrinkValid = error "ParamName"
+  shrinkValid = shrinkValidStructurally
 
 genNonEmptyTextBy :: Gen Char -> Gen Text
 genNonEmptyTextBy gen = genTextBy gen `suchThat` (not . T.null)
