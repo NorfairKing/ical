@@ -36,6 +36,7 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import ICal.PropertyType.RecurrenceRule
@@ -49,7 +50,7 @@ parseICalendarFromContentLines contentLines =
 parseVCalendarFromContentLines :: [ContentLine] -> Either String Calendar
 parseVCalendarFromContentLines = parseComponentFromContentLines
 
-parseComponentFromContentLines :: IsComponent component => [ContentLine] -> Either String component
+parseComponentFromContentLines :: (Validity component, IsComponent component) => [ContentLine] -> Either String component
 parseComponentFromContentLines = left errorBundlePretty . parse componentSectionP ""
 
 type CP = Parsec Void [ContentLine]
@@ -113,8 +114,12 @@ class IsComponent component where
   -- | Builder for this component
   componentB :: component -> DList ContentLine
 
-componentSectionP :: forall component. IsComponent component => CP component
-componentSectionP = sectionP (componentName (Proxy :: Proxy component)) componentP
+componentSectionP :: forall component. (Validity component, IsComponent component) => CP component
+componentSectionP = do
+  c <- sectionP (componentName (Proxy :: Proxy component)) componentP
+  case prettyValidate c of
+    Left err -> fail err
+    Right c' -> pure c'
 
 sectionP :: Text -> CP a -> CP a
 sectionP name parser = do
@@ -630,7 +635,57 @@ data Event = Event
   }
   deriving (Show, Eq, Generic)
 
-instance Validity Event
+instance Validity Event where
+  validate e@Event {..} =
+    mconcat
+      [ genericValidate e,
+        validateMDateTimeStartRRule eventDateTimeStart eventRecurrenceRules
+      ]
+
+validateMDateTimeStartRRule :: Maybe DateTimeStart -> Set RecurrenceRule -> Validation
+validateMDateTimeStartRRule mDateTimeStart recurrenceRules =
+  case mDateTimeStart of
+    Nothing ->
+      -- [section 3.8.2.4. Date-Time Start](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
+      --
+      -- @
+      -- This property is
+      -- REQUIRED in all types of recurring calendar components that
+      -- specify the "RRULE" property.
+      -- @
+      declare "If there is no DTSTART, then there are no recurrence rules" $
+        S.null recurrenceRules
+    Just dateTimeStart -> validateDateTimeStartRRule dateTimeStart recurrenceRules
+
+validateDateTimeStartRRule :: DateTimeStart -> Set RecurrenceRule -> Validation
+validateDateTimeStartRRule dateTimeStart recurrenceRules =
+  decorateList (S.toList recurrenceRules) $ \recurrenceRule ->
+    case recurrenceRuleUntilCount recurrenceRule of
+      Just (Left u) ->
+        -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+        -- @
+        -- The value of the UNTIL rule part MUST have the same
+        -- value type as the "DTSTART" property.
+        -- Furthermore, if the
+        -- "DTSTART" property is specified as a date with local time, then
+        -- the UNTIL rule part MUST also be specified as a date with local
+        -- time.
+        -- If the "DTSTART" property is specified as a date with UTC
+        -- time or a date with local time and time zone reference, then the
+        -- UNTIL rule part MUST be specified as a date with UTC time.
+        -- @
+        let msg =
+              unlines
+                [ "The value type of the UNTIL rule part has the same value type as the DTSTART property.",
+                  show dateTimeStart,
+                  show u
+                ]
+         in declare msg $
+              case (dateTimeStart, u) of
+                (DateTimeStartDate _, UntilDate _) -> True
+                (DateTimeStartDateTime _, UntilDateTime _) -> True
+                _ -> False
+      _ -> mempty
 
 instance NFData Event
 
@@ -662,7 +717,62 @@ vEventP = do
   -- @
   eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
   eventURL <- parseFirstMaybe eventProperties
-  eventRecurrenceRules <- parseSet eventProperties
+
+  -- It turns out that certain ical providers such as Google may output invalid
+  -- ICal that we still have to be able to deal with somehow.
+  -- For example, on 2022-06-26, google outputted an event with these properties:
+  --
+  -- @
+  -- BEGIN:VEVENT
+  -- UID:18jktp1kl13aov1ku35sf8i40b_R20220705T150000@google.com
+  -- DTSTART;TZID=Europe/Kiev:20220705T180000
+  -- DTEND;TZID=Europe/Kiev:20220705T183000
+  -- RRULE:FREQ=WEEKLY;WKST=SU;UNTIL=20220717;BYDAY=TU
+  -- DTSTAMP:20220726T130525Z
+  -- @
+  --
+  -- However, the spec says:
+  --
+  -- @
+  -- The value of the UNTIL rule part MUST have the same
+  -- value type as the "DTSTART" property.
+  -- @
+  --
+  -- This means that the UNTIL part must be specified as date WITH TIME.
+  -- The spec also says:
+  --
+  -- @
+  -- If the value
+  -- specified by UNTIL is synchronized with the specified recurrence,
+  -- this DATE or DATE-TIME becomes the last instance of the
+  -- recurrence.
+  -- @
+  --
+  -- So when the UNTIL has a date without time, we will guess the time that is
+  -- specified in DTSTART.
+  let fixUntil :: RecurrenceRule -> RecurrenceRule
+      fixUntil rrule =
+        case eventDateTimeStart of
+          Nothing -> rrule
+          Just dateTimeStart ->
+            case recurrenceRuleUntilCount rrule of
+              Just (Left u) -> case (dateTimeStart, u) of
+                (DateTimeStartDateTime dt, UntilDate (Date ud)) ->
+                  let newUntil = case dt of
+                        -- This guess is somewhat sensible.
+                        DateTimeUTC (Time.UTCTime _ sdt) ->
+                          UntilDateTime (Time.UTCTime ud sdt)
+                        -- This guess is bad.
+                        DateTimeFloating (Time.LocalTime _ tod) ->
+                          UntilDateTime (Time.UTCTime ud (Time.timeOfDayToTime tod))
+                        -- This guess is even worse.
+                        DateTimeZoned _ (Time.LocalTime _ tod) ->
+                          UntilDateTime (Time.UTCTime ud (Time.timeOfDayToTime tod))
+                   in rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
+                _ -> rrule
+              _ -> rrule
+  eventRecurrenceRules <- S.map fixUntil <$> parseSet eventProperties
+
   mEnd <- parseFirstMaybe eventProperties
   mDuration <- parseFirstMaybe eventProperties
   let eventDateTimeEndDuration = case (mEnd, mDuration) of
@@ -1254,6 +1364,12 @@ data Observance = Observance
     -- ;
     -- dtstart / tzoffsetto / tzoffsetfrom /
     -- @
+    -- @
+    -- The mandatory "DTSTART" property gives the effective onset date
+    -- and local time for the time zone sub-component definition.
+    -- "DTSTART" in this usage MUST be specified as a date with a local
+    -- time value.
+    -- @
     observanceDateTimeStart :: !Time.LocalTime,
     observanceTimeZoneOffsetTo :: !TimeZoneOffsetTo,
     observanceTimeZoneOffsetFrom :: !TimeZoneOffsetFrom,
@@ -1279,7 +1395,8 @@ instance Validity Observance where
   validate o@Observance {..} =
     mconcat
       [ genericValidate o,
-        validateImpreciseLocalTime observanceDateTimeStart
+        validateImpreciseLocalTime observanceDateTimeStart,
+        validateDateTimeStartRRule (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)) observanceRecurrenceRule
       ]
 
 instance NFData Observance

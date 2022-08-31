@@ -2,6 +2,7 @@ module PythonInteropSpec (spec) where
 
 import qualified Data.ByteString as SB
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import ICal
 import ICal.Component.Gen ()
 import Path
@@ -18,6 +19,8 @@ spec =
       forAllValid $ \calendar ->
         withSystemTempDir "ical-integration-test" $ \tdir -> do
           print calendar
+          T.putStrLn (renderICalendar [calendar])
+          shouldBeValid calendar
           calendarFile <- resolveFile tdir "calendar.ics"
           SB.writeFile (fromAbsFile calendarFile) (renderICalendarByteString [calendar])
           let cp = proc "python-echo" [fromAbsFile calendarFile]

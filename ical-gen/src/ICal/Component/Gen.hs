@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -10,16 +11,20 @@ import qualified Data.ByteString as SB
 import qualified Data.DList as DList
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
+import Data.GenValidity.Containers
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import ICal.Component
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
+import ICal.Property
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.Gen
+import ICal.PropertyType.RecurrenceRule
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd
@@ -31,9 +36,40 @@ instance GenValid Calendar where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid Event where
-  genValid = genValidStructurallyWithoutExtraChecking
+  genValid = do
+    eventDateTimeStamp <- genValid
+    eventUID <- genValid
+    eventDateTimeStart <- genValid
+    eventClassification <- genValid
+    eventCreated <- genValid
+    eventDescription <- genValid
+    eventGeographicPosition <- genValid
+    eventLastModified <- genValid
+    eventLocation <- genValid
+    eventStatus <- genValid
+    eventSummary <- genValid
+    eventTransparency <- genValid
+    eventURL <- genValid
+    eventRecurrenceRules <- case eventDateTimeStart of
+      Nothing -> pure S.empty
+      Just dtstart -> genSetOf $ do
+        rrule <- genValid
+        case recurrenceRuleUntilCount rrule of
+          Just (Left u) -> case (u, dtstart) of
+            (UntilDate _, DateTimeStartDate _) -> pure rrule
+            (UntilDateTime _, DateTimeStartDateTime _) -> pure rrule
+            (_, DateTimeStartDateTime _) -> do
+              ut <- genValid
+              pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTime ut})
+            (_, DateTimeStartDate _) -> do
+              d <- genValid
+              pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDate d})
+          _ -> pure rrule
 
-  shrinkValid (Event mp u rt cn cd d gp lm l ss sy t mu rrs med) = do
+    eventDateTimeEndDuration <- genValid
+    pure Event {..}
+
+  shrinkValid (Event mp u rt cn cd d gp lm l ss sy t mu rrs med) = filter isValid $ do
     (mp', (((u', rt'), ((cn', cd'), (d', gp'))), (((lm', l'), (ss', sy')), ((t', mu'), (rrs', med'))))) <-
       shrinkTuple
         shrinkValid
@@ -81,16 +117,26 @@ instance GenValid Event where
     pure (Event mp' u' rt' cn' cd' d' gp' lm' l' ss' sy' t' mu' rrs' med')
 
 instance GenValid Observance where
-  genValid =
-    Observance
-      <$> genImpreciseLocalTime
-      <*> genValid
-      <*> genValid
-      <*> genValid
-      <*> genValid
-      <*> genValid
+  genValid = do
+    observanceDateTimeStart <- genImpreciseLocalTime
+    observanceTimeZoneOffsetTo <- genValid
+    observanceTimeZoneOffsetFrom <- genValid
+    observanceRecurrenceRule <- genSetOf $ do
+      rrule <- genValid
+      case recurrenceRuleUntilCount rrule of
+        Just (Left u) -> case u of
+          UntilDateTime _ -> pure rrule
+          _ -> do
+            ut <- genValid
+            pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTime ut})
+        _ -> pure rrule
 
-  shrinkValid (Observance start to from rules comments name) = do
+    observanceComment <- genValid
+    observanceTimeZoneName <- genValid
+
+    pure Observance {..}
+
+  shrinkValid (Observance start to from rules comments name) = filter isValid $ do
     ((start', to'), ((from', rules'), (comments', name'))) <-
       shrinkTuple
         (shrinkTuple shrinkImpreciseLocalTime shrinkValid)

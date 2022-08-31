@@ -21,6 +21,10 @@ spec = do
     componentSpec @Daylight
 
   describe "TimeZone" $ do
+    genValidSpec @TimeZoneObservance
+    genValidSpec @Standard
+    genValidSpec @Daylight
+    genValidSpec @Observance
     genValidSpec @TimeZone
     componentSpec @TimeZone
 
