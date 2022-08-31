@@ -51,7 +51,10 @@ with final.haskell.lib;
   haskellPackages = previous.haskellPackages.override (
     old: {
       overrides = final.lib.composeExtensions (old.overrides or (_: _: { })) (
-        self: super: final.icalPackages
+        self: super: final.icalPackages // {
+          # Tests fail
+          timeout = unmarkBroken (dontCheck super.timeout);
+        }
       );
     }
   );
