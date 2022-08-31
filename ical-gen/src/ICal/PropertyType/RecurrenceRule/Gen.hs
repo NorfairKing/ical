@@ -122,23 +122,8 @@ instance GenValid BySetPos where
         )
 
 instance GenValid RecurrenceRule where
-  shrinkValid RecurrenceRule {..} =
-    -- Piecewise shrinking because it's faster
-    filter isValid $
-      RecurrenceRule
-        <$> shrinkValid recurrenceRuleFrequency
-        <*> shrinkValid recurrenceRuleInterval
-        <*> shrinkValid recurrenceRuleUntilCount
-        <*> shrinkValid recurrenceRuleBySecond
-        <*> shrinkValid recurrenceRuleByMinute
-        <*> shrinkValid recurrenceRuleByHour
-        <*> shrinkValid recurrenceRuleByDay
-        <*> shrinkValid recurrenceRuleByMonthDay
-        <*> shrinkValid recurrenceRuleByYearDay
-        <*> shrinkValid recurrenceRuleByWeekNo
-        <*> shrinkValid recurrenceRuleByMonth
-        <*> shrinkValid recurrenceRuleWeekStart
-        <*> shrinkValid recurrenceRuleBySetPos
+  shrinkValid = shrinkValidStructurally
+
   genValid = do
     recurrenceRuleFrequency <- genValid
     recurrenceRuleInterval <- genValid
