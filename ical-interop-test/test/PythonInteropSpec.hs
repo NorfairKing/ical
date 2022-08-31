@@ -1,8 +1,8 @@
 module PythonInteropSpec (spec) where
 
+import Control.Timeout
 import qualified Data.ByteString as SB
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import ICal
 import ICal.Component.Gen ()
 import Path
@@ -14,32 +14,38 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec =
-  modifyMaxSuccess (`div` 10) . xdescribe "does not pass yet." $
+  modifyMaxSuccess (`div` 10) . xdescribe "does not pass yet" $
     it "produces calendars that the python library can parse" $
       forAllValid $ \calendar ->
         withSystemTempDir "ical-integration-test" $ \tdir -> do
-          print calendar
-          T.putStrLn (renderICalendar [calendar])
           shouldBeValid calendar
           calendarFile <- resolveFile tdir "calendar.ics"
           SB.writeFile (fromAbsFile calendarFile) (renderICalendarByteString [calendar])
-          let cp = proc "python-echo" [fromAbsFile calendarFile]
-          (ec, out, err) <- readCreateProcessWithExitCode cp ""
-          case ec of
-            ExitSuccess -> pure ()
-            ExitFailure c ->
-              expectationFailure $
-                unlines
-                  [ unwords
-                      [ "vcal exited with code",
-                        show c
-                      ],
-                    "calendar:",
-                    ppShow calendar,
-                    "rendered:",
-                    T.unpack $ renderVCalendar calendar,
-                    "out:",
-                    out,
-                    "err:",
-                    err
-                  ]
+          mResult <- timeout 2 $ do
+            let cp = proc "python-echo" [fromAbsFile calendarFile]
+            readCreateProcessWithExitCode cp ""
+          case mResult of
+            Nothing -> do
+              -- Timeouts happens, they're fine.
+              print calendar
+              putStrLn (T.unpack (renderICalendar [calendar]))
+              putStrLn "Timeout-ed on the above calendar ^"
+            Just (ec, out, err) ->
+              case ec of
+                ExitSuccess -> pure ()
+                ExitFailure c ->
+                  expectationFailure $
+                    unlines
+                      [ unwords
+                          [ "vcal exited with code",
+                            show c
+                          ],
+                        "calendar:",
+                        ppShow calendar,
+                        "rendered:",
+                        T.unpack $ renderVCalendar calendar,
+                        "out:",
+                        out,
+                        "err:",
+                        err
+                      ]

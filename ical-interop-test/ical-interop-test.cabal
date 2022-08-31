@@ -59,4 +59,5 @@ test-suite ical-interop-test
     , process
     , sydtest
     , text
+    , timeout
   default-language: Haskell2010
