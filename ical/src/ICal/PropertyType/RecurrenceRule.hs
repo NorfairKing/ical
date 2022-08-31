@@ -1198,7 +1198,7 @@ weekStartP :: Text -> Either String WeekStart
 weekStartP = fmap WeekStart <$> parseDayOfWeek . CI.mk
 
 weekStartB :: WeekStart -> Text
-weekStartB = CI.foldedCase . renderDayOfWeek . unWeekStart
+weekStartB = CI.original . renderDayOfWeek . unWeekStart
 
 -- A month within a year
 --
