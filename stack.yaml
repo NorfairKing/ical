@@ -3,6 +3,7 @@ packages:
 - ical
 - ical-gen
 - ical-interop-test
+- ical-recurrence
 
 # These are duplicated in nix/overlay.nix
 ghc-options:

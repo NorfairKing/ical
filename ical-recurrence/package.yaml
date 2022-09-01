@@ -1,0 +1,11 @@
+name: ical-recurrence
+version: 0.0.0.0
+
+dependencies:
+- base >= 4.7 && < 5
+- ical
+
+library:
+  source-dirs: src
+  dependencies: []
+
