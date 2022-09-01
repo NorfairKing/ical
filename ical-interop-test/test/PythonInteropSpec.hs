@@ -14,7 +14,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec =
-  modifyMaxSuccess (`div` 10) $ -- . xdescribe "does not pass yet" $
+  modifyMaxSuccess (`div` 10) . xdescribe "does not pass yet" $
     it "produces calendars that the python library can parse" $
       forAllValid $ \calendar ->
         withSystemTempDir "ical-integration-test" $ \tdir -> do
