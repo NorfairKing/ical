@@ -557,16 +557,40 @@ value:
       time: 2022-08-09 16:10:54
     - state: TODO
       time: 2022-07-26 13:14:08
-  - header: Do end-to-end tests with other programs
-    state-history:
-    - state: TODO
-      time: 2022-07-11 21:54:47
   - header: fixup validity, this was not a bug
     properties:
       url: https://github.com/haskell/network-uri/commit/52ea071facb7c78cace8763ee0db5cdd12d669c9
     state-history:
+    - state: DONE
+      time: 2022-09-06 21:15:50
     - state: TODO
       time: 2022-07-08 06:51:11
+  - entry:
+      header: Do end-to-end tests with other programs
+      state-history:
+      - state: TODO
+        time: 2022-07-11 21:54:47
+    forest:
+    - header: python
+      state-history:
+      - state: TODO
+        time: 2022-09-06 21:15:49
+    - header: java
+      state-history:
+      - state: TODO
+        time: 2022-09-06 21:15:48
+    - header: go
+      state-history:
+      - state: TODO
+        time: 2022-09-06 21:15:48
+    - header: perl
+      state-history:
+      - state: TODO
+        time: 2022-09-06 21:15:47
+    - header: rust
+      state-history:
+      - state: TODO
+        time: 2022-09-06 21:15:47
   - header: Do a coverage analysis
     state-history:
     - state: TODO
