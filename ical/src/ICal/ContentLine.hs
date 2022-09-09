@@ -103,6 +103,9 @@ mkSimpleContentLineValue value =
       contentLineValueRaw = value
     }
 
+emptyContentLineValue :: ContentLineValue
+emptyContentLineValue = mkSimpleContentLineValue ""
+
 data ContentLineName
   = ContentLineNameIANA !(CI Text)
   | ContentLineNameX

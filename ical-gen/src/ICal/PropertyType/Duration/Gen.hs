@@ -4,6 +4,7 @@ module ICal.PropertyType.Duration.Gen where
 
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
+import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import ICal.PropertyType.Duration

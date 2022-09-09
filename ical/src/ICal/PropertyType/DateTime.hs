@@ -162,7 +162,7 @@ data DateTime
     -- FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
     -- @
     DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Read, Eq, Ord, Generic)
 
 instance Validity DateTime where
   validate dt =

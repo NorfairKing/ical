@@ -138,7 +138,7 @@ data Time
     -- FORM #3: LOCAL TIME AND TIME ZONE REFERENCE
     -- @
     TimeZoned !TZIDParam !Time.TimeOfDay
-  deriving (Show, Eq, Generic)
+  deriving (Show, Read, Eq, Generic)
 
 instance Validity Time where
   validate time =

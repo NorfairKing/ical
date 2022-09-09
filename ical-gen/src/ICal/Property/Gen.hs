@@ -6,6 +6,7 @@ module ICal.Property.Gen where
 
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
+import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import GHC.Stack
@@ -107,6 +108,10 @@ instance GenValid TimeZoneOffsetFrom where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid TimeZoneOffsetTo where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid ExceptionDateTimes where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

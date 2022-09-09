@@ -5,6 +5,7 @@
 
 module ICal.PropertySpec where
 
+import qualified Data.Set as S
 import Data.Time
 import GHC.Stack (HasCallStack, withFrozenCallStack)
 import ICal.ContentLine
@@ -295,3 +296,16 @@ spec = do
     exampleSpec
       "TRANSP:OPAQUE"
       TransparencyOpaque
+
+  describe "ExceptionDateTimes" $ do
+    genValidSpec @ExceptionDateTimes
+    propertySpec @ExceptionDateTimes
+    -- From the spec:
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
+    -- @
+    exampleSpec
+      "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
+      (ExceptionDateTimes (S.fromList []))

@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -9,6 +10,8 @@
 module ICal.PropertyType.Class where
 
 import Data.Proxy
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time as Time
@@ -107,6 +110,29 @@ instance IsPropertyType Text where
   propertyTypeP = Right . unEscapeText . contentLineValueRaw
   propertyTypeB :: Text -> ContentLineValue
   propertyTypeB = mkSimpleContentLineValue . escapeText
+
+propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Either String [propertyType]
+propertyTypeListP clv =
+  let clvs = do
+        raw <- T.splitOn "," (contentLineValueRaw clv)
+        pure (clv {contentLineValueRaw = raw})
+   in mapM propertyTypeP clvs
+
+propertyTypeListB :: IsPropertyType propertyType => [propertyType] -> ContentLineValue
+propertyTypeListB = \case
+  [] -> emptyContentLineValue
+  (pt : pts) ->
+    let clv = propertyTypeB pt
+        raw =
+          T.intercalate "," $
+            contentLineValueRaw clv : map (contentLineValueRaw . propertyTypeB) pts
+     in clv {contentLineValueRaw = raw}
+
+propertyTypeSetP :: (Ord propertyType, IsPropertyType propertyType) => ContentLineValue -> Either String (Set propertyType)
+propertyTypeSetP = fmap S.fromList . propertyTypeListP
+
+propertyTypeSetB :: IsPropertyType propertyType => Set propertyType -> ContentLineValue
+propertyTypeSetB = propertyTypeListB . S.toList
 
 -- | Escape 'Text'
 --

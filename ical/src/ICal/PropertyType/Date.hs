@@ -56,7 +56,7 @@ import ICal.PropertyType.Class
 --     19970714
 -- @
 newtype Date = Date {unDate :: Time.Day}
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Read, Eq, Ord, Generic)
 
 instance Validity Date
 
