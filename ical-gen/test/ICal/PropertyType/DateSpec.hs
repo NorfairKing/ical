@@ -19,7 +19,6 @@ spec = do
   describe "Date" $ do
     genValidSpec @Date
     propertyTypeSpec @Date
-    showReadSpec @Date
 
   describe "dateP" $ do
     let examples :: [(Date, ContentLineValue)]

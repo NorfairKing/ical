@@ -20,7 +20,6 @@ spec = do
   describe "Time" $ do
     genValidSpec @Time
     propertyTypeSpec @Time
-    showReadSpec @Time
 
   describe "timeP" $ do
     let examples :: [(Time, ContentLineValue)]

@@ -22,6 +22,7 @@ import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
 import Text.Megaparsec
+import Text.Printf
 
 -- | Time
 --
@@ -138,7 +139,7 @@ data Time
     -- FORM #3: LOCAL TIME AND TIME ZONE REFERENCE
     -- @
     TimeZoned !TZIDParam !Time.TimeOfDay
-  deriving (Show, Read, Eq, Generic)
+  deriving (Eq, Generic)
 
 instance Validity Time where
   validate time =
@@ -151,11 +152,31 @@ instance Validity Time where
          in validateImpreciseTimeOfDay tod
       ]
 
+instance Show Time where
+  showsPrec d =
+    showParen (d > 10) . \case
+      TimeFloating tod -> showString "TimeFloating " . timeOfDayShowsPrec 10 tod
+      TimeUTC tod -> showString "TimeUTC " . timeOfDayShowsPrec 10 tod
+      TimeZoned tzid tod -> showString "TimeZoned " . showsPrec 11 tzid . showString " " . timeOfDayShowsPrec 10 tod
+
 instance NFData Time
 
 instance IsPropertyType Time where
   propertyTypeP = timeP
   propertyTypeB = timeB
+
+timeOfDayShowsPrec :: Int -> Time.TimeOfDay -> ShowS
+timeOfDayShowsPrec d (Time.TimeOfDay h_ m_ s_) =
+  showParen (d > 10) $
+    showString "TimeOfDay "
+      . showString (printf "%.2d" h_)
+      . showString " "
+      . showString (printf "%.2d" m_)
+      . showString " "
+      . ( if floor s_ == (ceiling s_ :: Int)
+            then showString (printf "%.2d" (round s_ :: Int))
+            else showsPrec 11 s_
+        )
 
 timeP :: ContentLineValue -> Either String Time
 timeP ContentLineValue {..} =

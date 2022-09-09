@@ -22,6 +22,8 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
+import ICal.PropertyType.Date
+import ICal.PropertyType.Time
 import Text.Megaparsec
 
 -- | Date Time
@@ -162,7 +164,7 @@ data DateTime
     -- FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
     -- @
     DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
-  deriving (Show, Read, Eq, Ord, Generic)
+  deriving (Eq, Ord, Generic)
 
 instance Validity DateTime where
   validate dt =
@@ -173,6 +175,35 @@ instance Validity DateTime where
           DateTimeUTC u -> validateImpreciseUTCTime u
           DateTimeZoned _ l -> validateImpreciseLocalTime l
       ]
+
+instance Show DateTime where
+  showsPrec d =
+    showParen (d > 10) . \case
+      DateTimeFloating l -> showString "DateTimeFloating " . localTimeShowsPrec 11 l
+      DateTimeUTC u -> showString "DateTimeUTC " . utcTimeShowsPrec 11 u
+      DateTimeZoned tzid l -> showString "DateTimeZoned " . showsPrec 11 tzid . showString " " . localTimeShowsPrec 11 l
+
+localTimeShowsPrec :: Int -> Time.LocalTime -> ShowS
+localTimeShowsPrec d (Time.LocalTime day timeOfDay) =
+  showParen (d > 10) $
+    showString "LocalTime "
+      . dayShowsPrec 11 day
+      . showString " "
+      . timeOfDayShowsPrec 11 timeOfDay
+
+utcTimeShowsPrec :: Int -> Time.UTCTime -> ShowS
+utcTimeShowsPrec d (Time.UTCTime day diffTime) =
+  showParen (d > 10) $
+    showString "UTCTime "
+      . dayShowsPrec 11 day
+      . showString " "
+      . diffTimeShowsPrec 11 diffTime
+
+diffTimeShowsPrec :: Int -> Time.DiffTime -> ShowS
+diffTimeShowsPrec d diffTime =
+  showParen (d > 10) $
+    showString "timeOfDayToTime "
+      . timeOfDayShowsPrec 11 (Time.timeToTimeOfDay diffTime)
 
 instance NFData DateTime
 

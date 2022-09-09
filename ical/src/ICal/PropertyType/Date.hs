@@ -56,7 +56,12 @@ import ICal.PropertyType.Class
 --     19970714
 -- @
 newtype Date = Date {unDate :: Time.Day}
-  deriving (Show, Read, Eq, Ord, Generic)
+  deriving (Eq, Ord, Generic)
+
+instance Show Date where
+  showsPrec d (Date day) =
+    showParen (d > 10) $
+      showString "Date " . dayShowsPrec 11 day
 
 instance Validity Date
 
@@ -65,6 +70,17 @@ instance NFData Date
 instance IsPropertyType Date where
   propertyTypeP = dateP
   propertyTypeB = dateB
+
+dayShowsPrec :: Int -> Time.Day -> ShowS
+dayShowsPrec d day =
+  showParen (d > 10) $
+    let (y_, m_, d_) = Time.toGregorian day
+     in showString "fromGregorian "
+          . showsPrec 11 y_
+          . showString " "
+          . showsPrec 11 m_
+          . showString " "
+          . showsPrec 11 d_
 
 dateP :: ContentLineValue -> Either String Date
 dateP = parseDate . contentLineValueRaw

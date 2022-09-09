@@ -20,7 +20,6 @@ spec = do
   describe "DateTime" $ do
     genValidSpec @DateTime
     propertyTypeSpec @DateTime
-    showReadSpec @DateTime
 
   describe "dateTimeP" $ do
     -- Examples from the spec
