@@ -1,0 +1,104 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+module ICal.PropertyType.DateTimes where
+
+import Control.DeepSeq
+import Data.Set
+import qualified Data.Set as S
+import qualified Data.Time as Time
+import Data.Validity
+import Data.Validity.Text ()
+import Data.Validity.Time ()
+import GHC.Generics (Generic)
+import ICal.ContentLine
+import ICal.Parameter
+import ICal.PropertyType.Class
+import ICal.PropertyType.DateTime
+import Text.Show
+
+data DateTimes
+  = DateTimesEmpty
+  | DateTimesFloating !(Set Time.LocalTime)
+  | DateTimesUTC !(Set Time.UTCTime)
+  | DateTimesZoned !TZIDParam !(Set Time.LocalTime)
+  deriving (Eq, Ord, Generic)
+
+instance Validity DateTimes where
+  validate dt =
+    mconcat
+      [ genericValidate dt,
+        case dt of
+          DateTimesEmpty -> mempty
+          DateTimesFloating ls ->
+            mconcat
+              [ declare "The set is nonempty" $ not $ S.null ls,
+                decorateList (S.toList ls) $ \l -> validateImpreciseLocalTime l
+              ]
+          DateTimesUTC us ->
+            mconcat
+              [ declare "The set is nonempty" $ not $ S.null us,
+                decorateList (S.toList us) $ \u -> validateImpreciseUTCTime u
+              ]
+          DateTimesZoned _ ls ->
+            mconcat
+              [ declare "The set is nonempty" $ not $ S.null ls,
+                decorateList (S.toList ls) $ \l -> validateImpreciseLocalTime l
+              ]
+      ]
+
+instance Show DateTimes where
+  showsPrec d =
+    showParen (d > 10) . \case
+      DateTimesEmpty -> showString "DateTimesEmpty"
+      DateTimesFloating ls -> showString "DateTimesFloating " . setShowsPrec localTimeShowsPrec 11 ls
+      DateTimesUTC us -> showString "DateTimesUTC " . setShowsPrec utcTimeShowsPrec 11 us
+      DateTimesZoned tzid ls -> showString "DateTimesZoned " . showsPrec 11 tzid . showString " " . setShowsPrec localTimeShowsPrec 11 ls
+
+setShowsPrec :: (Int -> a -> ShowS) -> Int -> Set a -> ShowS
+setShowsPrec go d set =
+  showParen (d > 10) $
+    showString "S.fromList" . showListWith (go 11) (S.toList set)
+
+instance NFData DateTimes
+
+instance IsPropertyType DateTimes where
+  propertyTypeP = dateTimesP
+  propertyTypeB = dateTimesB
+
+dateTimesP :: ContentLineValue -> Either String DateTimes
+dateTimesP clv = do
+  set <- propertyTypeSetP clv
+  fromSet set
+
+fromSet :: Set DateTime -> Either String DateTimes
+fromSet set = case S.lookupMin set of
+  Nothing -> Right DateTimesEmpty
+  Just dt -> case dt of
+    DateTimeFloating _ -> goFloating set
+    DateTimeUTC _ -> goUTC set
+    DateTimeZoned tzid _ -> goZoned tzid set
+  where
+    goFloating :: Set DateTime -> Either String DateTimes
+    goFloating = undefined
+    goUTC :: Set DateTime -> Either String DateTimes
+    goUTC = undefined
+    goZoned :: TZIDParam -> Set DateTime -> Either String DateTimes
+    goZoned = undefined
+
+dateTimesB :: DateTimes -> ContentLineValue
+dateTimesB = propertyTypeSetB . toSet
+
+toSet :: DateTimes -> Set DateTime
+toSet = \case
+  DateTimesEmpty -> S.empty
+  DateTimesFloating lts -> S.map DateTimeFloating lts
+  DateTimesUTC us -> S.map DateTimeUTC us
+  DateTimesZoned tzid lts -> S.map (DateTimeZoned tzid) lts

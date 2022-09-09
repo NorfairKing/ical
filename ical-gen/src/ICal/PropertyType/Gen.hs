@@ -8,6 +8,7 @@ module ICal.PropertyType.Gen where
 
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
+import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
@@ -16,13 +17,7 @@ import GHC.Stack
 import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
-import ICal.PropertyType.Class
-import ICal.PropertyType.Date
-import ICal.PropertyType.DateTime
-import ICal.PropertyType.FloatingPoint
-import ICal.PropertyType.Time
-import ICal.PropertyType.URI
-import ICal.PropertyType.UTCOffset
+import ICal.PropertyType
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -75,6 +70,8 @@ instance GenValid DateTime where
           (tzid', lt') <- shrinkTuple shrinkValid shrinkImpreciseLocalTime (tzid, lt)
           pure (DateTimeZoned tzid' lt')
       )
+
+instance GenValid DateTimes
 
 genImpreciseUTCTime :: Gen UTCTime
 genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime
