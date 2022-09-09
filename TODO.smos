@@ -566,6 +566,28 @@ value:
     - state: TODO
       time: 2022-07-08 06:51:11
   - entry:
+      header: recurrence
+      state-history:
+      - state: TODO
+        time: 2022-09-09 14:11:25
+    forest:
+    - header: get the datetime values to pass
+      state-history:
+      - state: NEXT
+        time: 2022-09-09 14:11:34
+    - header: make an IsPropertyType (Set Date) instance
+      state-history:
+      - state: TODO
+        time: 2022-09-09 14:11:51
+    - header: Make a 'DateTimes' datatype with IsPropertyType DateTimes instance
+      state-history:
+      - state: TODO
+        time: 2022-09-09 14:12:08
+    - header: Make value a parameter type
+      state-history:
+      - state: TODO
+        time: 2022-09-09 14:11:24
+  - entry:
       header: Do end-to-end tests with other programs
       state-history:
       - state: TODO

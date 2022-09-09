@@ -6,7 +6,6 @@
 
 module ICal.PropertyType.DateTimeSpec where
 
-import Control.Monad
 import qualified Data.Map as M
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal.ContentLine
@@ -22,26 +21,74 @@ spec = do
     propertyTypeSpec @DateTime
 
   describe "dateTimeP" $ do
-    -- Examples from the spec
-    let examples :: [(DateTime, ContentLineValue)]
-        examples =
-          [ (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00), mkSimpleContentLineValue "19980118T230000"),
-            (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00), mkSimpleContentLineValue "19980119T070000Z"),
-            (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00), mkSimpleContentLineValue "19970714T133000"),
-            (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00), mkSimpleContentLineValue "19970714T173000Z"),
-            ( DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00),
-              ContentLineValue
-                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
-                  contentLineValueRaw = "19980119T020000"
-                }
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(dateTime, text) -> do
-        it "renders this example dateTime correctly" $
-          dateTimeB dateTime `shouldBe` text
-        it "parses this example text correctly" $
-          dateTimeP text `shouldBe` Right dateTime
+    propertyTypeRenderExampleSpec
+      (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00))
+      ( ContentLineValue
+          { contentLineValueRaw = "19980118T230000",
+            contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+          }
+      )
+
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "19980118T230000")
+      (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00))
+
+    propertyTypeRenderExampleSpec
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00))
+      ( ContentLineValue
+          { contentLineValueRaw = "19980119T070000Z",
+            contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+          }
+      )
+
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "19980119T070000Z")
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00))
+
+    propertyTypeRenderExampleSpec
+      (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00))
+      ( ContentLineValue
+          { contentLineValueRaw = "19970714T133000",
+            contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+          }
+      )
+
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "19970714T133000")
+      (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00))
+
+    propertyTypeRenderExampleSpec
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00))
+      ( ContentLineValue
+          { contentLineValueRaw = "19970714T173000Z",
+            contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+          }
+      )
+
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "19970714T173000Z")
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00))
+
+    propertyTypeRenderExampleSpec
+      (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00))
+      ( ContentLineValue
+          { contentLineValueParams =
+              M.fromList
+                [ ("TZID", ["America/New_York"]),
+                  ("VALUE", ["DATE-TIME"])
+                ],
+            contentLineValueRaw = "19980119T020000"
+          }
+      )
+
+    propertyTypeParseExampleSpec
+      ( ContentLineValue
+          { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
+            contentLineValueRaw = "19980119T020000"
+          }
+      )
+      (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00))
+
     -- @
     --       The form of date and time with UTC offset MUST NOT be used.  For
     --       example, the following is not valid for a DATE-TIME value:
@@ -52,3 +99,11 @@ spec = do
       case dateTimeP (mkSimpleContentLineValue "19980119T230000-0800") of
         Left _ -> pure ()
         Right _ -> expectationFailure "Should have failed to parse."
+
+    it "fails to parse this datetime with the wrong value type" $
+      let clv =
+            ContentLineValue
+              { contentLineValueRaw = "19970714T173000Z",
+                contentLineValueParams = M.singleton "VALUE" ["DATE"]
+              }
+       in dateTimeP clv `shouldBe` Left "Invalid VALUE"

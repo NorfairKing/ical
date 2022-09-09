@@ -5,10 +5,7 @@
 
 module ICal.PropertySpec where
 
-import qualified Data.Set as S
 import Data.Time
-import GHC.Stack (HasCallStack, withFrozenCallStack)
-import ICal.ContentLine
 import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType.Date
@@ -23,97 +20,88 @@ import Test.Syd.Validity hiding (Location)
 
 spec :: Spec
 spec = do
-  let parseSpec :: (HasCallStack, Show a, Eq a, IsProperty a) => ContentLine -> a -> Spec
-      parseSpec cl v =
-        it ("works for the example of " <> show cl) $
-          case propertyContentLineP cl of
-            Left err -> expectationFailure err
-            Right v' -> v' `shouldBe` v
-      renderSpec :: (HasCallStack, Show a, IsProperty a) => ContentLine -> a -> Spec
-      renderSpec cl v =
-        it ("can render the example of " <> show v) $
-          propertyContentLineB v `shouldBe` cl
-      exampleSpec :: (HasCallStack, Show a, Eq a, IsProperty a) => ContentLine -> a -> Spec
-      exampleSpec cl v = withFrozenCallStack $ do
-        parseSpec cl v
-        renderSpec cl v
-
   describe "ProdId" $ do
     genValidSpec @ProdId
     propertySpec @ProdId
-    exampleSpec "PRODID:Example" (ProdId "Example")
+    propertyExampleSpec "PRODID:Example" (ProdId "Example")
 
   describe "Version" $ do
     genValidSpec @Version
     propertySpec @Version
-    exampleSpec "VERSION:2.0" (Version "2.0")
+    propertyExampleSpec "VERSION:2.0" (Version "2.0")
 
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID
-    exampleSpec
+    propertyExampleSpec
       "UID:19960401T080045Z-4000F192713-0052@example.com"
       (UID "19960401T080045Z-4000F192713-0052@example.com")
 
   describe "TZID" $ do
     genValidSpec @TZID
     propertySpec @TZID
-    exampleSpec "TZID:America/New_York" (TZID "America/New_York")
-    exampleSpec "TZID:America/Los_Angeles" (TZID "America/Los_Angeles")
-    exampleSpec "TZID:/example.org/America/New_York" (TZID "/example.org/America/New_York")
+    propertyExampleSpec "TZID:America/New_York" (TZID "America/New_York")
+    propertyExampleSpec "TZID:America/Los_Angeles" (TZID "America/Los_Angeles")
+    propertyExampleSpec "TZID:/example.org/America/New_York" (TZID "/example.org/America/New_York")
 
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
-    exampleSpec
+    propertyRenderExampleSpec
+      "DTSTAMP;VALUE=DATE-TIME:19971210T080000Z"
+      (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00)))))
+    propertyParseExampleSpec
       "DTSTAMP:19971210T080000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00)))))
-    exampleSpec
+    propertyRenderExampleSpec
+      "DTSTAMP;VALUE=DATE-TIME:18581117T000000Z"
+      (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
+    propertyParseExampleSpec
       "DTSTAMP:18581117T000000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
-    parseSpec
+    propertyParseExampleSpec
       "DTSTART:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
-    renderSpec
+    propertyRenderExampleSpec
       "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
   describe "Classification" $ do
     genValidSpec @Classification
     propertySpec @Classification
-    exampleSpec
+    propertyExampleSpec
       "CLASS:PUBLIC"
       ClassificationPublic
 
   describe "Created" $ do
     genValidSpec @Created
     propertySpec @Created
-    exampleSpec
+    propertyExampleSpec
       "CREATED:19960329T133000Z"
       (Created (localTimeToUTC utc (LocalTime (fromGregorian 1996 03 29) (TimeOfDay 13 30 00))))
 
   describe "Summary" $ do
     genValidSpec @Summary
     propertySpec @Summary
-    exampleSpec
+    propertyExampleSpec
       "SUMMARY:Department Party"
       (Summary "Department Party")
 
   describe "Description" $ do
     genValidSpec @Description
     propertySpec @Description
-    exampleSpec
+    propertyExampleSpec
       "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
       (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
 
   describe "GeographicPosition" $ do
     genValidSpec @GeographicPosition
     propertySpec @GeographicPosition
-    exampleSpec
+    propertyExampleSpec
       "GEO:37.386013;-122.082932"
       ( GeographicPosition
           { geographicPositionLat = 37.386013,
@@ -130,7 +118,7 @@ spec = do
     --
     --     LAST-MODIFIED:19960817T133000Z
     -- @
-    exampleSpec
+    propertyExampleSpec
       "LAST-MODIFIED:19960817T133000Z"
       (LastModified (localTimeToUTC utc (LocalTime (fromGregorian 1996 08 17) (TimeOfDay 13 30 00))))
 
@@ -146,11 +134,11 @@ spec = do
     --     LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
     --      Conference Room - F123\, Bldg. 002
     -- @
-    exampleSpec
+    propertyExampleSpec
       "LOCATION:Conference Room - F123\\, Bldg. 002"
       (Location "Conference Room - F123, Bldg. 002")
     xdescribe "not implemented yet" $
-      exampleSpec
+      propertyExampleSpec
         "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
         (Location "Conference Room - F123, Bldg. 002")
 
@@ -164,7 +152,7 @@ spec = do
     --
     --     STATUS:TENTATIVE
     -- @
-    exampleSpec "STATUS:TENTATIVE" StatusTentative
+    propertyExampleSpec "STATUS:TENTATIVE" StatusTentative
 
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
@@ -177,13 +165,15 @@ spec = do
     --
     --     DTEND;VALUE=DATE:19980704
     -- @
-    exampleSpec
+    propertyRenderExampleSpec
+      "DTEND;VALUE=DATE-TIME:19960401T150000Z"
+      (DateTimeEndDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
+    propertyParseExampleSpec
       "DTEND:19960401T150000Z"
       (DateTimeEndDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
-    xdescribe "not implemented yet" $
-      exampleSpec
-        "DTEND;VALUE=DATE:19980704"
-        (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
+    propertyExampleSpec
+      "DTEND;VALUE=DATE:19980704"
+      (DateTimeEndDate (Date (fromGregorian 1998 07 04)))
 
   describe "Duration" $ do
     genValidSpec @Duration
@@ -200,7 +190,7 @@ spec = do
     --
     --     DURATION:PT15M
     -- @
-    parseSpec
+    propertyParseExampleSpec
       "DURATION:PT1H0M0S"
       ( DurationTime
           ( DurTime
@@ -211,7 +201,7 @@ spec = do
               }
           )
       )
-    exampleSpec
+    propertyExampleSpec
       "DURATION:PT15M"
       ( DurationTime
           ( DurTime
@@ -233,7 +223,7 @@ spec = do
     --     URL:http://example.com/pub/calendars/jsmith/mytime.ics
     -- @
     uri <- liftIO $ maybe (expectationFailure "could not parse URI") pure $ Network.parseURI "http://example.com/pub/calendars/jsmith/mytime.ics"
-    exampleSpec
+    propertyExampleSpec
       "URL:http://example.com/pub/calendars/jsmith/mytime.ics"
       (URL (URI uri))
 
@@ -253,8 +243,8 @@ spec = do
     --     TZOFFSETFROM:+1345
     -- @
     -- @
-    exampleSpec "TZOFFSETFROM:-0500" (TimeZoneOffsetFrom (UTCOffset (-18000)))
-    exampleSpec "TZOFFSETFROM:+1345" (TimeZoneOffsetFrom (UTCOffset 49500))
+    propertyExampleSpec "TZOFFSETFROM:-0500" (TimeZoneOffsetFrom (UTCOffset (-18000)))
+    propertyExampleSpec "TZOFFSETFROM:+1345" (TimeZoneOffsetFrom (UTCOffset 49500))
 
   describe "TimeZoneOffsetTo" $ do
     genValidSpec @TimeZoneOffsetTo
@@ -265,13 +255,13 @@ spec = do
     --
     --     TZOFFSETTO:+1245
     -- @
-    exampleSpec "TZOFFSETTO:-0400" (TimeZoneOffsetTo (UTCOffset (-14400)))
-    exampleSpec "TZOFFSETTO:+1245" (TimeZoneOffsetTo (UTCOffset 45900))
+    propertyExampleSpec "TZOFFSETTO:-0400" (TimeZoneOffsetTo (UTCOffset (-14400)))
+    propertyExampleSpec "TZOFFSETTO:+1245" (TimeZoneOffsetTo (UTCOffset 45900))
 
   describe "Comment" $ do
     genValidSpec @Comment
     propertySpec @Comment
-    exampleSpec
+    propertyExampleSpec
       "COMMENT:The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact\\, the venue for the meeting ought to be at their site. - - John"
       (Comment "The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact, the venue for the meeting ought to be at their site. - - John")
 
@@ -290,22 +280,23 @@ spec = do
     --
     --     TRANSP:OPAQUE
     -- @
-    exampleSpec
+    propertyExampleSpec
       "TRANSP:TRANSPARENT"
       TransparencyTransparent
-    exampleSpec
+    propertyExampleSpec
       "TRANSP:OPAQUE"
       TransparencyOpaque
 
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes
     propertySpec @ExceptionDateTimes
-    -- From the spec:
-    -- @
-    -- Example:  The following is an example of this property:
-    --
-    --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
-    -- @
-    exampleSpec
-      "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
-      (ExceptionDateTimes (S.fromList []))
+
+-- -- From the spec:
+-- -- @
+-- -- Example:  The following is an example of this property:
+-- --
+-- --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
+-- -- @
+-- propertyExampleSpec
+--   "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
+--   (undefined :: ExceptionDateTimes)

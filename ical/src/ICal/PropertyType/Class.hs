@@ -113,10 +113,13 @@ instance IsPropertyType Text where
 
 propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Either String [propertyType]
 propertyTypeListP clv =
-  let clvs = do
-        raw <- T.splitOn "," (contentLineValueRaw clv)
-        pure (clv {contentLineValueRaw = raw})
-   in mapM propertyTypeP clvs
+  if T.null (contentLineValueRaw clv)
+    then pure []
+    else
+      let clvs = do
+            raw <- T.splitOn "," (contentLineValueRaw clv)
+            pure (clv {contentLineValueRaw = raw})
+       in mapM propertyTypeP clvs
 
 propertyTypeListB :: IsPropertyType propertyType => [propertyType] -> ContentLineValue
 propertyTypeListB = \case

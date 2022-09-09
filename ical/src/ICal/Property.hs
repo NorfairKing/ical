@@ -19,7 +19,6 @@ module ICal.Property where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
-import qualified Data.Map as M
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -30,6 +29,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
@@ -561,12 +561,8 @@ instance IsProperty DateTimeStart where
     (DateTimeStartDate <$> propertyTypeP cl)
       <|> (DateTimeStartDateTime <$> propertyTypeP cl)
   propertyB = \case
-    DateTimeStartDate date ->
-      let clv = propertyTypeB date
-       in clv {contentLineValueParams = M.insert "VALUE" ["DATE"] (contentLineValueParams clv)}
-    DateTimeStartDateTime dateTime ->
-      let clv = propertyTypeB dateTime
-       in clv {contentLineValueParams = M.insert "VALUE" ["DATE-TIME"] (contentLineValueParams clv)}
+    DateTimeStartDate date -> propertyTypeB date
+    DateTimeStartDateTime dateTime -> propertyTypeB dateTime
 
 -- | Classification
 --
@@ -1712,7 +1708,11 @@ instance IsProperty TimeZoneOffsetTo where
 --
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
 -- @
-newtype ExceptionDateTimes = ExceptionDateTimes {unExceptionDateTimes :: Set DateTime}
+data ExceptionDateTimes
+  = ExceptionDates !(Set Date)
+  | ExceptionDateTimesFloating !(Set Time.LocalTime)
+  | ExceptionDateTimesUTC !(Set Time.UTCTime)
+  | ExceptionDateTimesZoned !TZIDParam !(Set Time.LocalTime)
   deriving (Show, Eq, Generic)
 
 instance Validity ExceptionDateTimes
@@ -1721,5 +1721,5 @@ instance NFData ExceptionDateTimes
 
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
-  propertyP = fmap ExceptionDateTimes . propertyTypeSetP
-  propertyB = propertyTypeSetB . unExceptionDateTimes
+  propertyP = undefined
+  propertyB = undefined

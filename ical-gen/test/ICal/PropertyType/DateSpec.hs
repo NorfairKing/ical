@@ -6,7 +6,7 @@
 
 module ICal.PropertyType.DateSpec where
 
-import Control.Monad
+import qualified Data.Map as M
 import Data.Time (fromGregorian)
 import ICal.ContentLine
 import ICal.PropertyType.Date
@@ -21,13 +21,31 @@ spec = do
     propertyTypeSpec @Date
 
   describe "dateP" $ do
-    let examples :: [(Date, ContentLineValue)]
-        examples =
-          [ (Date $ fromGregorian 1997 07 14, mkSimpleContentLineValue "19970714")
-          ]
-    describe "examples" $
-      forM_ examples $ \(date, text) -> do
-        it "renders this example date correctly" $
-          dateB date `shouldBe` text
-        it "parses this example text correctly" $
-          dateP text `shouldBe` Right date
+    it "renders this date correctly" $
+      dateB
+        (Date (fromGregorian 1997 07 14))
+        `shouldBe` ( ContentLineValue
+                       { contentLineValueParams = M.singleton "VALUE" ["DATE"],
+                         contentLineValueRaw = "19970714"
+                       }
+                   )
+    it "parses this date correctly" $
+      dateP
+        (mkSimpleContentLineValue "19970714")
+        `shouldBe` Right (Date (fromGregorian 1997 07 14))
+    it "parses this date correctly" $
+      dateP
+        ( ContentLineValue
+            { contentLineValueRaw = "19970714",
+              contentLineValueParams = M.singleton "VALUE" ["DATE"]
+            }
+        )
+        `shouldBe` Right (Date (fromGregorian 1997 07 14))
+    it "fails to parse this date, correctly" $
+      dateP
+        ( ContentLineValue
+            { contentLineValueRaw = "19970714",
+              contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+            }
+        )
+        `shouldBe` Left "Invalid VALUE"

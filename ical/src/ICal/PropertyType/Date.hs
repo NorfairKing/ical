@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -9,6 +11,7 @@
 module ICal.PropertyType.Date where
 
 import Control.DeepSeq
+import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -83,10 +86,18 @@ dayShowsPrec d day =
           . showsPrec 11 d_
 
 dateP :: ContentLineValue -> Either String Date
-dateP = parseDate . contentLineValueRaw
+dateP ContentLineValue {..} =
+  let goOn = parseDate contentLineValueRaw
+   in case M.lookup "VALUE" contentLineValueParams of
+        Just t -> if t == ["DATE"] then goOn else Left "Invalid VALUE"
+        _ -> goOn
 
 dateB :: Date -> ContentLineValue
-dateB = mkSimpleContentLineValue . renderDate
+dateB d =
+  ContentLineValue
+    { contentLineValueRaw = renderDate d,
+      contentLineValueParams = M.singleton "VALUE" ["DATE"]
+    }
 
 parseDate :: Text -> Either String Date
 parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack

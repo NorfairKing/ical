@@ -13,6 +13,7 @@ import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
 import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime (..), localTimeToUTC, utc, utcToLocalTime)
 import GHC.Stack
+import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
 import ICal.PropertyType.Class
@@ -152,6 +153,36 @@ instance GenValid UTCOffset where
   shrinkValid =
     let inclusiveBound = utcOffsetAbsBound - 1
      in fmap UTCOffset . shrinkRange2 (-inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
+
+propertyTypeRenderExampleSpec ::
+  ( Show propertyType,
+    IsPropertyType propertyType,
+    HasCallStack
+  ) =>
+  propertyType ->
+  ContentLineValue ->
+  Spec
+propertyTypeRenderExampleSpec value expected =
+  withFrozenCallStack $
+    it "renders this example correctly" $
+      context (show value) $
+        propertyTypeB value `shouldBe` expected
+
+propertyTypeParseExampleSpec ::
+  ( Show propertyType,
+    Eq propertyType,
+    IsPropertyType propertyType,
+    HasCallStack
+  ) =>
+  ContentLineValue ->
+  propertyType ->
+  Spec
+propertyTypeParseExampleSpec clv expected = withFrozenCallStack $
+  it "parses this example correctly" $
+    context (show clv) $
+      case propertyTypeP clv of
+        Left err -> expectationFailure err
+        Right actual -> actual `shouldBe` expected
 
 propertyTypeSpec ::
   forall a.

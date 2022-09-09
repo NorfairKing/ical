@@ -9,7 +9,9 @@ import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import qualified Data.Text as T
 import GHC.Stack
+import ICal.ContentLine
 import ICal.Parameter.Gen ()
 import ICal.Property
 import ICal.PropertyType.Gen
@@ -114,6 +116,51 @@ instance GenValid TimeZoneOffsetTo where
 instance GenValid ExceptionDateTimes where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+propertyRenderExampleSpec ::
+  ( Show property,
+    IsProperty property,
+    HasCallStack
+  ) =>
+  ContentLine ->
+  property ->
+  Spec
+propertyRenderExampleSpec expected value =
+  withFrozenCallStack $
+    it "renders this example correctly" $
+      context (show value) $
+        let cl = propertyContentLineB value
+         in context (T.unpack (renderContentLines [cl])) $
+              cl `shouldBe` expected
+
+propertyParseExampleSpec ::
+  ( IsProperty property,
+    Show property,
+    Eq property,
+    HasCallStack
+  ) =>
+  ContentLine ->
+  property ->
+  Spec
+propertyParseExampleSpec cl expected = withFrozenCallStack $
+  it "parses this example correctly" $
+    context (show cl) $
+      case propertyContentLineP cl of
+        Left err -> expectationFailure err
+        Right actual -> actual `shouldBe` expected
+
+propertyExampleSpec ::
+  ( IsProperty property,
+    Show property,
+    Eq property,
+    HasCallStack
+  ) =>
+  ContentLine ->
+  property ->
+  Spec
+propertyExampleSpec cl v = withFrozenCallStack $ do
+  propertyParseExampleSpec cl v
+  propertyRenderExampleSpec cl v
 
 propertySpec ::
   forall a.
