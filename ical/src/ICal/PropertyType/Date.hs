@@ -12,6 +12,7 @@ module ICal.PropertyType.Date where
 
 import Control.DeepSeq
 import qualified Data.Map as M
+import Data.Set (Set)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -73,6 +74,10 @@ instance NFData Date
 instance IsPropertyType Date where
   propertyTypeP = dateP
   propertyTypeB = dateB
+
+instance IsPropertyType (Set Date) where
+  propertyTypeP = propertyTypeSetP
+  propertyTypeB = propertyTypeSetB
 
 dayShowsPrec :: Int -> Time.Day -> ShowS
 dayShowsPrec d day =
