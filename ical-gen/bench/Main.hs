@@ -10,12 +10,7 @@ import Data.GenValidity.Vector ()
 import ICal
 import ICal.Component.Gen ()
 import ICal.Property.Gen ()
-import ICal.PropertyType.Duration
-import ICal.PropertyType.FloatingPoint
 import ICal.PropertyType.Gen
-import ICal.PropertyType.RecurrenceRule
-import ICal.PropertyType.URI
-import ICal.PropertyType.UTCOffset
 
 main :: IO ()
 main = do
