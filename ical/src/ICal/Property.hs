@@ -29,14 +29,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
-import ICal.Parameter
-import ICal.PropertyType.Class
-import ICal.PropertyType.Date
-import ICal.PropertyType.DateTime
-import ICal.PropertyType.Duration
-import ICal.PropertyType.RecurrenceRule
-import ICal.PropertyType.URI
-import ICal.PropertyType.UTCOffset
+import ICal.PropertyType
 import Text.Read
 
 -- |
@@ -1708,11 +1701,7 @@ instance IsProperty TimeZoneOffsetTo where
 --
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
 -- @
-data ExceptionDateTimes
-  = ExceptionDates !(Set Date)
-  | ExceptionDateTimesFloating !(Set Time.LocalTime)
-  | ExceptionDateTimesUTC !(Set Time.UTCTime)
-  | ExceptionDateTimesZoned !TZIDParam !(Set Time.LocalTime)
+newtype ExceptionDateTimes = ExceptionDateTimes {unExceptionDateTimes :: Either DateTimes (Set Date)}
   deriving (Show, Eq, Generic)
 
 instance Validity ExceptionDateTimes
@@ -1721,5 +1710,14 @@ instance NFData ExceptionDateTimes
 
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
-  propertyP = undefined
-  propertyB = undefined
+  propertyP clv =
+    ExceptionDateTimes
+      <$> ( (Left <$> propertyTypeP clv)
+              <|> (Right <$> propertyTypeP clv)
+          )
+  propertyB =
+    ( \case
+        Left dts -> propertyTypeB dts
+        Right ds -> propertyTypeB ds
+    )
+      . unExceptionDateTimes

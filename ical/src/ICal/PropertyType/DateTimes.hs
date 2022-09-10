@@ -73,6 +73,7 @@ instance IsPropertyType DateTimes where
   propertyTypeP = dateTimesP
   propertyTypeB = dateTimesB
 
+-- TODO this can probably be much more efficient using a custom parser.
 dateTimesP :: ContentLineValue -> Either String DateTimes
 dateTimesP clv = do
   set <- propertyTypeSetP clv
@@ -87,11 +88,32 @@ fromSet set = case S.lookupMin set of
     DateTimeZoned tzid _ -> goZoned tzid set
   where
     goFloating :: Set DateTime -> Either String DateTimes
-    goFloating = undefined
+    goFloating =
+      fmap (DateTimesFloating . S.fromList)
+        . mapM
+          ( \case
+              DateTimeFloating lt -> Right lt
+              _ -> Left "Must be Floating"
+          )
+        . S.toList
     goUTC :: Set DateTime -> Either String DateTimes
-    goUTC = undefined
+    goUTC =
+      fmap (DateTimesUTC . S.fromList)
+        . mapM
+          ( \case
+              DateTimeUTC u -> Right u
+              _ -> Left "Must be UTC"
+          )
+        . S.toList
     goZoned :: TZIDParam -> Set DateTime -> Either String DateTimes
-    goZoned = undefined
+    goZoned tzid =
+      fmap (DateTimesZoned tzid . S.fromList)
+        . mapM
+          ( \case
+              DateTimeZoned tzid' lt -> if tzid == tzid' then Right lt else Left "Must be the same tzid"
+              _ -> Left "Must be UTC"
+          )
+        . S.toList
 
 dateTimesB :: DateTimes -> ContentLineValue
 dateTimesB = propertyTypeSetB . toSet
