@@ -11,6 +11,7 @@
 module ICal.PropertyType.DateTimes where
 
 import Control.DeepSeq
+import qualified Data.Map as M
 import Data.Set
 import qualified Data.Set as S
 import qualified Data.Time as Time
@@ -77,7 +78,10 @@ instance IsPropertyType DateTimes where
 dateTimesP :: ContentLineValue -> Either String DateTimes
 dateTimesP clv = do
   set <- propertyTypeSetP clv
-  fromSet set
+  let goOn = fromSet set
+  case M.lookup "VALUE" (contentLineValueParams clv) of
+    Just t -> if t == ["DATE-TIME"] then goOn else Left "Invalid VALUE"
+    _ -> goOn
 
 fromSet :: Set DateTime -> Either String DateTimes
 fromSet set = case S.lookupMin set of
@@ -116,7 +120,9 @@ fromSet set = case S.lookupMin set of
         . S.toList
 
 dateTimesB :: DateTimes -> ContentLineValue
-dateTimesB = propertyTypeSetB . toSet
+dateTimesB = addValue . propertyTypeSetB . toSet
+  where
+    addValue clv = clv {contentLineValueParams = M.insert "VALUE" ["DATE-TIME"] (contentLineValueParams clv)}
 
 toSet :: DateTimes -> Set DateTime
 toSet = \case

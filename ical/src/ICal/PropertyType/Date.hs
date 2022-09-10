@@ -77,7 +77,9 @@ instance IsPropertyType Date where
 
 instance IsPropertyType (Set Date) where
   propertyTypeP = propertyTypeSetP
-  propertyTypeB = propertyTypeSetB
+  propertyTypeB = addValue . propertyTypeSetB
+    where
+      addValue clv = clv {contentLineValueParams = M.insert "VALUE" ["DATE"] (contentLineValueParams clv)}
 
 dayShowsPrec :: Int -> Time.Day -> ShowS
 dayShowsPrec d day =
