@@ -117,6 +117,10 @@ instance GenValid ExceptionDateTimes where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid RecurrenceDateTimes where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 propertyRenderExampleSpec ::
   ( Show property,
     IsProperty property,

@@ -1810,13 +1810,14 @@ instance IsProperty ExceptionDateTimes where
 --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
 -- @
 newtype RecurrenceDateTimes = RecurrenceDateTimes {unRecurrenceDateTimes :: Either DateTimes (Set Date)}
+  deriving (Show, Eq, Generic)
 
 instance Validity RecurrenceDateTimes
 
 instance NFData RecurrenceDateTimes
 
 instance IsProperty RecurrenceDateTimes where
-  propertyName Proxy = "EXDATE"
+  propertyName Proxy = "RDATE"
   propertyP clv =
     RecurrenceDateTimes
       <$> ( (Left <$> propertyTypeP clv)

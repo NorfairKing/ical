@@ -5,15 +5,12 @@
 
 module ICal.PropertySpec where
 
+import qualified Data.Set as S
 import Data.Time
 import ICal.Property
 import ICal.Property.Gen
-import ICal.PropertyType.Date
-import ICal.PropertyType.DateTime
-import ICal.PropertyType.Duration
+import ICal.PropertyType
 import ICal.PropertyType.Duration.Gen ()
-import ICal.PropertyType.URI
-import ICal.PropertyType.UTCOffset
 import qualified Network.URI as Network
 import Test.Syd
 import Test.Syd.Validity hiding (Location)
@@ -290,13 +287,118 @@ spec = do
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes
     propertySpec @ExceptionDateTimes
+    -- From the spec:
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
+    -- @
+    let val =
+          ExceptionDateTimes
+            ( Left
+                ( DateTimesUTC
+                    ( S.fromList
+                        [ UTCTime
+                            (fromGregorian 1996 4 2)
+                            (timeOfDayToTime (TimeOfDay 01 00 00)),
+                          UTCTime
+                            (fromGregorian 1996 4 3)
+                            (timeOfDayToTime (TimeOfDay 01 00 00)),
+                          UTCTime
+                            (fromGregorian 1996 4 4)
+                            (timeOfDayToTime (TimeOfDay 01 00 00))
+                        ]
+                    )
+                )
+            )
+    propertyParseExampleSpec
+      "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
+      val
+    propertyRenderExampleSpec
+      "EXDATE;VALUE=DATE-TIME:19960402T010000Z,19960403T010000Z,19960404T010000Z"
+      val
 
--- -- From the spec:
--- -- @
--- -- Example:  The following is an example of this property:
--- --
--- --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
--- -- @
--- propertyExampleSpec
---   "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
---   (undefined :: ExceptionDateTimes)
+  describe "RecurrenceDateTimes" $ do
+    genValidSpec @RecurrenceDateTimes
+    propertySpec @RecurrenceDateTimes
+
+    -- From the spec:
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --     RDATE:19970714T123000Z
+    --     RDATE;TZID=America/New_York:19970714T083000
+    --
+    --     RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
+    --      19960404T010000Z/PT3H
+    --
+    --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
+    --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
+    -- @
+    --     RDATE:19970714T123000Z
+    let ex1 =
+          RecurrenceDateTimes
+            ( Left
+                ( DateTimesUTC
+                    ( S.fromList
+                        [ UTCTime
+                            (fromGregorian 1997 7 14)
+                            (timeOfDayToTime (TimeOfDay 12 30 00))
+                        ]
+                    )
+                )
+            )
+    propertyParseExampleSpec
+      "RDATE:19970714T123000Z"
+      ex1
+    propertyRenderExampleSpec
+      "RDATE;VALUE=DATE-TIME:19970714T123000Z"
+      ex1
+    --     RDATE;TZID=America/New_York:19970714T083000
+    let ex2 =
+          RecurrenceDateTimes $
+            Left
+              ( DateTimesZoned
+                  "America/New_York"
+                  ( S.fromList
+                      [LocalTime (fromGregorian 1997 7 14) (TimeOfDay 08 30 00)]
+                  )
+              )
+
+    propertyParseExampleSpec
+      "RDATE;TZID=America/New_York:19970714T083000"
+      ex2
+    propertyRenderExampleSpec
+      "RDATE;VALUE=DATE-TIME;TZID=America/New_York:19970714T083000"
+      ex2
+
+    -- TODO
+    --     RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
+    --      19960404T010000Z/PT3H
+    let ex3 = RecurrenceDateTimes $ Right S.empty
+    propertyExampleSpec
+      "RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"
+      ex3
+
+    --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
+    --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
+    let ex4 =
+          RecurrenceDateTimes $
+            Right
+              ( S.fromList
+                  [ Date (fromGregorian 1997 1 1),
+                    Date (fromGregorian 1997 1 20),
+                    Date (fromGregorian 1997 2 17),
+                    Date (fromGregorian 1997 4 21),
+                    Date (fromGregorian 1997 5 26),
+                    Date (fromGregorian 1997 7 4),
+                    Date (fromGregorian 1997 9 1),
+                    Date (fromGregorian 1997 10 14),
+                    Date (fromGregorian 1997 11 28),
+                    Date (fromGregorian 1997 11 29),
+                    Date (fromGregorian 1997 12 25)
+                  ]
+              )
+    propertyExampleSpec
+      "RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,19970526,19970704,19970901,19971014,19971128,19971129,19971225"
+      ex4
