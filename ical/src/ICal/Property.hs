@@ -1316,8 +1316,8 @@ instance IsProperty DateTimeEnd where
 -- @
 instance IsProperty Duration where
   propertyName Proxy = "DURATION"
-  propertyP = durationP
-  propertyB = durationB
+  propertyP = propertyTypeP
+  propertyB = propertyTypeB
 
 -- | Time Transparency
 --
@@ -1809,7 +1809,10 @@ instance IsProperty ExceptionDateTimes where
 --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
 --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
 -- @
-newtype RecurrenceDateTimes = RecurrenceDateTimes {unRecurrenceDateTimes :: Either DateTimes (Set Date)}
+data RecurrenceDateTimes
+  = RecurrenceDateTimes !DateTimes
+  | RecurrenceDates !(Set Date)
+  --  | RecurrencePeriod !Period
   deriving (Show, Eq, Generic)
 
 instance Validity RecurrenceDateTimes
@@ -1819,13 +1822,8 @@ instance NFData RecurrenceDateTimes
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
   propertyP clv =
-    RecurrenceDateTimes
-      <$> ( (Left <$> propertyTypeP clv)
-              <|> (Right <$> propertyTypeP clv)
-          )
-  propertyB =
-    ( \case
-        Left dts -> propertyTypeB dts
-        Right ds -> propertyTypeB ds
-    )
-      . unRecurrenceDateTimes
+    (RecurrenceDateTimes <$> propertyTypeP clv)
+      <|> (RecurrenceDates <$> propertyTypeP clv)
+  propertyB = \case
+    RecurrenceDateTimes dts -> propertyTypeB dts
+    RecurrenceDates ds -> propertyTypeB ds

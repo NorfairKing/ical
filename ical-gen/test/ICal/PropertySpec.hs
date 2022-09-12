@@ -337,17 +337,14 @@ spec = do
     -- @
     --     RDATE:19970714T123000Z
     let ex1 =
-          RecurrenceDateTimes
-            ( Left
-                ( DateTimesUTC
-                    ( S.fromList
-                        [ UTCTime
-                            (fromGregorian 1997 7 14)
-                            (timeOfDayToTime (TimeOfDay 12 30 00))
-                        ]
-                    )
-                )
-            )
+          RecurrenceDateTimes $
+            DateTimesUTC
+              ( S.fromList
+                  [ UTCTime
+                      (fromGregorian 1997 7 14)
+                      (timeOfDayToTime (TimeOfDay 12 30 00))
+                  ]
+              )
     propertyParseExampleSpec
       "RDATE:19970714T123000Z"
       ex1
@@ -357,12 +354,10 @@ spec = do
     --     RDATE;TZID=America/New_York:19970714T083000
     let ex2 =
           RecurrenceDateTimes $
-            Left
-              ( DateTimesZoned
-                  "America/New_York"
-                  ( S.fromList
-                      [LocalTime (fromGregorian 1997 7 14) (TimeOfDay 08 30 00)]
-                  )
+            DateTimesZoned
+              "America/New_York"
+              ( S.fromList
+                  [LocalTime (fromGregorian 1997 7 14) (TimeOfDay 08 30 00)]
               )
 
     propertyParseExampleSpec
@@ -375,7 +370,7 @@ spec = do
     -- TODO
     --     RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
     --      19960404T010000Z/PT3H
-    let ex3 = RecurrenceDateTimes $ Right S.empty
+    let ex3 = RecurrenceDates S.empty
     propertyExampleSpec
       "RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"
       ex3
@@ -383,22 +378,21 @@ spec = do
     --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
     --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
     let ex4 =
-          RecurrenceDateTimes $
-            Right
-              ( S.fromList
-                  [ Date (fromGregorian 1997 1 1),
-                    Date (fromGregorian 1997 1 20),
-                    Date (fromGregorian 1997 2 17),
-                    Date (fromGregorian 1997 4 21),
-                    Date (fromGregorian 1997 5 26),
-                    Date (fromGregorian 1997 7 4),
-                    Date (fromGregorian 1997 9 1),
-                    Date (fromGregorian 1997 10 14),
-                    Date (fromGregorian 1997 11 28),
-                    Date (fromGregorian 1997 11 29),
-                    Date (fromGregorian 1997 12 25)
-                  ]
-              )
+          RecurrenceDates $
+            S.fromList
+              [ Date (fromGregorian 1997 1 1),
+                Date (fromGregorian 1997 1 20),
+                Date (fromGregorian 1997 2 17),
+                Date (fromGregorian 1997 4 21),
+                Date (fromGregorian 1997 5 26),
+                Date (fromGregorian 1997 7 4),
+                Date (fromGregorian 1997 9 1),
+                Date (fromGregorian 1997 10 14),
+                Date (fromGregorian 1997 11 28),
+                Date (fromGregorian 1997 11 29),
+                Date (fromGregorian 1997 12 25)
+              ]
+
     propertyExampleSpec
       "RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,19970526,19970704,19970901,19971014,19971128,19971129,19971225"
       ex4

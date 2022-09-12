@@ -88,8 +88,8 @@ instance Validity Duration
 instance NFData Duration
 
 instance IsPropertyType Duration where
-  propertyTypeP = durationP
-  propertyTypeB = durationB
+  propertyTypeP = parseDuration . contentLineValueRaw
+  propertyTypeB = mkSimpleContentLineValue . renderDuration
 
 data DurDate = DurDate
   { durDateSign :: !Sign,
@@ -133,11 +133,11 @@ instance Validity Sign
 
 instance NFData Sign
 
-durationP :: ContentLineValue -> Either String Duration
-durationP = parseDuration . contentLineValueRaw
-
-durationB :: Duration -> ContentLineValue
-durationB = mkSimpleContentLineValue . renderDuration
+durationSign :: Duration -> Sign
+durationSign = \case
+  DurationDate dd -> durDateSign dd
+  DurationTime dt -> durTimeSign dt
+  DurationWeek dw -> durWeekSign dw
 
 -- @
 -- dur-value  = (["+"] / "-") "P" (dur-date / dur-time / dur-week)

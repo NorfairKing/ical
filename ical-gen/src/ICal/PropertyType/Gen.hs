@@ -18,6 +18,7 @@ import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
 import ICal.PropertyType
+import ICal.PropertyType.Duration.Gen ()
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -72,6 +73,8 @@ instance GenValid DateTime where
       )
 
 instance GenValid DateTimes
+
+instance GenValid Period
 
 genImpreciseUTCTime :: Gen UTCTime
 genImpreciseUTCTime = localTimeToUTC utc <$> genImpreciseLocalTime
@@ -151,15 +154,28 @@ instance GenValid UTCOffset where
     let inclusiveBound = utcOffsetAbsBound - 1
      in fmap UTCOffset . shrinkRange2 (-inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
 
+propertyTypeExampleSpec ::
+  ( Show propertyType,
+    IsPropertyType propertyType,
+    Eq propertyType,
+    HasCallStack
+  ) =>
+  ContentLineValue ->
+  propertyType ->
+  Spec
+propertyTypeExampleSpec clv value = withFrozenCallStack $ do
+  propertyTypeRenderExampleSpec clv value
+  propertyTypeParseExampleSpec clv value
+
 propertyTypeRenderExampleSpec ::
   ( Show propertyType,
     IsPropertyType propertyType,
     HasCallStack
   ) =>
-  propertyType ->
   ContentLineValue ->
+  propertyType ->
   Spec
-propertyTypeRenderExampleSpec value expected =
+propertyTypeRenderExampleSpec expected value =
   withFrozenCallStack $
     it "renders this example correctly" $
       context (show value) $

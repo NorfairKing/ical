@@ -22,55 +22,54 @@ spec = do
 
   describe "dateTimeP" $ do
     propertyTypeRenderExampleSpec
-      (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00))
       ( ContentLineValue
           { contentLineValueRaw = "19980118T230000",
             contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
           }
       )
+      (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00))
 
     propertyTypeParseExampleSpec
       (mkSimpleContentLineValue "19980118T230000")
       (DateTimeFloating $ LocalTime (fromGregorian 1998 01 18) (TimeOfDay 23 00 00))
 
     propertyTypeRenderExampleSpec
-      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00))
       ( ContentLineValue
           { contentLineValueRaw = "19980119T070000Z",
             contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
           }
       )
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00))
 
     propertyTypeParseExampleSpec
       (mkSimpleContentLineValue "19980119T070000Z")
       (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 07 00 00))
 
     propertyTypeRenderExampleSpec
-      (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00))
       ( ContentLineValue
           { contentLineValueRaw = "19970714T133000",
             contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
           }
       )
+      (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00))
 
     propertyTypeParseExampleSpec
       (mkSimpleContentLineValue "19970714T133000")
       (DateTimeFloating $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 13 30 00))
 
     propertyTypeRenderExampleSpec
-      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00))
       ( ContentLineValue
           { contentLineValueRaw = "19970714T173000Z",
             contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
           }
       )
+      (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00))
 
     propertyTypeParseExampleSpec
       (mkSimpleContentLineValue "19970714T173000Z")
       (DateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 1997 07 14) (TimeOfDay 17 30 00))
 
     propertyTypeRenderExampleSpec
-      (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00))
       ( ContentLineValue
           { contentLineValueParams =
               M.fromList
@@ -80,6 +79,7 @@ spec = do
             contentLineValueRaw = "19980119T020000"
           }
       )
+      (DateTimeZoned "America/New_York" $ LocalTime (fromGregorian 1998 01 19) (TimeOfDay 02 00 00))
 
     propertyTypeParseExampleSpec
       ( ContentLineValue

@@ -33,31 +33,22 @@ spec = do
     --
     --     P7W
     -- @
-    let examples :: [(Duration, ContentLineValue)]
-        examples =
-          [ ( DurationDate $
-                DurDate
-                  { durDateSign = Positive,
-                    durDateDay = 15,
-                    durDateHour = 5,
-                    durDateMinute = 0,
-                    durDateSecond = 20
-                  },
-              mkSimpleContentLineValue "P15DT5H0M20S"
-            ),
-            ( DurationWeek $
-                DurWeek
-                  { durWeekSign = Positive,
-                    durWeekWeek = 7
-                  },
-              mkSimpleContentLineValue "P7W"
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(duration, text) -> do
-        it "renders this example duration correctly" $
-          durationB duration `shouldBe` text
-        it "parses this example text correctly" $
-          case durationP text of
-            Left err -> expectationFailure err
-            Right duration' -> duration' `shouldBe` duration
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "P15DT5H0M20S")
+      ( DurationDate $
+          DurDate
+            { durDateSign = Positive,
+              durDateDay = 15,
+              durDateHour = 5,
+              durDateMinute = 0,
+              durDateSecond = 20
+            }
+      )
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "P7W")
+      ( DurationWeek $
+          DurWeek
+            { durWeekSign = Positive,
+              durWeekWeek = 7
+            }
+      )
