@@ -1,12 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module ICal.PropertyType.DurationSpec where
 
-import Control.Monad
 import ICal.ContentLine
 import ICal.PropertyType.Duration
 import ICal.PropertyType.Duration.Gen ()

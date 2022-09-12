@@ -573,16 +573,31 @@ value:
     forest:
     - header: get the datetime values to pass
       state-history:
+      - state: DONE
+        time: 2022-09-12 22:16:27
       - state: NEXT
         time: 2022-09-09 14:11:34
     - header: make an IsPropertyType (Set Date) instance
       state-history:
+      - state: DONE
+        time: 2022-09-12 22:16:28
       - state: TODO
         time: 2022-09-09 14:11:51
     - header: Make a 'DateTimes' datatype with IsPropertyType DateTimes instance
       state-history:
+      - state: DONE
+        time: 2022-09-12 22:16:28
       - state: TODO
         time: 2022-09-09 14:12:08
+    - header: make the recurrence tests pass so far
+      state-history:
+      - state: TODO
+        time: 2022-09-12 22:16:38
+    - header: Make parameters read a single text instead of a list
+      contents: have instances for sets where appropriate
+      state-history:
+      - state: TODO
+        time: 2022-09-12 22:22:21
     - header: Make value a parameter type
       state-history:
       - state: TODO

@@ -295,20 +295,18 @@ spec = do
     -- @
     let val =
           ExceptionDateTimes
-            ( Left
-                ( DateTimesUTC
-                    ( S.fromList
-                        [ UTCTime
-                            (fromGregorian 1996 4 2)
-                            (timeOfDayToTime (TimeOfDay 01 00 00)),
-                          UTCTime
-                            (fromGregorian 1996 4 3)
-                            (timeOfDayToTime (TimeOfDay 01 00 00)),
-                          UTCTime
-                            (fromGregorian 1996 4 4)
-                            (timeOfDayToTime (TimeOfDay 01 00 00))
-                        ]
-                    )
+            ( DateTimesUTC
+                ( S.fromList
+                    [ UTCTime
+                        (fromGregorian 1996 4 2)
+                        (timeOfDayToTime (TimeOfDay 01 00 00)),
+                      UTCTime
+                        (fromGregorian 1996 4 3)
+                        (timeOfDayToTime (TimeOfDay 01 00 00)),
+                      UTCTime
+                        (fromGregorian 1996 4 4)
+                        (timeOfDayToTime (TimeOfDay 01 00 00))
+                    ]
                 )
             )
     propertyParseExampleSpec
@@ -367,10 +365,24 @@ spec = do
       "RDATE;VALUE=DATE-TIME;TZID=America/New_York:19970714T083000"
       ex2
 
-    -- TODO
     --     RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
     --      19960404T010000Z/PT3H
-    let ex3 = RecurrenceDates S.empty
+    let ex3 =
+          RecurrencePeriods
+            ( S.fromList
+                [ PeriodStartEnd (UTCTime (fromGregorian 1996 04 03) (timeOfDayToTime (TimeOfDay 02 00 00))) (UTCTime (fromGregorian 1996 04 03) (timeOfDayToTime (TimeOfDay 04 00 00))),
+                  PeriodStartDuration
+                    (UTCTime (fromGregorian 1996 04 04) (timeOfDayToTime (TimeOfDay 01 00 00)))
+                    ( DurationTime
+                        DurTime
+                          { durTimeSign = Positive,
+                            durTimeHour = 3,
+                            durTimeMinute = 0,
+                            durTimeSecond = 0
+                          }
+                    )
+                ]
+            )
     propertyExampleSpec
       "RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"
       ex3

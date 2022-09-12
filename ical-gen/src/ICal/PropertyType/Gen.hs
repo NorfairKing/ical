@@ -154,19 +154,6 @@ instance GenValid UTCOffset where
     let inclusiveBound = utcOffsetAbsBound - 1
      in fmap UTCOffset . shrinkRange2 (-inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
 
-propertyTypeExampleSpec ::
-  ( Show propertyType,
-    IsPropertyType propertyType,
-    Eq propertyType,
-    HasCallStack
-  ) =>
-  ContentLineValue ->
-  propertyType ->
-  Spec
-propertyTypeExampleSpec clv value = withFrozenCallStack $ do
-  propertyTypeRenderExampleSpec clv value
-  propertyTypeParseExampleSpec clv value
-
 propertyTypeRenderExampleSpec ::
   ( Show propertyType,
     IsPropertyType propertyType,
@@ -196,6 +183,19 @@ propertyTypeParseExampleSpec clv expected = withFrozenCallStack $
       case propertyTypeP clv of
         Left err -> expectationFailure err
         Right actual -> actual `shouldBe` expected
+
+propertyTypeExampleSpec ::
+  ( Show propertyType,
+    IsPropertyType propertyType,
+    Eq propertyType,
+    HasCallStack
+  ) =>
+  ContentLineValue ->
+  propertyType ->
+  Spec
+propertyTypeExampleSpec clv value = withFrozenCallStack $ do
+  propertyTypeParseExampleSpec clv value
+  propertyTypeRenderExampleSpec clv value
 
 propertyTypeSpec ::
   forall a.

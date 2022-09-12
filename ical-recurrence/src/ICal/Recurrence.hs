@@ -36,8 +36,8 @@ import ICal.Property
 import ICal.PropertyType.RecurrenceRule
 
 data RecurrenceProperties = RecurrenceProperties
-  { recurrencePropertyExceptionDateTimes :: Set ExceptionDateTime,
-    recurrencePropertyRecurrenceDateTimes :: Set RecurrenceDateTime,
+  { recurrencePropertyExceptionDateTimes :: Set ExceptionDateTimes,
+    recurrencePropertyRecurrenceDateTimes :: Set RecurrenceDateTimes,
     recurrencePropertyRecurrenceRules :: Set RecurrenceRule
   }
   deriving (Show, Eq, Generic)

@@ -1,26 +1,24 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module ICal.PropertyType.Period where
 
-import Control.Arrow (left)
 import Control.DeepSeq
-import Control.Monad
 import Data.Data
-import Data.Maybe
-import Data.Text (Text)
+import qualified Data.Map as M
+import Data.Set (Set)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
-import Data.Void
 import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
 import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
 
 -- | Period
 --
@@ -75,8 +73,8 @@ import Text.Megaparsec.Char.Lexer
 --    encoding, see Section 3.3.11) is defined for this value type.
 -- @
 data Period
-  = PeriodStartEnd !DateTime !DateTime
-  | PeriodStartDuration !DateTime !Duration
+  = PeriodStartEnd !Time.UTCTime !Time.UTCTime
+  | PeriodStartDuration !Time.UTCTime !Duration
   deriving (Show, Eq, Ord, Generic, Typeable)
 
 instance Validity Period where
@@ -95,5 +93,42 @@ instance Validity Period where
 instance NFData Period
 
 instance IsPropertyType Period where
-  propertyTypeP = undefined
-  propertyTypeB = undefined
+  propertyTypeP clv =
+    let goOn = case T.splitOn "/" (contentLineValueRaw clv) of
+          [startStr, endOrDurationStr] -> do
+            startDateTime <- parseDateTimeUTC startStr
+            endOrDuration <-
+              (Left <$> parseDateTimeUTC endOrDurationStr)
+                <|> (Right <$> parseDuration endOrDurationStr)
+            pure $ case endOrDuration of
+              Left end -> PeriodStartEnd startDateTime end
+              Right duration -> PeriodStartDuration startDateTime duration
+          _ -> Left "Expected two pieces separated by /"
+     in case M.lookup "VALUE" (contentLineValueParams clv) of
+          Just t -> if t == ["PERIOD"] then goOn else Left "Invalid VALUE"
+          _ -> goOn
+
+  propertyTypeB =
+    ( \t ->
+        ContentLineValue
+          { contentLineValueRaw = t,
+            contentLineValueParams = M.singleton "VALUE" ["PERIOD"]
+          }
+    )
+      . T.intercalate "/"
+      . ( \case
+            PeriodStartEnd start end ->
+              [ renderDateTimeUTC start,
+                renderDateTimeUTC end
+              ]
+            PeriodStartDuration start duration ->
+              [ renderDateTimeUTC start,
+                renderDuration duration
+              ]
+        )
+
+instance IsPropertyType (Set Period) where
+  propertyTypeP = propertyTypeSetP
+  propertyTypeB = addValue . propertyTypeSetB
+    where
+      addValue clv = clv {contentLineValueParams = M.insert "VALUE" ["PERIOD"] (contentLineValueParams clv)}

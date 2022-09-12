@@ -19,6 +19,7 @@ module ICal.Property where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -1701,7 +1702,9 @@ instance IsProperty TimeZoneOffsetTo where
 --
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
 -- @
-newtype ExceptionDateTimes = ExceptionDateTimes {unExceptionDateTimes :: Either DateTimes (Set Date)}
+data ExceptionDateTimes
+  = ExceptionDateTimes !DateTimes
+  | ExceptionDates !(Set Date)
   deriving (Show, Eq, Generic)
 
 instance Validity ExceptionDateTimes
@@ -1710,17 +1713,15 @@ instance NFData ExceptionDateTimes
 
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
-  propertyP clv =
-    ExceptionDateTimes
-      <$> ( (Left <$> propertyTypeP clv)
-              <|> (Right <$> propertyTypeP clv)
-          )
-  propertyB =
-    ( \case
-        Left dts -> propertyTypeB dts
-        Right ds -> propertyTypeB ds
-    )
-      . unExceptionDateTimes
+  propertyP clv = case M.lookup "VALUE" $ contentLineValueParams clv of
+    Just ["DATE-TIME"] -> ExceptionDateTimes <$> propertyTypeP clv
+    Just ["DATE"] -> ExceptionDates <$> propertyTypeP clv
+    Just _ -> Left "Unknown VALUE of EXDATE"
+    Nothing -> ExceptionDateTimes <$> propertyTypeP clv
+
+  propertyB = \case
+    ExceptionDateTimes dts -> propertyTypeB dts
+    ExceptionDates ds -> propertyTypeB ds
 
 -- | Recurrence Date-Times
 --
@@ -1812,7 +1813,7 @@ instance IsProperty ExceptionDateTimes where
 data RecurrenceDateTimes
   = RecurrenceDateTimes !DateTimes
   | RecurrenceDates !(Set Date)
-  --  | RecurrencePeriod !Period
+  | RecurrencePeriods !(Set Period)
   deriving (Show, Eq, Generic)
 
 instance Validity RecurrenceDateTimes
@@ -1821,9 +1822,14 @@ instance NFData RecurrenceDateTimes
 
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
-  propertyP clv =
-    (RecurrenceDateTimes <$> propertyTypeP clv)
-      <|> (RecurrenceDates <$> propertyTypeP clv)
+  propertyP clv = case M.lookup "VALUE" $ contentLineValueParams clv of
+    Just ["DATE-TIME"] -> RecurrenceDateTimes <$> propertyTypeP clv
+    Just ["PERIOD"] -> RecurrencePeriods <$> propertyTypeP clv
+    Just ["DATE"] -> RecurrenceDates <$> propertyTypeP clv
+    Just _ -> Left "Unknown VALUE for RDATE"
+    Nothing -> RecurrenceDateTimes <$> propertyTypeP clv
+
   propertyB = \case
     RecurrenceDateTimes dts -> propertyTypeB dts
     RecurrenceDates ds -> propertyTypeB ds
+    RecurrencePeriods ps -> propertyTypeB ps
