@@ -11,7 +11,6 @@
 module ICal.Parameter where
 
 import Control.DeepSeq
-import Control.Monad
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
@@ -95,6 +94,9 @@ setParamMap :: forall param. IsParameter param => Set param -> Map ParamName (No
 setParamMap params = case NE.nonEmpty (map parameterB (S.toList params)) of
   Nothing -> M.empty
   Just ne -> M.singleton (parameterName (Proxy :: Proxy param)) (sconcat ne)
+
+insertParam :: forall param. IsParameter param => param -> ContentLineValue -> ContentLineValue
+insertParam param clv = clv {contentLineValueParams = M.insert (parameterName (Proxy :: Proxy param)) (parameterB param) (contentLineValueParams clv)}
 
 singleParamP :: (ParamValue -> Either String a) -> NonEmpty ParamValue -> Either String a
 singleParamP func = \case
@@ -327,3 +329,13 @@ instance IsParameter ValueDataType where
     TypeURI -> "URI"
     TypeUTCOffset -> "UTC-OFFSET"
     OtherType pv -> pv
+
+parseOfValue :: ValueDataType -> Map ParamName (NonEmpty ParamValue) -> Either String ()
+parseOfValue typ params = do
+  mValue <- optionalParam params
+  case mValue of
+    Just typ' ->
+      if typ == typ'
+        then pure ()
+        else Left "Invalid VALUE" -- TODO better error
+    _ -> pure ()

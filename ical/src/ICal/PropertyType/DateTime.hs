@@ -213,17 +213,14 @@ instance IsPropertyType DateTime where
   propertyTypeB = dateTimeB
 
 dateTimeP :: ContentLineValue -> Either String DateTime
-dateTimeP clv@ContentLineValue {..} =
-  let goOn =
-        let s = T.unpack contentLineValueRaw
-         in case lookupParam contentLineValueParams of
-              Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
-              _ ->
-                (DateTimeFloating <$> dateTimeFloatingP clv)
-                  <|> (DateTimeUTC <$> dateTimeUTCP clv)
-   in case M.lookup "VALUE" contentLineValueParams of
-        Just t -> if t == ["DATE-TIME"] then goOn else Left "Invalid VALUE"
-        _ -> goOn
+dateTimeP clv@ContentLineValue {..} = do
+  parseOfValue TypeDateTime contentLineValueParams
+  let s = T.unpack contentLineValueRaw
+  case lookupParam contentLineValueParams of
+    Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
+    _ ->
+      (DateTimeFloating <$> dateTimeFloatingP clv)
+        <|> (DateTimeUTC <$> dateTimeUTCP clv)
 
 dateTimeFloatingP :: ContentLineValue -> Either String Time.LocalTime
 dateTimeFloatingP ContentLineValue {..} =
@@ -235,12 +232,10 @@ dateTimeUTCP ContentLineValue {..} =
   parseDateTimeUTC contentLineValueRaw
 
 dateTimeB :: DateTime -> ContentLineValue
-dateTimeB dt =
-  let clv = case dt of
-        DateTimeFloating lt -> dateTimeFloatingB lt
-        DateTimeUTC lt -> dateTimeUTCB lt
-        DateTimeZoned tzidParam lt -> dateTimeZonedB tzidParam lt
-   in clv {contentLineValueParams = M.insert "VALUE" ["DATE-TIME"] (contentLineValueParams clv)}
+dateTimeB dt = insertParam TypeDateTime $ case dt of
+  DateTimeFloating lt -> dateTimeFloatingB lt
+  DateTimeUTC lt -> dateTimeUTCB lt
+  DateTimeZoned tzidParam lt -> dateTimeZonedB tzidParam lt
 
 dateTimeFloatingB :: Time.LocalTime -> ContentLineValue
 dateTimeFloatingB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr

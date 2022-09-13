@@ -19,7 +19,6 @@ module ICal.Property where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
-import qualified Data.Map as M
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -30,6 +29,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType
 import Text.Read
 
@@ -1713,11 +1713,13 @@ instance NFData ExceptionDateTimes
 
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
-  propertyP clv = case M.lookup "VALUE" $ contentLineValueParams clv of
-    Just ["DATE-TIME"] -> ExceptionDateTimes <$> propertyTypeP clv
-    Just ["DATE"] -> ExceptionDates <$> propertyTypeP clv
-    Just _ -> Left "Unknown VALUE of EXDATE"
-    Nothing -> ExceptionDateTimes <$> propertyTypeP clv
+  propertyP clv = do
+    mValue <- optionalParam $ contentLineValueParams clv
+    case mValue of
+      Just TypeDateTime -> ExceptionDateTimes <$> propertyTypeP clv
+      Just TypeDate -> ExceptionDates <$> propertyTypeP clv
+      Just _ -> Left "Unknown VALUE of EXDATE"
+      Nothing -> ExceptionDateTimes <$> propertyTypeP clv
 
   propertyB = \case
     ExceptionDateTimes dts -> propertyTypeB dts
@@ -1822,12 +1824,14 @@ instance NFData RecurrenceDateTimes
 
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
-  propertyP clv = case M.lookup "VALUE" $ contentLineValueParams clv of
-    Just ["DATE-TIME"] -> RecurrenceDateTimes <$> propertyTypeP clv
-    Just ["PERIOD"] -> RecurrencePeriods <$> propertyTypeP clv
-    Just ["DATE"] -> RecurrenceDates <$> propertyTypeP clv
-    Just _ -> Left "Unknown VALUE for RDATE"
-    Nothing -> RecurrenceDateTimes <$> propertyTypeP clv
+  propertyP clv = do
+    mValue <- optionalParam $ contentLineValueParams clv
+    case mValue of
+      Just TypeDateTime -> RecurrenceDateTimes <$> propertyTypeP clv
+      Just TypePeriod -> RecurrencePeriods <$> propertyTypeP clv
+      Just TypeDate -> RecurrenceDates <$> propertyTypeP clv
+      Just _ -> Left "Unknown VALUE for RDATE"
+      Nothing -> RecurrenceDateTimes <$> propertyTypeP clv
 
   propertyB = \case
     RecurrenceDateTimes dts -> propertyTypeB dts

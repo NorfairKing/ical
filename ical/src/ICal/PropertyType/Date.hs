@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -11,7 +10,6 @@
 module ICal.PropertyType.Date where
 
 import Control.DeepSeq
-import qualified Data.Map as M
 import Data.Set (Set)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -21,6 +19,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 
 -- | Date
@@ -77,9 +76,7 @@ instance IsPropertyType Date where
 
 instance IsPropertyType (Set Date) where
   propertyTypeP = propertyTypeSetP
-  propertyTypeB = addValue . propertyTypeSetB
-    where
-      addValue clv = clv {contentLineValueParams = M.insert "VALUE" ["DATE"] (contentLineValueParams clv)}
+  propertyTypeB = insertParam TypeDate . propertyTypeSetB
 
 dayShowsPrec :: Int -> Time.Day -> ShowS
 dayShowsPrec d day =
@@ -93,18 +90,12 @@ dayShowsPrec d day =
           . showsPrec 11 d_
 
 dateP :: ContentLineValue -> Either String Date
-dateP ContentLineValue {..} =
-  let goOn = parseDate contentLineValueRaw
-   in case M.lookup "VALUE" contentLineValueParams of
-        Just t -> if t == ["DATE"] then goOn else Left "Invalid VALUE"
-        _ -> goOn
+dateP ContentLineValue {..} = do
+  parseOfValue TypeDate contentLineValueParams
+  parseDate contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
-dateB d =
-  ContentLineValue
-    { contentLineValueRaw = renderDate d,
-      contentLineValueParams = M.singleton "VALUE" ["DATE"]
-    }
+dateB = insertParam TypeDate . mkSimpleContentLineValue . renderDate
 
 parseDate :: Text -> Either String Date
 parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack

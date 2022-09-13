@@ -178,13 +178,14 @@ timeOfDayShowsPrec d (Time.TimeOfDay h_ m_ s_) =
         )
 
 timeP :: ContentLineValue -> Either String Time
-timeP ContentLineValue {..} =
+timeP ContentLineValue {..} = do
+  parseOfValue TypeTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
-   in case lookupParam contentLineValueParams of
-        Nothing ->
-          (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
-            <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
-        Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
+  case lookupParam contentLineValueParams of
+    Nothing ->
+      (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
+        <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
+    Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
 
 timeB :: Time -> ContentLineValue
 timeB =
