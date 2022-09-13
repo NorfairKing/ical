@@ -8,6 +8,7 @@
 module ICal.ContentLine where
 
 import Control.Arrow (left)
+import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
@@ -85,6 +86,8 @@ data ContentLineValue = ContentLineValue
   deriving stock (Show, Read, Eq, Ord, Generic)
 
 instance Validity ContentLineValue
+
+instance NFData ContentLineValue
 
 -- It turns out that this 'IsString' instance is a bother to write because of how ';' and ':' interact with parsing.
 -- Instead we better use 'mkSimpleContentLineValue' below and the record constructor.
@@ -167,6 +170,8 @@ instance Validity ParamName where
               ]
       ]
 
+instance NFData ParamName
+
 instance IsString ParamName where
   fromString s =
     let t = fromString s
@@ -185,6 +190,8 @@ instance Validity VendorId where
         decorateText (CI.original unVendorId) validateVendorIdChar
       ]
 
+instance NFData VendorId
+
 -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.2
 -- "Property parameter values that are not in quoted-strings are case-
 -- insensitive."
@@ -202,12 +209,19 @@ instance Validity ParamValue where
           QuotedParam t -> decorateText t validateQSafeChar
       ]
 
+instance NFData ParamValue
+
 instance IsString ParamValue where
   fromString s =
     let t = fromString s
      in if haveToQuoteText t
           then QuotedParam t
           else UnquotedParam (CI.mk t)
+
+paramValueCI :: ParamValue -> CI Text
+paramValueCI = \case
+  UnquotedParam ci -> ci
+  QuotedParam t -> CI.mk t
 
 renderContentLines :: [ContentLine] -> Text
 renderContentLines = renderUnfoldedLines . map renderContentLineToUnfoldedLine

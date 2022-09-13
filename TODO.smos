@@ -591,11 +591,15 @@ value:
         time: 2022-09-09 14:12:08
     - header: make the recurrence tests pass so far
       state-history:
+      - state: DONE
+        time: 2022-09-13 12:03:15
       - state: TODO
         time: 2022-09-12 22:16:38
     - header: Make parameters read a single text instead of a list
       contents: have instances for sets where appropriate
       state-history:
+      - state: CANCELLED
+        time: 2022-09-13 12:03:11
       - state: TODO
         time: 2022-09-12 22:22:21
     - header: Make value a parameter type

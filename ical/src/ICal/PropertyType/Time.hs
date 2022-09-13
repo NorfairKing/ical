@@ -11,7 +11,6 @@
 module ICal.PropertyType.Time where
 
 import Control.DeepSeq
-import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -194,7 +193,7 @@ timeB =
     TimeUTC tod -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale timeUTCFormatStr tod
     TimeZoned tzidParam tod ->
       ContentLineValue
-        { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (tzIDParamB tzidParam),
+        { contentLineValueParams = paramMap tzidParam,
           contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale timeZonedFormatStr tod
         }
 

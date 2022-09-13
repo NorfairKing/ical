@@ -10,6 +10,10 @@ import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import Data.List.NonEmpty (NonEmpty)
+import GHC.Stack
+import ICal.ContentLine
+import ICal.ContentLine.Gen ()
 import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
@@ -24,6 +28,40 @@ instance GenValid TZIDParam where
     TZIDParam "B" -> [TZIDParam "UTC", TZIDParam "A"]
     TZIDParam "C" -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B"]
     TZIDParam _ -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B", TZIDParam "C"]
+
+instance GenValid ValueDataType
+
+parameterExampleSpec ::
+  (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
+  NonEmpty ParamValue ->
+  parameter ->
+  Spec
+parameterExampleSpec params val = withFrozenCallStack $ do
+  parameterParseExampleSpec params val
+  parameterRenderExampleSpec params val
+
+parameterParseExampleSpec ::
+  (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
+  NonEmpty ParamValue ->
+  parameter ->
+  Spec
+parameterParseExampleSpec params expected = withFrozenCallStack $ do
+  it "parses this example correctly" $
+    context (show params) $
+      case parameterP params of
+        Left err -> expectationFailure err
+        Right actual -> actual `shouldBe` expected
+
+parameterRenderExampleSpec ::
+  (Show parameter, IsParameter parameter, HasCallStack) =>
+  NonEmpty ParamValue ->
+  parameter ->
+  Spec
+parameterRenderExampleSpec expected value = withFrozenCallStack $ do
+  it "renders this example correctly" $
+    context (show value) $
+      let actual = parameterB value
+       in actual `shouldBe` expected
 
 parameterSpec ::
   forall a.
