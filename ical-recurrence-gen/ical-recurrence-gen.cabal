@@ -1,0 +1,46 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.7.
+--
+-- see: https://github.com/sol/hpack
+
+name:           ical-recurrence-gen
+version:        0.0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      ICal.Recurrence.Gen
+  other-modules:
+      Paths_ical_recurrence_gen
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , genvalidity
+    , genvalidity-containers
+    , ical
+    , ical-gen
+    , ical-recurrence
+  default-language: Haskell2010
+
+test-suite ical-recurrence-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      ICal.RecurrenceSpec
+      Paths_ical_recurrence_gen
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      base >=4.7 && <5
+    , genvalidity-sydtest
+    , ical
+    , ical-gen
+    , ical-recurrence
+    , ical-recurrence-gen
+    , sydtest
+  default-language: Haskell2010

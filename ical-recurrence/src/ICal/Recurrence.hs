@@ -31,13 +31,37 @@
 module ICal.Recurrence where
 
 import Data.Set (Set)
+import Data.Time
+import Data.Validity
 import GHC.Generics (Generic)
 import ICal.Property
-import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType
 
-data RecurrenceProperties = RecurrenceProperties
-  { recurrencePropertyExceptionDateTimes :: Set ExceptionDateTimes,
-    recurrencePropertyRecurrenceDateTimes :: Set RecurrenceDateTimes,
-    recurrencePropertyRecurrenceRules :: Set RecurrenceRule
+data Recurrence = Recurrence
+  { recurrenceExceptionDateTimes :: Set ExceptionDateTimes,
+    recurrenceRecurrenceDateTimes :: Set RecurrenceDateTimes,
+    recurrenceRecurrenceRules :: Set RecurrenceRule
   }
   deriving (Show, Eq, Generic)
+
+instance Validity Recurrence
+
+data RecurringEvent = RecurringEvent
+  { recurringEventStart :: !(Maybe DateTimeStart),
+    recurringEventEnd :: !(Maybe (Either DateTimeEnd Duration)),
+    recurringEventRecurrence :: !Recurrence
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity RecurringEvent
+
+data EventOccurrence = EventOccurrence
+  { eventOccurrenceStart :: !(Maybe DateTimeStart),
+    eventOccurrenceEnd :: !(Maybe (Either DateTimeEnd Duration))
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity EventOccurrence
+
+recurEvents :: Day -> Day -> RecurringEvent -> Set EventOccurrence
+recurEvents begin end = undefined begin end

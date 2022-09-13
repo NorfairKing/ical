@@ -2,8 +2,10 @@ resolver: lts-19.6
 packages:
 - ical
 - ical-gen
-- ical-interop-test
 - ical-recurrence
+- ical-recurrence-gen
+
+- ical-interop-test
 
 # These are duplicated in nix/overlay.nix
 ghc-options:

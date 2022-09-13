@@ -37,6 +37,7 @@ with final.haskell.lib;
         final.icalInterops.python-echo
       ];
       ical-recurrence = icalPkg "ical-recurrence";
+      ical-recurrence-gen = icalPkg "ical-recurrence-gen";
     };
 
   icalInterops = {

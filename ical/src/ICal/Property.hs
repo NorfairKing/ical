@@ -543,7 +543,7 @@ instance IsProperty TZID where
 data DateTimeStart
   = DateTimeStartDate !Date
   | DateTimeStartDateTime !DateTime
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DateTimeStart
 
@@ -1254,7 +1254,7 @@ renderStatus = \case
 data DateTimeEnd
   = DateTimeEndDate !Date
   | DateTimeEndDateTime !DateTime
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DateTimeEnd
 
@@ -1705,7 +1705,7 @@ instance IsProperty TimeZoneOffsetTo where
 data ExceptionDateTimes
   = ExceptionDateTimes !DateTimes
   | ExceptionDates !(Set Date)
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity ExceptionDateTimes
 
@@ -1816,7 +1816,7 @@ data RecurrenceDateTimes
   = RecurrenceDateTimes !DateTimes
   | RecurrenceDates !(Set Date)
   | RecurrencePeriods !(Set Period)
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity RecurrenceDateTimes
 
