@@ -28,7 +28,13 @@
 --
 -- However, because recurrence sets can be infinite, we do not reify
 -- them and instead provide only functions that produce finite results.
-module ICal.Recurrence where
+module ICal.Recurrence
+  ( RecurringEvent (..),
+    Recurrence (..),
+    EventOccurrence (..),
+    recurEvents,
+  )
+where
 
 import Data.Set (Set)
 import Data.Time
@@ -63,5 +69,36 @@ data EventOccurrence = EventOccurrence
 
 instance Validity EventOccurrence
 
-recurEvents :: Day -> Day -> RecurringEvent -> Set EventOccurrence
-recurEvents begin end = undefined begin end
+-- | Compute the recurrence set, up to a given limit
+recurEvents :: LocalTime -> RecurringEvent -> Set EventOccurrence
+recurEvents limit = undefined limit
+
+-- | Compute the occurrences that the recurrence date times imply
+recurRecurrenceDateTimes ::
+  Maybe DateTimeStart ->
+  Maybe (Either DateTimeEnd Duration) ->
+  Set RecurrenceDateTimes ->
+  Set EventOccurrence
+recurRecurrenceDateTimes = undefined
+
+-- | Compute the occurrences that the recurrence rules imply
+recurRecurrenceRules ::
+  -- | Limit
+  LocalTime ->
+  Maybe DateTimeStart ->
+  Maybe (Either DateTimeEnd Duration) ->
+  Set RecurrenceRule ->
+  Set EventOccurrence
+recurRecurrenceRules = undefined
+
+-- | Remove the occurrences that the exception date times imply should be removed
+removeExceptionDatetimes ::
+  Set ExceptionDateTimes ->
+  Set EventOccurrence ->
+  Set EventOccurrence
+removeExceptionDatetimes = undefined
+
+data RecurCtx = RecurCtx {recurCtxLimit :: LocalTime}
+  deriving (Show, Eq)
+
+type R = Reader RecurCtx
