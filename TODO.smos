@@ -608,6 +608,26 @@ value:
         time: 2022-09-13 13:32:46
       - state: TODO
         time: 2022-09-09 14:11:24
+    - header: Implement timezone resolution to
+      state-history:
+      - state: TODO
+        time: 2022-09-15 12:29:32
+    - header: Implement date diffing
+      state-history:
+      - state: TODO
+        time: 2022-09-15 12:29:33
+    - header: Implement datetime diffing
+      state-history:
+      - state: TODO
+        time: 2022-09-15 12:29:34
+    - header: Test exact durations in rdates
+      state-history:
+      - state: TODO
+        time: 2022-09-15 12:29:33
+    - header: Implement exact duration
+      state-history:
+      - state: TODO
+        time: 2022-09-15 12:29:34
     - header: Make a recurringevent type with start and endduration and recurrence
       state-history:
       - state: TODO
