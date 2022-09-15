@@ -604,8 +604,18 @@ value:
         time: 2022-09-12 22:22:21
     - header: Make value a parameter type
       state-history:
+      - state: DONE
+        time: 2022-09-13 13:32:46
       - state: TODO
         time: 2022-09-09 14:11:24
+    - header: Make a recurringevent type with start and endduration and recurrence
+      state-history:
+      - state: TODO
+        time: 2022-09-13 13:38:23
+    - header: make an unresolvedevent type with start and endduration
+      state-history:
+      - state: TODO
+        time: 2022-09-13 13:38:23
   - entry:
       header: Do end-to-end tests with other programs
       state-history:

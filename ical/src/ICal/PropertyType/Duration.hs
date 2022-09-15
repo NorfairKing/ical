@@ -91,6 +91,17 @@ instance IsPropertyType Duration where
   propertyTypeP = parseDuration . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . renderDuration
 
+durationOneDay :: Duration
+durationOneDay =
+  DurationDate
+    DurDate
+      { durDateSign = Positive,
+        durDateDay = 1,
+        durDateHour = 0,
+        durDateMinute = 0,
+        durDateSecond = 0
+      }
+
 data DurDate = DurDate
   { durDateSign :: !Sign,
     durDateDay :: !Word,

@@ -9,5 +9,6 @@ library:
   source-dirs: src
   dependencies:
   - containers
+  - mtl
   - time
   - validity
