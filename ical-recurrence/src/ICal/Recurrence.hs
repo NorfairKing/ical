@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | ICal Recurrence
@@ -48,6 +49,7 @@ import Data.Validity
 import GHC.Generics (Generic)
 import ICal.Property
 import ICal.PropertyType
+import qualified ICal.PropertyType.DateTimes as DateTimes
 
 data Recurrence = Recurrence
   { recurrenceExceptionDateTimes :: Set ExceptionDateTimes,
@@ -118,7 +120,108 @@ recurRecurrenceDateTimes ::
   Maybe (Either DateTimeEnd Duration) ->
   Set RecurrenceDateTimes ->
   Set EventOccurrence
-recurRecurrenceDateTimes dateTimeStart endOrDuration = undefined
+recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
+  S.unions $
+    flip S.map recurrenceDateTimess $
+      let withNewStart newStart =
+            EventOccurrence
+              { eventOccurrenceStart = Just newStart,
+                eventOccurrenceEndOrDuration = resolveEndOrDurationDate dateTimeStart endOrDuration newStart
+              }
+       in \case
+            RecurrenceDates dates ->
+              S.map
+                (withNewStart . DateTimeStartDate)
+                dates
+            RecurrenceDateTimes dateTimes ->
+              S.map
+                (withNewStart . DateTimeStartDateTime)
+                (DateTimes.toSet dateTimes)
+            RecurrencePeriods periods ->
+              S.map
+                ( \case
+                    PeriodStartEnd start end ->
+                      EventOccurrence
+                        { eventOccurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
+                          eventOccurrenceEndOrDuration = Just (Left (DateTimeEndDateTime (DateTimeUTC end)))
+                        }
+                    PeriodStartDuration start duration ->
+                      EventOccurrence
+                        { eventOccurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
+                          eventOccurrenceEndOrDuration = Just (Right duration)
+                        }
+                )
+                periods
+
+resolveEndOrDurationDate ::
+  DateTimeStart ->
+  Maybe (Either DateTimeEnd Duration) ->
+  DateTimeStart ->
+  Maybe (Either DateTimeEnd Duration)
+resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDuration of
+  Nothing -> Nothing
+  Just (Right duration) -> Just (Right duration)
+  Just (Left end) ->
+    -- @
+    -- If the duration of the recurring component is specified with the
+    -- "DTEND" or "DUE" property, then the same exact duration will apply
+    -- to all the members of the generated recurrence set.  Else, if the
+    -- duration of the recurring component is specified with the
+    -- "DURATION" property, then the same nominal duration will apply to
+    -- all the members of the generated recurrence set and the exact
+    -- duration of each recurrence instance will depend on its specific
+    -- start time.  For example, recurrence instances of a nominal
+    -- duration of one day will have an exact duration of more or less
+    -- than 24 hours on a day where a time zone shift occurs.  The
+    -- duration of a specific recurrence may be modified in an exception
+    -- component or simply by using an "RDATE" property of PERIOD value
+    -- type.
+    -- @
+    case (originalStart, end) of
+      (DateTimeStartDate startDate, DateTimeEndDate endDate) ->
+        let exactDuration = diffDates startDate endDate
+         in case newStart of
+              DateTimeStartDate newDate -> Just (Left (DateTimeEndDate (dateAddDays exactDuration newDate)))
+              _ -> undefined "Exact duration offsets are not supported yet."
+      (DateTimeStartDateTime startDateTime, DateTimeEndDate endDateTime) ->
+        undefined "Exact duration offsets are not supported yet."
+      -- These two cases represent invalid ical:
+      -- @
+      -- The "VEVENT" is also the calendar component used to specify an
+      -- anniversary or daily reminder within a calendar.
+      -- These events
+      -- have a DATE value type for the "DTSTART" property instead of the
+      -- default value type of DATE-TIME.  If such a "VEVENT" has a "DTEND"
+      -- property, it MUST be specified as a DATE value also.
+      -- @
+      -- However, this is a new restriction, see the following, so we do
+      -- _something_ in this case, to not have to error.
+      --
+      -- In the section: "A.1. New Restrictions":
+      -- @
+      -- The value type of the "DTEND" or "DUE" properties MUST match the
+      -- value type of "DTSTART" property.
+      -- @
+      (DateTimeStartDate startDate, DateTimeEndDateTime endDateTime) ->
+        let -- Note that this generous interpretation comes with the very false
+            -- assumption that timezones are not relevant to dates.
+            --
+            -- TODO do this with a test case.
+            duration = diffDates startDate (dateTimeDate endDateTime)
+         in case newStart of
+              DateTimeStartDate newDate ->
+                Just (Left (DateTimeEndDate (dateAddDays duration newDate)))
+              _ -> undefined "Exact duration offsets are not supported yet."
+      (DateTimeStartDateTime startDateTime, DateTimeEndDate endDate) ->
+        undefined "Exact duration offsets are not supported yet."
+
+-- For cases where a "VEVENT" calendar component
+-- specifies a "DTSTART" property with a DATE value type but no
+-- "DTEND" nor "DURATION" property, the event's duration is taken to
+-- be one day.  For cases where a "VEVENT" calendar component
+-- specifies a "DTSTART" property with a DATE-TIME value type but no
+-- "DTEND" property, the event ends on the same calendar date and
+-- time of day specified by the "DTSTART" property.
 
 -- | Compute the occurrences that the recurrence rules imply
 --

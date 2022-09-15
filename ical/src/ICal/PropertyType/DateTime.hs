@@ -213,6 +213,20 @@ instance IsPropertyType DateTime where
   propertyTypeP = dateTimeP
   propertyTypeB = dateTimeB
 
+-- | Get the date of a datetime
+--
+-- WARNING: This gets the specified date in the context that it is specified.
+-- The resulting date may have been different in a different timezone.
+--
+-- TODO: show this with a test case
+dateTimeDate :: DateTime -> Date
+dateTimeDate =
+  Date . \case
+    DateTimeFloating lt -> Time.localDay lt
+    DateTimeUTC ut -> Time.utctDay ut
+    -- This is where the warning is relevant
+    DateTimeZoned _ lt -> Time.localDay lt
+
 dateTimeP :: ContentLineValue -> Either String DateTime
 dateTimeP clv@ContentLineValue {..} = do
   parseOfValue TypeDateTime contentLineValueParams

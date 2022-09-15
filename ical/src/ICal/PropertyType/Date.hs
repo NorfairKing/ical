@@ -66,6 +66,17 @@ instance Show Date where
     showParen (d > 10) $
       showString "Date " . dayShowsPrec 11 day
 
+dayShowsPrec :: Int -> Time.Day -> ShowS
+dayShowsPrec d day =
+  showParen (d > 10) $
+    let (y_, m_, d_) = Time.toGregorian day
+     in showString "fromGregorian "
+          . showsPrec 11 y_
+          . showString " "
+          . showsPrec 11 m_
+          . showString " "
+          . showsPrec 11 d_
+
 instance Validity Date
 
 instance NFData Date
@@ -78,16 +89,11 @@ instance IsPropertyType (Set Date) where
   propertyTypeP = propertyTypeSetP
   propertyTypeB = insertParam TypeDate . propertyTypeSetB
 
-dayShowsPrec :: Int -> Time.Day -> ShowS
-dayShowsPrec d day =
-  showParen (d > 10) $
-    let (y_, m_, d_) = Time.toGregorian day
-     in showString "fromGregorian "
-          . showsPrec 11 y_
-          . showString " "
-          . showsPrec 11 m_
-          . showString " "
-          . showsPrec 11 d_
+diffDates :: Date -> Date -> Integer
+diffDates (Date a) (Date b) = Time.diffDays a b
+
+dateAddDays :: Integer -> Date -> Date
+dateAddDays diff (Date a) = Date $ Time.addDays diff a
 
 dateP :: ContentLineValue -> Either String Date
 dateP ContentLineValue {..} = do

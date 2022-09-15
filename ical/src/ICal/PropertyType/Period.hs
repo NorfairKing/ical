@@ -72,6 +72,8 @@ import Text.Megaparsec
 --    No additional content value encoding (i.e., BACKSLASH character
 --    encoding, see Section 3.3.11) is defined for this value type.
 -- @
+--
+-- TODO these should probably contain DATE-TIME values, but it's not clear.
 data Period
   = PeriodStartEnd !Time.UTCTime !Time.UTCTime
   | PeriodStartDuration !Time.UTCTime !Duration

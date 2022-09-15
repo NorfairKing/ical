@@ -27,9 +27,9 @@ spec = do
     -- RDATE:19970714T123000Z
     -- @
     it "works for any interpretation of the date time in UTC example from the spec" $
-      forAllValid $ \date ->
+      forAllValid $ \dateTimeStart ->
         recurRecurrenceDateTimes
-          (DateTimeStartDate date)
+          dateTimeStart
           Nothing
           [RecurrenceDateTimes (DateTimesUTC [UTCTime (fromGregorian 1997 07 14) (timeOfDayToTime (TimeOfDay 23 00 00))])]
           `shouldBe` [ EventOccurrence
@@ -43,14 +43,14 @@ spec = do
     -- RDATE;TZID=America/New_York:19970714T083000
     -- @
     it "works for any interpretation of the date time with timezone example from the spec" $
-      forAllValid $ \date ->
+      forAllValid $ \dateTimeStart ->
         recurRecurrenceDateTimes
-          (DateTimeStartDate date)
+          dateTimeStart
           Nothing
           [RecurrenceDateTimes (DateTimesZoned "America/New_York" [LocalTime (fromGregorian 1997 07 14) (TimeOfDay 08 30 00)])]
           `shouldBe` [ EventOccurrence
                          { eventOccurrenceStart =
-                             Just (DateTimeStartDateTime (DateTimeZoned "America/New_York" (LocalTime (fromGregorian 1997 07 14) (TimeOfDay 23 00 00)))),
+                             Just (DateTimeStartDateTime (DateTimeZoned "America/New_York" (LocalTime (fromGregorian 1997 07 14) (TimeOfDay 08 30 00)))),
                            eventOccurrenceEndOrDuration = Nothing
                          }
                      ]
@@ -60,9 +60,9 @@ spec = do
     --  19960404T010000Z/PT3H
     -- @
     it "works for any interpretation of the period example from the spec" $
-      forAllValid $ \date ->
+      forAllValid $ \dateTimeStart ->
         recurRecurrenceDateTimes
-          (DateTimeStartDate date)
+          dateTimeStart
           Nothing
           [ RecurrencePeriods
               [ PeriodStartEnd
@@ -90,9 +90,9 @@ spec = do
     --  19970526,19970704,19970901,19971014,19971128,19971129,19971225
     -- @
     it "works for any interpretation of the second dates example from the spec" $
-      forAllValid $ \date ->
+      forAllValid $ \dateTimeStart ->
         recurRecurrenceDateTimes
-          (DateTimeStartDate date)
+          dateTimeStart
           Nothing
           [ RecurrenceDates
               [ Date $ fromGregorian 1997 01 01,
@@ -100,7 +100,7 @@ spec = do
                 Date $ fromGregorian 1997 02 17,
                 Date $ fromGregorian 1997 04 21,
                 Date $ fromGregorian 1997 05 26,
-                Date $ fromGregorian 1997 07 24,
+                Date $ fromGregorian 1997 07 04,
                 Date $ fromGregorian 1997 09 01,
                 Date $ fromGregorian 1997 10 14,
                 Date $ fromGregorian 1997 11 28,
@@ -169,12 +169,12 @@ spec = do
     -- RDATE;VALUE=DATE:19970304,19970504,19970704,19970904
     -- @
     it "works for any interpretation of the second dates example from the spec" $
-      forAllValid $ \date ->
+      forAllValid $ \dateTimeStart ->
         recurRecurrenceDateTimes
-          (DateTimeStartDate date)
+          dateTimeStart
           Nothing
           [ RecurrenceDates
-              [ Date $ fromGregorian 1977 03 04,
+              [ Date $ fromGregorian 1997 03 04,
                 Date $ fromGregorian 1997 05 04,
                 Date $ fromGregorian 1997 07 04,
                 Date $ fromGregorian 1997 09 04
@@ -182,22 +182,22 @@ spec = do
           ]
           `shouldBe` [ EventOccurrence
                          { eventOccurrenceStart =
-                             Just (DateTimeStartDate (Date (fromGregorian 1977 03 04))),
+                             Just (DateTimeStartDate (Date (fromGregorian 1997 03 04))),
                            eventOccurrenceEndOrDuration = Nothing
                          },
                        EventOccurrence
                          { eventOccurrenceStart =
-                             Just (DateTimeStartDate (Date (fromGregorian 1977 05 04))),
+                             Just (DateTimeStartDate (Date (fromGregorian 1997 05 04))),
                            eventOccurrenceEndOrDuration = Nothing
                          },
                        EventOccurrence
                          { eventOccurrenceStart =
-                             Just (DateTimeStartDate (Date (fromGregorian 1977 07 04))),
+                             Just (DateTimeStartDate (Date (fromGregorian 1997 07 04))),
                            eventOccurrenceEndOrDuration = Nothing
                          },
                        EventOccurrence
                          { eventOccurrenceStart =
-                             Just (DateTimeStartDate (Date (fromGregorian 1977 09 04))),
+                             Just (DateTimeStartDate (Date (fromGregorian 1997 09 04))),
                            eventOccurrenceEndOrDuration = Nothing
                          }
                      ]
@@ -217,7 +217,7 @@ spec = do
         Nothing
         [RecurrenceDateTimes (DateTimesFloating [LocalTime (fromGregorian 1975 02 23) (TimeOfDay 02 00 00)])]
         `shouldBe` [ EventOccurrence
-                       { eventOccurrenceStart = Just (DateTimeStartDateTime (DateTimeFloating (LocalTime (fromGregorian 1977 02 23) (TimeOfDay 02 00 00)))),
+                       { eventOccurrenceStart = Just (DateTimeStartDateTime (DateTimeFloating (LocalTime (fromGregorian 1975 02 23) (TimeOfDay 02 00 00)))),
                          eventOccurrenceEndOrDuration = Nothing
                        }
                    ]
