@@ -668,15 +668,11 @@ value:
         time: 2022-07-07 09:28:12
       - state: TODO
         time: 2022-07-04 22:20:25
-  - header: for properties, use the names that they have in the spec
-    state-history:
-    - state: TODO
-      time: 2022-04-07 10:24:24
-  - header: for parameters, use the names that they have in the spec
-    state-history:
-    - state: TODO
-      time: 2022-04-07 10:24:32
-  - header: 'Don''t require prodid: some people don''t make them'
+  - header: 'Don''t require prodid while parsing?: some people don''t make them'
     state-history:
     - state: TODO
       time: 2022-04-07 10:24:12
+  - header: Test recurrence against other implementations
+    state-history:
+    - state: TODO
+      time: 2022-09-15 07:53:56

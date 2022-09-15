@@ -43,4 +43,5 @@ test-suite ical-recurrence-test
     , ical-recurrence
     , ical-recurrence-gen
     , sydtest
+    , time
   default-language: Haskell2010

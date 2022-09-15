@@ -159,6 +159,7 @@ data DateTime
     -- @
     -- FORM #2: DATE WITH UTC TIME
     -- @
+    -- TODO: Consider using a LocalTime here too.
     DateTimeUTC !Time.UTCTime
   | -- |
     -- @
