@@ -15,6 +15,7 @@ library
       ICal.Component.Class
       ICal.Component.Event
       ICal.Component.TimeZone
+      ICal.Conformance
       ICal.ContentLine
       ICal.Parameter
       ICal.Property
