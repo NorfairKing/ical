@@ -16,6 +16,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Proxy
 import Data.Set (Set)
+import qualified Data.Set as S
 import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
@@ -483,6 +484,13 @@ instance IsComponent TimeZone where
   componentP = vTimeZoneP
   componentB = vTimeZoneB
 
+makeTimeZone :: TZID -> NonEmpty TimeZoneObservance -> TimeZone
+makeTimeZone tzid observances =
+  TimeZone
+    { timeZoneId = tzid,
+      timeZoneObservances = observances
+    }
+
 vTimeZoneP :: CP TimeZone
 vTimeZoneP = do
   timeZoneProperties <- takeWhileP (Just "timeZoneProperties") $ \ContentLine {..} ->
@@ -590,6 +598,17 @@ instance Validity Observance where
 
 instance NFData Observance
 
+makeObservance :: Time.LocalTime -> TimeZoneOffsetFrom -> TimeZoneOffsetTo -> Observance
+makeObservance start from to =
+  Observance
+    { observanceDateTimeStart = start,
+      observanceTimeZoneOffsetFrom = from,
+      observanceTimeZoneOffsetTo = to,
+      observanceRecurrenceRule = S.empty,
+      observanceComment = S.empty,
+      observanceTimeZoneName = S.empty
+    }
+
 observanceP :: CP Observance
 observanceP = do
   observanceProperties <- takeWhileP (Just "observanceProperties") $ \ContentLine {..} ->
@@ -628,3 +647,9 @@ observanceB Observance {..} =
       propertySetB observanceComment,
       propertySetB observanceTimeZoneName
     ]
+
+resolveLocalTime :: TimeZone -> Time.LocalTime -> Time.UTCTime
+resolveLocalTime = undefined
+
+unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
+unresolveLocalTime = undefined
