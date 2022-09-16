@@ -12,6 +12,7 @@ library
   exposed-modules:
       ICal
       ICal.Component
+      ICal.Component.Class
       ICal.ContentLine
       ICal.Parameter
       ICal.Property

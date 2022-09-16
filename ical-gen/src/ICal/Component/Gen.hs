@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import ICal.Component
+import ICal.Component.Class
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property

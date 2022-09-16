@@ -608,6 +608,10 @@ value:
         time: 2022-09-13 13:32:46
       - state: TODO
         time: 2022-09-09 14:11:24
+    - header: Refactor components into modules
+      state-history:
+      - state: TODO
+        time: 2022-09-16 09:11:40
     - header: Implement timezone resolution to
       state-history:
       - state: TODO
