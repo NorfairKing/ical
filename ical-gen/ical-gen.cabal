@@ -49,9 +49,10 @@ test-suite ical-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      ICal.Component.EventSpec
+      ICal.Component.TimeZoneSpec
       ICal.ComponentSpec
       ICal.ContentLineSpec
-      ICal.EventSpec
       ICal.ParameterSpec
       ICal.PropertySpec
       ICal.PropertyType.DateSpec
@@ -65,7 +66,6 @@ test-suite ical-test
       ICal.PropertyType.URISpec
       ICal.PropertyType.UTCOffsetSpec
       ICal.PropertyTypeSpec
-      ICal.TimeZoneSpec
       ICal.UnfoldedLineSpec
       ICalSpec
       Paths_ical_gen
