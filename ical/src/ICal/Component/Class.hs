@@ -12,32 +12,23 @@
 
 module ICal.Component.Class where
 
-import Control.Applicative.Permutations
 import Control.Arrow (left)
-import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
-import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Property
-import ICal.PropertyType.Class
-import ICal.PropertyType.Date
-import ICal.PropertyType.DateTime
-import ICal.PropertyType.Duration
 import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
 import Text.Megaparsec
@@ -267,3 +258,48 @@ parseSomeSubcomponents cls = do
   case NE.nonEmpty cs of
     Nothing -> fail "expected at least one subcompent"
     Just ne -> pure ne
+
+validateMDateTimeStartRRule :: Maybe DateTimeStart -> Set RecurrenceRule -> Validation
+validateMDateTimeStartRRule mDateTimeStart recurrenceRules =
+  case mDateTimeStart of
+    Nothing ->
+      -- [section 3.8.2.4. Date-Time Start](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
+      --
+      -- @
+      -- This property is
+      -- REQUIRED in all types of recurring calendar components that
+      -- specify the "RRULE" property.
+      -- @
+      declare "If there is no DTSTART, then there are no recurrence rules" $
+        S.null recurrenceRules
+    Just dateTimeStart -> validateDateTimeStartRRule dateTimeStart recurrenceRules
+
+validateDateTimeStartRRule :: DateTimeStart -> Set RecurrenceRule -> Validation
+validateDateTimeStartRRule dateTimeStart recurrenceRules =
+  decorateList (S.toList recurrenceRules) $ \recurrenceRule ->
+    case recurrenceRuleUntilCount recurrenceRule of
+      Just (Left u) ->
+        -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+        -- @
+        -- The value of the UNTIL rule part MUST have the same
+        -- value type as the "DTSTART" property.
+        -- Furthermore, if the
+        -- "DTSTART" property is specified as a date with local time, then
+        -- the UNTIL rule part MUST also be specified as a date with local
+        -- time.
+        -- If the "DTSTART" property is specified as a date with UTC
+        -- time or a date with local time and time zone reference, then the
+        -- UNTIL rule part MUST be specified as a date with UTC time.
+        -- @
+        let msg =
+              unlines
+                [ "The value type of the UNTIL rule part has the same value type as the DTSTART property.",
+                  show dateTimeStart,
+                  show u
+                ]
+         in declare msg $
+              case (dateTimeStart, u) of
+                (DateTimeStartDate _, UntilDate _) -> True
+                (DateTimeStartDateTime _, UntilDateTime _) -> True
+                _ -> False
+      _ -> mempty
