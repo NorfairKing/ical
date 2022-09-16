@@ -153,6 +153,12 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
                 )
                 periods
 
+exactDuration :: DateTime -> DateTime -> Time.NominalDiffTime
+exactDuration dt1 dt2 = case (dt1, dt2) of
+  (DateTimeLocalTime lt1, DateTimeLocalTime lt2) -> Time.diffLocalTime lt1 lt2 -- Assuming the same timezone
+  (DateTimeUTCTime ut1, DateTimeUTCTime ut2) -> Time.diffUTCTime ut1 ut2
+  (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> undefined "Exact duration offsets between two zoned times are not supported yet."
+
 resolveEndOrDurationDate ::
   DateTimeStart ->
   Maybe (Either DateTimeEnd Duration) ->
