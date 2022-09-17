@@ -55,13 +55,6 @@ spec = do
           Left err -> expectationFailure err
           Right actual -> actual `shouldBe` contentLine
 
-  describe "parseContentLines" $
-    it "roundtrips with renderContentLines" $
-      forAllValid $ \contentLines ->
-        case parseContentLines (renderContentLines contentLines) of
-          Left err -> expectationFailure err
-          Right actual -> actual `shouldBe` contentLines
-
   describe "examples" $ do
     -- Examples from the spec
     let examples :: [(ContentLine, Text)]
@@ -172,7 +165,7 @@ spec = do
     scenarioDirRecur "test_resources/calendars" $ \calFile ->
       it "can parse and unfold every line" $ do
         contents <- SB.readFile calFile
-        case parseContentLines =<< left show (TE.decodeUtf8' contents) of
+        case mapM parseContentLineFromUnfoldedLine =<< left show . parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
           Left err -> expectationFailure err
           Right contentLines -> shouldBeValid contentLines
 

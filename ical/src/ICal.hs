@@ -38,6 +38,7 @@ type ICalendar = [Calendar]
 
 data ICalParseError
   = TextDecodingError !TE.UnicodeException
+  | UnfoldingError !UnfoldingError
   | OtherError !String
   deriving (Show, Eq)
 
@@ -63,14 +64,14 @@ parseICalendarByteString contents = do
 -- | Parse a VCALENDAR stream
 parseICalendar :: Text -> Conform ICalParseError Void Void ICalendar
 parseICalendar contents = do
-  unfoldedLines <- conformFromEither $ left OtherError $ parseUnfoldedLines contents
+  unfoldedLines <- conformFromEither $ left UnfoldingError $ parseUnfoldedLines contents
   contentLines <- conformFromEither $ left OtherError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformFromEither $ left OtherError $ parseICalendarFromContentLines contentLines
 
 -- | Parse a single VCALENDAR
 parseVCalendar :: Text -> Conform ICalParseError Void Void Calendar
 parseVCalendar contents = do
-  unfoldedLines <- conformFromEither $ left OtherError $ parseUnfoldedLines contents
+  unfoldedLines <- conformFromEither $ left UnfoldingError $ parseUnfoldedLines contents
   contentLines <- conformFromEither $ left OtherError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformFromEither $ left OtherError $ parseVCalendarFromContentLines contentLines
 
@@ -94,7 +95,8 @@ renderICalendarByteString = TE.encodeUtf8 . renderICalendar
 -- | Render a VCALENDAR stream
 renderICalendar :: ICalendar -> Text
 renderICalendar =
-  renderContentLines
+  renderUnfoldedLines
+    . map renderContentLineToUnfoldedLine
     . DList.toList
     . iCalendarB
 

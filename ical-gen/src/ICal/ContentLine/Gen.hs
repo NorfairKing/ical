@@ -2,14 +2,15 @@
 
 module ICal.ContentLine.Gen where
 
-import Data.CaseInsensitive as CI
+import qualified Data.CaseInsensitive as CI
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Map ()
 import Data.GenValidity.Text
-import Data.Text
+import Data.Text (Text)
 import qualified Data.Text as T
 import ICal.ContentLine
+import ICal.UnfoldedLine
 import Test.QuickCheck
 
 instance GenValid ContentLine where
@@ -67,3 +68,8 @@ genAtLeastNOf i g
 
 genVendorIdChar :: Gen Char
 genVendorIdChar = genValid `suchThat` (validationIsValid . validateVendorIdChar)
+
+renderContentLines :: [ContentLine] -> Text
+renderContentLines =
+  renderUnfoldedLines
+    . map renderContentLineToUnfoldedLine

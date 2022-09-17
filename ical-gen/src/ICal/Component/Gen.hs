@@ -181,13 +181,14 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
   it "can parse this file as a timezone and roundtrip it" $ do
     let parseBS bs = do
           textContents <- left show $ TE.decodeUtf8' bs
-          unfoldedLines <- parseUnfoldedLines textContents
+          unfoldedLines <- left show $ parseUnfoldedLines textContents
           contentLines <- mapM parseContentLineFromUnfoldedLine unfoldedLines
           parseComponentFromContentLines contentLines
 
         renderBS =
           TE.encodeUtf8
-            . renderContentLines
+            . renderUnfoldedLines
+            . map renderContentLineToUnfoldedLine
             . DList.toList
             . componentSectionB
 

@@ -1,10 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ICal.UnfoldedLine where
 
+import Control.Exception
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -61,8 +63,15 @@ newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
 
 instance Validity UnfoldedLine -- TODO: requirement that it's a single line?
 
+data UnfoldingError = NoCRLFAtEnd
+  deriving (Show, Eq)
+
+instance Exception UnfoldingError where
+  displayException = \case
+    NoCRLFAtEnd -> "Document did not end in a crlf."
+
 -- TODO we can probably do something more efficient here with megaparsec.
-parseUnfoldedLines :: Text -> Either String [UnfoldedLine]
+parseUnfoldedLines :: Text -> Either UnfoldingError [UnfoldedLine]
 parseUnfoldedLines t
   | T.null t = Right []
   | T.takeEnd 2 t == "\r\n" =
@@ -94,7 +103,7 @@ parseUnfoldedLines t
       -- @
       . T.replace "\r\n " ""
       $ t
-  | otherwise = Left "Document did not end in a crlf."
+  | otherwise = Left NoCRLFAtEnd
 
 renderUnfoldedLines :: [UnfoldedLine] -> Text
 renderUnfoldedLines = LT.toStrict . LTB.toLazyText . unfoldedLinesB

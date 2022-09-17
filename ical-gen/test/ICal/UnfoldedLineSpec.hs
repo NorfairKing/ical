@@ -70,6 +70,6 @@ spec = do
   scenarioDirRecur "test_resources/calendars" $ \calFile ->
     it "can parse and unfold every line" $ do
       contents <- SB.readFile calFile
-      case parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
+      case left show . parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
         Left err -> expectationFailure err
         Right unfoldedLines -> shouldBeValid unfoldedLines

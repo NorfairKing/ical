@@ -12,9 +12,11 @@ import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import GHC.Stack
 import ICal.ContentLine
+import ICal.ContentLine.Gen (renderContentLines)
 import ICal.Parameter.Gen ()
 import ICal.Property
 import ICal.PropertyType.Gen
+import ICal.UnfoldedLine
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -134,7 +136,7 @@ propertyRenderExampleSpec expected value =
     it "renders this example correctly" $
       context (show value) $
         let cl = propertyContentLineB value
-         in context (T.unpack (renderContentLines [cl])) $
+         in context (T.unpack (renderUnfoldedLines [renderContentLineToUnfoldedLine cl])) $
               cl `shouldBe` expected
 
 propertyParseExampleSpec ::

@@ -223,12 +223,6 @@ paramValueCI = \case
   UnquotedParam ci -> ci
   QuotedParam t -> CI.mk t
 
-renderContentLines :: [ContentLine] -> Text
-renderContentLines = renderUnfoldedLines . map renderContentLineToUnfoldedLine
-
-parseContentLines :: Text -> Either String [ContentLine]
-parseContentLines = parseUnfoldedLines >=> mapM parseContentLineFromUnfoldedLine
-
 -- @
 -- When parsing a content line, folded lines MUST first be unfolded
 -- according to the unfolding procedure described above.

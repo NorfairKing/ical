@@ -5,6 +5,7 @@
 
 module ICal.Conformance where
 
+import Control.Arrow (first)
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
@@ -40,6 +41,9 @@ newtype ConformT ue fe w m a = ConformT
       MonadError (HaltReason ue fe),
       MonadWriter (Notes fe w)
     )
+
+instance MonadTrans (ConformT ue fe w) where
+  lift = ConformT . lift . lift . lift
 
 data HaltReason ue fe
   = HaltedBecauseOfUnfixableError !ue
@@ -142,6 +146,13 @@ conformFromEither :: Monad m => Either ue a -> ConformT ue fe w m a
 conformFromEither = \case
   Left ue -> unfixableError ue
   Right r -> pure r
+
+conformMapError :: Functor m => (ue1 -> ue2) -> ConformT ue1 fe w m a -> ConformT ue2 fe w m a
+conformMapError func (ConformT cFunc) = ConformT $ mapReaderT (mapWriterT (withExceptT (haltReasonMapError func))) cFunc
+  where
+    haltReasonMapError f = \case
+      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError (f ue)
+      HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness fe
 
 emitWarning :: Monad m => w -> ConformT ue fe w m ()
 emitWarning w = tell (Notes [] [w])
