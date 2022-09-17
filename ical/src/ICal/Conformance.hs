@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ICal.Conformance where
@@ -48,6 +49,7 @@ data Notes fe w = Notes
   { notesFixableErrors :: ![fe],
     notesWarnings :: ![w]
   }
+  deriving (Show, Eq)
 
 instance Semigroup (Notes w fe) where
   (<>) (Notes fes1 ws1) (Notes fes2 ws2) =
@@ -122,11 +124,24 @@ type Conform ue fe w a = ConformT ue fe w Identity a
 runConformFlexible :: (fe -> Bool) -> Conform ue fe w a -> Either (HaltReason ue fe) (a, Notes fe w)
 runConformFlexible predicate = runIdentity . runConformTFlexible predicate
 
+-- | Don't fix any fixable errors, and don't allow any warnings either
+--
+-- This is standard-complient, but potentially more strict than necessary.
+runConformStrict ::
+  Conform ue fe w a ->
+  Either (Either ue (Notes fe w)) a
+runConformStrict = runIdentity . runConformTStrict
+
 fixAll :: fe -> Bool
 fixAll = const True
 
 fixNone :: fe -> Bool
 fixNone = const False
+
+conformFromEither :: Either ue a -> Conform ue fe w a
+conformFromEither = \case
+  Left ue -> unfixableError ue
+  Right r -> pure r
 
 emitWarning :: Monad m => w -> ConformT ue fe w m ()
 emitWarning w = tell (Notes [] [w])

@@ -7,6 +7,7 @@ import qualified Data.Text as T
 import Data.Time
 import ICal
 import ICal.Component.Gen ()
+import ICal.Conformance.TestUtils
 import Test.Syd
 import Test.Syd.Validity
 
@@ -107,13 +108,11 @@ spec = do
   scenarioDirRecur "test_resources/calendars" $ \calFile ->
     it "can parse this calendar" $ do
       contents <- SB.readFile calFile
-      case parseICalendarByteString contents of
-        Left err -> expectationFailure err
-        Right ical -> do
-          shouldBeValid ical
-          case parseICalendarByteString (renderICalendarByteString ical) of
-            Left err -> expectationFailure err
-            Right ical' -> ical' `shouldBe` ical
+      ical <- shouldConformStrict $ parseICalendarByteString contents
+      shouldBeValid ical
+      let rendered = renderICalendarByteString ical
+      ical' <- shouldConformStrict $ parseICalendarByteString rendered
+      ical' `shouldBe` ical
 
   describe "renderVCalendar" $
     it "roundtrips with parseVCalendar" $
@@ -135,7 +134,7 @@ spec = do
 
   describe "renderICalendarByteString" $
     it "roundtrips with parseICalendarByteString" $
-      forAllValid $ \iCalendar ->
-        case parseICalendarByteString (renderICalendarByteString iCalendar) of
-          Left err -> expectationFailure err
-          Right iCalendar' -> iCalendar' `shouldBe` iCalendar
+      forAllValid $ \iCalendar -> do
+        let rendered = renderICalendarByteString iCalendar
+        iCalendar' <- shouldConformStrict $ parseICalendarByteString rendered
+        iCalendar' `shouldBe` iCalendar

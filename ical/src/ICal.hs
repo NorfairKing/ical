@@ -13,7 +13,9 @@ import Data.ByteString (ByteString)
 import qualified Data.DList as DList
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
+import Data.Void
 import ICal.Component
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
@@ -47,8 +49,8 @@ type ICalendar = [Calendar]
 -- The "charset" Content-Type parameter MUST be used in MIME transports
 -- to specify the charset being used.
 -- @
-parseICalendarByteString :: ByteString -> Either String ICalendar
-parseICalendarByteString contents = do
+parseICalendarByteString :: ByteString -> Conform String Void Void ICalendar
+parseICalendarByteString contents = conformFromEither $ do
   textContents <- left show $ TE.decodeUtf8' contents
   parseICalendar textContents
 

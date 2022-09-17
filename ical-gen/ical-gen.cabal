@@ -11,6 +11,7 @@ build-type:     Simple
 library
   exposed-modules:
       ICal.Component.Gen
+      ICal.Conformance.TestUtils
       ICal.ContentLine.Gen
       ICal.Parameter.Gen
       ICal.Property.Gen
