@@ -13,6 +13,7 @@ library:
   - deepseq
   - dlist
   - megaparsec
+  - mtl
   - network-uri
   - parser-combinators
   - text

@@ -1,65 +1,75 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module ICal.Conformance where
 
-data Conform w fe ue a
-  = Conforming a
-  | -- |
-    -- For "SHOULD"s and "SHOULD NOT"s that were not met
-    WithWarnings [w] a
-  | -- |
-    -- For "MUST"s and "MUST NOT"s that were not met
-    WithFixableErrors
-      [w]
-      [fe]
-      a
-  | -- |
-    -- For unfixable errors.
-    Errors [ue]
+import Control.Monad.Except
+import Control.Monad.Reader
+import Control.Monad.Writer.Strict
 
-instance Functor (Conform w fe ue) where
-  fmap f = \case
-    Conforming a -> Conforming (f a)
-    WithWarnings ws a -> WithWarnings ws (f a)
-    WithFixableErrors ws fes a -> WithFixableErrors ws fes (f a)
-    Errors es -> Errors es
+-- | A conforming monad transformer to compute a result according to a spec.
+--
+-- RFC 2119 describes these terms:
+--
+-- 1. MUST and MUST NOT:
+--    These describe absolute requirements or absolute prohibitions.
+--    However, some implementations still do not adhere to these.
+--    Some of those situations are fixable, and some are not.
+--
+--    If the situation is fixable, we can either error out (a strict implementation) or apply the fix.
+--    The @fe@ parameter represents fixable errors, which can either be emitted as warnings, or errored on.
+--    A predicate @(fe -> Bool)@ decides whether to fix the error. (The predicate returns True.)
+-- 2. SHOULD and SHOULD NOT:
+--    These describe weaker requirements or prohibitions.
+--    The @w@ parameter represents warnings to represent cases where requirements or prohibitions were violated.
+newtype ConformT w fe ue m a = Conform
+  { unConform ::
+      ReaderT (fe -> Bool) (ExceptT (HaltReason fe ue) (WriterT (Notes w fe) m)) a
+  }
+  deriving newtype
+    ( Functor,
+      Applicative,
+      Monad,
+      MonadReader (fe -> Bool),
+      MonadError (HaltReason fe ue),
+      MonadWriter (Notes w fe)
+    )
 
-instance Applicative (Conform w fe ue) where
-  pure = Conforming
-  (<*>) ff fa = case (ff, fa) of
-    (Conforming f, Conforming a) -> Conforming (f a)
-    (Conforming f, WithWarnings ws a) -> WithWarnings ws (f a)
-    (Conforming f, WithFixableErrors ws fes a) -> WithFixableErrors ws fes (f a)
-    (WithWarnings ws f, Conforming a) -> WithWarnings ws (f a)
-    (WithWarnings ws1 f, WithWarnings ws2 a) -> WithWarnings (ws1 ++ ws2) (f a)
-    (WithWarnings ws1 f, WithFixableErrors ws2 fes a) -> WithFixableErrors (ws1 ++ ws2) fes (f a)
-    (WithFixableErrors ws fes f, Conforming a) -> WithFixableErrors ws fes (f a)
-    (WithFixableErrors ws1 fes f, WithWarnings ws2 a) -> WithFixableErrors (ws1 ++ ws2) fes (f a)
-    (WithFixableErrors ws1 fes1 f, WithFixableErrors ws2 fes2 a) -> WithFixableErrors (ws1 ++ ws2) (fes1 ++ fes2) (f a)
-    (Errors es1, Errors es2) -> Errors (es1 ++ es2)
-    (_, Errors es2) -> Errors es2
-    (Errors es1, _) -> Errors es1
+data HaltReason fe ue
+  = HaltedBecauseOfStrictness fe
+  | HaltedBecauseOfUnfixableError ue
 
-instance Monad (Conform w fe ue) where
-  (>>=) m f = case m of
-    Conforming a -> f a
-    WithWarnings ws1 a -> case f a of
-      Conforming b -> Conforming b
-      WithWarnings ws2 b -> WithWarnings (ws1 ++ ws2) b
-      WithFixableErrors ws2 fes b -> WithFixableErrors (ws1 ++ ws2) fes b
-      Errors es -> Errors es
-    WithFixableErrors ws1 fes1 a -> case f a of
-      Conforming b -> Conforming b
-      WithWarnings ws2 b -> WithFixableErrors (ws1 ++ ws2) fes1 b
-      WithFixableErrors ws2 fes2 b -> WithFixableErrors (ws1 ++ ws2) (fes1 ++ fes2) b
-      Errors es -> Errors es
-    Errors es -> Errors es
+data Notes w fe = Notes
+  { notesWarnings :: [w],
+    notesFixableErrors :: [fe]
+  }
 
-emitWarning :: w -> Conform w fe ue ()
-emitWarning w = WithWarnings [w] ()
+instance Semigroup (Notes w fe) where
+  (<>) (Notes ws1 fes1) (Notes ws2 fes2) =
+    Notes
+      { notesWarnings = ws1 ++ ws2,
+        notesFixableErrors = fes1 ++ fes2
+      }
 
-emitFixableError :: fe -> Conform w fe ue ()
-emitFixableError fe = WithFixableErrors [] [fe] ()
+instance Monoid (Notes w fe) where
+  mempty = Notes [] []
+  mappend = (<>)
 
-unfixableError :: ue -> Conform w fe ue a
-unfixableError ue = Errors [ue]
+runConformT ::
+  (fe -> Bool) ->
+  ConformT w fe ue m a ->
+  m (Either (HaltReason fe ue) (Notes w fe, a))
+runConformT = undefined
+
+emitWarning :: Monad m => w -> ConformT w fe ue m ()
+emitWarning w = tell (Notes [w] [])
+
+emitFixableError :: Monad m => fe -> ConformT w fe ue m ()
+emitFixableError fe = do
+  predicate <- ask
+  if predicate fe
+    then tell (Notes [] [fe])
+    else throwError (HaltedBecauseOfStrictness fe)
+
+unfixableError :: Monad m => ue -> ConformT w fe ue m a
+unfixableError ue = throwError (HaltedBecauseOfUnfixableError ue)
