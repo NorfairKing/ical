@@ -15,7 +15,9 @@ import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
 import Data.Validity
 import Data.Validity.Text ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 
 -- | An unfolded line of text, the required newlines are already stripped.
 --
@@ -63,22 +65,29 @@ newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
 
 instance Validity UnfoldedLine -- TODO: requirement that it's a single line?
 
-data UnfoldingError = NoCRLFAtEnd
+data UnfoldingError = NoCRLFAtEnd -- TODO this is a fixable error, I think.
   deriving (Show, Eq)
 
 instance Exception UnfoldingError where
   displayException = \case
     NoCRLFAtEnd -> "Document did not end in a crlf."
 
+data UnfoldingWarning = LineTooLong
+  deriving (Show, Eq)
+
+instance Exception UnfoldingWarning where
+  displayException = \case
+    LineTooLong -> "Line was too long, so not folded according to spec: \"Lines of text SHOULD NOT be longer than 75 octets, excluding the line break.\""
+
 -- TODO we can probably do something more efficient here with megaparsec.
-parseUnfoldedLines :: Text -> Either UnfoldingError [UnfoldedLine]
+parseUnfoldedLines :: Text -> Conform UnfoldingError Void Void [UnfoldedLine]
 parseUnfoldedLines t
-  | T.null t = Right []
+  | T.null t = pure []
   | T.takeEnd 2 t == "\r\n" =
-    Right
+    pure
       . map UnfoldedLine
       . init -- Ignore the last, empty, line
-      -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545)
+      -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
       -- @
       -- Content lines are delimited by a line break,
       -- which is a CRLF sequence (CR character followed by LF character).
@@ -103,7 +112,7 @@ parseUnfoldedLines t
       -- @
       . T.replace "\r\n " ""
       $ t
-  | otherwise = Left NoCRLFAtEnd
+  | otherwise = unfixableError NoCRLFAtEnd
 
 renderUnfoldedLines :: [UnfoldedLine] -> Text
 renderUnfoldedLines = LT.toStrict . LTB.toLazyText . unfoldedLinesB

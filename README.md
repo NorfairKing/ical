@@ -2,6 +2,11 @@
 
 An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
 
+## Goals
+
+* Strict RFC Compliance
+* Being able to deal with some of other implementors' failures to comply with the spec
+
 ## Implementation checklist
 
    - [X] 1.  Introduction

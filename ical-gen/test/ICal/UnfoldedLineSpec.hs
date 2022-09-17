@@ -5,6 +5,8 @@ module ICal.UnfoldedLineSpec where
 import Control.Arrow (left)
 import qualified Data.ByteString as SB
 import qualified Data.Text.Encoding as TE
+import ICal.Conformance
+import ICal.Conformance.TestUtils
 import ICal.UnfoldedLine
 import ICal.UnfoldedLine.Gen ()
 import Test.Syd
@@ -14,13 +16,13 @@ spec :: Spec
 spec = do
   describe "parseUnfoldedLines" $ do
     it "parses empty text as no lines" $
-      parseUnfoldedLines "" `shouldBe` Right []
+      shouldConformStrict (parseUnfoldedLines "") `shouldReturn` []
     it "parses an empty line as such" $
-      parseUnfoldedLines "\r\n" `shouldBe` Right [""]
+      shouldConformStrict (parseUnfoldedLines "\r\n") `shouldReturn` [""]
     it "roundtrips with renderUnfoldedLinesText" $
       forAllValid $ \unfoldedLines ->
-        parseUnfoldedLines (renderUnfoldedLines unfoldedLines)
-          `shouldBe` Right unfoldedLines
+        shouldConformStrict (parseUnfoldedLines (renderUnfoldedLines unfoldedLines))
+          `shouldReturn` unfoldedLines
 
     -- Test based on this part of the spec:
     --
@@ -39,7 +41,7 @@ spec = do
     it "parses these two into the same unfolded lines:" $ do
       let line1 = "DESCRIPTION:This is a long description that exists on a long line.\r\n"
       let line2 = "DESCRIPTION:This is a lo\r\n ng description\r\n  that exists on a long line.\r\n"
-      parseUnfoldedLines line1 `shouldBe` parseUnfoldedLines line2
+      runConformStrict (parseUnfoldedLines line1) `shouldBe` runConformStrict (parseUnfoldedLines line2)
   describe "renderUnfoldedLinesText" $ do
     it "renders no lines as nothing" $
       renderUnfoldedLines [] `shouldBe` ""
@@ -70,6 +72,6 @@ spec = do
   scenarioDirRecur "test_resources/calendars" $ \calFile ->
     it "can parse and unfold every line" $ do
       contents <- SB.readFile calFile
-      case left show . parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
+      case left show . (runConformStrict . parseUnfoldedLines) =<< left show (TE.decodeUtf8' contents) of
         Left err -> expectationFailure err
         Right unfoldedLines -> shouldBeValid unfoldedLines

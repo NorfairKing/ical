@@ -18,6 +18,7 @@ import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import ICal.Component
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property
@@ -181,7 +182,7 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
   it "can parse this file as a timezone and roundtrip it" $ do
     let parseBS bs = do
           textContents <- left show $ TE.decodeUtf8' bs
-          unfoldedLines <- left show $ parseUnfoldedLines textContents
+          unfoldedLines <- left show $ runConformStrict $ parseUnfoldedLines textContents
           contentLines <- mapM parseContentLineFromUnfoldedLine unfoldedLines
           parseComponentFromContentLines contentLines
 

@@ -14,6 +14,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.UnfoldedLine
@@ -165,7 +166,7 @@ spec = do
     scenarioDirRecur "test_resources/calendars" $ \calFile ->
       it "can parse and unfold every line" $ do
         contents <- SB.readFile calFile
-        case mapM parseContentLineFromUnfoldedLine =<< left show . parseUnfoldedLines =<< left show (TE.decodeUtf8' contents) of
+        case mapM parseContentLineFromUnfoldedLine =<< left show . (runConformStrict . parseUnfoldedLines) =<< left show (TE.decodeUtf8' contents) of
           Left err -> expectationFailure err
           Right contentLines -> shouldBeValid contentLines
 
