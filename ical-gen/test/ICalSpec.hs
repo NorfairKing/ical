@@ -96,13 +96,14 @@ spec = do
                 ]
             }
         ]
-  it "renders this example from the spec correctly" $
-    parseICalendar (renderICalendar expectedICal) `shouldBe` parseICalendar exampleText
+  it "renders this example from the spec correctly" $ do
+    actual <- shouldConformStrict $ parseICalendar (renderICalendar expectedICal)
+    expected <- shouldConformStrict $ parseICalendar exampleText
+    actual `shouldBe` expected
 
-  it "parses this example from the spec correctly" $
-    case parseICalendar exampleText of
-      Left err -> expectationFailure err
-      Right iCalendar -> iCalendar `shouldBe` expectedICal
+  it "parses this example from the spec correctly" $ do
+    iCalendar <- shouldConformStrict $ parseICalendar exampleText
+    iCalendar `shouldBe` expectedICal
 
   -- Tests based on example calendars
   scenarioDirRecur "test_resources/calendars" $ \calFile ->
@@ -119,18 +120,18 @@ spec = do
       forAllValid $ \vCalendar ->
         let rendered = renderVCalendar vCalendar
             ctx = unlines ["Rendered VCALENDAR:", T.unpack rendered]
-         in context ctx $ case parseVCalendar rendered of
-              Left err -> expectationFailure err
-              Right vCalendar' -> vCalendar' `shouldBe` vCalendar
+         in context ctx $ do
+              vCalendar' <- shouldConformStrict $ parseVCalendar rendered
+              vCalendar' `shouldBe` vCalendar
 
   describe "renderICalendar" $
     it "roundtrips with parseICalendar" $
       forAllValid $ \iCalendar ->
         let rendered = renderICalendar iCalendar
             ctx = unlines ["Rendered VCALENDAR stream:", T.unpack rendered]
-         in context ctx $ case parseICalendar rendered of
-              Left err -> expectationFailure err
-              Right iCalendar' -> iCalendar' `shouldBe` iCalendar
+         in context ctx $ do
+              iCalendar' <- shouldConformStrict $ parseICalendar rendered
+              iCalendar' `shouldBe` iCalendar
 
   describe "renderICalendarByteString" $
     it "roundtrips with parseICalendarByteString" $

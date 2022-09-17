@@ -138,7 +138,7 @@ fixAll = const True
 fixNone :: fe -> Bool
 fixNone = const False
 
-conformFromEither :: Either ue a -> Conform ue fe w a
+conformFromEither :: Monad m => Either ue a -> ConformT ue fe w m a
 conformFromEither = \case
   Left ue -> unfixableError ue
   Right r -> pure r
