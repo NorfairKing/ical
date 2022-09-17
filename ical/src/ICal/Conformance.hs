@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ICal.Conformance where
 
@@ -7,6 +8,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
 import Data.Functor.Identity
+import Data.Void
 
 -- | A conforming monad transformer to compute a result according to a spec.
 --
@@ -39,12 +41,12 @@ newtype ConformT ue fe w m a = ConformT
     )
 
 data HaltReason ue fe
-  = HaltedBecauseOfUnfixableError ue
-  | HaltedBecauseOfStrictness fe
+  = HaltedBecauseOfUnfixableError !ue
+  | HaltedBecauseOfStrictness !fe
 
 data Notes fe w = Notes
-  { notesFixableErrors :: [fe],
-    notesWarnings :: [w]
+  { notesFixableErrors :: ![fe],
+    notesWarnings :: ![w]
   }
 
 instance Semigroup (Notes w fe) where
@@ -58,16 +60,73 @@ instance Monoid (Notes w fe) where
   mempty = Notes [] []
   mappend = (<>)
 
-runConformT ::
+nullNotes :: Notes w fe -> Bool
+nullNotes Notes {..} = null notesFixableErrors && null notesWarnings
+
+-- | Most flexible way to run a 'ConformT'
+runConformTFlexible ::
   (fe -> Bool) ->
   ConformT ue fe w m a ->
   m (Either (HaltReason ue fe) (a, Notes fe w))
-runConformT predicate (ConformT func) = runExceptT (runWriterT (runReaderT func predicate))
+runConformTFlexible predicate (ConformT func) = runExceptT (runWriterT (runReaderT func predicate))
+
+-- | Don't fix any fixable errors.
+--
+-- This is standard-complient
+runConformT ::
+  Monad m =>
+  ConformT ue fe w m a ->
+  m (Either (HaltReason ue fe) (a, Notes Void w))
+runConformT func = do
+  errOrTup <- runConformTFlexible fixNone func
+  pure $ do
+    (a, notes) <- errOrTup
+    pure (a, notes {notesFixableErrors = []})
+
+-- | Don't fix any fixable errors, and don't allow any warnings either
+--
+-- This is standard-complient, but potentially more strict than necessary.
+runConformTStrict ::
+  Monad m =>
+  ConformT ue fe w m a ->
+  m (Either (Either ue (Notes fe w)) a)
+runConformTStrict func = do
+  errOrTup <- runConformTFlexible fixNone func
+  pure $ case errOrTup of
+    Left haltReason -> case haltReason of
+      HaltedBecauseOfUnfixableError ue -> Left (Left ue)
+      -- Cannot happen, but is fine if it does.
+      HaltedBecauseOfStrictness fe -> Left (Right (Notes [fe] []))
+    Right (a, notes) -> if nullNotes notes then Right a else Left (Right notes)
+
+-- | Fix as much as possible
+--
+-- That this is __not__ standard-complient.
+runConformTLenient ::
+  Monad m =>
+  ConformT ue fe w m a ->
+  m (Either (HaltReason ue Void) (a, Notes fe w))
+runConformTLenient func = do
+  errOrTup <- runConformTFlexible fixAll func
+  pure $ case errOrTup of
+    Left hr -> Left $ case hr of
+      HaltedBecauseOfStrictness _ ->
+        HaltedBecauseOfStrictness
+          (error "cannot happen, but this cannot be proven to the compiler.")
+      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError ue
+    Right r -> Right r
 
 type Conform ue fe w a = ConformT ue fe w Identity a
 
-runConform :: (fe -> Bool) -> Conform ue fe w a -> Either (HaltReason ue fe) (a, Notes fe w)
-runConform predicate = runIdentity . runConformT predicate
+-- | Most flexible way to run a 'Conform'
+runConformFlexible :: (fe -> Bool) -> Conform ue fe w a -> Either (HaltReason ue fe) (a, Notes fe w)
+runConformFlexible predicate = runIdentity . runConformTFlexible predicate
+
+fixAll :: fe -> Bool
+fixAll = const True
+
+fixNone :: fe -> Bool
+fixNone = const False
 
 emitWarning :: Monad m => w -> ConformT ue fe w m ()
 emitWarning w = tell (Notes [] [w])
