@@ -12,7 +12,6 @@ import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import GHC.Stack
 import ICal.ContentLine
-import ICal.ContentLine.Gen (renderContentLines)
 import ICal.Parameter.Gen ()
 import ICal.Property
 import ICal.PropertyType.Gen

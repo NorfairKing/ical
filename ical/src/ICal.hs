@@ -39,6 +39,7 @@ type ICalendar = [Calendar]
 data ICalParseError
   = TextDecodingError !TE.UnicodeException
   | UnfoldingError !UnfoldingError
+  | ContentLineParseError !String
   | OtherError !String
   deriving (Show, Eq)
 
@@ -65,14 +66,14 @@ parseICalendarByteString contents = do
 parseICalendar :: Text -> Conform ICalParseError Void Void ICalendar
 parseICalendar contents = do
   unfoldedLines <- conformMapError UnfoldingError $ parseUnfoldedLines contents
-  contentLines <- conformFromEither $ left OtherError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+  contentLines <- conformFromEither $ left ContentLineParseError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformFromEither $ left OtherError $ parseICalendarFromContentLines contentLines
 
 -- | Parse a single VCALENDAR
 parseVCalendar :: Text -> Conform ICalParseError Void Void Calendar
 parseVCalendar contents = do
   unfoldedLines <- conformMapError UnfoldingError $ parseUnfoldedLines contents
-  contentLines <- conformFromEither $ left OtherError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+  contentLines <- conformFromEither $ left ContentLineParseError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformFromEither $ left OtherError $ parseVCalendarFromContentLines contentLines
 
 -- | Render an ICalendar as a ByteString using the UTF8 encoding.

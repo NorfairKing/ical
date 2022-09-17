@@ -5,7 +5,6 @@
 
 module ICal.Conformance where
 
-import Control.Arrow (first)
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
