@@ -11,5 +11,7 @@ pkgs.haskell.lib.buildStackProject {
     icalInterops.python-echo
     zlib
   ] ++ pre-commit.tools;
-  shellHook = pre-commit.run.shellHook;
+  shellHook = pre-commit.run.shellHook + ''
+    export SPEC=${pkgs.rfc5545}
+  '';
 }
