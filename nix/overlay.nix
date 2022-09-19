@@ -63,10 +63,12 @@ with final.haskell.lib;
       url = "https://www.rfc-editor.org/rfc/rfc5545.html";
       hash = "sha256-6bhmOfGmDONCkWyapkcaQVCbiFCxWQNC/jIXe0InkwU=";
     })
-    (final.fetchurl {
-      url = "https://www.rfc-editor.org/errata/rfc5545";
-      hash = "sha256-hSHdXXCd1DmU3v8wK9DkGuP1DTQffLPhJVguod5lMEc=";
-    })
+    # TODO get individual erata in case more are found.
+    # TODO get the other relevant rfcs
+    # (final.fetchurl {
+    #   url = "https://www.rfc-editor.org/errata/rfc5545";
+    #   hash = "sha256-hSHdXXCd1DmU3v8wK9DkGuP1DTQffLPhJVguod5lMEc=";
+    # })
   ];
 
   haskellPackages = previous.haskellPackages.override (
