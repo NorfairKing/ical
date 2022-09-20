@@ -6,8 +6,10 @@
 
 module ICal.PropertyType.DateTimeSpec where
 
+import Data.Either
 import qualified Data.Map as M
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Gen
@@ -96,7 +98,7 @@ spec = do
     --        19980119T230000-0800       ;Invalid time format
     -- @
     it "fails to parse this invalid datetime" $
-      case dateTimeP (mkSimpleContentLineValue "19980119T230000-0800") of
+      case runConformStrict (dateTimeP (mkSimpleContentLineValue "19980119T230000-0800")) of
         Left _ -> pure ()
         Right _ -> expectationFailure "Should have failed to parse."
 
@@ -106,4 +108,4 @@ spec = do
               { contentLineValueRaw = "19970714T173000Z",
                 contentLineValueParams = M.singleton "VALUE" ["DATE"]
               }
-       in dateTimeP clv `shouldBe` Left "Invalid VALUE"
+       in runConformStrict (dateTimeP clv) `shouldSatisfy` isLeft

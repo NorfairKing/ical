@@ -18,7 +18,6 @@ module ICal.Property where
 
 import Control.Arrow (left)
 import Control.DeepSeq
-import Control.Monad
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -36,7 +35,7 @@ import ICal.PropertyType
 import Text.Read
 
 data PropertyParseError
-  = PropertyTypeParseError !String
+  = PropertyTypeParseError !PropertyTypeParseError
   | ParameterParseError !String
   | OtherPropertyParseError !String
   deriving (Show, Eq, Ord)
@@ -103,7 +102,7 @@ viaPropertyTypeP ::
   (propertyType -> Conform PropertyParseError Void Void property) ->
   (ContentLineValue -> Conform PropertyParseError Void Void property)
 viaPropertyTypeP func clv = do
-  propertyType <- conformFromEither $ left PropertyTypeParseError $ propertyTypeP clv
+  propertyType <- conformMapError PropertyTypeParseError $ propertyTypeP clv
   func propertyType
 
 wrapPropertyTypeP ::
@@ -952,11 +951,8 @@ instance NFData GeographicPosition
 
 instance IsProperty GeographicPosition where
   propertyName Proxy = "GEO"
-  propertyP = viaPropertyTypeP (conformFromEither . left PropertyTypeParseError . parseGeographicPosition)
+  propertyP = viaPropertyTypeP (conformFromEither . left OtherPropertyParseError . parseGeographicPosition)
   propertyB = mkSimpleContentLineValue . renderGeographicPosition
-
-geographicPositionP :: ContentLineValue -> Either String GeographicPosition
-geographicPositionP = propertyTypeP >=> parseGeographicPosition
 
 parseGeographicPosition :: Text -> Either String GeographicPosition
 parseGeographicPosition t = case T.splitOn ";" t of
@@ -1828,7 +1824,7 @@ instance NFData RecurrenceDateTimes
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
   propertyP clv = do
-    mValue <- conformFromEither $ left PropertyTypeParseError $ optionalParam $ contentLineValueParams clv
+    mValue <- conformFromEither $ left ParameterParseError $ optionalParam $ contentLineValueParams clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv

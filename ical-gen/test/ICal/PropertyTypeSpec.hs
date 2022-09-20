@@ -1,12 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module ICal.PropertyTypeSpec where
 
-import Control.Monad
 import Data.Text (Text)
 import ICal.ContentLine
 import ICal.PropertyType.Class
@@ -18,18 +16,9 @@ spec :: Spec
 spec = do
   describe "Text" $ do
     propertyTypeSpec @Text
-    let examples :: [(Text, ContentLineValue)]
-        examples =
-          [ ( "Project XYZ Final Review\nConference Room - 3B\nCome Prepared.",
-              mkSimpleContentLineValue "Project XYZ Final Review\\nConference Room - 3B\\nCome Prepared."
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(text, clv) -> do
-        it "renders this example text correctly" $
-          propertyTypeB text `shouldBe` clv
-        it "parses this example text correctly" $
-          propertyTypeP clv `shouldBe` Right text
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "Project XYZ Final Review\\nConference Room - 3B\\nCome Prepared.")
+      ("Project XYZ Final Review\nConference Room - 3B\nCome Prepared." :: Text)
 
   describe "escapeText" $ do
     it "escapes this diverse example correctly" $

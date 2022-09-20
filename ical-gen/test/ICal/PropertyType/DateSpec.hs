@@ -6,10 +6,12 @@
 
 module ICal.PropertyType.DateSpec where
 
+import Data.Either
 import qualified Data.Map as M
 import Data.Time (fromGregorian)
+import ICal.Conformance
 import ICal.ContentLine
-import ICal.PropertyType.Date
+import ICal.PropertyType
 import ICal.PropertyType.Gen
 import Test.Syd
 import Test.Syd.Validity
@@ -29,23 +31,23 @@ spec = do
                          contentLineValueRaw = "19970714"
                        }
                    )
-    it "parses this date correctly" $
-      dateP
-        (mkSimpleContentLineValue "19970714")
-        `shouldBe` Right (Date (fromGregorian 1997 07 14))
-    it "parses this date correctly" $
-      dateP
-        ( ContentLineValue
-            { contentLineValueRaw = "19970714",
-              contentLineValueParams = M.singleton "VALUE" ["DATE"]
-            }
-        )
-        `shouldBe` Right (Date (fromGregorian 1997 07 14))
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "19970714")
+      (Date (fromGregorian 1997 07 14))
+    propertyTypeRenderExampleSpec
+      ( ContentLineValue
+          { contentLineValueRaw = "19970714",
+            contentLineValueParams = M.singleton "VALUE" ["DATE"]
+          }
+      )
+      (Date (fromGregorian 1997 07 14))
     it "fails to parse this date, correctly" $
-      dateP
-        ( ContentLineValue
-            { contentLineValueRaw = "19970714",
-              contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
-            }
+      runConformStrict
+        ( dateP
+            ( ContentLineValue
+                { contentLineValueRaw = "19970714",
+                  contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
+                }
+            )
         )
-        `shouldBe` Left "Invalid VALUE"
+        `shouldSatisfy` isLeft

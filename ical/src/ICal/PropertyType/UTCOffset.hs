@@ -3,6 +3,7 @@
 
 module ICal.PropertyType.UTCOffset where
 
+import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Int
 import Data.Text (Text)
@@ -11,6 +12,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import Text.Read

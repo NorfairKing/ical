@@ -4,6 +4,7 @@
 
 module ICal.PropertyType.DateTimesSpec where
 
+import ICal.Conformance
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.DateTimes
@@ -21,6 +22,6 @@ spec = do
     it "can parse any single datetime as a datetimes set of one element" $
       forAllValid $ \dateTime ->
         let clv = propertyTypeB (dateTime :: DateTime)
-         in case propertyTypeP clv :: Either String DateTimes of
-              Left err -> expectationFailure err
-              Right _ -> pure ()
+         in case runConformStrict (propertyTypeP clv) of
+              Left err -> expectationFailure (show err)
+              Right dateTimes -> shouldBeValid (dateTimes :: DateTimes)

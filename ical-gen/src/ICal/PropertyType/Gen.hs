@@ -14,6 +14,7 @@ import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
 import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime (..), localTimeToUTC, utc, utcToLocalTime)
 import GHC.Stack
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
@@ -180,8 +181,8 @@ propertyTypeParseExampleSpec ::
 propertyTypeParseExampleSpec clv expected = withFrozenCallStack $
   it "parses this example correctly" $
     context (show clv) $
-      case propertyTypeP clv of
-        Left err -> expectationFailure err
+      case runConformStrict $ propertyTypeP clv of
+        Left err -> expectationFailure $ show err
         Right actual -> actual `shouldBe` expected
 
 propertyTypeExampleSpec ::
@@ -208,13 +209,14 @@ propertyTypeSpec = withFrozenCallStack $ do
 
   it "parses only valid things" $
     forAllValid $ \a ->
-      case propertyTypeP (propertyTypeB (a :: a)) of
+      case runConformStrict $ propertyTypeP (propertyTypeB (a :: a)) of
         Left _ -> pure ()
         Right a' -> shouldBeValid (a' :: a)
 
   it "roundtrips through ContentLine" $
     forAllValid $ \propertyType ->
       let value = propertyTypeB (propertyType :: a)
-       in context (show value) $ case propertyTypeP value of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` propertyType
+       in context (show value) $
+            case runConformStrict $ propertyTypeP value of
+              Left err -> expectationFailure $ show err
+              Right actual -> actual `shouldBe` propertyType

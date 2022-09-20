@@ -11,7 +11,6 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal.ContentLine
-import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
@@ -163,22 +162,14 @@ spec = do
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
     propertyTypeSpec @RecurrenceRule
-    let examples :: [(ContentLineValue, RecurrenceRule)]
-        examples =
-          [ ( mkSimpleContentLineValue "FREQ=YEARLY;INTERVAL=2;BYMINUTE=30;BYHOUR=8,9;BYDAY=SU;BYMONTH=1",
-              ( (makeRecurrenceRule Yearly)
-                  { recurrenceRuleFrequency = Yearly,
-                    recurrenceRuleInterval = Interval {unInterval = 2},
-                    recurrenceRuleByMinute = [ByMinute {unByMinute = 30}],
-                    recurrenceRuleByHour = [ByHour {unByHour = 8}, ByHour {unByHour = 9}],
-                    recurrenceRuleByDay = [Every Sunday],
-                    recurrenceRuleByMonth = [ByMonth {unByMonth = January}]
-                  }
-              )
-            )
-          ]
-    forM_ examples $ \(clv, recurrenceRule) -> do
-      it "can parse this example" $
-        propertyTypeP clv `shouldBe` Right recurrenceRule
-      it "can render this example" $
-        propertyTypeB recurrenceRule `shouldBe` clv
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "FREQ=YEARLY;INTERVAL=2;BYMINUTE=30;BYHOUR=8,9;BYDAY=SU;BYMONTH=1")
+      ( (makeRecurrenceRule Yearly)
+          { recurrenceRuleFrequency = Yearly,
+            recurrenceRuleInterval = Interval {unInterval = 2},
+            recurrenceRuleByMinute = [ByMinute {unByMinute = 30}],
+            recurrenceRuleByHour = [ByHour {unByHour = 8}, ByHour {unByHour = 9}],
+            recurrenceRuleByDay = [Every Sunday],
+            recurrenceRuleByMonth = [ByMonth {unByMonth = January}]
+          }
+      )

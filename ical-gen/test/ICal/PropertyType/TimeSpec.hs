@@ -6,9 +6,9 @@
 
 module ICal.PropertyType.TimeSpec where
 
-import Control.Monad
 import qualified Data.Map as M
 import Data.Time (TimeOfDay (..))
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Gen
 import ICal.PropertyType.Time
@@ -22,25 +22,21 @@ spec = do
     propertyTypeSpec @Time
 
   describe "timeP" $ do
-    let examples :: [(Time, ContentLineValue)]
-        examples =
-          [ (TimeFloating $ TimeOfDay 23 00 00, mkSimpleContentLineValue "230000"),
-            (TimeUTC $ TimeOfDay 07 00 00, mkSimpleContentLineValue "070000Z"),
-            ( TimeZoned "America/New_York" (TimeOfDay 08 30 00),
-              ContentLineValue
-                { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
-                  contentLineValueRaw = "083000"
-                }
-            )
-          ]
-    describe "examples" $
-      forM_ examples $ \(time, text) -> do
-        it "renders this example time correctly" $
-          timeB time `shouldBe` text
-        it "parses this example text correctly" $
-          timeP text `shouldBe` Right time
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "230000")
+      (TimeFloating $ TimeOfDay 23 00 00)
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "070000Z")
+      (TimeUTC $ TimeOfDay 07 00 00)
+    propertyTypeExampleSpec
+      ( ContentLineValue
+          { contentLineValueParams = M.singleton "TZID" ["America/New_York"],
+            contentLineValueRaw = "083000"
+          }
+      )
+      (TimeZoned "America/New_York" (TimeOfDay 08 30 00))
 
     it "fails to parse this counterexample from the spec" $
-      case timeP (mkSimpleContentLineValue "230000-0800") of
+      case runConformStrict $ timeP (mkSimpleContentLineValue "230000-0800") of
         Left _ -> pure ()
         Right time -> expectationFailure $ "Should have failed to parse, but parsed: " <> show time

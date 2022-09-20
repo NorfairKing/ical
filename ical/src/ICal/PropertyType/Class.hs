@@ -26,6 +26,7 @@ import ICal.Parameter
 
 data PropertyTypeParseError
   = OtherPropertyTypeParseError !String
+  deriving (Show, Eq, Ord)
 
 -- | Property type
 --
