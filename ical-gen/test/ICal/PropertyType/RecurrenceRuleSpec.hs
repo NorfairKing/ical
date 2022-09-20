@@ -37,7 +37,7 @@ spec = do
     let examples :: [(Text, Until)]
         examples =
           [ ("20220622", UntilDate $ Date $ fromGregorian 2022 06 22),
-            ("20220622T124500Z", UntilDateTime $ localTimeToUTC utc $ LocalTime (fromGregorian 2022 06 22) (TimeOfDay 12 45 00))
+            ("20220622T124500Z", UntilDateTimeUTC $ localTimeToUTC utc $ LocalTime (fromGregorian 2022 06 22) (TimeOfDay 12 45 00))
           ]
     forM_ examples $ \(pvs, until_) -> do
       it "can parse this example" $

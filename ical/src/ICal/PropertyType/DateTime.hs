@@ -243,9 +243,7 @@ dateTimeP clv@ContentLineValue {..} = do
     Right dateTime -> pure dateTime
 
 dateTimeFloatingP :: ContentLineValue -> Either String Time.LocalTime
-dateTimeFloatingP ContentLineValue {..} =
-  let s = T.unpack contentLineValueRaw
-   in parseTimeEither dateTimeFloatingFormatStr s
+dateTimeFloatingP ContentLineValue {..} = parseDateTimeFloating contentLineValueRaw
 
 dateTimeUTCP :: ContentLineValue -> Either String Time.UTCTime
 dateTimeUTCP ContentLineValue {..} =
@@ -258,7 +256,7 @@ dateTimeB dt = insertParam TypeDateTime $ case dt of
   DateTimeZoned tzidParam lt -> dateTimeZonedB tzidParam lt
 
 dateTimeFloatingB :: Time.LocalTime -> ContentLineValue
-dateTimeFloatingB = mkSimpleContentLineValue . T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
+dateTimeFloatingB = mkSimpleContentLineValue . renderDateTimeFloating
 
 dateTimeUTCB :: Time.UTCTime -> ContentLineValue
 dateTimeUTCB = mkSimpleContentLineValue . renderDateTimeUTC
@@ -269,6 +267,12 @@ dateTimeZonedB tzidParam lt =
     { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),
       contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
     }
+
+parseDateTimeFloating :: Text -> Either String Time.LocalTime
+parseDateTimeFloating = parseTimeEither dateTimeFloatingFormatStr . T.unpack
+
+renderDateTimeFloating :: Time.LocalTime -> Text
+renderDateTimeFloating = T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
 
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"

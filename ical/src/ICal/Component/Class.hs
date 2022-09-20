@@ -35,7 +35,7 @@ import Data.Void
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
-import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
@@ -330,8 +330,13 @@ validateDateTimeStartRRule dateTimeStart recurrenceRules =
                   show u
                 ]
          in declare msg $
-              case (dateTimeStart, u) of
-                (DateTimeStartDate _, UntilDate _) -> True
-                (DateTimeStartDateTime _, UntilDateTime _) -> True
-                _ -> False
+              case dateTimeStart of
+                DateTimeStartDate _ -> case u of
+                  UntilDate _ -> True
+                  _ -> False
+                DateTimeStartDateTime dateTime -> case (dateTime, u) of
+                  (DateTimeFloating _, UntilDateTimeFloating _) -> True
+                  (DateTimeUTC _, UntilDateTimeUTC _) -> True
+                  (DateTimeZoned _ _, UntilDateTimeUTC _) -> True
+                  _ -> False
       _ -> mempty

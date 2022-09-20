@@ -770,14 +770,57 @@ intervalB = T.pack . show . unInterval
 -- with UTC time.  If specified as a DATE-TIME value, then it MUST be
 -- specified in a UTC time format.
 -- @
+--
+-- However, we find the following in [Erratum 4414 (verified)]https://www.rfc-editor.org/errata/eid4414):
+-- @
+-- Section 3.3.10 says:
+--       The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+--       the recurrence rule in an inclusive manner.  If the value
+--       specified by UNTIL is synchronized with the specified recurrence,
+--       this DATE or DATE-TIME becomes the last instance of the
+--       recurrence.  The value of the UNTIL rule part MUST have the same
+--       value type as the "DTSTART" property.  Furthermore, if the
+--       "DTSTART" property is specified as a date with local time, then
+--       the UNTIL rule part MUST also be specified as a date with local
+--       time.  If the "DTSTART" property is specified as a date with UTC
+--       time or a date with local time and time zone reference, then the
+--       UNTIL rule part MUST be specified as a date with UTC time.  In the
+--       case of the "STANDARD" and "DAYLIGHT" sub-components the UNTIL
+--       rule part MUST always be specified as a date with UTC time.  If
+--       specified as a DATE-TIME value, then it MUST be specified in a UTC
+--       time format.  If not present, and the COUNT rule part is also not
+--       present, the "RRULE" is considered to repeat forever.
+--
+-- It should say:
+--
+--       The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+--       the recurrence rule in an inclusive manner.  If the value
+--       specified by UNTIL is synchronized with the specified recurrence,
+--       this DATE or DATE-TIME becomes the last instance of the
+--       recurrence.  The value of the UNTIL rule part MUST have the same
+--       value type as the "DTSTART" property.  Furthermore, if the
+--       "DTSTART" property is specified as a date with local time, then
+--       the UNTIL rule part MUST also be specified as a date with local
+--       time.  If the "DTSTART" property is specified as a date with UTC
+--       time or a date with local time and time zone reference, then the
+--       UNTIL rule part MUST be specified as a date with UTC time.  In the
+--       case of the "STANDARD" and "DAYLIGHT" sub-components the UNTIL
+--       rule part MUST always be specified as a date with UTC time.
+--       If not present, and the COUNT rule part is also not
+--       present, the "RRULE" is considered to repeat forever.
+--
+-- Notes:
+--
+-- The following sentence from RFC 2445 should have been removed from the text.
+--
+-- If
+-- specified as a DATE-TIME value, then it MUST be specified in a UTC
+-- time format.
+-- @
 data Until
   = UntilDate !Date
-  | -- |
-    -- @
-    -- with UTC time.  If specified as a DATE-TIME value, then it MUST be
-    -- specified in a UTC time format.
-    -- @
-    UntilDateTime !Time.UTCTime
+  | UntilDateTimeFloating !Time.LocalTime
+  | UntilDateTimeUTC !Time.UTCTime
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Until where
@@ -786,7 +829,8 @@ instance Validity Until where
       [ genericValidate u,
         case u of
           UntilDate _ -> valid
-          UntilDateTime ut -> validateImpreciseUTCTime ut
+          UntilDateTimeFloating lt -> validateImpreciseLocalTime lt
+          UntilDateTimeUTC ut -> validateImpreciseUTCTime ut
       ]
 
 instance NFData Until
@@ -799,12 +843,14 @@ instance IsRecurrenceRulePart Until where
 untilP :: Text -> Either String Until
 untilP t =
   (UntilDate <$> parseDate t)
-    <|> (UntilDateTime <$> parseDateTimeUTC t)
+    <|> (UntilDateTimeUTC <$> parseDateTimeUTC t)
+    <|> (UntilDateTimeFloating <$> parseDateTimeFloating t)
 
 untilB :: Until -> Text
 untilB = \case
   UntilDate d -> renderDate d
-  UntilDateTime lt -> renderDateTimeUTC lt
+  UntilDateTimeFloating lt -> renderDateTimeFloating lt
+  UntilDateTimeUTC ut -> renderDateTimeUTC ut
 
 newtype Count = Count {unCount :: Word}
   deriving (Show, Eq, Ord, Generic)

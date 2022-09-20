@@ -23,9 +23,9 @@ import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property
 import ICal.Property.Gen ()
+import ICal.PropertyType
 import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.Gen
-import ICal.PropertyType.RecurrenceRule
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd
@@ -57,10 +57,23 @@ instance GenValid Event where
         case recurrenceRuleUntilCount rrule of
           Just (Left u) -> case (u, dtstart) of
             (UntilDate _, DateTimeStartDate _) -> pure rrule
-            (UntilDateTime _, DateTimeStartDateTime _) -> pure rrule
-            (_, DateTimeStartDateTime _) -> do
-              ut <- genValid
-              pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTime ut})
+            (UntilDateTimeFloating _, DateTimeStartDateTime dt) -> case dt of
+              DateTimeFloating _ -> pure rrule
+              _ -> do
+                ut <- genImpreciseUTCTime
+                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
+            (UntilDateTimeUTC _, DateTimeStartDateTime dt) -> case dt of
+              DateTimeFloating _ -> do
+                lt <- genImpreciseLocalTime
+                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeFloating lt})
+              _ -> pure rrule
+            (UntilDate _, DateTimeStartDateTime dt) -> case dt of
+              DateTimeFloating _ -> do
+                lt <- genImpreciseLocalTime
+                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeFloating lt})
+              _ -> do
+                ut <- genImpreciseUTCTime
+                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
             (_, DateTimeStartDate _) -> do
               d <- genValid
               pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDate d})
@@ -125,10 +138,10 @@ instance GenValid Observance where
       rrule <- genValid
       case recurrenceRuleUntilCount rrule of
         Just (Left u) -> case u of
-          UntilDateTime _ -> pure rrule
-          _ -> do
+          UntilDate _ -> do
             ut <- genValid
-            pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTime ut})
+            pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
+          _ -> pure rrule
         _ -> pure rrule
 
     observanceComment <- genValid

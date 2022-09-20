@@ -339,13 +339,12 @@ vEventP = do
                   let newUntil = case dt of
                         -- This guess is somewhat sensible.
                         DateTimeUTC (Time.UTCTime _ sdt) ->
-                          UntilDateTime (Time.UTCTime ud sdt)
-                        -- This guess is bad.
+                          UntilDateTimeUTC (Time.UTCTime ud sdt)
                         DateTimeFloating (Time.LocalTime _ tod) ->
-                          UntilDateTime (Time.UTCTime ud (Time.timeOfDayToTime tod))
-                        -- This guess is even worse.
+                          UntilDateTimeFloating (Time.LocalTime ud tod)
+                        -- This guess is bad
                         DateTimeZoned _ (Time.LocalTime _ tod) ->
-                          UntilDateTime (Time.UTCTime ud (Time.timeOfDayToTime tod))
+                          UntilDateTimeUTC (Time.UTCTime ud (Time.timeOfDayToTime tod))
                    in rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
                 _ -> rrule
               _ -> rrule
