@@ -16,7 +16,9 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
@@ -177,15 +179,18 @@ timeOfDayShowsPrec d (Time.TimeOfDay h_ m_ s_) =
             else showsPrec 11 s_
         )
 
-timeP :: ContentLineValue -> Either String Time
+timeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time
 timeP ContentLineValue {..} = do
   parseOfValue TypeTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
-  case lookupParam contentLineValueParams of
-    Nothing ->
-      (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
-        <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
-    Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
+  let errOrTime = case lookupParam contentLineValueParams of
+        Nothing ->
+          (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
+            <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
+        Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
+  case errOrTime of
+    Left err -> unfixableError $ OtherPropertyTypeParseError err
+    Right time -> pure time
 
 timeB :: Time -> ContentLineValue
 timeB =

@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -9,6 +8,8 @@
 
 module ICal.PropertyType.Class where
 
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map (Map)
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -18,7 +19,13 @@ import Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
+import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
+
+data PropertyTypeParseError
+  = OtherPropertyTypeParseError !String
 
 -- | Property type
 --
@@ -42,7 +49,7 @@ import ICal.ContentLine
 -- >>> forAllValid $ \property -> propertyTypeP (propertyTypeB property) == Right property
 class IsPropertyType propertyType where
   -- | Parser for the property type
-  propertyTypeP :: ContentLineValue -> Either String propertyType
+  propertyTypeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void propertyType
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
@@ -106,12 +113,10 @@ class IsPropertyType propertyType where
 --     Project XYZ Final Review\nConference Room - 3B\nCome Prepared.
 -- @
 instance IsPropertyType Text where
-  propertyTypeP :: ContentLineValue -> Either String Text
-  propertyTypeP = Right . unEscapeText . contentLineValueRaw
-  propertyTypeB :: Text -> ContentLineValue
+  propertyTypeP = pure . unEscapeText . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
-propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Either String [propertyType]
+propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Conform PropertyTypeParseError Void Void [propertyType]
 propertyTypeListP clv =
   if T.null (contentLineValueRaw clv)
     then pure []
@@ -131,11 +136,23 @@ propertyTypeListB = \case
             contentLineValueRaw clv : map (contentLineValueRaw . propertyTypeB) pts
      in clv {contentLineValueRaw = raw}
 
-propertyTypeSetP :: (Ord propertyType, IsPropertyType propertyType) => ContentLineValue -> Either String (Set propertyType)
+propertyTypeSetP :: (Ord propertyType, IsPropertyType propertyType) => ContentLineValue -> Conform PropertyTypeParseError Void Void (Set propertyType)
 propertyTypeSetP = fmap S.fromList . propertyTypeListP
 
 propertyTypeSetB :: IsPropertyType propertyType => Set propertyType -> ContentLineValue
 propertyTypeSetB = propertyTypeListB . S.toList
+
+parseOfValue :: ValueDataType -> Map ParamName (NonEmpty ParamValue) -> Conform PropertyTypeParseError Void Void ()
+parseOfValue typ params = do
+  case optionalParam params of
+    Left err -> unfixableError $ OtherPropertyTypeParseError err -- TODO much better error
+    Right mValue ->
+      case mValue of
+        Just typ' ->
+          if typ == typ'
+            then pure ()
+            else unfixableError $ OtherPropertyTypeParseError "Invalid VALUE" -- TODO better error
+        _ -> pure ()
 
 -- | Escape 'Text'
 --

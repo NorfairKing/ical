@@ -6,6 +6,7 @@
 
 module ICal.PropertyType.Period where
 
+import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Data
 import Data.Set (Set)
@@ -13,12 +14,12 @@ import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Duration
-import Text.Megaparsec
 
 -- | Period
 --
@@ -99,14 +100,14 @@ instance IsPropertyType Period where
     parseOfValue TypePeriod $ contentLineValueParams clv
     case T.splitOn "/" (contentLineValueRaw clv) of
       [startStr, endOrDurationStr] -> do
-        startDateTime <- parseDateTimeUTC startStr
+        startDateTime <- conformFromEither $ left OtherPropertyTypeParseError $ parseDateTimeUTC startStr
         endOrDuration <-
-          (Left <$> parseDateTimeUTC endOrDurationStr)
-            <|> (Right <$> parseDuration endOrDurationStr)
+          (Left <$> conformFromEither (left OtherPropertyTypeParseError (parseDateTimeUTC endOrDurationStr)))
+            `altConform` (Right <$> parseDuration endOrDurationStr)
         pure $ case endOrDuration of
           Left end -> PeriodStartEnd startDateTime end
           Right duration -> PeriodStartDuration startDateTime duration
-      _ -> Left "Expected two pieces separated by /"
+      _ -> unfixableError $ OtherPropertyTypeParseError "Expected two pieces separated by /"
   propertyTypeB =
     insertParam TypePeriod . mkSimpleContentLineValue
       . T.intercalate "/"

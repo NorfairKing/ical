@@ -19,7 +19,9 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
@@ -227,15 +229,18 @@ dateTimeDate =
     -- This is where the warning is relevant
     DateTimeZoned _ lt -> Time.localDay lt
 
-dateTimeP :: ContentLineValue -> Either String DateTime
+dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTime
 dateTimeP clv@ContentLineValue {..} = do
   parseOfValue TypeDateTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
-  case lookupParam contentLineValueParams of
-    Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
-    _ ->
-      (DateTimeFloating <$> dateTimeFloatingP clv)
-        <|> (DateTimeUTC <$> dateTimeUTCP clv)
+  let errOrDateTime = case lookupParam contentLineValueParams of
+        Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
+        _ ->
+          (DateTimeFloating <$> dateTimeFloatingP clv)
+            <|> (DateTimeUTC <$> dateTimeUTCP clv)
+  case errOrDateTime of
+    Left err -> unfixableError $ OtherPropertyTypeParseError err
+    Right dateTime -> pure dateTime
 
 dateTimeFloatingP :: ContentLineValue -> Either String Time.LocalTime
 dateTimeFloatingP ContentLineValue {..} =

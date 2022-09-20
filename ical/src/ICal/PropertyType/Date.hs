@@ -17,7 +17,9 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
@@ -95,10 +97,12 @@ diffDates (Date a) (Date b) = Time.diffDays a b
 dateAddDays :: Integer -> Date -> Date
 dateAddDays diff (Date a) = Date $ Time.addDays diff a
 
-dateP :: ContentLineValue -> Either String Date
+dateP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Date
 dateP ContentLineValue {..} = do
   parseOfValue TypeDate contentLineValueParams
-  parseDate contentLineValueRaw
+  case parseDate contentLineValueRaw of
+    Left err -> unfixableError $ OtherPropertyTypeParseError err
+    Right date -> pure date
 
 dateB :: Date -> ContentLineValue
 dateB = insertParam TypeDate . mkSimpleContentLineValue . renderDate

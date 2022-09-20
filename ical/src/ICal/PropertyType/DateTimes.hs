@@ -10,6 +10,7 @@
 
 module ICal.PropertyType.DateTimes where
 
+import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Set
 import qualified Data.Set as S
@@ -17,7 +18,9 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
@@ -74,11 +77,11 @@ instance IsPropertyType DateTimes where
   propertyTypeB = dateTimesB
 
 -- TODO this can probably be much more efficient using a custom parser.
-dateTimesP :: ContentLineValue -> Either String DateTimes
+dateTimesP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTimes
 dateTimesP clv = do
   parseOfValue TypeDateTime $ contentLineValueParams clv
   set <- propertyTypeSetP clv
-  fromSet set
+  conformFromEither . left OtherPropertyTypeParseError $ fromSet set
 
 fromSet :: Set DateTime -> Either String DateTimes
 fromSet set = case S.lookupMin set of

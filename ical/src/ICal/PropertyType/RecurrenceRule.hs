@@ -28,7 +28,9 @@ import Data.Time as Time
 import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
@@ -545,28 +547,36 @@ instance IsPropertyType RecurrenceRule where
 
 recurrenceRuleP ::
   ContentLineValue ->
-  Either String RecurrenceRule
+  Conform PropertyTypeParseError Void Void RecurrenceRule
 recurrenceRuleP ContentLineValue {..} = do
   -- contentLineValueParams are ignored
   let parts = T.splitOn ";" contentLineValueRaw
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
-    [] -> Left "Could not parse recurrence rule part."
+    [] -> unfixableError $ OtherPropertyTypeParseError "Could not parse recurrence rule part."
     (k : vs) -> pure (k, T.intercalate "=" vs)
-  let parsePart :: forall part. IsRecurrenceRulePart part => Either String part
+  let parsePart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void part
       parsePart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in case lookup name tups of
-              Nothing -> Left $ "Recurrence rule part not found: " <> show name
-              Just val -> recurrenceRulePartP val
-      parseMPart :: forall part. IsRecurrenceRulePart part => Either String (Maybe part)
+              Nothing -> unfixableError $ OtherPropertyTypeParseError $ "Recurrence rule part not found: " <> show name
+              Just val -> case recurrenceRulePartP val of
+                Left err -> unfixableError $ OtherPropertyTypeParseError err
+                Right p -> pure p
+
+      parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void (Maybe part)
       parseMPart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
-         in mapM recurrenceRulePartP (lookup name tups)
+         in mapM
+              ( \v -> case recurrenceRulePartP v of
+                  Left err -> unfixableError $ OtherPropertyTypeParseError err
+                  Right p -> pure p
+              )
+              (lookup name tups)
 
-      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Either String part
+      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Conform PropertyTypeParseError Void Void part
       parseDPart defaultValue = fromMaybe defaultValue <$> parseMPart
 
-      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Either String (Set part)
+      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Conform PropertyTypeParseError Void Void (Set part)
       parseSetPart = parseDPart S.empty
 
   recurrenceRuleFrequency <- parsePart

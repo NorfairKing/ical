@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module ICal.PropertyType.FloatingPoint where
@@ -10,6 +9,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import Text.Printf
@@ -56,11 +56,9 @@ instance Validity FloatingPoint where
 instance NFData FloatingPoint
 
 instance IsPropertyType FloatingPoint where
-  propertyTypeP :: ContentLineValue -> Either String FloatingPoint
   propertyTypeP ContentLineValue {..} =
     let s = T.unpack contentLineValueRaw
      in case readMaybe s of
-          Nothing -> Left $ unwords ["Could not read FLOAT: " <> s]
-          Just f -> Right (FloatingPoint f)
-  propertyTypeB :: FloatingPoint -> ContentLineValue
+          Nothing -> unfixableError $ OtherPropertyTypeParseError $ unwords ["Could not read FLOAT: " <> s]
+          Just f -> pure (FloatingPoint f)
   propertyTypeB = mkSimpleContentLineValue . T.pack . printf "%f" . unFloatingPoint

@@ -67,14 +67,8 @@ utcOffsetAbsBound = ((24 * 60) + 60) * 60 + 60
 instance NFData UTCOffset
 
 instance IsPropertyType UTCOffset where
-  propertyTypeP = utcOffsetP
-  propertyTypeB = utcOffsetB
-
-utcOffsetP :: ContentLineValue -> Either String UTCOffset
-utcOffsetP = parseUTCOffset . contentLineValueRaw
-
-utcOffsetB :: UTCOffset -> ContentLineValue
-utcOffsetB = mkSimpleContentLineValue . renderUTCOffset
+  propertyTypeP = conformFromEither . left OtherPropertyTypeParseError . parseUTCOffset . contentLineValueRaw
+  propertyTypeB = mkSimpleContentLineValue . renderUTCOffset
 
 parseUTCOffset :: Text -> Either String UTCOffset
 parseUTCOffset =

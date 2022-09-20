@@ -329,13 +329,3 @@ instance IsParameter ValueDataType where
     TypeURI -> "URI"
     TypeUTCOffset -> "UTC-OFFSET"
     OtherType pv -> pv
-
-parseOfValue :: ValueDataType -> Map ParamName (NonEmpty ParamValue) -> Either String ()
-parseOfValue typ params = do
-  mValue <- optionalParam params
-  case mValue of
-    Just typ' ->
-      if typ == typ'
-        then pure ()
-        else Left "Invalid VALUE" -- TODO better error
-    _ -> pure ()

@@ -14,6 +14,7 @@ import qualified Data.Text as T
 import Data.Validity
 import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import Text.Megaparsec
@@ -198,8 +199,8 @@ renderSign = \case
   Positive -> []
   Negative -> "-"
 
-parseDuration :: Text -> Either String Duration
-parseDuration = left errorBundlePretty . parse go ""
+parseDuration :: Text -> Conform PropertyTypeParseError Void Void Duration
+parseDuration = either (unfixableError . OtherPropertyTypeParseError) pure . left errorBundlePretty . parse go ""
   where
     go :: Parsec Void Text Duration
     go = do

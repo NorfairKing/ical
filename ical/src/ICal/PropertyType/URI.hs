@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.URI where
 
+import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -16,6 +17,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Validity.URI
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import qualified Network.URI as Network
@@ -61,14 +63,8 @@ instance Validity URI
 instance NFData URI
 
 instance IsPropertyType URI where
-  propertyTypeP = uriP
-  propertyTypeB = uriB
-
-uriP :: ContentLineValue -> Either String URI
-uriP = parseURI . contentLineValueRaw
-
-uriB :: URI -> ContentLineValue
-uriB = mkSimpleContentLineValue . renderURI
+  propertyTypeP = conformFromEither . left OtherPropertyTypeParseError . parseURI . contentLineValueRaw
+  propertyTypeB = mkSimpleContentLineValue . renderURI
 
 parseURI :: Text -> Either String URI
 parseURI = fmap URI . maybe (Left "Unparseable URI") Right . Network.parseURIReference . T.unpack
