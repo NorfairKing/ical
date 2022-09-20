@@ -121,10 +121,13 @@ runConformTLenient func = do
       HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError ue
     Right r -> Right r
 
-type Conform ue fe w a = ConformT ue fe w Identity a
+type Conform ue fe w = ConformT ue fe w Identity
 
 -- | Most flexible way to run a 'Conform'
-runConformFlexible :: (fe -> Bool) -> Conform ue fe w a -> Either (HaltReason ue fe) (a, Notes fe w)
+runConformFlexible ::
+  (fe -> Bool) ->
+  Conform ue fe w a ->
+  Either (HaltReason ue fe) (a, Notes fe w)
 runConformFlexible predicate = runIdentity . runConformTFlexible predicate
 
 -- | Don't fix any fixable errors, and don't allow any warnings either

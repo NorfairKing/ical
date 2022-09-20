@@ -15,7 +15,6 @@ module ICal.Component
   )
 where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Data.DList (DList (..))
 import Data.Maybe
@@ -23,19 +22,20 @@ import Data.Proxy
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
 import ICal.Component.Class
 import ICal.Component.Event
 import ICal.Component.TimeZone
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import Text.Megaparsec
 
-parseICalendarFromContentLines :: [ContentLine] -> Either String [Calendar]
-parseICalendarFromContentLines contentLines =
-  left errorBundlePretty $ parse iCalendarP "" contentLines
+parseICalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void [Calendar]
+parseICalendarFromContentLines = runCP iCalendarP
 
-parseVCalendarFromContentLines :: [ContentLine] -> Either String Calendar
+parseVCalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void Calendar
 parseVCalendarFromContentLines = parseComponentFromContentLines
 
 iCalendarP :: CP [Calendar]

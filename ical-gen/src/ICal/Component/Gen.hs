@@ -30,7 +30,6 @@ import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
 import Test.Syd
 import Test.Syd.Validity
-import Text.Megaparsec
 
 instance GenValid Calendar where
   genValid = genValidStructurallyWithoutExtraChecking
@@ -179,12 +178,12 @@ componentScenarioDir ::
   FilePath ->
   Spec
 componentScenarioDir dir = scenarioDir dir $ \tzFile ->
-  it "can parse this file as a timezone and roundtrip it" $ do
+  it "can parse this file as a component and roundtrip it" $ do
     let parseBS bs = do
           textContents <- left show $ TE.decodeUtf8' bs
           unfoldedLines <- left show $ runConformStrict $ parseUnfoldedLines textContents
           contentLines <- mapM parseContentLineFromUnfoldedLine unfoldedLines
-          parseComponentFromContentLines contentLines
+          left show $ runConformStrict $ parseComponentFromContentLines contentLines
 
         renderBS =
           TE.encodeUtf8
@@ -214,7 +213,7 @@ componentSpec = do
 
   it "parses only valid things" $
     forAllValid $ \component ->
-      case parse componentSectionP "test input" (DList.toList (componentSectionB (component :: a))) of
+      case runConformStrict (runCP componentSectionP (DList.toList (componentSectionB (component :: a)))) of
         Left _ -> pure ()
         Right a -> shouldBeValid (a :: a)
 
@@ -231,6 +230,6 @@ componentSpec = do
                 T.unpack renderedText
               ]
        in context ctx $
-            case parse componentSectionP "test input" rendered of
-              Left err -> expectationFailure $ errorBundlePretty err
+            case runConformStrict (runCP componentSectionP rendered) of
+              Left err -> expectationFailure $ show err
               Right parsed -> parsed `shouldBe` a

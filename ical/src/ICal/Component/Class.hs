@@ -1,19 +1,22 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.Component.Class where
 
-import Control.Arrow (left)
 import Control.Monad
+import Control.Monad.Trans
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
@@ -27,16 +30,44 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType.RecurrenceRule
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
-parseComponentFromContentLines :: (Validity component, IsComponent component) => [ContentLine] -> Either String component
-parseComponentFromContentLines = left errorBundlePretty . parse componentSectionP ""
+deriving instance Ord s => Ord (PosState s)
 
-type CP = Parsec Void [ContentLine]
+deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
+
+deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
+
+data CalendarParseError
+  = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)
+  | OtherError String
+  deriving (Show, Eq, Ord)
+
+parseComponentFromContentLines ::
+  (Validity component, IsComponent component) =>
+  [ContentLine] ->
+  Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void component
+parseComponentFromContentLines = runCP componentSectionP
+
+runCP ::
+  CP a ->
+  [ContentLine] ->
+  Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void a
+runCP func cls = do
+  errOrComponent <- runParserT func "" cls
+  case errOrComponent of
+    Left err -> unfixableError err
+    Right component -> pure component
+
+liftCP :: CP a -> [ContentLine] -> CP a
+liftCP parserFunc cls = lift $ runCP parserFunc cls
+
+type CP a = ParsecT CalendarParseError [ContentLine] (Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void) a
 
 instance VisualStream [ContentLine] where
   showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
@@ -193,9 +224,7 @@ parseSubcomponent = go1
               then go2 $ takeWhile (not . isEnd) rest
               else go1 rest
     go2 :: [ContentLine] -> CP a
-    go2 cls = case parse componentP "subcomponent" cls of
-      Left err -> fail $ show err
-      Right a -> pure a
+    go2 = liftCP componentP
 
     name = componentName (Proxy :: Proxy a)
 
@@ -214,9 +243,7 @@ parseManySubcomponents = go1
                  in (:) <$> go2 subComponentLines <*> go1 restAfterSubcomponent
               else go1 rest
     go2 :: [ContentLine] -> CP a
-    go2 cls = case parse componentP "subcomponent" cls of
-      Left err -> fail $ show err
-      Right a -> pure a
+    go2 = liftCP componentP
 
     name = componentName (Proxy :: Proxy a)
 
@@ -245,9 +272,7 @@ parseManySubcomponents2 = go1
                      in (:) <$> (Right <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
               else go1 rest
     go2 :: forall c. IsComponent c => [ContentLine] -> CP c
-    go2 cls = case parse componentP "subcomponent" cls of
-      Left err -> fail $ show err
-      Right a -> pure a
+    go2 = liftCP componentP
 
     nameA = componentName (Proxy :: Proxy a)
     nameB = componentName (Proxy :: Proxy b)

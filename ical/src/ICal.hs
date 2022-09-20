@@ -21,6 +21,7 @@ import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine
+import Text.Megaparsec (ParseErrorBundle)
 
 -- | MIME Content type
 --
@@ -40,7 +41,7 @@ data ICalParseError
   = TextDecodingError !TE.UnicodeException
   | UnfoldingError !UnfoldingError
   | ContentLineParseError !String
-  | OtherError !String
+  | CalendarParseError !(ParseErrorBundle [ContentLine] CalendarParseError)
   deriving (Show, Eq)
 
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
@@ -67,14 +68,14 @@ parseICalendar :: Text -> Conform ICalParseError Void Void ICalendar
 parseICalendar contents = do
   unfoldedLines <- conformMapError UnfoldingError $ parseUnfoldedLines contents
   contentLines <- conformFromEither $ left ContentLineParseError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
-  conformFromEither $ left OtherError $ parseICalendarFromContentLines contentLines
+  conformMapError CalendarParseError $ parseICalendarFromContentLines contentLines
 
 -- | Parse a single VCALENDAR
 parseVCalendar :: Text -> Conform ICalParseError Void Void Calendar
 parseVCalendar contents = do
   unfoldedLines <- conformMapError UnfoldingError $ parseUnfoldedLines contents
   contentLines <- conformFromEither $ left ContentLineParseError $ mapM parseContentLineFromUnfoldedLine unfoldedLines
-  conformFromEither $ left OtherError $ parseVCalendarFromContentLines contentLines
+  conformMapError CalendarParseError $ parseVCalendarFromContentLines contentLines
 
 -- | Render an ICalendar as a ByteString using the UTF8 encoding.
 --
