@@ -44,7 +44,7 @@ where
 import Control.Monad.Reader
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Time
+import Data.Time as Time
 import Data.Validity
 import GHC.Generics (Generic)
 import ICal.Property
@@ -155,8 +155,10 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
 
 exactDuration :: DateTime -> DateTime -> Time.NominalDiffTime
 exactDuration dt1 dt2 = case (dt1, dt2) of
-  (DateTimeLocalTime lt1, DateTimeLocalTime lt2) -> Time.diffLocalTime lt1 lt2 -- Assuming the same timezone
-  (DateTimeUTCTime ut1, DateTimeUTCTime ut2) -> Time.diffUTCTime ut1 ut2
+  (DateTimeFloating lt1, DateTimeFloating lt2) ->
+    -- Assuming the same timezone
+    Time.diffLocalTime lt1 lt2
+  (DateTimeUTC ut1, DateTimeUTC ut2) -> Time.diffUTCTime ut1 ut2
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> undefined "Exact duration offsets between two zoned times are not supported yet."
 
 resolveEndOrDurationDate ::
