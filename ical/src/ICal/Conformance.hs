@@ -41,6 +41,24 @@ newtype ConformT ue fe w m a = ConformT
       MonadWriter (Notes fe w)
     )
 
+-- We cannot have 'Alternative' because there is no 'empty', but we don't want to depend on some dependency that provides 'Alt': https://hackage.haskell.org/package/semigroupoids-5.3.7/docs/Data-Functor-Alt.html
+-- because it's a huge dependency.
+altConform :: Monad m => ConformT ue fe w m a -> ConformT ue fe w m a -> ConformT ue fe w m a
+altConform cf1 cf2 = do
+  decider <- ask
+  errOrTup1 <- lift $ runConformTFlexible decider cf1
+  case errOrTup1 of
+    Right (a, notes) -> do
+      tell notes
+      pure a
+    Left _ -> do
+      errOrTup2 <- lift $ runConformTFlexible decider cf2
+      case errOrTup2 of
+        Right (a, notes) -> do
+          tell notes
+          pure a
+        Left err2 -> throwError err2
+
 instance MonadTrans (ConformT ue fe w) where
   lift = ConformT . lift . lift . lift
 

@@ -11,6 +11,7 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import GHC.Stack
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter.Gen ()
 import ICal.Property
@@ -150,8 +151,8 @@ propertyParseExampleSpec ::
 propertyParseExampleSpec cl expected = withFrozenCallStack $
   it "parses this example correctly" $
     context (show cl) $
-      case propertyContentLineP cl of
-        Left err -> expectationFailure err
+      case runConformStrict $ propertyContentLineP cl of
+        Left err -> expectationFailure $ show err
         Right actual -> actual `shouldBe` expected
 
 propertyExampleSpec ::
@@ -178,13 +179,14 @@ propertySpec = withFrozenCallStack $ do
 
   it "parses only valid things" $
     forAllValid $ \a ->
-      case propertyContentLineP (propertyContentLineB (a :: a)) of
+      case runConformStrict $ propertyContentLineP (propertyContentLineB (a :: a)) of
         Left _ -> pure ()
         Right a' -> shouldBeValid (a' :: a)
 
   it "roundtrips through ContentLine" $
     forAllValid $ \a ->
       let rendered = propertyContentLineB (a :: a)
-       in context (show rendered) $ case propertyContentLineP rendered of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` a
+       in context (show rendered) $
+            case runConformStrict $ propertyContentLineP rendered of
+              Left err -> expectationFailure $ show err
+              Right actual -> actual `shouldBe` a

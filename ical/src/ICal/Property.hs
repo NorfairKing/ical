@@ -16,7 +16,7 @@
 -- @
 module ICal.Property where
 
-import Control.Applicative
+import Control.Arrow (left)
 import Control.DeepSeq
 import Control.Monad
 import Data.Proxy
@@ -27,11 +27,19 @@ import qualified Data.Time as Time
 import Data.Validity hiding (Location)
 import Data.Validity.Text ()
 import Data.Validity.Time ()
+import Data.Void
 import GHC.Generics (Generic)
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType
 import Text.Read
+
+data PropertyParseError
+  = PropertyTypeParseError !String
+  | ParameterParseError !String
+  | OtherPropertyParseError !String
+  deriving (Show, Eq, Ord)
 
 -- |
 --
@@ -62,7 +70,7 @@ class IsProperty property where
   propertyName :: Proxy property -> ContentLineName
 
   -- | Parser for the property
-  propertyP :: ContentLineValue -> Either String property
+  propertyP :: ContentLineValue -> Conform PropertyParseError Void Void property
 
   -- | Builder for the property
   propertyB :: property -> ContentLineValue
@@ -71,23 +79,38 @@ propertyContentLineP ::
   forall property.
   IsProperty property =>
   ContentLine ->
-  Either String property
+  Conform PropertyParseError Void Void property
 propertyContentLineP ContentLine {..} =
   let name = propertyName (Proxy :: Proxy property)
    in if contentLineName == name
         then propertyP contentLineValue
         else
-          Left $
-            unwords
-              [ "Expected content line with name",
-                show name,
-                "but got",
-                show contentLineName,
-                "instead."
-              ]
+          unfixableError $
+            OtherPropertyParseError $
+              unwords
+                [ "Expected content line with name",
+                  show name,
+                  "but got",
+                  show contentLineName,
+                  "instead."
+                ]
 
 propertyContentLineB :: forall property. IsProperty property => property -> ContentLine
 propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . propertyB
+
+viaPropertyTypeP ::
+  IsPropertyType propertyType =>
+  (propertyType -> Conform PropertyParseError Void Void property) ->
+  (ContentLineValue -> Conform PropertyParseError Void Void property)
+viaPropertyTypeP func clv = do
+  propertyType <- conformFromEither $ left PropertyTypeParseError $ propertyTypeP clv
+  func propertyType
+
+wrapPropertyTypeP ::
+  IsPropertyType propertyType =>
+  (propertyType -> property) ->
+  (ContentLineValue -> Conform PropertyParseError Void Void property)
+wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Generic)
@@ -98,7 +121,7 @@ instance NFData Begin
 
 instance IsProperty Begin where
   propertyName Proxy = "BEGIN"
-  propertyP = fmap Begin . propertyTypeP
+  propertyP = wrapPropertyTypeP Begin
   propertyB = propertyTypeB . unBegin
 
 newtype End = End {unEnd :: Text}
@@ -110,7 +133,7 @@ instance NFData End
 
 instance IsProperty End where
   propertyName Proxy = "END"
-  propertyP = fmap End . propertyTypeP
+  propertyP = wrapPropertyTypeP End
   propertyB = propertyTypeB . unEnd
 
 -- |
@@ -165,7 +188,7 @@ instance NFData ProdId
 
 instance IsProperty ProdId where
   propertyName Proxy = "PRODID"
-  propertyP = fmap ProdId . propertyTypeP
+  propertyP = wrapPropertyTypeP ProdId
   propertyB = propertyTypeB . unProdId
 
 -- |
@@ -220,14 +243,8 @@ instance NFData Version
 
 instance IsProperty Version where
   propertyName Proxy = "VERSION"
-  propertyP = versionP
-  propertyB = versionB
-
-versionP :: ContentLineValue -> Either String Version
-versionP = fmap Version . propertyTypeP
-
-versionB :: Version -> ContentLineValue
-versionB = propertyTypeB . unVersion
+  propertyP = wrapPropertyTypeP Version
+  propertyB = propertyTypeB . unVersion
 
 -- | The current version
 version20 :: Version
@@ -280,11 +297,10 @@ instance NFData CalendarScale
 
 instance IsProperty CalendarScale where
   propertyName Proxy = "CALSCALE"
-  propertyP clv = do
-    t <- propertyTypeP clv
+  propertyP = viaPropertyTypeP $ \t ->
     case t :: Text of
-      "GREGORIAN" -> Right CalendarScaleGregorian
-      _ -> Left $ unwords ["Unknown Calendar Scale:", show t]
+      "GREGORIAN" -> pure CalendarScaleGregorian
+      _ -> unfixableError $ OtherPropertyParseError $ unwords ["Unknown Calendar Scale:", show t]
   propertyB =
     propertyTypeB . \case
       CalendarScaleGregorian -> "GREGORIAN" :: Text
@@ -367,7 +383,7 @@ instance NFData UID
 
 instance IsProperty UID where
   propertyName Proxy = "UID"
-  propertyP = fmap UID . propertyTypeP
+  propertyP = wrapPropertyTypeP UID
   propertyB = propertyTypeB . unUID
 
 -- |
@@ -432,7 +448,7 @@ instance NFData DateTimeStamp
 
 instance IsProperty DateTimeStamp where
   propertyName Proxy = "DTSTAMP"
-  propertyP = fmap DateTimeStamp . propertyTypeP
+  propertyP = wrapPropertyTypeP DateTimeStamp
   propertyB = propertyTypeB . unDateTimeStamp
 
 -- |
@@ -471,7 +487,7 @@ instance NFData TZID
 
 instance IsProperty TZID where
   propertyName Proxy = "TZID"
-  propertyP = fmap TZID . propertyTypeP
+  propertyP = wrapPropertyTypeP TZID
   propertyB = propertyTypeB . unTZID
 
 -- |
@@ -552,8 +568,8 @@ instance NFData DateTimeStart
 instance IsProperty DateTimeStart where
   propertyName Proxy = "DTSTART"
   propertyP cl =
-    (DateTimeStartDate <$> propertyTypeP cl)
-      <|> (DateTimeStartDateTime <$> propertyTypeP cl)
+    wrapPropertyTypeP DateTimeStartDate cl
+      `altConform` wrapPropertyTypeP DateTimeStartDateTime cl
   propertyB = \case
     DateTimeStartDate date -> propertyTypeB date
     DateTimeStartDateTime dateTime -> propertyTypeB dateTime
@@ -623,14 +639,8 @@ instance NFData Classification
 
 instance IsProperty Classification where
   propertyName Proxy = "CLASS"
-  propertyP = classificationP
-  propertyB = classificationB
-
-classificationB :: Classification -> ContentLineValue
-classificationB = propertyTypeB . renderClassification
-
-classificationP :: ContentLineValue -> Either String Classification
-classificationP = fmap parseClassification . propertyTypeP
+  propertyP = wrapPropertyTypeP parseClassification
+  propertyB = propertyTypeB . renderClassification
 
 parseClassification :: Text -> Classification
 parseClassification = \case
@@ -702,7 +712,9 @@ instance NFData Created
 
 instance IsProperty Created where
   propertyName Proxy = "CREATED"
-  propertyP = fmap Created . dateTimeUTCP
+  propertyP clv = case dateTimeUTCP clv of
+    Left err -> unfixableError $ OtherPropertyParseError err
+    Right ut -> pure $ Created ut
   propertyB = dateTimeUTCB . unCreated
 
 -- |
@@ -762,7 +774,7 @@ instance NFData Summary
 
 instance IsProperty Summary where
   propertyName Proxy = "SUMMARY"
-  propertyP = fmap Summary . propertyTypeP
+  propertyP = wrapPropertyTypeP Summary
   propertyB = propertyTypeB . unSummary
 
 -- |
@@ -830,12 +842,12 @@ instance NFData Description
 
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
-  propertyP = fmap Description . propertyTypeP
+  propertyP = wrapPropertyTypeP Description
   propertyB = propertyTypeB . unDescription
 
 instance IsProperty RecurrenceRule where
   propertyName Proxy = "RRULE"
-  propertyP = recurrenceRuleP
+  propertyP = wrapPropertyTypeP id
   propertyB = recurrenceRuleB
 
 -- | Geographic Position
@@ -940,11 +952,8 @@ instance NFData GeographicPosition
 
 instance IsProperty GeographicPosition where
   propertyName Proxy = "GEO"
-  propertyP = geographicPositionP
-  propertyB = geographicPositionB
-
-geographicPositionB :: GeographicPosition -> ContentLineValue
-geographicPositionB = mkSimpleContentLineValue . renderGeographicPosition
+  propertyP = viaPropertyTypeP (conformFromEither . left PropertyTypeParseError . parseGeographicPosition)
+  propertyB = mkSimpleContentLineValue . renderGeographicPosition
 
 geographicPositionP :: ContentLineValue -> Either String GeographicPosition
 geographicPositionP = propertyTypeP >=> parseGeographicPosition
@@ -1015,7 +1024,9 @@ instance NFData LastModified
 
 instance IsProperty LastModified where
   propertyName Proxy = "LAST-MODIFIED"
-  propertyP = fmap LastModified . dateTimeUTCP
+  propertyP clv = case dateTimeUTCP clv of
+    Left err -> unfixableError $ OtherPropertyParseError err
+    Right ut -> pure $ LastModified ut
   propertyB = dateTimeUTCB . unLastModified
 
 -- | Location
@@ -1082,7 +1093,7 @@ instance NFData Location
 
 instance IsProperty Location where
   propertyName Proxy = "LOCATION"
-  propertyP = fmap Location . propertyTypeP
+  propertyP = wrapPropertyTypeP Location
   propertyB = propertyTypeB . unLocation
 
 -- | Status
@@ -1168,14 +1179,10 @@ instance NFData Status
 
 instance IsProperty Status where
   propertyName Proxy = "STATUS"
-  propertyP = statusP
-  propertyB = statusB
-
-statusB :: Status -> ContentLineValue
-statusB = propertyTypeB . renderStatus
-
-statusP :: ContentLineValue -> Either String Status
-statusP = propertyTypeP >=> parseStatus
+  propertyP = viaPropertyTypeP $ \t -> case parseStatus t of
+    Left err -> unfixableError $ OtherPropertyParseError err
+    Right s -> pure s
+  propertyB = propertyTypeB . renderStatus
 
 parseStatus :: Text -> Either String Status
 parseStatus = \case
@@ -1263,8 +1270,8 @@ instance NFData DateTimeEnd
 instance IsProperty DateTimeEnd where
   propertyName Proxy = "DTEND"
   propertyP cl =
-    (DateTimeEndDate <$> propertyTypeP cl)
-      <|> (DateTimeEndDateTime <$> propertyTypeP cl)
+    wrapPropertyTypeP DateTimeEndDate cl
+      `altConform` wrapPropertyTypeP DateTimeEndDateTime cl
   propertyB = \case
     DateTimeEndDate date -> propertyTypeB date
     DateTimeEndDateTime dateTime -> propertyTypeB dateTime
@@ -1317,7 +1324,7 @@ instance IsProperty DateTimeEnd where
 -- @
 instance IsProperty Duration where
   propertyName Proxy = "DURATION"
-  propertyP = propertyTypeP
+  propertyP = wrapPropertyTypeP id
   propertyB = propertyTypeB
 
 -- | Time Transparency
@@ -1381,14 +1388,10 @@ instance NFData Transparency
 
 instance IsProperty Transparency where
   propertyName Proxy = "TRANSP"
-  propertyP = transparencyP
-  propertyB = transparencyB
-
-transparencyB :: Transparency -> ContentLineValue
-transparencyB = propertyTypeB . renderTransparency
-
-transparencyP :: ContentLineValue -> Either String Transparency
-transparencyP = propertyTypeP >=> parseTransparency
+  propertyP = viaPropertyTypeP $ \t -> case parseTransparency t of
+    Left err -> unfixableError $ OtherPropertyParseError err
+    Right s -> pure s
+  propertyB = propertyTypeB . renderTransparency
 
 parseTransparency :: Text -> Either String Transparency
 parseTransparency = \case
@@ -1446,7 +1449,7 @@ instance NFData URL
 
 instance IsProperty URL where
   propertyName Proxy = "URL"
-  propertyP = fmap URL . propertyTypeP
+  propertyP = wrapPropertyTypeP URL
   propertyB = propertyTypeB . unURL
 
 -- TODO description
@@ -1459,7 +1462,7 @@ instance NFData TimeZoneName
 
 instance IsProperty TimeZoneName where
   propertyName Proxy = "TZNAME"
-  propertyP = fmap TimeZoneName . propertyTypeP
+  propertyP = wrapPropertyTypeP TimeZoneName
   propertyB = propertyTypeB . unTimeZoneName
 
 -- @
@@ -1515,7 +1518,7 @@ instance NFData Comment
 
 instance IsProperty Comment where
   propertyName Proxy = "COMMENT"
-  propertyP = fmap Comment . propertyTypeP
+  propertyP = wrapPropertyTypeP Comment
   propertyB = propertyTypeB . unComment
 
 -- | Timezone Offset From
@@ -1570,7 +1573,7 @@ instance NFData TimeZoneOffsetFrom
 
 instance IsProperty TimeZoneOffsetFrom where
   propertyName Proxy = "TZOFFSETFROM"
-  propertyP = fmap TimeZoneOffsetFrom . propertyTypeP
+  propertyP = wrapPropertyTypeP TimeZoneOffsetFrom
   propertyB = propertyTypeB . unTimeZoneOffsetFrom
 
 -- | Timezone Offset To
@@ -1622,7 +1625,7 @@ instance NFData TimeZoneOffsetTo
 
 instance IsProperty TimeZoneOffsetTo where
   propertyName Proxy = "TZOFFSETTO"
-  propertyP = fmap TimeZoneOffsetTo . propertyTypeP
+  propertyP = wrapPropertyTypeP TimeZoneOffsetTo
   propertyB = propertyTypeB . unTimeZoneOffsetTo
 
 -- | Exception Date-Times
@@ -1714,12 +1717,12 @@ instance NFData ExceptionDateTimes
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
   propertyP clv = do
-    mValue <- optionalParam $ contentLineValueParams clv
+    mValue <- conformFromEither $ left ParameterParseError $ optionalParam $ contentLineValueParams clv
     case mValue of
-      Just TypeDateTime -> ExceptionDateTimes <$> propertyTypeP clv
-      Just TypeDate -> ExceptionDates <$> propertyTypeP clv
-      Just _ -> Left "Unknown VALUE of EXDATE"
-      Nothing -> ExceptionDateTimes <$> propertyTypeP clv
+      Just TypeDateTime -> wrapPropertyTypeP ExceptionDateTimes clv
+      Just TypeDate -> wrapPropertyTypeP ExceptionDates clv
+      Just _ -> unfixableError $ OtherPropertyParseError "Unknown VALUE of EXDATE"
+      Nothing -> wrapPropertyTypeP ExceptionDateTimes clv
 
   propertyB = \case
     ExceptionDateTimes dts -> propertyTypeB dts
@@ -1825,13 +1828,13 @@ instance NFData RecurrenceDateTimes
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
   propertyP clv = do
-    mValue <- optionalParam $ contentLineValueParams clv
+    mValue <- conformFromEither $ left PropertyTypeParseError $ optionalParam $ contentLineValueParams clv
     case mValue of
-      Just TypeDateTime -> RecurrenceDateTimes <$> propertyTypeP clv
-      Just TypePeriod -> RecurrencePeriods <$> propertyTypeP clv
-      Just TypeDate -> RecurrenceDates <$> propertyTypeP clv
-      Just _ -> Left "Unknown VALUE for RDATE"
-      Nothing -> RecurrenceDateTimes <$> propertyTypeP clv
+      Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
+      Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv
+      Just TypeDate -> wrapPropertyTypeP RecurrenceDates clv
+      Just _ -> unfixableError $ OtherPropertyParseError "Unknown VALUE for RDATE"
+      Nothing -> wrapPropertyTypeP RecurrenceDateTimes clv
 
   propertyB = \case
     RecurrenceDateTimes dts -> propertyTypeB dts

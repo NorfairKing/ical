@@ -16,7 +16,9 @@
 module ICal.Component.Class where
 
 import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.Except
+import Control.Monad.Reader
+import Control.Monad.Writer
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
@@ -45,6 +47,7 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 
 data CalendarParseError
   = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)
+  | PropertyParseError !PropertyParseError
   | OtherError String
   deriving (Show, Eq, Ord)
 
@@ -66,6 +69,16 @@ runCP func cls = do
 
 liftCP :: CP a -> [ContentLine] -> CP a
 liftCP parserFunc cls = lift $ runCP parserFunc cls
+
+liftConformToCP :: Conform CalendarParseError Void Void a -> CP a
+liftConformToCP func = do
+  decider <- lift ask
+  case runConformFlexible decider func of
+    Left hr -> case hr of
+      HaltedBecauseOfUnfixableError ue -> customFailure ue
+    Right (a, notes) -> lift $ do
+      tell notes
+      pure a
 
 type CP a = ParsecT CalendarParseError [ContentLine] (Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void) a
 
@@ -142,9 +155,7 @@ parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenPro
 parseProperty :: IsProperty property => CP property
 parseProperty = do
   contentLine <- anySingle
-  case propertyContentLineP contentLine of
-    Left err -> fail err
-    Right p -> pure p
+  liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP contentLine
 
 componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
 componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
@@ -179,9 +190,7 @@ parseFirst = go
       [] -> fail $ "Did not find required " <> show name
       (cl : cls) ->
         if contentLineName cl == name
-          then case propertyContentLineP cl of
-            Right result -> pure result
-            Left err -> fail err
+          then liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP cl
           else go cls
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
@@ -194,9 +203,7 @@ parseFirstMaybe = go
       -- TODO do better than a linear search?
       (cl : cls) ->
         if contentLineName cl == name
-          then case propertyContentLineP cl of
-            Right result -> pure (Just result)
-            Left err -> fail err
+          then fmap Just $ liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP cl
           else go cls
 
 parseSet ::
@@ -206,7 +213,7 @@ parseSet ::
   CP (Set a)
 parseSet cls =
   fmap S.fromList $
-    mapM (either fail pure . propertyContentLineP) $
+    mapM (liftConformToCP . conformMapError PropertyParseError . propertyContentLineP) $
       filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)
