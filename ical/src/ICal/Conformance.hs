@@ -65,6 +65,7 @@ instance MonadTrans (ConformT ue fe w) where
 data HaltReason ue fe
   = HaltedBecauseOfUnfixableError !ue
   | HaltedBecauseOfStrictness !fe
+  deriving (Show, Eq)
 
 data Notes fe w = Notes
   { notesFixableErrors :: ![fe],
@@ -155,6 +156,14 @@ runConformStrict ::
   Conform ue fe w a ->
   Either (Either ue (Notes fe w)) a
 runConformStrict = runIdentity . runConformTStrict
+
+-- | Fix as much as possible
+--
+-- That this is __not__ standard-complient.
+runConformLenient ::
+  Conform ue fe w a ->
+  Either (HaltReason ue Void) (a, Notes fe w)
+runConformLenient = runIdentity . runConformTLenient
 
 fixAll :: fe -> Bool
 fixAll = const True

@@ -7,6 +7,7 @@ import qualified Data.Text as T
 import Data.Time
 import ICal
 import ICal.Component.Gen ()
+import ICal.Conformance
 import ICal.Conformance.TestUtils
 import Test.Syd
 import Test.Syd.Validity
@@ -106,10 +107,25 @@ spec = do
     iCalendar `shouldBe` expectedICal
 
   -- Tests based on example calendars
-  scenarioDirRecur "test_resources/calendars" $ \calFile ->
+  scenarioDirRecur "test_resources/calendars/valid" $ \calFile ->
     it "can parse this calendar" $ do
       contents <- SB.readFile calFile
       ical <- shouldConformStrict $ parseICalendarByteString contents
+      shouldBeValid ical
+      let rendered = renderICalendarByteString ical
+      ical' <- shouldConformStrict $ parseICalendarByteString rendered
+      ical' `shouldBe` ical
+
+  scenarioDirRecur "test_resources/calendars/fixable" $ \calFile -> do
+    it "cannot parse this calendar strictly" $ do
+      contents <- SB.readFile calFile
+      case runConformStrict $ parseICalendarByteString contents of
+        Left _ -> pure ()
+        Right ical -> expectationFailure $ unlines ["Should have failed but succeeded in parsing this ical:", ppShow ical]
+
+    it "can parse this calendar leniently and turn it into something valid that can be parsed strictly" $ do
+      contents <- SB.readFile calFile
+      ical <- shouldConformLenient $ parseICalendarByteString contents
       shouldBeValid ical
       let rendered = renderICalendarByteString ical
       ical' <- shouldConformStrict $ parseICalendarByteString rendered

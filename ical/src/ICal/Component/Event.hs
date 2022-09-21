@@ -10,6 +10,7 @@
 module ICal.Component.Event where
 
 import Control.DeepSeq
+import Control.Monad.Trans (lift)
 import Data.DList (DList (..))
 import Data.Maybe
 import Data.Proxy
@@ -21,6 +22,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType.Date
@@ -296,59 +298,7 @@ vEventP = do
   eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
   eventURL <- parseFirstMaybe eventProperties
 
-  -- It turns out that certain ical providers such as Google may output invalid
-  -- ICal that we still have to be able to deal with somehow.
-  -- For example, on 2022-06-26, google outputted an event with these properties:
-  --
-  -- @
-  -- BEGIN:VEVENT
-  -- UID:18jktp1kl13aov1ku35sf8i40b_R20220705T150000@google.com
-  -- DTSTART;TZID=Europe/Kiev:20220705T180000
-  -- DTEND;TZID=Europe/Kiev:20220705T183000
-  -- RRULE:FREQ=WEEKLY;WKST=SU;UNTIL=20220717;BYDAY=TU
-  -- DTSTAMP:20220726T130525Z
-  -- @
-  --
-  -- However, the spec says:
-  --
-  -- @
-  -- The value of the UNTIL rule part MUST have the same
-  -- value type as the "DTSTART" property.
-  -- @
-  --
-  -- This means that the UNTIL part must be specified as date WITH TIME.
-  -- The spec also says:
-  --
-  -- @
-  -- If the value
-  -- specified by UNTIL is synchronized with the specified recurrence,
-  -- this DATE or DATE-TIME becomes the last instance of the
-  -- recurrence.
-  -- @
-  --
-  -- So when the UNTIL has a date without time, we will guess the time that is
-  -- specified in DTSTART.
-  let fixUntil :: RecurrenceRule -> RecurrenceRule
-      fixUntil rrule =
-        case eventDateTimeStart of
-          Nothing -> rrule
-          Just dateTimeStart ->
-            case recurrenceRuleUntilCount rrule of
-              Just (Left u) -> case (dateTimeStart, u) of
-                (DateTimeStartDateTime dt, UntilDate (Date ud)) ->
-                  let newUntil = case dt of
-                        -- This guess is somewhat sensible.
-                        DateTimeUTC (Time.UTCTime _ sdt) ->
-                          UntilDateTimeUTC (Time.UTCTime ud sdt)
-                        DateTimeFloating (Time.LocalTime _ tod) ->
-                          UntilDateTimeFloating (Time.LocalTime ud tod)
-                        -- This guess is bad
-                        DateTimeZoned _ (Time.LocalTime _ tod) ->
-                          UntilDateTimeUTC (Time.UTCTime ud (Time.timeOfDayToTime tod))
-                   in rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
-                _ -> rrule
-              _ -> rrule
-  eventRecurrenceRules <- S.map fixUntil <$> parseSet eventProperties
+  eventRecurrenceRules <- S.fromList <$> (parseList eventProperties >>= traverse (fixUntil eventDateTimeStart))
 
   mEnd <- parseFirstMaybe eventProperties
   mDuration <- parseFirstMaybe eventProperties
@@ -357,6 +307,60 @@ vEventP = do
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
   pure Event {..}
+
+-- It turns out that certain ical providers such as Google Calendar may output invalid
+-- ICal that we still have to be able to deal with somehow.
+-- For example, on 2022-06-26, google outputted an event with these properties:
+--
+-- @
+-- BEGIN:VEVENT
+-- UID:18jktp1kl13aov1ku35sf8i40b_R20220705T150000@google.com
+-- DTSTART;TZID=Europe/Kiev:20220705T180000
+-- DTEND;TZID=Europe/Kiev:20220705T183000
+-- RRULE:FREQ=WEEKLY;WKST=SU;UNTIL=20220717;BYDAY=TU
+-- DTSTAMP:20220726T130525Z
+-- @
+--
+-- However, the spec says:
+--
+-- @
+-- The value of the UNTIL rule part MUST have the same
+-- value type as the "DTSTART" property.
+-- @
+--
+-- This means that the UNTIL part must be specified as date WITH TIME.
+-- The spec also says:
+--
+-- @
+-- If the value
+-- specified by UNTIL is synchronized with the specified recurrence,
+-- this DATE or DATE-TIME becomes the last instance of the
+-- recurrence.
+-- @
+--
+-- So when the UNTIL has a date without time, we will guess the time that is
+-- specified in DTSTART.
+fixUntil :: Maybe DateTimeStart -> RecurrenceRule -> CP RecurrenceRule
+fixUntil mDateTimeStart rrule =
+  case mDateTimeStart of
+    Nothing -> pure rrule
+    Just dateTimeStart ->
+      case recurrenceRuleUntilCount rrule of
+        Just (Left u) -> case (dateTimeStart, u) of
+          (DateTimeStartDateTime dt, UntilDate (Date ud)) -> do
+            let newUntil = case dt of
+                  -- This guess is somewhat sensible.
+                  DateTimeUTC (Time.UTCTime _ sdt) ->
+                    UntilDateTimeUTC (Time.UTCTime ud sdt)
+                  DateTimeFloating (Time.LocalTime _ tod) ->
+                    UntilDateTimeFloating (Time.LocalTime ud tod)
+                  -- This guess is bad
+                  DateTimeZoned _ (Time.LocalTime _ tod) ->
+                    UntilDateTimeUTC (Time.UTCTime ud (Time.timeOfDayToTime tod))
+            lift $ emitFixableError $ UntilTypeGuess dateTimeStart u newUntil
+            pure $ rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
+          _ -> pure rrule
+        _ -> pure rrule
 
 vEventB :: Event -> DList ContentLine
 vEventB Event {..} =

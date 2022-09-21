@@ -52,7 +52,7 @@ data CalendarParseError
   deriving (Show, Eq, Ord)
 
 data CalendarParseFixableError
-  = UntilTypeGuess
+  = UntilTypeGuess !DateTimeStart !Until !Until -- Old until new until
   deriving (Show, Eq, Ord)
 
 parseComponentFromContentLines ::
@@ -85,7 +85,12 @@ liftConformToCP func = do
       tell notes
       pure a
 
-type CP a = ParsecT CalendarParseError [ContentLine] (Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void) a
+type CP a =
+  ParsecT
+    CalendarParseError
+    [ContentLine]
+    (Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void)
+    a
 
 instance VisualStream [ContentLine] where
   showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
@@ -211,17 +216,23 @@ parseFirstMaybe = go
           then fmap Just $ liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
           else go cls
 
+parseList ::
+  forall a.
+  IsProperty a =>
+  [ContentLine] ->
+  CP [a]
+parseList cls =
+  mapM (liftConformToCP . conformMapErrors PropertyParseError absurd . propertyContentLineP) $
+    filter ((== name) . contentLineName) cls
+  where
+    name = propertyName (Proxy :: Proxy a)
+
 parseSet ::
   forall a.
   (Ord a, IsProperty a) =>
   [ContentLine] ->
   CP (Set a)
-parseSet cls =
-  fmap S.fromList $
-    mapM (liftConformToCP . conformMapErrors PropertyParseError absurd . propertyContentLineP) $
-      filter ((== name) . contentLineName) cls
-  where
-    name = propertyName (Proxy :: Proxy a)
+parseSet = fmap S.fromList . parseList
 
 parseSubcomponent :: forall a. (IsComponent a) => [ContentLine] -> CP a
 parseSubcomponent = go1
