@@ -573,10 +573,14 @@ value:
     forest:
     - header: Make it possible to map the fixable error
       state-history:
+      - state: DONE
+        time: 2022-09-21 14:26:19
       - state: TODO
         time: 2022-09-21 09:09:39
     - header: Make the UNTIL error fixable
       state-history:
+      - state: NEXT
+        time: 2022-09-21 14:26:20
       - state: TODO
         time: 2022-09-21 09:09:23
     - header: Get rid of all the 'other' errors

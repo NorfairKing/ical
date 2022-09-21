@@ -80,6 +80,7 @@ liftConformToCP func = do
   case runConformFlexible decider func of
     Left hr -> case hr of
       HaltedBecauseOfUnfixableError ue -> customFailure ue
+      HaltedBecauseOfStrictness fe -> throwError (HaltedBecauseOfStrictness fe)
     Right (a, notes) -> lift $ do
       tell notes
       pure a
@@ -159,7 +160,7 @@ parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenPro
 parseProperty :: IsProperty property => CP property
 parseProperty = do
   contentLine <- anySingle
-  liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP contentLine
+  liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
 
 componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
 componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
@@ -192,9 +193,9 @@ parseFirst = go
     go :: [ContentLine] -> CP a
     go = \case
       [] -> fail $ "Did not find required " <> show name
-      (cl : cls) ->
-        if contentLineName cl == name
-          then liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP cl
+      (contentLine : cls) ->
+        if contentLineName contentLine == name
+          then liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
           else go cls
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
@@ -205,9 +206,9 @@ parseFirstMaybe = go
     go = \case
       [] -> pure Nothing
       -- TODO do better than a linear search?
-      (cl : cls) ->
-        if contentLineName cl == name
-          then fmap Just $ liftConformToCP $ conformMapError PropertyParseError $ propertyContentLineP cl
+      (contentLine : cls) ->
+        if contentLineName contentLine == name
+          then fmap Just $ liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
           else go cls
 
 parseSet ::
@@ -217,7 +218,7 @@ parseSet ::
   CP (Set a)
 parseSet cls =
   fmap S.fromList $
-    mapM (liftConformToCP . conformMapError PropertyParseError . propertyContentLineP) $
+    mapM (liftConformToCP . conformMapErrors PropertyParseError absurd . propertyContentLineP) $
       filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)

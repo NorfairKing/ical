@@ -167,33 +167,36 @@ conformFromEither = \case
   Left ue -> unfixableError ue
   Right r -> pure r
 
-conformMapError :: Functor m => (ue1 -> ue2) -> ConformT ue1 fe w m a -> ConformT ue2 fe w m a
-conformMapError func (ConformT cFunc) = ConformT $ mapReaderT (mapWriterT (withExceptT (haltReasonMapError func))) cFunc
-  where
-    haltReasonMapError f = \case
-      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError (f ue)
-      HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness fe
-
-conformMapFixableError ::
-  (fe1 -> fe2) ->
-  (fe2 -> fe1) ->
-  ConformT ue fe1 w m a ->
-  ConformT ue fe2 w m a
-conformMapFixableError to from (ConformT cFunc) =
+conformMapErrors :: Monad m => (ue1 -> ue2) -> (fe1 -> fe2) -> ConformT ue1 fe1 w m a -> ConformT ue2 fe2 w m a
+conformMapErrors ueFunc feFunc (ConformT cFunc) =
   ConformT $
     mapReaderT
       ( mapWriterT
           ( \func -> do
-              (res, notes) <- withExceptT (haltReasonMapError from)
+              (res, notes) <- withExceptT haltReasonMapError func
               pure (res, notesMapError notes)
           )
-          func
       )
-      (withReaderT (\predicate -> predicate . to) cFunc)
+      (withReaderT (\predicate -> predicate . feFunc) cFunc)
   where
-    haltReasonMapError f = \case
-      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError ue
-      HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness (f fe)
+    notesMapError (Notes fes wes) = Notes (map feFunc fes) wes
+    haltReasonMapError = \case
+      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError (ueFunc ue)
+      HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness (feFunc fe)
+
+conformMapError ::
+  Monad m =>
+  (ue1 -> ue2) ->
+  ConformT ue1 fe w m a ->
+  ConformT ue2 fe w m a
+conformMapError func = conformMapErrors func id
+
+conformMapFixableError ::
+  Monad m =>
+  (fe1 -> fe2) ->
+  ConformT ue fe1 w m a ->
+  ConformT ue fe2 w m a
+conformMapFixableError = conformMapErrors id
 
 emitWarning :: Monad m => w -> ConformT ue fe w m ()
 emitWarning w = tell (Notes [] [w])

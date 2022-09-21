@@ -32,10 +32,10 @@ import ICal.ContentLine
 import ICal.Property
 import Text.Megaparsec
 
-parseICalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void [Calendar]
+parseICalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void [Calendar]
 parseICalendarFromContentLines = runCP iCalendarP
 
-parseVCalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void Calendar
+parseVCalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void Calendar
 parseVCalendarFromContentLines = parseComponentFromContentLines
 
 iCalendarP :: CP [Calendar]
