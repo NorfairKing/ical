@@ -27,3 +27,4 @@ tests:
     - ical-recurrence-gen
     - sydtest
     - time
+    - QuickCheck
