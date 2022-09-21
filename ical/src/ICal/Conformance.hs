@@ -174,6 +174,27 @@ conformMapError func (ConformT cFunc) = ConformT $ mapReaderT (mapWriterT (withE
       HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError (f ue)
       HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness fe
 
+conformMapFixableError ::
+  (fe1 -> fe2) ->
+  (fe2 -> fe1) ->
+  ConformT ue fe1 w m a ->
+  ConformT ue fe2 w m a
+conformMapFixableError to from (ConformT cFunc) =
+  ConformT $
+    mapReaderT
+      ( mapWriterT
+          ( \func -> do
+              (res, notes) <- withExceptT (haltReasonMapError from)
+              pure (res, notesMapError notes)
+          )
+          func
+      )
+      (withReaderT (\predicate -> predicate . to) cFunc)
+  where
+    haltReasonMapError f = \case
+      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError ue
+      HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness (f fe)
+
 emitWarning :: Monad m => w -> ConformT ue fe w m ()
 emitWarning w = tell (Notes [] [w])
 

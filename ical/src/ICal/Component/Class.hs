@@ -51,16 +51,20 @@ data CalendarParseError
   | OtherError String
   deriving (Show, Eq, Ord)
 
+data CalendarParseFixableError
+  = UntilTypeGuess
+  deriving (Show, Eq, Ord)
+
 parseComponentFromContentLines ::
   (Validity component, IsComponent component) =>
   [ContentLine] ->
-  Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void component
+  Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void component
 parseComponentFromContentLines = runCP componentSectionP
 
 runCP ::
   CP a ->
   [ContentLine] ->
-  Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void a
+  Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void a
 runCP func cls = do
   errOrComponent <- runParserT func "" cls
   case errOrComponent of
@@ -70,7 +74,7 @@ runCP func cls = do
 liftCP :: CP a -> [ContentLine] -> CP a
 liftCP parserFunc cls = lift $ runCP parserFunc cls
 
-liftConformToCP :: Conform CalendarParseError Void Void a -> CP a
+liftConformToCP :: Conform CalendarParseError CalendarParseFixableError Void a -> CP a
 liftConformToCP func = do
   decider <- lift ask
   case runConformFlexible decider func of
@@ -80,7 +84,7 @@ liftConformToCP func = do
       tell notes
       pure a
 
-type CP a = ParsecT CalendarParseError [ContentLine] (Conform (ParseErrorBundle [ContentLine] CalendarParseError) Void Void) a
+type CP a = ParsecT CalendarParseError [ContentLine] (Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void) a
 
 instance VisualStream [ContentLine] where
   showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
