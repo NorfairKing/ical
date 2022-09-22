@@ -34,7 +34,8 @@ spec = do
                   actual <- shouldConformStrict $ recurRecurrenceDateTimes dateTimeStart mEndOrDuration recurrenceDateTimess
                   actual `shouldBe` expected
 
-    -- The following tests are built from these these examples from the spec:
+    -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)
+    --
     -- @
     -- RDATE:19970714T123000Z
     -- @
@@ -49,6 +50,8 @@ spec = do
           }
       ]
 
+    -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)
+    --
     -- @
     -- RDATE;TZID=America/New_York:19970714T083000
     -- @
@@ -63,6 +66,8 @@ spec = do
           }
       ]
 
+    -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)
+    --
     -- @
     -- RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
     --  19960404T010000Z/PT3H
@@ -91,6 +96,8 @@ spec = do
           }
       ]
 
+    -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)
+    --
     -- @
     -- RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
     --  19970526,19970704,19970901,19971014,19971128,19971129,19971225
@@ -168,6 +175,8 @@ spec = do
             eventOccurrenceEndOrDuration = Nothing
           }
       ]
+    -- [Section 3.1.1.  List and Field Separators](https://www.rfc-editor.org/rfc/rfc5545#section-3.1.1)
+    --
     -- @
     -- RDATE;VALUE=DATE:19970304,19970504,19970704,19970904
     -- @

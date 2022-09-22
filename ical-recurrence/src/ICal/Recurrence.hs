@@ -177,7 +177,7 @@ dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
     -- Assuming the same timezone
     Time.diffLocalTime lt1 lt2
   (DateTimeUTC ut1, DateTimeUTC ut2) -> Time.diffUTCTime ut1 ut2
-  (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> undefined "Exact duration offsets between two zoned times are not supported yet."
+  (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> error "Exact duration offsets between two zoned times are not supported yet."
 
 resolveEndOrDurationDate ::
   DateTimeStart ->
