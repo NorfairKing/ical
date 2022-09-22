@@ -28,7 +28,8 @@ test-suite ical-recurrence-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ICal.RecurrenceSpec
+      ICal.Recurrence.ClassSpec
+      ICal.Recurrence.RecurrenceDateTimesSpec
       Paths_ical_recurrence_gen
   hs-source-dirs:
       test

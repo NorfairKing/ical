@@ -1,11 +1,9 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
-module ICal.RecurrenceSpec where
+module ICal.Recurrence.RecurrenceDateTimesSpec where
 
 import Data.Time
-import ICal.Conformance
 import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
@@ -17,13 +15,6 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
-  describe "Recurrence" $ do
-    genValidSpec @Recurrence
-  describe "RecurringEvent" $ do
-    genValidSpec @RecurringEvent
-  describe "EventOccurrence" $ do
-    genValidSpec @EventOccurrence
-
   describe "recurRecurrenceDateTimes" $ do
     let exampleSpec mStart mEndOrDuration recurrenceDateTimess expected =
           it "works for this example" $

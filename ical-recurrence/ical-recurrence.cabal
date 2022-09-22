@@ -11,6 +11,8 @@ build-type:     Simple
 library
   exposed-modules:
       ICal.Recurrence
+      ICal.Recurrence.Class
+      ICal.Recurrence.RecurrenceDateTimes
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:
