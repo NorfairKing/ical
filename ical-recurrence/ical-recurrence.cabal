@@ -13,6 +13,7 @@ library
       ICal.Recurrence
       ICal.Recurrence.Class
       ICal.Recurrence.RecurrenceDateTimes
+      ICal.Recurrence.RecurrenceRule
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:
