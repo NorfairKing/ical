@@ -15,6 +15,7 @@
 
 module ICal.Component.Class where
 
+import Control.Exception
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -28,6 +29,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
@@ -51,9 +53,22 @@ data CalendarParseError
   | OtherError String
   deriving (Show, Eq, Ord)
 
+instance Exception CalendarParseError where
+  displayException = \case
+    SubcomponentError pe -> errorBundlePretty pe
+    PropertyParseError ppe -> displayException ppe
+    OtherError s -> s
+
+instance ShowErrorComponent CalendarParseError where
+  showErrorComponent = displayException
+
 data CalendarParseFixableError
   = UntilTypeGuess !DateTimeStart !Until !Until -- Old until new until
   deriving (Show, Eq, Ord)
+
+instance Exception CalendarParseFixableError where
+  displayException = \case
+    UntilTypeGuess dateTimeStart until1 until2 -> unwords ["UntilTypeGuess", show dateTimeStart, show until1, show until2]
 
 parseComponentFromContentLines ::
   (Validity component, IsComponent component) =>
@@ -327,18 +342,6 @@ validateDateTimeStartRRule dateTimeStart recurrenceRules =
   decorateList (S.toList recurrenceRules) $ \recurrenceRule ->
     case recurrenceRuleUntilCount recurrenceRule of
       Just (Left u) ->
-        -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
-        -- @
-        -- The value of the UNTIL rule part MUST have the same
-        -- value type as the "DTSTART" property.
-        -- Furthermore, if the
-        -- "DTSTART" property is specified as a date with local time, then
-        -- the UNTIL rule part MUST also be specified as a date with local
-        -- time.
-        -- If the "DTSTART" property is specified as a date with UTC
-        -- time or a date with local time and time zone reference, then the
-        -- UNTIL rule part MUST be specified as a date with UTC time.
-        -- @
         let msg =
               unlines
                 [ "The value type of the UNTIL rule part has the same value type as the DTSTART property.",
@@ -346,13 +349,88 @@ validateDateTimeStartRRule dateTimeStart recurrenceRules =
                   show u
                 ]
          in declare msg $
+              -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+              -- @
+              -- The value of the UNTIL rule part MUST have the same
+              -- value type as the "DTSTART" property.
+              -- @
               case dateTimeStart of
                 DateTimeStartDate _ -> case u of
                   UntilDate _ -> True
                   _ -> False
                 DateTimeStartDateTime dateTime -> case (dateTime, u) of
+                  -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+                  -- @
+                  -- "DTSTART" property is specified as a date with local time, then
+                  -- the UNTIL rule part MUST also be specified as a date with local
+                  -- time.
+                  -- @
+                  (_, UntilDate _) -> False
+                  -- [section 3.3.10.  Recurrence Rule](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+                  -- @
+                  -- If the "DTSTART" property is specified as a date with UTC
+                  -- time or a date with local time and time zone reference, then the
+                  -- UNTIL rule part MUST be specified as a date with UTC time.
+                  -- @
                   (DateTimeFloating _, UntilDateTimeFloating _) -> True
+                  (DateTimeUTC _, UntilDateTimeFloating _) -> False
+                  (DateTimeZoned _ _, UntilDateTimeFloating _) -> False
+                  (DateTimeFloating _, UntilDateTimeUTC _) -> True
                   (DateTimeUTC _, UntilDateTimeUTC _) -> True
                   (DateTimeZoned _ _, UntilDateTimeUTC _) -> True
-                  _ -> False
       _ -> mempty
+
+-- It turns out that certain ical providers such as Google Calendar may output invalid
+-- ICal that we still have to be able to deal with somehow.
+-- For example, on 2022-06-26, google outputted an event with these properties:
+--
+-- @
+-- BEGIN:VEVENT
+-- UID:18jktp1kl13aov1ku35sf8i40b_R20220705T150000@google.com
+-- DTSTART;TZID=Europe/Kiev:20220705T180000
+-- DTEND;TZID=Europe/Kiev:20220705T183000
+-- RRULE:FREQ=WEEKLY;WKST=SU;UNTIL=20220717;BYDAY=TU
+-- DTSTAMP:20220726T130525Z
+-- @
+--
+-- However, the spec says:
+--
+-- @
+-- The value of the UNTIL rule part MUST have the same
+-- value type as the "DTSTART" property.
+-- @
+--
+-- This means that the UNTIL part must be specified as date WITH TIME.
+-- The spec also says:
+--
+-- @
+-- If the value
+-- specified by UNTIL is synchronized with the specified recurrence,
+-- this DATE or DATE-TIME becomes the last instance of the
+-- recurrence.
+-- @
+--
+-- So when the UNTIL has a date without time, we will guess the time that is
+-- specified in DTSTART.
+fixUntil :: Maybe DateTimeStart -> RecurrenceRule -> CP RecurrenceRule
+fixUntil mDateTimeStart rrule =
+  case mDateTimeStart of
+    Nothing -> pure rrule
+    Just dateTimeStart ->
+      case recurrenceRuleUntilCount rrule of
+        Just (Left u) -> case (dateTimeStart, u) of
+          (DateTimeStartDateTime dt, UntilDate (Date ud)) -> do
+            let newUntil = case dt of
+                  -- This guess is somewhat sensible.
+                  DateTimeUTC (Time.UTCTime _ sdt) ->
+                    UntilDateTimeUTC (Time.UTCTime ud sdt)
+                  -- This guess is fine as well.
+                  DateTimeFloating (Time.LocalTime _ tod) ->
+                    UntilDateTimeFloating (Time.LocalTime ud tod)
+                  -- This guess is bad
+                  DateTimeZoned _ (Time.LocalTime _ tod) ->
+                    UntilDateTimeUTC (Time.UTCTime ud (Time.timeOfDayToTime tod))
+            lift $ emitFixableError $ UntilTypeGuess dateTimeStart u newUntil
+            pure $ rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
+          _ -> pure rrule
+        _ -> pure rrule

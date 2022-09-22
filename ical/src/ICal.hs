@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module ICal
@@ -9,6 +10,7 @@ module ICal
 where
 
 import Control.Arrow (left)
+import Control.Exception
 import Data.ByteString (ByteString)
 import qualified Data.DList as DList
 import Data.Text (Text)
@@ -43,6 +45,13 @@ data ICalParseError
   | ContentLineParseError !String
   | CalendarParseError !(ParseErrorBundle [ContentLine] CalendarParseError)
   deriving (Show, Eq)
+
+instance Exception ICalParseError where
+  displayException = \case
+    TextDecodingError e -> displayException e
+    UnfoldingError ue -> displayException ue
+    ContentLineParseError s -> s
+    CalendarParseError peb -> displayException peb
 
 data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)

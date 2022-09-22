@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.Class where
 
+import Control.Exception
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import Data.Proxy
@@ -27,6 +28,10 @@ import ICal.Parameter
 data PropertyTypeParseError
   = OtherPropertyTypeParseError !String
   deriving (Show, Eq, Ord)
+
+instance Exception PropertyTypeParseError where
+  displayException = \case
+    OtherPropertyTypeParseError s -> s
 
 -- | Property type
 --

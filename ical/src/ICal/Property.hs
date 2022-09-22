@@ -18,6 +18,7 @@ module ICal.Property where
 
 import Control.Arrow (left)
 import Control.DeepSeq
+import Control.Exception
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -39,6 +40,12 @@ data PropertyParseError
   | ParameterParseError !String
   | OtherPropertyParseError !String
   deriving (Show, Eq, Ord)
+
+instance Exception PropertyParseError where
+  displayException = \case
+    PropertyTypeParseError ptpe -> displayException ptpe
+    ParameterParseError s -> s
+    OtherPropertyParseError s -> s
 
 -- |
 --

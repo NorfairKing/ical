@@ -48,4 +48,5 @@ type R = Conform RecurrenceError Void Void
 data RecurrenceError
   = StartStartMismatch !DateTimeStart !DateTimeStart -- Internal error, should not happen.
   | StartEndMismatch !DateTimeStart !DateTimeEnd
+  | ExactDurationMismatch !DateTime !DateTime
   deriving (Show, Eq, Ord)

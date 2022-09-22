@@ -7,6 +7,7 @@
 module ICal.Component.Gen where
 
 import Control.Arrow (left)
+import Control.Exception
 import qualified Data.ByteString as SB
 import qualified Data.DList as DList
 import Data.GenValidity
@@ -17,23 +18,53 @@ import Data.GenValidity.Time ()
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import ICal.Component
+import Data.Void
+import ICal
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
-import ICal.Property
 import ICal.Property.Gen ()
-import ICal.PropertyType
 import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.UnfoldedLine
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
 instance GenValid Calendar where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+fixUntilCount :: DateTimeStart -> RecurrenceRule -> Gen RecurrenceRule
+fixUntilCount dateTimeStart rrule =
+  case recurrenceRuleUntilCount rrule of
+    Just (Left u) ->
+      let updateUntil u' = rrule {recurrenceRuleUntilCount = Just $ Left u'}
+       in case dateTimeStart of
+            DateTimeStartDate _ -> case u of
+              UntilDate _ -> pure rrule
+              _ -> do
+                d <- genValid
+                pure $ updateUntil $ UntilDate d
+            DateTimeStartDateTime dt -> case (dt, u) of
+              (DateTimeFloating _, UntilDate _) -> do
+                u' <- oneof [UntilDateTimeFloating <$> genImpreciseLocalTime, UntilDateTimeUTC <$> genImpreciseUTCTime]
+                pure $ updateUntil u'
+              (DateTimeUTC _, UntilDate _) -> do
+                ut <- genImpreciseUTCTime
+                pure $ updateUntil $ UntilDateTimeUTC ut
+              (DateTimeZoned _ _, UntilDate _) -> do
+                ut <- genImpreciseUTCTime
+                pure $ updateUntil $ UntilDateTimeUTC ut
+              (DateTimeUTC _, UntilDateTimeFloating _) -> do
+                ut <- genImpreciseUTCTime
+                pure $ updateUntil $ UntilDateTimeUTC ut
+              (DateTimeZoned _ _, UntilDateTimeFloating _) -> do
+                ut <- genImpreciseUTCTime
+                pure $ updateUntil $ UntilDateTimeUTC ut
+              _ -> pure rrule
+    _ -> pure rrule
 
 instance GenValid Event where
   genValid = do
@@ -52,32 +83,7 @@ instance GenValid Event where
     eventURL <- genValid
     eventRecurrenceRules <- case eventDateTimeStart of
       Nothing -> pure S.empty
-      Just dtstart -> genSetOf $ do
-        rrule <- genValid
-        case recurrenceRuleUntilCount rrule of
-          Just (Left u) -> case (u, dtstart) of
-            (UntilDate _, DateTimeStartDate _) -> pure rrule
-            (UntilDateTimeFloating _, DateTimeStartDateTime dt) -> case dt of
-              DateTimeFloating _ -> pure rrule
-              _ -> do
-                ut <- genImpreciseUTCTime
-                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
-            (UntilDateTimeUTC _, DateTimeStartDateTime dt) -> case dt of
-              DateTimeFloating _ -> do
-                lt <- genImpreciseLocalTime
-                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeFloating lt})
-              _ -> pure rrule
-            (UntilDate _, DateTimeStartDateTime dt) -> case dt of
-              DateTimeFloating _ -> do
-                lt <- genImpreciseLocalTime
-                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeFloating lt})
-              _ -> do
-                ut <- genImpreciseUTCTime
-                pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
-            (_, DateTimeStartDate _) -> do
-              d <- genValid
-              pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDate d})
-          _ -> pure rrule
+      Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
 
     eventDateTimeEndDuration <- genValid
     pure Event {..}
@@ -134,15 +140,7 @@ instance GenValid Observance where
     observanceDateTimeStart <- genImpreciseLocalTime
     observanceTimeZoneOffsetTo <- genValid
     observanceTimeZoneOffsetFrom <- genValid
-    observanceRecurrenceRule <- genSetOf $ do
-      rrule <- genValid
-      case recurrenceRuleUntilCount rrule of
-        Just (Left u) -> case u of
-          UntilDate _ -> do
-            ut <- genValid
-            pure (rrule {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC ut})
-          _ -> pure rrule
-        _ -> pure rrule
+    observanceRecurrenceRules <- genSetOf $ genValid >>= fixUntilCount (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart))
 
     observanceComment <- genValid
     observanceTimeZoneName <- genValid
@@ -191,12 +189,12 @@ componentScenarioDir ::
   FilePath ->
   Spec
 componentScenarioDir dir = scenarioDir dir $ \tzFile ->
-  it "can parse this file as a component and roundtrip it" $ do
-    let parseBS bs = do
-          textContents <- left show $ TE.decodeUtf8' bs
-          unfoldedLines <- left show $ runConformStrict $ parseUnfoldedLines textContents
-          contentLines <- mapM parseContentLineFromUnfoldedLine unfoldedLines
-          left show $ runConformStrict $ parseComponentFromContentLines contentLines
+  it "can parse this file as a component strictly and roundtrip it" $ do
+    let parseBS bs = runConformStrict $ do
+          textContents <- conformFromEither $ left TextDecodingError $ TE.decodeUtf8' bs
+          unfoldedLines <- conformMapErrors UnfoldingError absurd $ parseUnfoldedLines textContents
+          contentLines <- conformMapErrors ContentLineParseError absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+          conformMapErrors CalendarParseError CalendarParseFixableError $ parseComponentFromContentLines contentLines
 
         renderBS =
           TE.encodeUtf8
@@ -207,13 +205,25 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
 
     contents <- SB.readFile tzFile
     case parseBS contents of
-      Left err -> expectationFailure err
+      Left err -> expectationFailure $ renderError err
       Right result -> do
         shouldBeValid (result :: a)
         let rendered = renderBS result
         case parseBS rendered of
-          Left err -> expectationFailure err
+          Left err -> expectationFailure $ renderError err
           Right result' -> result' `shouldBe` result
+
+renderError :: Either ICalParseError (Notes ICalParseFixableError Void) -> String
+renderError = \case
+  Left iCalParseError -> displayException iCalParseError
+  Right (Notes fes wes) ->
+    unlines $
+      concat
+        [ ["Fixable errors:"],
+          map show fes,
+          ["Warnings:"],
+          map show wes
+        ]
 
 componentSpec ::
   forall a.

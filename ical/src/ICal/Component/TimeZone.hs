@@ -576,7 +576,7 @@ data Observance = Observance
     -- ;
     -- rrule /
     -- @
-    observanceRecurrenceRule :: !(Set RecurrenceRule),
+    observanceRecurrenceRules :: !(Set RecurrenceRule),
     -- @
     -- ; The following are OPTIONAL,
     -- ; and MAY occur more than once.
@@ -593,7 +593,7 @@ instance Validity Observance where
     mconcat
       [ genericValidate o,
         validateImpreciseLocalTime observanceDateTimeStart,
-        validateDateTimeStartRRule (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)) observanceRecurrenceRule
+        validateDateTimeStartRRule (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)) observanceRecurrenceRules
       ]
 
 instance NFData Observance
@@ -604,7 +604,7 @@ makeObservance start from to =
     { observanceDateTimeStart = start,
       observanceTimeZoneOffsetFrom = from,
       observanceTimeZoneOffsetTo = to,
-      observanceRecurrenceRule = S.empty,
+      observanceRecurrenceRules = S.empty,
       observanceComment = S.empty,
       observanceTimeZoneName = S.empty
     }
@@ -632,7 +632,8 @@ observanceP = do
 
   observanceTimeZoneOffsetTo <- parseFirst observanceProperties
   observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
-  observanceRecurrenceRule <- parseSet observanceProperties
+  observanceRecurrenceRules <- S.fromList <$> (parseList observanceProperties >>= traverse (fixUntil (Just dtstart)))
+
   observanceComment <- parseSet observanceProperties
   observanceTimeZoneName <- parseSet observanceProperties
   pure Observance {..}
@@ -643,7 +644,7 @@ observanceB Observance {..} =
     [ propertyListB (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
       propertyListB observanceTimeZoneOffsetTo,
       propertyListB observanceTimeZoneOffsetFrom,
-      propertySetB observanceRecurrenceRule,
+      propertySetB observanceRecurrenceRules,
       propertySetB observanceComment,
       propertySetB observanceTimeZoneName
     ]

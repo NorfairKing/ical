@@ -9,9 +9,6 @@ import Control.Monad
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
-import Data.Validity
-import Data.Void
-import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
@@ -65,13 +62,14 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
 dateExactDuration :: Date -> Date -> Integer
 dateExactDuration = diffDates
 
-dateTimeExactDuration :: DateTime -> DateTime -> Time.NominalDiffTime
+dateTimeExactDuration :: DateTime -> DateTime -> R Time.NominalDiffTime
 dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
   (DateTimeFloating lt1, DateTimeFloating lt2) ->
     -- Assuming the same timezone
-    Time.diffLocalTime lt1 lt2
-  (DateTimeUTC ut1, DateTimeUTC ut2) -> Time.diffUTCTime ut1 ut2
-  (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> error "Exact duration offsets between two zoned times are not supported yet."
+    pure $ Time.diffLocalTime lt1 lt2
+  (DateTimeUTC ut1, DateTimeUTC ut2) -> pure $ Time.diffUTCTime ut1 ut2
+  (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> error "Exact duration offsets between two zoned times are not supported yet." tzid1 tzid2 lt1 lt2
+  _ -> unfixableError $ ExactDurationMismatch dt1 dt2
 
 resolveEndOrDurationDate ::
   DateTimeStart ->
@@ -106,7 +104,7 @@ resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDura
       (DateTimeStartDateTime startDateTime, DateTimeEndDateTime endDateTime) ->
         let exactDuration = dateTimeExactDuration startDateTime endDateTime
          in case newStart of
-              DateTimeStartDateTime newDateTime -> undefined
+              DateTimeStartDateTime newDateTime -> error "Not supported yet." exactDuration newDateTime
               _ -> unfixableError $ StartStartMismatch originalStart newStart
       -- These two cases represent invalid ical:
       -- @
@@ -125,7 +123,7 @@ resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDura
       -- The value type of the "DTEND" or "DUE" properties MUST match the
       -- value type of "DTSTART" property.
       -- @
-      (DateTimeStartDate startDate, DateTimeEndDateTime endDateTime) ->
+      (DateTimeStartDate _, DateTimeEndDateTime _) ->
         unfixableError $ StartEndMismatch originalStart end
-      (DateTimeStartDateTime startDateTime, DateTimeEndDate endDate) ->
+      (DateTimeStartDateTime _, DateTimeEndDate _) ->
         unfixableError $ StartEndMismatch originalStart end
