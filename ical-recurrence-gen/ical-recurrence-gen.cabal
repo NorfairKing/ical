@@ -30,6 +30,7 @@ test-suite ical-recurrence-test
   other-modules:
       ICal.Recurrence.ClassSpec
       ICal.Recurrence.RecurrenceDateTimesSpec
+      ICal.Recurrence.RecurrenceRuleSpec
       Paths_ical_recurrence_gen
   hs-source-dirs:
       test
@@ -39,6 +40,7 @@ test-suite ical-recurrence-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , containers
     , genvalidity-sydtest
     , ical
     , ical-gen

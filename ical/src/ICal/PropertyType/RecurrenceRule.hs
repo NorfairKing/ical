@@ -587,6 +587,7 @@ recurrenceRuleP ContentLineValue {..} = do
         (Nothing, Nothing) -> Nothing
         (Nothing, Just c) -> Just (Left c)
         -- Don't reject invalid ical that defines both, but ignore the count.
+        -- TODO emit a fixable warning here.
         (Just u, _) -> Just (Right u)
 
   recurrenceRuleBySecond <- parseSetPart
