@@ -26,11 +26,22 @@ import ICal.ContentLine
 import ICal.Parameter
 
 data PropertyTypeParseError
-  = OtherPropertyTypeParseError !String
+  = UnexpectedValueType
+      !ValueDataType
+      -- ^ Actual
+      !ValueDataType
+      -- ^ Expected
+  | OtherPropertyTypeParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyTypeParseError where
   displayException = \case
+    UnexpectedValueType actual expected ->
+      unlines
+        [ "Uxpected value type.",
+          unwords ["actual:   ", show actual],
+          unwords ["expected: ", show expected]
+        ]
     OtherPropertyTypeParseError s -> s
 
 -- | Property type
@@ -157,7 +168,7 @@ parseOfValue typ params = do
         Just typ' ->
           if typ == typ'
             then pure ()
-            else unfixableError $ OtherPropertyTypeParseError "Invalid VALUE" -- TODO better error
+            else unfixableError $ UnexpectedValueType typ' typ
         _ -> pure ()
 
 -- | Escape 'Text'
