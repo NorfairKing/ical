@@ -13,7 +13,6 @@
 
 module ICal.PropertyType.RecurrenceRule where
 
-import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI (..))
@@ -559,19 +558,12 @@ recurrenceRuleP ContentLineValue {..} = do
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in case lookup name tups of
               Nothing -> unfixableError $ OtherPropertyTypeParseError $ "Recurrence rule part not found: " <> show name
-              Just val -> case recurrenceRulePartP val of
-                Left err -> unfixableError $ OtherPropertyTypeParseError err
-                Right p -> pure p
+              Just val -> recurrenceRulePartP val
 
       parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void (Maybe part)
       parseMPart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
-         in mapM
-              ( \v -> case recurrenceRulePartP v of
-                  Left err -> unfixableError $ OtherPropertyTypeParseError err
-                  Right p -> pure p
-              )
-              (lookup name tups)
+         in mapM recurrenceRulePartP (lookup name tups)
 
       parseDPart :: forall part. IsRecurrenceRulePart part => part -> Conform PropertyTypeParseError Void Void part
       parseDPart defaultValue = fromMaybe defaultValue <$> parseMPart
@@ -646,13 +638,13 @@ recurrenceRuleB RecurrenceRule {..} =
 
 class IsRecurrenceRulePart part where
   recurrenceRulePartName :: Proxy part -> Text
-  recurrenceRulePartP :: Text -> Either String part
+  recurrenceRulePartP :: Text -> Conform PropertyTypeParseError Void Void part
   recurrenceRulePartB :: part -> Text
 
-setP :: Ord part => (Text -> Either String part) -> Text -> Either String (Set part)
+setP :: Ord part => (Text -> Conform PropertyTypeParseError Void Void part) -> Text -> Conform PropertyTypeParseError Void Void (Set part)
 setP parser t =
   if T.null t
-    then Right S.empty
+    then pure S.empty
     else S.fromList <$> mapM parser (T.splitOn "," t)
 
 setB :: (part -> Text) -> Set part -> Text
@@ -703,16 +695,16 @@ instance IsRecurrenceRulePart Frequency where
   recurrenceRulePartP = frequencyP
   recurrenceRulePartB = frequencyB
 
-frequencyP :: Text -> Either String Frequency
+frequencyP :: Text -> Conform PropertyTypeParseError Void Void Frequency
 frequencyP = \case
-  "SECONDLY" -> Right Secondly
-  "MINUTELY" -> Right Minutely
-  "HOURLY" -> Right Hourly
-  "DAILY" -> Right Daily
-  "WEEKLY" -> Right Weekly
-  "MONTHLY" -> Right Monthly
-  "YEARLY" -> Right Yearly
-  t -> Left $ "Unknown Frequency value: " <> show t
+  "SECONDLY" -> pure Secondly
+  "MINUTELY" -> pure Minutely
+  "HOURLY" -> pure Hourly
+  "DAILY" -> pure Daily
+  "WEEKLY" -> pure Weekly
+  "MONTHLY" -> pure Monthly
+  "YEARLY" -> pure Yearly
+  t -> unfixableError $ UnknownFrequency t
 
 frequencyB :: Frequency -> Text
 frequencyB = \case
@@ -746,11 +738,11 @@ instance IsRecurrenceRulePart Interval where
   recurrenceRulePartP = intervalP
   recurrenceRulePartB = intervalB
 
-intervalP :: Text -> Either String Interval
+intervalP :: Text -> Conform PropertyTypeParseError Void Void Interval
 intervalP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "INTERVAL did not look like a positive integer: " <> show t
-    Just w -> Right $ Interval w
+    Nothing -> unfixableError $ UnReadableInterval t
+    Just w -> pure $ Interval w
 
 intervalB :: Interval -> Text
 intervalB = T.pack . show . unInterval
@@ -841,11 +833,11 @@ instance IsRecurrenceRulePart Until where
   recurrenceRulePartP = untilP
   recurrenceRulePartB = untilB
 
-untilP :: Text -> Either String Until
+untilP :: Text -> Conform PropertyTypeParseError Void Void Until
 untilP t =
   (UntilDate <$> parseDate t)
-    <|> (UntilDateTimeUTC <$> parseDateTimeUTC t)
-    <|> (UntilDateTimeFloating <$> parseDateTimeFloating t)
+    `altConform` (UntilDateTimeUTC <$> parseDateTimeUTC t)
+    `altConform` (UntilDateTimeFloating <$> parseDateTimeFloating t)
 
 untilB :: Until -> Text
 untilB = \case
@@ -871,11 +863,11 @@ instance IsRecurrenceRulePart Count where
   recurrenceRulePartP = countP
   recurrenceRulePartB = countB
 
-countP :: Text -> Either String Count
+countP :: Text -> Conform PropertyTypeParseError Void Void Count
 countP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "COUNT did not look like a positive integer: " <> show t
-    Just w -> Right $ Count w
+    Nothing -> unfixableError $ UnReadableCount t
+    Just w -> pure $ Count w
 
 countB :: Count -> Text
 countB = T.pack . show . unCount
@@ -901,11 +893,11 @@ instance IsRecurrenceRulePart (Set BySecond) where
   recurrenceRulePartP = setP bySecondP
   recurrenceRulePartB = setB bySecondB
 
-bySecondP :: Text -> Either String BySecond
+bySecondP :: Text -> Conform PropertyTypeParseError Void Void BySecond
 bySecondP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYSECOND did not look like a positive integer: " <> show t
-    Just w -> Right $ BySecond w
+    Nothing -> unfixableError $ UnReadableBySecond t
+    Just w -> pure $ BySecond w
 
 bySecondB :: BySecond -> Text
 bySecondB = T.pack . show . unBySecond
@@ -931,11 +923,11 @@ instance IsRecurrenceRulePart (Set ByMinute) where
   recurrenceRulePartP = setP byMinuteP
   recurrenceRulePartB = setB byMinuteB
 
-byMinuteP :: Text -> Either String ByMinute
+byMinuteP :: Text -> Conform PropertyTypeParseError Void Void ByMinute
 byMinuteP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYMINUTE did not look like a positive integer: " <> show t
-    Just w -> Right $ ByMinute w
+    Nothing -> unfixableError $ UnReadableByMinute t
+    Just w -> pure $ ByMinute w
 
 byMinuteB :: ByMinute -> Text
 byMinuteB = T.pack . show . unByMinute
@@ -961,11 +953,11 @@ instance IsRecurrenceRulePart (Set ByHour) where
   recurrenceRulePartP = setP byHourP
   recurrenceRulePartB = setB byHourB
 
-byHourP :: Text -> Either String ByHour
+byHourP :: Text -> Conform PropertyTypeParseError Void Void ByHour
 byHourP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYHOUR did not look like a positive integer: " <> show t
-    Just w -> Right $ ByHour w
+    Nothing -> unfixableError $ UnReadableByHour t
+    Just w -> pure $ ByHour w
 
 byHourB :: ByHour -> Text
 byHourB = T.pack . show . unByHour
@@ -1011,34 +1003,40 @@ instance IsRecurrenceRulePart (Set ByDay) where
   recurrenceRulePartP = setP byDayP
   recurrenceRulePartB = setB byDayB
 
-byDayP :: Text -> Either String ByDay
+byDayP :: Text -> Conform PropertyTypeParseError Void Void ByDay
 byDayP t =
   let ci = CI.mk t
-   in case parseDayOfWeek ci of
-        Right dow -> pure $ Every dow
-        Left err -> case T.unpack t of
-          '-' : d : rest -> case readMaybe [d] of
-            Nothing -> undefined
-            Just i -> do
-              dow <- parseDayOfWeek (CI.mk (T.pack rest))
-              pure $ Specific (negate i) dow
-          d : rest -> case readMaybe [d] of
-            Nothing -> undefined
-            Just i -> do
-              dow <- parseDayOfWeek (CI.mk (T.pack rest))
-              pure $ Specific i dow
-          _ -> Left err
+   in everyP ci `altConform` specificP ci
 
-parseDayOfWeek :: CI Text -> Either String DayOfWeek
+everyP :: CI Text -> Conform PropertyTypeParseError Void Void ByDay
+everyP = fmap Every . parseDayOfWeek
+
+specificP :: CI Text -> Conform PropertyTypeParseError Void Void ByDay
+specificP ci =
+  let t = CI.original ci
+   in case T.unpack t of
+        '-' : d : rest -> case readMaybe [d] of
+          Nothing -> unfixableError $ UnReadableByDay t
+          Just i -> do
+            dow <- parseDayOfWeek (CI.mk (T.pack rest))
+            pure $ Specific (negate i) dow
+        d : rest -> case readMaybe [d] of
+          Nothing -> undefined
+          Just i -> do
+            dow <- parseDayOfWeek (CI.mk (T.pack rest))
+            pure $ Specific i dow
+        _ -> unfixableError $ UnReadableByDay t
+
+parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError Void Void DayOfWeek
 parseDayOfWeek = \case
-  "MO" -> Right Monday
-  "TU" -> Right Tuesday
-  "WE" -> Right Wednesday
-  "TH" -> Right Thursday
-  "FR" -> Right Friday
-  "SA" -> Right Saturday
-  "SU" -> Right Sunday
-  t -> Left $ unwords ["Unknown day of week:", show t]
+  "MO" -> pure Monday
+  "TU" -> pure Tuesday
+  "WE" -> pure Wednesday
+  "TH" -> pure Thursday
+  "FR" -> pure Friday
+  "SA" -> pure Saturday
+  "SU" -> pure Sunday
+  t -> unfixableError $ UnReadableDayOfWeek t
 
 renderDayOfWeek :: DayOfWeek -> CI Text
 renderDayOfWeek = \case
@@ -1078,11 +1076,11 @@ instance IsRecurrenceRulePart (Set ByMonthDay) where
   recurrenceRulePartP = setP byMonthDayP
   recurrenceRulePartB = setB byMonthDayB
 
-byMonthDayP :: Text -> Either String ByMonthDay
+byMonthDayP :: Text -> Conform PropertyTypeParseError Void Void ByMonthDay
 byMonthDayP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYMONTHDAY did not look like an integer: " <> show t
-    Just w -> Right $ ByMonthDay w
+    Nothing -> unfixableError $ UnReadableByMonthDay t
+    Just w -> pure $ ByMonthDay w
 
 byMonthDayB :: ByMonthDay -> Text
 byMonthDayB = T.pack . show . unByMonthDay
@@ -1110,11 +1108,11 @@ instance IsRecurrenceRulePart (Set ByYearDay) where
   recurrenceRulePartP = setP byYearDayP
   recurrenceRulePartB = setB byYearDayB
 
-byYearDayP :: Text -> Either String ByYearDay
+byYearDayP :: Text -> Conform PropertyTypeParseError Void Void ByYearDay
 byYearDayP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYYEARDAY did not look like an integer: " <> show t
-    Just w -> Right $ ByYearDay w
+    Nothing -> unfixableError $ UnReadableByYearDay t
+    Just w -> pure $ ByYearDay w
 
 byYearDayB :: ByYearDay -> Text
 byYearDayB = T.pack . show . unByYearDay
@@ -1151,11 +1149,11 @@ instance IsRecurrenceRulePart (Set ByWeekNo) where
   recurrenceRulePartP = setP byWeekNoP
   recurrenceRulePartB = setB byWeekNoB
 
-byWeekNoP :: Text -> Either String ByWeekNo
+byWeekNoP :: Text -> Conform PropertyTypeParseError Void Void ByWeekNo
 byWeekNoP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYWEEKNO did not look like an integer: " <> show t
-    Just w -> Right $ ByWeekNo w
+    Nothing -> unfixableError $ UnReadableByWeekNo t
+    Just w -> pure $ ByWeekNo w
 
 byWeekNoB :: ByWeekNo -> Text
 byWeekNoB = T.pack . show . unByWeekNo
@@ -1177,10 +1175,10 @@ instance IsRecurrenceRulePart (Set ByMonth) where
   recurrenceRulePartP = setP byMonthP
   recurrenceRulePartB = setB byMonthB
 
-byMonthP :: Text -> Either String ByMonth
+byMonthP :: Text -> Conform PropertyTypeParseError Void Void ByMonth
 byMonthP t = case readMaybe (T.unpack t) >>= monthNoToMonth of
-  Nothing -> Left $ "BYMONTH did not look like a positive integer: " <> show t
-  Just w -> Right $ ByMonth w
+  Nothing -> unfixableError $ UnReadableByMonth t
+  Just w -> pure $ ByMonth w
 
 byMonthB :: ByMonth -> Text
 byMonthB = T.pack . show . monthToMonthNo . unByMonth
@@ -1221,11 +1219,11 @@ instance IsRecurrenceRulePart (Set BySetPos) where
   recurrenceRulePartP = setP bySetPosP
   recurrenceRulePartB = setB bySetPosB
 
-bySetPosP :: Text -> Either String BySetPos
+bySetPosP :: Text -> Conform PropertyTypeParseError Void Void BySetPos
 bySetPosP t =
   case readMaybe (T.unpack t) of
-    Nothing -> Left $ "BYSETPOS did not look like an integer: " <> show t
-    Just w -> Right $ BySetPos w
+    Nothing -> unfixableError $ UnReadableBySetPos t
+    Just w -> pure $ BySetPos w
 
 bySetPosB :: BySetPos -> Text
 bySetPosB = T.pack . show . unBySetPos
@@ -1251,7 +1249,7 @@ instance IsRecurrenceRulePart WeekStart where
   recurrenceRulePartP = weekStartP
   recurrenceRulePartB = weekStartB
 
-weekStartP :: Text -> Either String WeekStart
+weekStartP :: Text -> Conform PropertyTypeParseError Void Void WeekStart
 weekStartP = fmap WeekStart <$> parseDayOfWeek . CI.mk
 
 weekStartB :: WeekStart -> Text

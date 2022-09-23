@@ -27,7 +27,6 @@ import ICal.Parameter
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.Time
-import Text.Megaparsec
 
 -- | Date Time
 --
@@ -233,21 +232,20 @@ dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTi
 dateTimeP clv@ContentLineValue {..} = do
   parseOfValue TypeDateTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
-  let errOrDateTime = case lookupParam contentLineValueParams of
-        Just errOrTZID -> DateTimeZoned <$> errOrTZID <*> parseTimeEither dateTimeZonedFormatStr s
-        _ ->
-          (DateTimeFloating <$> dateTimeFloatingP clv)
-            <|> (DateTimeUTC <$> dateTimeUTCP clv)
-  case errOrDateTime of
-    Left err -> unfixableError $ OtherPropertyTypeParseError err
-    Right dateTime -> pure dateTime
+  case lookupParam contentLineValueParams of
+    Nothing ->
+      (DateTimeFloating <$> dateTimeFloatingP clv)
+        `altConform` (DateTimeUTC <$> dateTimeUTCP clv)
+    Just conformTzid ->
+      DateTimeZoned
+        <$> conformMapError ParameterParseError conformTzid
+        <*> parseTimeStr dateTimeZonedFormatStr s
 
-dateTimeFloatingP :: ContentLineValue -> Either String Time.LocalTime
-dateTimeFloatingP ContentLineValue {..} = parseDateTimeFloating contentLineValueRaw
+dateTimeFloatingP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time.LocalTime
+dateTimeFloatingP = parseDateTimeFloating . contentLineValueRaw
 
-dateTimeUTCP :: ContentLineValue -> Either String Time.UTCTime
-dateTimeUTCP ContentLineValue {..} =
-  parseDateTimeUTC contentLineValueRaw
+dateTimeUTCP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time.UTCTime
+dateTimeUTCP = parseDateTimeUTC . contentLineValueRaw
 
 dateTimeB :: DateTime -> ContentLineValue
 dateTimeB dt = insertParam TypeDateTime $ case dt of
@@ -268,8 +266,8 @@ dateTimeZonedB tzidParam lt =
       contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
     }
 
-parseDateTimeFloating :: Text -> Either String Time.LocalTime
-parseDateTimeFloating = parseTimeEither dateTimeFloatingFormatStr . T.unpack
+parseDateTimeFloating :: Text -> Conform PropertyTypeParseError Void Void Time.LocalTime
+parseDateTimeFloating = parseTimeStr dateTimeFloatingFormatStr . T.unpack
 
 renderDateTimeFloating :: Time.LocalTime -> Text
 renderDateTimeFloating = T.pack . Time.formatTime Time.defaultTimeLocale dateTimeFloatingFormatStr
@@ -277,8 +275,8 @@ renderDateTimeFloating = T.pack . Time.formatTime Time.defaultTimeLocale dateTim
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
 
-parseDateTimeUTC :: Text -> Either String Time.UTCTime
-parseDateTimeUTC = parseTimeEither dateTimeUTCFormatStr . T.unpack
+parseDateTimeUTC :: Text -> Conform PropertyTypeParseError Void Void Time.UTCTime
+parseDateTimeUTC = parseTimeStr dateTimeUTCFormatStr . T.unpack
 
 renderDateTimeUTC :: Time.UTCTime -> Text
 renderDateTimeUTC = T.pack . Time.formatTime Time.defaultTimeLocale dateTimeUTCFormatStr

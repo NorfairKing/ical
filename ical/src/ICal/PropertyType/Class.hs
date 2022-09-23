@@ -9,6 +9,7 @@
 module ICal.PropertyType.Class where
 
 import Control.Exception
+import Data.CaseInsensitive (CI)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import Data.Proxy
@@ -26,22 +27,60 @@ import ICal.ContentLine
 import ICal.Parameter
 
 data PropertyTypeParseError
-  = UnexpectedValueType
+  = ParameterParseError !ParameterParseError
+  | TimeStrParseError
+      !String
+      -- ^ Format String
+      !String
+      -- ^ Input String
+  | UnexpectedValueType
       !ValueDataType
       -- ^ Actual
       !ValueDataType
       -- ^ Expected
+  | UnknownFrequency !Text
+  | UnReadableInterval !Text
+  | UnReadableCount !Text
+  | UnReadableBySecond !Text
+  | UnReadableByMinute !Text
+  | UnReadableByHour !Text
+  | UnReadableByDay !Text
+  | UnReadableByMonthDay !Text
+  | UnReadableByYearDay !Text
+  | UnReadableByWeekNo !Text
+  | UnReadableByMonth !Text
+  | UnReadableBySetPos !Text
+  | UnReadableDayOfWeek !(CI Text)
   | OtherPropertyTypeParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyTypeParseError where
   displayException = \case
+    ParameterParseError pe -> displayException pe
+    TimeStrParseError formatStr inputStr ->
+      unlines
+        [ unwords ["Could not parse time value:", show inputStr],
+          unwords ["using format string:", show formatStr]
+        ]
     UnexpectedValueType actual expected ->
       unlines
         [ "Uxpected value type.",
           unwords ["actual:   ", show actual],
           unwords ["expected: ", show expected]
         ]
+    UnknownFrequency s -> unwords ["Unknown FREQ value:", show s]
+    UnReadableInterval s -> unwords ["Unreadable INTERVAL value:", show s]
+    UnReadableCount s -> unwords ["Unreadable COUNT value:", show s]
+    UnReadableBySecond s -> unwords ["Unreadable BYSECOND value:", show s]
+    UnReadableByMinute s -> unwords ["Unreadable BYMINUTE value:", show s]
+    UnReadableByHour s -> unwords ["Unreadable BYHOUR value:", show s]
+    UnReadableByDay s -> unwords ["Unreadable BYDAY value:", show s]
+    UnReadableByMonthDay s -> unwords ["Unreadable BYMONTHDAY value:", show s]
+    UnReadableByYearDay s -> unwords ["Unreadable BYYEARDAY value:", show s]
+    UnReadableByWeekNo s -> unwords ["Unreadable BYWEEKNO value:", show s]
+    UnReadableByMonth s -> unwords ["Unreadable BYMONTH value:", show s]
+    UnReadableBySetPos s -> unwords ["Unreadable BYSETPOS value:", show s]
+    UnReadableDayOfWeek s -> unwords ["Unknown day of week value:", show s]
     OtherPropertyTypeParseError s -> s
 
 -- | Property type
@@ -161,15 +200,13 @@ propertyTypeSetB = propertyTypeListB . S.toList
 
 parseOfValue :: ValueDataType -> Map ParamName (NonEmpty ParamValue) -> Conform PropertyTypeParseError Void Void ()
 parseOfValue typ params = do
-  case optionalParam params of
-    Left err -> unfixableError $ OtherPropertyTypeParseError err -- TODO much better error
-    Right mValue ->
-      case mValue of
-        Just typ' ->
-          if typ == typ'
-            then pure ()
-            else unfixableError $ UnexpectedValueType typ' typ
-        _ -> pure ()
+  mValueDataType <- conformMapError ParameterParseError $ optionalParam params
+  case mValueDataType of
+    Just typ' ->
+      if typ == typ'
+        then pure ()
+        else unfixableError $ UnexpectedValueType typ' typ
+    _ -> pure ()
 
 -- | Escape 'Text'
 --
@@ -217,7 +254,7 @@ validateImpreciseTimeOfDay tod =
 proxyOf :: a -> Proxy a
 proxyOf !_ = Proxy
 
-parseTimeEither :: Time.ParseTime t => String -> String -> Either String t
-parseTimeEither formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
-  Nothing -> Left $ "Could not parse time value: " <> s
-  Just t -> Right t
+parseTimeStr :: Time.ParseTime t => String -> String -> Conform PropertyTypeParseError void void t
+parseTimeStr formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
+  Nothing -> unfixableError $ TimeStrParseError formatStr s
+  Just t -> pure t

@@ -22,7 +22,6 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
-import Text.Megaparsec
 import Text.Printf
 
 -- | Time
@@ -183,14 +182,14 @@ timeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time
 timeP ContentLineValue {..} = do
   parseOfValue TypeTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
-  let errOrTime = case lookupParam contentLineValueParams of
-        Nothing ->
-          (TimeFloating <$> parseTimeEither timeFloatingFormatStr s)
-            <|> (TimeUTC <$> parseTimeEither timeUTCFormatStr s)
-        Just errOrTZID -> TimeZoned <$> errOrTZID <*> parseTimeEither timeZonedFormatStr s
-  case errOrTime of
-    Left err -> unfixableError $ OtherPropertyTypeParseError err
-    Right time -> pure time
+  case lookupParam contentLineValueParams of
+    Nothing ->
+      (TimeFloating <$> parseTimeStr timeFloatingFormatStr s)
+        `altConform` (TimeUTC <$> parseTimeStr timeUTCFormatStr s)
+    Just conformTzid ->
+      TimeZoned
+        <$> conformMapError ParameterParseError conformTzid
+        <*> parseTimeStr timeZonedFormatStr s
 
 timeB :: Time -> ContentLineValue
 timeB =

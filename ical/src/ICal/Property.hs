@@ -37,14 +37,12 @@ import Text.Read
 
 data PropertyParseError
   = PropertyTypeParseError !PropertyTypeParseError
-  | ParameterParseError !String
   | OtherPropertyParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyParseError where
   displayException = \case
     PropertyTypeParseError ptpe -> displayException ptpe
-    ParameterParseError s -> s
     OtherPropertyParseError s -> s
 
 -- |
@@ -718,9 +716,7 @@ instance NFData Created
 
 instance IsProperty Created where
   propertyName Proxy = "CREATED"
-  propertyP clv = case dateTimeUTCP clv of
-    Left err -> unfixableError $ OtherPropertyParseError err
-    Right ut -> pure $ Created ut
+  propertyP = fmap Created . conformMapError PropertyTypeParseError . dateTimeUTCP
   propertyB = dateTimeUTCB . unCreated
 
 -- |
@@ -1027,9 +1023,7 @@ instance NFData LastModified
 
 instance IsProperty LastModified where
   propertyName Proxy = "LAST-MODIFIED"
-  propertyP clv = case dateTimeUTCP clv of
-    Left err -> unfixableError $ OtherPropertyParseError err
-    Right ut -> pure $ LastModified ut
+  propertyP = fmap LastModified . conformMapError PropertyTypeParseError . dateTimeUTCP
   propertyB = dateTimeUTCB . unLastModified
 
 -- | Location
@@ -1720,7 +1714,7 @@ instance NFData ExceptionDateTimes
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
   propertyP clv = do
-    mValue <- conformFromEither $ left ParameterParseError $ optionalParam $ contentLineValueParams clv
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP ExceptionDateTimes clv
       Just TypeDate -> wrapPropertyTypeP ExceptionDates clv
@@ -1831,7 +1825,7 @@ instance NFData RecurrenceDateTimes
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
   propertyP clv = do
-    mValue <- conformFromEither $ left ParameterParseError $ optionalParam $ contentLineValueParams clv
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv

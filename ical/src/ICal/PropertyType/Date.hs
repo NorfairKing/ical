@@ -100,15 +100,13 @@ dateAddDays diff (Date a) = Date $ Time.addDays diff a
 dateP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Date
 dateP ContentLineValue {..} = do
   parseOfValue TypeDate contentLineValueParams
-  case parseDate contentLineValueRaw of
-    Left err -> unfixableError $ OtherPropertyTypeParseError err
-    Right date -> pure date
+  parseDate contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
 dateB = insertParam TypeDate . mkSimpleContentLineValue . renderDate
 
-parseDate :: Text -> Either String Date
-parseDate = fmap Date . parseTimeEither dateFormatStr . T.unpack
+parseDate :: Text -> Conform PropertyTypeParseError void void Date
+parseDate = fmap Date . parseTimeStr dateFormatStr . T.unpack
 
 renderDate :: Date -> Text
 renderDate = T.pack . Time.formatTime Time.defaultTimeLocale dateFormatStr . unDate

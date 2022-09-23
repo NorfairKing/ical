@@ -12,6 +12,10 @@ import Data.GenValidity.Containers
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Set as S
+import Data.Text (Text)
+import GHC.Stack
+import ICal.Conformance
+import ICal.Conformance.TestUtils
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck
@@ -210,24 +214,35 @@ genDailyRecurrence = do
           else pure S.empty
   pure RecurrenceRule {..}
 
+recurrenceRulePartExampleSpec ::
+  (HasCallStack, Show a, Eq a, IsRecurrenceRulePart a) =>
+  Text ->
+  a ->
+  Spec
+recurrenceRulePartExampleSpec text value = withFrozenCallStack $ do
+  it "can parse this example correctly" $ do
+    actual <- shouldConformStrict $ recurrenceRulePartP text
+    actual `shouldBe` value
+  it "can render this example correctly" $
+    recurrenceRulePartB value `shouldBe` text
+
 recurrenceRulePartSpec ::
   forall a.
-  (Show a, Eq a, GenValid a, IsRecurrenceRulePart a) =>
+  (HasCallStack, Show a, Eq a, GenValid a, IsRecurrenceRulePart a) =>
   Spec
-recurrenceRulePartSpec = do
+recurrenceRulePartSpec = withFrozenCallStack $ do
   it "always renders a valid text values" $
     forAllValid $ \part ->
       shouldBeValid $ recurrenceRulePartB (part :: a)
 
   it "parses only valid things" $
     forAllValid $ \a ->
-      case recurrenceRulePartP (recurrenceRulePartB (a :: a)) of
+      case runConformStrict $ recurrenceRulePartP (recurrenceRulePartB (a :: a)) of
         Left _ -> pure ()
         Right a' -> shouldBeValid (a' :: a)
 
   it "roundtrips through text values" $
-    forAllValid $ \part ->
+    forAllValid $ \part -> do
       let values = recurrenceRulePartB (part :: a)
-       in case recurrenceRulePartP values of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` part
+      actual <- shouldConformStrict $ recurrenceRulePartP values
+      actual `shouldBe` part

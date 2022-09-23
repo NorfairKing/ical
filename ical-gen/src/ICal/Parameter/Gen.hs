@@ -12,6 +12,8 @@ import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import Data.List.NonEmpty (NonEmpty)
 import GHC.Stack
+import ICal.Conformance
+import ICal.Conformance.TestUtils
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Parameter
@@ -47,10 +49,9 @@ parameterParseExampleSpec ::
   Spec
 parameterParseExampleSpec params expected = withFrozenCallStack $ do
   it "parses this example correctly" $
-    context (show params) $
-      case parameterP params of
-        Left err -> expectationFailure err
-        Right actual -> actual `shouldBe` expected
+    context (show params) $ do
+      actual <- shouldConformStrict $ parameterP params
+      actual `shouldBe` expected
 
 parameterRenderExampleSpec ::
   (Show parameter, IsParameter parameter, HasCallStack) =>
@@ -74,13 +75,12 @@ parameterSpec = do
 
   it "parses only valid things" $
     forAllValid $ \a ->
-      case parameterP (parameterB (a :: a)) of
+      case runConformStrict $ parameterP (parameterB (a :: a)) of
         Left _ -> pure ()
         Right a' -> shouldBeValid (a' :: a)
 
   it "roundtrips through parameter values" $
-    forAllValid $ \parameter ->
+    forAllValid $ \parameter -> do
       let values = parameterB (parameter :: a)
-       in case parameterP values of
-            Left err -> expectationFailure err
-            Right actual -> actual `shouldBe` parameter
+      actual <- shouldConformStrict $ parameterP values
+      actual `shouldBe` parameter

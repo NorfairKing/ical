@@ -6,7 +6,6 @@
 
 module ICal.PropertyType.Period where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Data
 import Data.Set (Set)
@@ -100,9 +99,9 @@ instance IsPropertyType Period where
     parseOfValue TypePeriod $ contentLineValueParams clv
     case T.splitOn "/" (contentLineValueRaw clv) of
       [startStr, endOrDurationStr] -> do
-        startDateTime <- conformFromEither $ left OtherPropertyTypeParseError $ parseDateTimeUTC startStr
+        startDateTime <- parseDateTimeUTC startStr
         endOrDuration <-
-          (Left <$> conformFromEither (left OtherPropertyTypeParseError (parseDateTimeUTC endOrDurationStr)))
+          (Left <$> parseDateTimeUTC endOrDurationStr)
             `altConform` (Right <$> parseDuration endOrDurationStr)
         pure $ case endOrDuration of
           Left end -> PeriodStartEnd startDateTime end
