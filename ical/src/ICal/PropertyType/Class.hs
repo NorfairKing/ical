@@ -38,6 +38,7 @@ data PropertyTypeParseError
       -- ^ Actual
       !ValueDataType
       -- ^ Expected
+  | UnparseableURI !Text
   | RecurrenceRulePartNotFound !Text
   | UnknownFrequency !Text
   | UnReadableInterval !Text
@@ -69,6 +70,7 @@ instance Exception PropertyTypeParseError where
           unwords ["actual:   ", show actual],
           unwords ["expected: ", show expected]
         ]
+    UnparseableURI t -> unwords ["Unparseable URI", show t]
     RecurrenceRulePartNotFound t -> unwords ["Recurrence rule part not found:", show t]
     UnknownFrequency s -> unwords ["Unknown FREQ value:", show s]
     UnReadableInterval s -> unwords ["Unreadable INTERVAL value:", show s]

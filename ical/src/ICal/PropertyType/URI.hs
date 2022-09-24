@@ -1,14 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.PropertyType.URI where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -63,11 +61,13 @@ instance Validity URI
 instance NFData URI
 
 instance IsPropertyType URI where
-  propertyTypeP = conformFromEither . left OtherPropertyTypeParseError . parseURI . contentLineValueRaw
+  propertyTypeP clv =
+    let t = contentLineValueRaw clv
+     in maybe (unfixableError $ UnparseableURI t) pure $ parseURI t
   propertyTypeB = mkSimpleContentLineValue . renderURI
 
-parseURI :: Text -> Either String URI
-parseURI = fmap URI . maybe (Left "Unparseable URI") Right . Network.parseURIReference . T.unpack
+parseURI :: Text -> Maybe URI
+parseURI = fmap URI . Network.parseURIReference . T.unpack
 
 renderURI :: URI -> Text
 renderURI = T.pack . dangerousURIToString . unURI
