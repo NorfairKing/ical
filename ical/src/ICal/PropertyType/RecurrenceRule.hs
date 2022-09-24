@@ -31,6 +31,7 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
@@ -548,16 +549,16 @@ recurrenceRuleP ::
   ContentLineValue ->
   Conform PropertyTypeParseError Void Void RecurrenceRule
 recurrenceRuleP ContentLineValue {..} = do
-  -- contentLineValueParams are ignored
+  parseOfValue TypeRecur contentLineValueParams
   let parts = T.splitOn ";" contentLineValueRaw
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
-    [] -> unfixableError $ OtherPropertyTypeParseError "Could not parse recurrence rule part."
+    [] -> error "cannot happen because T.splitOn never returns an empty list."
     (k : vs) -> pure (k, T.intercalate "=" vs)
   let parsePart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void part
       parsePart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in case lookup name tups of
-              Nothing -> unfixableError $ OtherPropertyTypeParseError $ "Recurrence rule part not found: " <> show name
+              Nothing -> unfixableError $ RecurrenceRulePartNotFound name
               Just val -> recurrenceRulePartP val
 
       parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void (Maybe part)
