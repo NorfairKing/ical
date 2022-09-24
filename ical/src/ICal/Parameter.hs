@@ -35,7 +35,6 @@ import ICal.ContentLine
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
   | MultipleParametersfound !(NonEmpty ParamValue)
-  | OtherParameterParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception ParameterParseError where
@@ -52,7 +51,6 @@ instance Exception ParameterParseError where
           "values:",
           show values
         ]
-    OtherParameterParseError s -> s
 
 -- | Parameters
 --
