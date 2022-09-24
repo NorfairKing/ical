@@ -4,16 +4,17 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.PropertyType.DateTimes where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Set
 import qualified Data.Set as S
+import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
@@ -76,48 +77,19 @@ instance IsPropertyType DateTimes where
   propertyTypeP = dateTimesP
   propertyTypeB = dateTimesB
 
--- TODO this can probably be much more efficient using a custom parser.
 dateTimesP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTimes
-dateTimesP clv = do
-  parseOfValue TypeDateTime $ contentLineValueParams clv
-  set <- propertyTypeSetP clv
-  conformFromEither . left OtherPropertyTypeParseError $ fromSet set
-
-fromSet :: Set DateTime -> Either String DateTimes
-fromSet set = case S.lookupMin set of
-  Nothing -> Right DateTimesEmpty
-  Just dt -> case dt of
-    DateTimeFloating _ -> goFloating set
-    DateTimeUTC _ -> goUTC set
-    DateTimeZoned tzid _ -> goZoned tzid set
-  where
-    goFloating :: Set DateTime -> Either String DateTimes
-    goFloating =
-      fmap (DateTimesFloating . S.fromList)
-        . mapM
-          ( \case
-              DateTimeFloating lt -> Right lt
-              _ -> Left "Must be Floating"
-          )
-        . S.toList
-    goUTC :: Set DateTime -> Either String DateTimes
-    goUTC =
-      fmap (DateTimesUTC . S.fromList)
-        . mapM
-          ( \case
-              DateTimeUTC u -> Right u
-              _ -> Left "Must be UTC"
-          )
-        . S.toList
-    goZoned :: TZIDParam -> Set DateTime -> Either String DateTimes
-    goZoned tzid =
-      fmap (DateTimesZoned tzid . S.fromList)
-        . mapM
-          ( \case
-              DateTimeZoned tzid' lt -> if tzid == tzid' then Right lt else Left "Must be the same tzid"
-              _ -> Left "Must be UTC"
-          )
-        . S.toList
+dateTimesP ContentLineValue {..} = do
+  parseOfValue TypeDateTime contentLineValueParams
+  if T.null contentLineValueRaw
+    then pure DateTimesEmpty
+    else case lookupParam contentLineValueParams of
+      Nothing ->
+        (DateTimesUTC <$> parseTimesSetText dateTimeUTCFormatStr contentLineValueRaw)
+          `altConform` (DateTimesFloating <$> parseTimesSetText dateTimeFloatingFormatStr contentLineValueRaw)
+      Just conformTzid ->
+        DateTimesZoned
+          <$> conformMapError ParameterParseError conformTzid
+          <*> parseTimesSetText dateTimeZonedFormatStr contentLineValueRaw
 
 dateTimesB :: DateTimes -> ContentLineValue
 dateTimesB = insertParam TypeDateTime . propertyTypeSetB . toSet

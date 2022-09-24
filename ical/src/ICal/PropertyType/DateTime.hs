@@ -234,8 +234,8 @@ dateTimeP clv@ContentLineValue {..} = do
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
     Nothing ->
-      (DateTimeFloating <$> dateTimeFloatingP clv)
-        `altConform` (DateTimeUTC <$> dateTimeUTCP clv)
+      (DateTimeUTC <$> dateTimeUTCP clv)
+        `altConform` (DateTimeFloating <$> dateTimeFloatingP clv)
     Just conformTzid ->
       DateTimeZoned
         <$> conformMapError ParameterParseError conformTzid

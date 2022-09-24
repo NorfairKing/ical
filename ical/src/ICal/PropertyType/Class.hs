@@ -258,3 +258,14 @@ parseTimeStr :: Time.ParseTime t => String -> String -> Conform PropertyTypePars
 parseTimeStr formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
   Nothing -> unfixableError $ TimeStrParseError formatStr s
   Just t -> pure t
+
+parseTimesListText :: Time.ParseTime t => String -> Text -> Conform PropertyTypeParseError void void [t]
+parseTimesListText formatStr t =
+  if T.null t
+    then pure []
+    else
+      let texts = T.splitOn "," t
+       in mapM (parseTimeStr formatStr . T.unpack) texts
+
+parseTimesSetText :: (Ord t, Time.ParseTime t) => String -> Text -> Conform PropertyTypeParseError void void (Set t)
+parseTimesSetText formatStr t = S.fromList <$> parseTimesListText formatStr t
