@@ -3,7 +3,6 @@
 
 module ICal.PropertyType.UTCOffset where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Int
 import Data.Text (Text)
@@ -69,20 +68,25 @@ utcOffsetAbsBound = ((24 * 60) + 60) * 60 + 60
 instance NFData UTCOffset
 
 instance IsPropertyType UTCOffset where
-  propertyTypeP = conformFromEither . left OtherPropertyTypeParseError . parseUTCOffset . contentLineValueRaw
+  propertyTypeP clv =
+    let t = contentLineValueRaw clv
+     in maybe (unfixableError $ UnparseableUTCOffset t) pure $ parseUTCOffset t
   propertyTypeB = mkSimpleContentLineValue . renderUTCOffset
 
-parseUTCOffset :: Text -> Either String UTCOffset
+parseUTCOffset :: Text -> Maybe UTCOffset
 parseUTCOffset =
   ( \str ->
       let goOn r = case r of
-            [h1, h2, m1, m2] -> case (,) <$> readMaybe [h1, h2] <*> readMaybe [m1, m2] of
-              Nothing -> Left "Unreadable UTCOffset"
-              Just (h, m) -> Right $ (h * 60 + m) * 60
-            [h1, h2, m1, m2, s1, s2] -> case (,,) <$> readMaybe [h1, h2] <*> readMaybe [m1, m2] <*> readMaybe [s1, s2] of
-              Nothing -> Left "Unreadable UTCOffset"
-              Just (h, m, s) -> Right $ (h * 60 + m) * 60 + s
-            _ -> Left "Unreadable UTCOffset"
+            [h1, h2, m1, m2] -> do
+              h <- readMaybe [h1, h2]
+              m <- readMaybe [m1, m2]
+              pure $ (h * 60 + m) * 60
+            [h1, h2, m1, m2, s1, s2] -> do
+              h <- readMaybe [h1, h2]
+              m <- readMaybe [m1, m2]
+              s <- readMaybe [s1, s2]
+              pure $ (h * 60 + m) * 60 + s
+            _ -> Nothing
        in UTCOffset <$> case str of
             ('+' : rest) -> goOn rest
             ('-' : rest) -> negate <$> goOn rest
@@ -109,9 +113,3 @@ renderUTCOffset =
            in sign : hoursStr ++ minutesStr ++ (if seconds == 0 then "" else secondStr)
       )
     . unUTCOffset
-
-utcOffsetFormatWithSecondsStr :: String
-utcOffsetFormatWithSecondsStr = "%02h%02M%S"
-
-utcOffsetFormatWithoutSecondsStr :: String
-utcOffsetFormatWithoutSecondsStr = "%02h%02M"
