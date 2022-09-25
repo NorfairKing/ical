@@ -43,14 +43,12 @@ import Text.Megaparsec
 data CalendarParseError
   = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)
   | PropertyParseError !PropertyParseError
-  | OtherError String
   deriving (Show, Eq, Ord)
 
 instance Exception CalendarParseError where
   displayException = \case
     SubcomponentError pe -> errorBundlePretty pe
     PropertyParseError ppe -> displayException ppe
-    OtherError s -> s
 
 instance ShowErrorComponent CalendarParseError where
   showErrorComponent = displayException
