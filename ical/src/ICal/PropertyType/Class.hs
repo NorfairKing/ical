@@ -43,6 +43,7 @@ data PropertyTypeParseError
   | UnparseableUTCOffset !Text
   | UnparseablePeriod !Text
   | UnparseableDuration !(ParseErrorBundle Text Void)
+  | UnparseableFloatingPoint !Text
   | RecurrenceRulePartNotFound !Text
   | UnknownFrequency !Text
   | UnReadableInterval !Text
@@ -79,6 +80,7 @@ instance Exception PropertyTypeParseError where
     UnparseablePeriod t -> unwords ["Unparseable Period", show t]
     UnparseableDuration t -> unwords ["Unparseable Duration", show t]
     RecurrenceRulePartNotFound t -> unwords ["Recurrence rule part not found:", show t]
+    UnparseableFloatingPoint t -> unwords ["Unparseable Floating point number", show t]
     UnknownFrequency s -> unwords ["Unknown FREQ value:", show s]
     UnReadableInterval s -> unwords ["Unreadable INTERVAL value:", show s]
     UnReadableCount s -> unwords ["Unreadable COUNT value:", show s]

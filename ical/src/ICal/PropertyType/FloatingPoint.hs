@@ -57,8 +57,7 @@ instance NFData FloatingPoint
 
 instance IsPropertyType FloatingPoint where
   propertyTypeP ContentLineValue {..} =
-    let s = T.unpack contentLineValueRaw
-     in case readMaybe s of
-          Nothing -> unfixableError $ OtherPropertyTypeParseError $ unwords ["Could not read FLOAT: " <> s]
-          Just f -> pure (FloatingPoint f)
+    case readMaybe (T.unpack contentLineValueRaw) of
+      Nothing -> unfixableError $ UnparseableFloatingPoint contentLineValueRaw
+      Just f -> pure (FloatingPoint f)
   propertyTypeB = mkSimpleContentLineValue . T.pack . printf "%f" . unFloatingPoint
