@@ -21,6 +21,7 @@ import qualified Data.Text.Encoding as TE
 import Data.Void
 import ICal
 import ICal.Conformance
+import ICal.Conformance.TestUtils
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
@@ -89,50 +90,46 @@ instance GenValid Event where
     pure Event {..}
 
   shrinkValid (Event mp u rt cn cd d gp lm l ss sy t mu rrs med) = filter isValid $ do
-    (mp', (((u', rt'), ((cn', cd'), (d', gp'))), (((lm', l'), (ss', sy')), ((t', mu'), (rrs', med'))))) <-
+    ( (mp', (u', rt'), (cn', cd'), (d', gp')),
+      ((lm', l'), (ss', sy'), (t', mu'), (rrs', med'))
+      ) <-
       shrinkTuple
-        shrinkValid
-        ( shrinkTuple
+        ( shrinkQuadruple
+            shrinkValid
             ( shrinkTuple
-                ( shrinkTuple
-                    shrinkValid
-                    shrinkValid
-                )
-                ( shrinkTuple
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                )
+                shrinkValid
+                shrinkValid
             )
             ( shrinkTuple
-                ( shrinkTuple
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                )
-                ( shrinkTuple
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                    ( shrinkTuple
-                        shrinkValid
-                        shrinkValid
-                    )
-                )
+                shrinkValid
+                shrinkValid
+            )
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
             )
         )
-        (mp, (((u, rt), ((cn, cd), (d, gp))), (((lm, l), (ss, sy)), ((t, mu), (rrs, med)))))
+        ( shrinkQuadruple
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+            ( shrinkTuple
+                shrinkValid
+                shrinkValid
+            )
+        )
+        ( (mp, (u, rt), (cn, cd), (d, gp)),
+          ((lm, l), (ss, sy), (t, mu), (rrs, med))
+        )
     pure (Event mp' u' rt' cn' cd' d' gp' lm' l' ss' sy' t' mu' rrs' med')
 
 instance GenValid Observance where
@@ -236,9 +233,9 @@ componentSpec = do
 
   it "parses only valid things" $
     forAllValid $ \component ->
-      case runConformStrict (runCP componentSectionP (DList.toList (componentSectionB (component :: a)))) of
+      case runConform (runCP componentSectionP (DList.toList (componentSectionB (component :: a)))) of
         Left _ -> pure ()
-        Right a -> shouldBeValid (a :: a)
+        Right (a, _) -> shouldBeValid (a :: a)
 
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
@@ -246,13 +243,12 @@ componentSpec = do
           renderedText = renderUnfoldedLines $ map renderContentLineToUnfoldedLine rendered
           ctx =
             unlines
-              [ -- "Internal representation:",
-                -- ppShow rendered,
-                -- "",
+              [ "Internal representation:",
+                ppShow rendered,
+                "",
                 "Textual representation:",
                 T.unpack renderedText
               ]
-       in context ctx $
-            case runConformStrict (runCP componentSectionP rendered) of
-              Left err -> expectationFailure $ show err
-              Right parsed -> parsed `shouldBe` a
+       in context ctx $ do
+            parsed <- shouldConform $ runCP componentSectionP rendered
+            parsed `shouldBe` a

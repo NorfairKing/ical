@@ -137,7 +137,7 @@ spec = do
         let rendered = renderVCalendar vCalendar
             ctx = unlines ["Rendered VCALENDAR:", T.unpack rendered]
          in context ctx $ do
-              vCalendar' <- shouldConformStrict $ parseVCalendar rendered
+              vCalendar' <- shouldConform $ parseVCalendar rendered
               vCalendar' `shouldBe` vCalendar
 
   describe "renderICalendar" $
@@ -146,12 +146,12 @@ spec = do
         let rendered = renderICalendar iCalendar
             ctx = unlines ["Rendered VCALENDAR stream:", T.unpack rendered]
          in context ctx $ do
-              iCalendar' <- shouldConformStrict $ parseICalendar rendered
+              iCalendar' <- shouldConform $ parseICalendar rendered
               iCalendar' `shouldBe` iCalendar
 
   describe "renderICalendarByteString" $
     it "roundtrips with parseICalendarByteString" $
       forAllValid $ \iCalendar -> do
         let rendered = renderICalendarByteString iCalendar
-        iCalendar' <- shouldConformStrict $ parseICalendarByteString rendered
+        iCalendar' <- shouldConform $ parseICalendarByteString rendered
         iCalendar' `shouldBe` iCalendar

@@ -1,6 +1,7 @@
 module ICal.Conformance.TestUtils where
 
 import Control.Monad.IO.Class
+import Data.Void
 import ICal.Conformance
 import Test.Syd
 
@@ -17,6 +18,25 @@ assertStrictResultSucceeded errOrErrOrResult =
   case errOrErrOrResult of
     Left e -> expectationFailure $ show e
     Right a -> pure a
+
+shouldConform :: (Show ue, Show fe) => Conform ue fe w a -> IO a
+shouldConform = assertResultSucceeded . runConform
+
+shouldConformT :: (Show ue, Show fe, MonadIO m) => ConformT ue fe w m a -> m a
+shouldConformT func = do
+  errOrErrOrResult <- runConformT func
+  liftIO $ assertResultSucceeded errOrErrOrResult
+
+assertResultSucceeded :: (Show ue, Show fe) => Either (HaltReason ue fe) (a, Notes Void w) -> IO a
+assertResultSucceeded errOrErrOrResult =
+  case errOrErrOrResult of
+    Left hr ->
+      expectationFailure $
+        unwords
+          [ "runConform failed",
+            ppShow hr
+          ]
+    Right (a, _) -> pure a
 
 shouldConformLenient :: Show ue => Conform ue fe w a -> IO a
 shouldConformLenient = assertLenientResultSucceeded . runConformLenient

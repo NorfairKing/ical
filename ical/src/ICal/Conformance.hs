@@ -149,6 +149,14 @@ runConformFlexible ::
   Either (HaltReason ue fe) (a, Notes fe w)
 runConformFlexible predicate = runIdentity . runConformTFlexible predicate
 
+-- | Don't fix any fixable errors.
+--
+-- This is standard-complient
+runConform ::
+  Conform ue fe w a ->
+  Either (HaltReason ue fe) (a, Notes Void w)
+runConform = runIdentity . runConformT
+
 -- | Don't fix any fixable errors, and don't allow any warnings either
 --
 -- This is standard-complient, but potentially more strict than necessary.
