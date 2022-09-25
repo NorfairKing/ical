@@ -4,7 +4,6 @@
 
 module ICal.PropertyType.Duration where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Control.Monad
 import Data.Data
@@ -200,7 +199,7 @@ renderSign = \case
   Negative -> "-"
 
 parseDuration :: Text -> Conform PropertyTypeParseError Void Void Duration
-parseDuration = either (unfixableError . OtherPropertyTypeParseError) pure . left errorBundlePretty . parse go ""
+parseDuration = either (unfixableError . UnparseableDuration) pure . parse go ""
   where
     go :: Parsec Void Text Duration
     go = do

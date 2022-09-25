@@ -1,11 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.Parameter where
@@ -31,6 +34,13 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import Text.Megaparsec
+
+deriving instance Ord s => Ord (PosState s)
+
+deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
+
+deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))

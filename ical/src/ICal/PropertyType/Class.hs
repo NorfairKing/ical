@@ -25,6 +25,7 @@ import Data.Void
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
+import Text.Megaparsec
 
 data PropertyTypeParseError
   = ParameterParseError !ParameterParseError
@@ -40,6 +41,8 @@ data PropertyTypeParseError
       -- ^ Expected
   | UnparseableURI !Text
   | UnparseableUTCOffset !Text
+  | UnparseablePeriod !Text
+  | UnparseableDuration !(ParseErrorBundle Text Void)
   | RecurrenceRulePartNotFound !Text
   | UnknownFrequency !Text
   | UnReadableInterval !Text
@@ -73,6 +76,8 @@ instance Exception PropertyTypeParseError where
         ]
     UnparseableURI t -> unwords ["Unparseable URI", show t]
     UnparseableUTCOffset t -> unwords ["Unparseable UTC Offset", show t]
+    UnparseablePeriod t -> unwords ["Unparseable Period", show t]
+    UnparseableDuration t -> unwords ["Unparseable Duration", show t]
     RecurrenceRulePartNotFound t -> unwords ["Recurrence rule part not found:", show t]
     UnknownFrequency s -> unwords ["Unknown FREQ value:", show s]
     UnReadableInterval s -> unwords ["Unreadable INTERVAL value:", show s]

@@ -7,7 +7,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -40,12 +39,6 @@ import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine
 import Text.Megaparsec
-
-deriving instance Ord s => Ord (PosState s)
-
-deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
-
-deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 
 data CalendarParseError
   = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)

@@ -97,7 +97,8 @@ instance NFData Period
 instance IsPropertyType Period where
   propertyTypeP clv = do
     parseOfValue TypePeriod $ contentLineValueParams clv
-    case T.splitOn "/" (contentLineValueRaw clv) of
+    let t = contentLineValueRaw clv
+    case T.splitOn "/" t of
       [startStr, endOrDurationStr] -> do
         startDateTime <- parseDateTimeUTC startStr
         endOrDuration <-
@@ -106,7 +107,7 @@ instance IsPropertyType Period where
         pure $ case endOrDuration of
           Left end -> PeriodStartEnd startDateTime end
           Right duration -> PeriodStartDuration startDateTime duration
-      _ -> unfixableError $ OtherPropertyTypeParseError "Expected two pieces separated by /"
+      _ -> unfixableError $ UnparseablePeriod t
   propertyTypeB =
     insertParam TypePeriod . mkSimpleContentLineValue
       . T.intercalate "/"
