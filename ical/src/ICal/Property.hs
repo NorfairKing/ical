@@ -16,7 +16,6 @@
 -- @
 module ICal.Property where
 
-import Control.Arrow (left)
 import Control.DeepSeq
 import Control.Exception
 import Data.Proxy
@@ -43,7 +42,10 @@ data PropertyParseError
       !ContentLineName
       -- ^ Actual
   | UnknownCalendarScale !Text
-  | OtherPropertyParseError !String
+  | UnReadableGeographicPosition !Text
+  | UnknownStatus !Text
+  | UnknownTransparency !Text
+  | ValueMismatch !ContentLineName !(Maybe ValueDataType) ![ValueDataType]
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyParseError where
@@ -58,7 +60,15 @@ instance Exception PropertyParseError where
           "instead."
         ]
     UnknownCalendarScale t -> unwords ["Unknown Calendar Scale:", show t]
-    OtherPropertyParseError s -> s
+    UnReadableGeographicPosition t -> unwords ["UnReadable Geographic position:", show t]
+    UnknownStatus t -> unwords ["Unknown Status:", show t]
+    UnknownTransparency t -> unwords ["Unknown Transparency:", show t]
+    ValueMismatch name actual expecteds ->
+      unlines
+        [ unwords ["Mismatched value type for:", show name],
+          unwords ["Actual:", show actual],
+          unwords ["Expecteds:", show expecteds]
+        ]
 
 -- |
 --
@@ -960,15 +970,16 @@ instance NFData GeographicPosition
 
 instance IsProperty GeographicPosition where
   propertyName Proxy = "GEO"
-  propertyP = viaPropertyTypeP (conformFromEither . left OtherPropertyParseError . parseGeographicPosition)
+  propertyP = viaPropertyTypeP (\t -> maybe (unfixableError $ UnReadableGeographicPosition t) pure $ parseGeographicPosition t)
   propertyB = mkSimpleContentLineValue . renderGeographicPosition
 
-parseGeographicPosition :: Text -> Either String GeographicPosition
+parseGeographicPosition :: Text -> Maybe GeographicPosition
 parseGeographicPosition t = case T.splitOn ";" t of
-  [latText, lonText] -> case (,) <$> readMaybe (T.unpack latText) <*> readMaybe (T.unpack lonText) of
-    Nothing -> Left "Could not parse GEO"
-    Just (geographicPositionLat, geographicPositionLon) -> pure GeographicPosition {..}
-  _ -> Left "Could not parse GEO"
+  [latText, lonText] -> do
+    geographicPositionLat <- readMaybe (T.unpack latText)
+    geographicPositionLon <- readMaybe (T.unpack lonText)
+    pure GeographicPosition {..}
+  _ -> Nothing
 
 renderGeographicPosition :: GeographicPosition -> Text
 renderGeographicPosition GeographicPosition {..} =
@@ -1183,16 +1194,16 @@ instance NFData Status
 instance IsProperty Status where
   propertyName Proxy = "STATUS"
   propertyP = viaPropertyTypeP $ \t -> case parseStatus t of
-    Left err -> unfixableError $ OtherPropertyParseError err
-    Right s -> pure s
+    Nothing -> unfixableError $ UnknownStatus t
+    Just s -> pure s
   propertyB = propertyTypeB . renderStatus
 
-parseStatus :: Text -> Either String Status
+parseStatus :: Text -> Maybe Status
 parseStatus = \case
-  "TENTATIVE" -> Right StatusTentative
-  "CONFIRMED" -> Right StatusConfirmed
-  "CANCELLED" -> Right StatusCancelled
-  t -> Left $ "Unknown status:" <> show t
+  "TENTATIVE" -> pure StatusTentative
+  "CONFIRMED" -> pure StatusConfirmed
+  "CANCELLED" -> pure StatusCancelled
+  _ -> Nothing
 
 renderStatus :: Status -> Text
 renderStatus = \case
@@ -1392,15 +1403,15 @@ instance NFData Transparency
 instance IsProperty Transparency where
   propertyName Proxy = "TRANSP"
   propertyP = viaPropertyTypeP $ \t -> case parseTransparency t of
-    Left err -> unfixableError $ OtherPropertyParseError err
-    Right s -> pure s
+    Nothing -> unfixableError $ UnknownTransparency t
+    Just s -> pure s
   propertyB = propertyTypeB . renderTransparency
 
-parseTransparency :: Text -> Either String Transparency
+parseTransparency :: Text -> Maybe Transparency
 parseTransparency = \case
-  "TRANSPARENT" -> Right TransparencyTransparent
-  "OPAQUE" -> Right TransparencyOpaque
-  t -> Left $ "Unknown transparency:" <> show t
+  "TRANSPARENT" -> pure TransparencyTransparent
+  "OPAQUE" -> pure TransparencyOpaque
+  _ -> Nothing
 
 renderTransparency :: Transparency -> Text
 renderTransparency = \case
@@ -1724,7 +1735,7 @@ instance IsProperty ExceptionDateTimes where
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP ExceptionDateTimes clv
       Just TypeDate -> wrapPropertyTypeP ExceptionDates clv
-      Just _ -> unfixableError $ OtherPropertyParseError "Unknown VALUE of EXDATE"
+      Just _ -> unfixableError $ ValueMismatch "EXDATE" mValue [TypeDateTime, TypeDate]
       Nothing -> wrapPropertyTypeP ExceptionDateTimes clv
 
   propertyB = \case
@@ -1836,7 +1847,7 @@ instance IsProperty RecurrenceDateTimes where
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv
       Just TypeDate -> wrapPropertyTypeP RecurrenceDates clv
-      Just _ -> unfixableError $ OtherPropertyParseError "Unknown VALUE for RDATE"
+      Just _ -> unfixableError $ ValueMismatch "RDATE" mValue [TypeDateTime, TypePeriod, TypeDate]
       Nothing -> wrapPropertyTypeP RecurrenceDateTimes clv
 
   propertyB = \case
