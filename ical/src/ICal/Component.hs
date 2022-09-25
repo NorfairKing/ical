@@ -22,7 +22,6 @@ import Data.Proxy
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
-import Data.Void
 import GHC.Generics (Generic)
 import ICal.Component.Class
 import ICal.Component.Event
@@ -32,10 +31,22 @@ import ICal.ContentLine
 import ICal.Property
 import Text.Megaparsec
 
-parseICalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void [Calendar]
+parseICalendarFromContentLines ::
+  [ContentLine] ->
+  Conform
+    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseFixableError
+    CalendarParseWarning
+    [Calendar]
 parseICalendarFromContentLines = runCP iCalendarP
 
-parseVCalendarFromContentLines :: [ContentLine] -> Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void Calendar
+parseVCalendarFromContentLines ::
+  [ContentLine] ->
+  Conform
+    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseFixableError
+    CalendarParseWarning
+    Calendar
 parseVCalendarFromContentLines = parseComponentFromContentLines
 
 iCalendarP :: CP [Calendar]

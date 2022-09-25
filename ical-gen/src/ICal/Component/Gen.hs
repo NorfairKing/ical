@@ -192,9 +192,9 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
   it "can parse this file as a component strictly and roundtrip it" $ do
     let parseBS bs = runConformStrict $ do
           textContents <- conformFromEither $ left TextDecodingError $ TE.decodeUtf8' bs
-          unfoldedLines <- conformMapErrors UnfoldingError absurd $ parseUnfoldedLines textContents
-          contentLines <- conformMapErrors ContentLineParseError absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
-          conformMapErrors CalendarParseError CalendarParseFixableError $ parseComponentFromContentLines contentLines
+          unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines textContents
+          contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+          conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseComponentFromContentLines contentLines
 
         renderBS =
           TE.encodeUtf8
@@ -213,7 +213,7 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
           Left err -> expectationFailure $ renderError err
           Right result' -> result' `shouldBe` result
 
-renderError :: Either ICalParseError (Notes ICalParseFixableError Void) -> String
+renderError :: Either ICalParseError (Notes ICalParseFixableError ICalParseWarning) -> String
 renderError = \case
   Left iCalParseError -> displayException iCalParseError
   Right (Notes fes wes) ->

@@ -176,8 +176,8 @@ conformFromEither = \case
   Left ue -> unfixableError ue
   Right r -> pure r
 
-conformMapErrors :: Monad m => (ue1 -> ue2) -> (fe1 -> fe2) -> ConformT ue1 fe1 w m a -> ConformT ue2 fe2 w m a
-conformMapErrors ueFunc feFunc (ConformT cFunc) =
+conformMapAll :: Monad m => (ue1 -> ue2) -> (fe1 -> fe2) -> (w1 -> w2) -> ConformT ue1 fe1 w1 m a -> ConformT ue2 fe2 w2 m a
+conformMapAll ueFunc feFunc wFunc (ConformT cFunc) =
   ConformT $
     mapReaderT
       ( mapWriterT
@@ -188,10 +188,16 @@ conformMapErrors ueFunc feFunc (ConformT cFunc) =
       )
       (withReaderT (\predicate -> predicate . feFunc) cFunc)
   where
-    notesMapError (Notes fes wes) = Notes (map feFunc fes) wes
+    notesMapError (Notes fes wes) =
+      Notes
+        (map feFunc fes)
+        (map wFunc wes)
     haltReasonMapError = \case
       HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError (ueFunc ue)
       HaltedBecauseOfStrictness fe -> HaltedBecauseOfStrictness (feFunc fe)
+
+conformMapErrors :: Monad m => (ue1 -> ue2) -> (fe1 -> fe2) -> ConformT ue1 fe1 w m a -> ConformT ue2 fe2 w m a
+conformMapErrors ueFunc feFunc = conformMapAll ueFunc feFunc id
 
 conformMapError ::
   Monad m =>

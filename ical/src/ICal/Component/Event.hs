@@ -10,6 +10,8 @@
 module ICal.Component.Event where
 
 import Control.DeepSeq
+import Control.Monad
+import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.Maybe
 import Data.Proxy
@@ -20,6 +22,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
@@ -293,6 +296,7 @@ vEventP = do
   eventURL <- parseFirstMaybe eventProperties
 
   eventRecurrenceRules <- S.fromList <$> (parseList eventProperties >>= traverse (fixUntil eventDateTimeStart))
+  when (S.size eventRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
 
   mEnd <- parseFirstMaybe eventProperties
   mDuration <- parseFirstMaybe eventProperties

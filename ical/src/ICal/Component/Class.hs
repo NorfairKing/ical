@@ -61,16 +61,28 @@ instance Exception CalendarParseFixableError where
   displayException = \case
     UntilTypeGuess dateTimeStart until1 until2 -> unwords ["UntilTypeGuess", show dateTimeStart, show until1, show until2]
 
+data CalendarParseWarning
+  = WarnMultipleRecurrenceRules !(Set RecurrenceRule)
+  deriving (Show, Eq, Ord)
+
 parseComponentFromContentLines ::
   (Validity component, IsComponent component) =>
   [ContentLine] ->
-  Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void component
+  Conform
+    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseFixableError
+    CalendarParseWarning
+    component
 parseComponentFromContentLines = runCP componentSectionP
 
 runCP ::
   CP a ->
   [ContentLine] ->
-  Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void a
+  Conform
+    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseFixableError
+    CalendarParseWarning
+    a
 runCP func cls = do
   errOrComponent <- runParserT func "" cls
   case errOrComponent of
@@ -80,7 +92,13 @@ runCP func cls = do
 liftCP :: CP a -> [ContentLine] -> CP a
 liftCP parserFunc cls = lift $ runCP parserFunc cls
 
-liftConformToCP :: Conform CalendarParseError CalendarParseFixableError Void a -> CP a
+liftConformToCP ::
+  Conform
+    CalendarParseError
+    CalendarParseFixableError
+    CalendarParseWarning
+    a ->
+  CP a
 liftConformToCP func = do
   decider <- lift ask
   case runConformFlexible decider func of
@@ -95,7 +113,11 @@ type CP a =
   ParsecT
     CalendarParseError
     [ContentLine]
-    (Conform (ParseErrorBundle [ContentLine] CalendarParseError) CalendarParseFixableError Void)
+    ( Conform
+        (ParseErrorBundle [ContentLine] CalendarParseError)
+        CalendarParseFixableError
+        CalendarParseWarning
+    )
     a
 
 instance VisualStream [ContentLine] where
@@ -171,7 +193,12 @@ parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenPro
 parseProperty :: IsProperty property => CP property
 parseProperty = do
   contentLine <- anySingle
-  liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
+  liftConformToCP $
+    conformMapAll
+      PropertyParseError
+      absurd
+      absurd
+      $ propertyContentLineP contentLine
 
 componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
 componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
@@ -206,7 +233,7 @@ parseFirst = go
       [] -> fail $ "Did not find required " <> show name
       (contentLine : cls) ->
         if contentLineName contentLine == name
-          then liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
+          then liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
@@ -219,7 +246,7 @@ parseFirstMaybe = go
       -- TODO do better than a linear search?
       (contentLine : cls) ->
         if contentLineName contentLine == name
-          then fmap Just $ liftConformToCP $ conformMapErrors PropertyParseError absurd $ propertyContentLineP contentLine
+          then fmap Just $ liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
 
 parseList ::
@@ -228,7 +255,7 @@ parseList ::
   [ContentLine] ->
   CP [a]
 parseList cls =
-  mapM (liftConformToCP . conformMapErrors PropertyParseError absurd . propertyContentLineP) $
+  mapM (liftConformToCP . conformMapAll PropertyParseError absurd absurd . propertyContentLineP) $
     filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)

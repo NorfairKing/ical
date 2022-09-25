@@ -56,6 +56,9 @@ instance Exception ICalParseError where
 data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)
 
+data ICalParseWarning = CalendarParseWarning !CalendarParseWarning
+  deriving (Show, Eq)
+
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
 --
 -- UTF8 is the default character encoding according to the spec:
@@ -70,24 +73,42 @@ data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableErro
 -- The "charset" Content-Type parameter MUST be used in MIME transports
 -- to specify the charset being used.
 -- @
-parseICalendarByteString :: ByteString -> Conform ICalParseError ICalParseFixableError Void ICalendar
+parseICalendarByteString ::
+  ByteString ->
+  Conform
+    ICalParseError
+    ICalParseFixableError
+    ICalParseWarning
+    ICalendar
 parseICalendarByteString contents = do
   textContents <- conformFromEither $ left TextDecodingError $ TE.decodeUtf8' contents
   parseICalendar textContents
 
 -- | Parse a VCALENDAR stream
-parseICalendar :: Text -> Conform ICalParseError ICalParseFixableError Void ICalendar
+parseICalendar ::
+  Text ->
+  Conform
+    ICalParseError
+    ICalParseFixableError
+    ICalParseWarning
+    ICalendar
 parseICalendar contents = do
-  unfoldedLines <- conformMapErrors UnfoldingError absurd $ parseUnfoldedLines contents
-  contentLines <- conformMapErrors ContentLineParseError absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
-  conformMapErrors CalendarParseError CalendarParseFixableError $ parseICalendarFromContentLines contentLines
+  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+  conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseICalendarFromContentLines contentLines
 
 -- | Parse a single VCALENDAR
-parseVCalendar :: Text -> Conform ICalParseError ICalParseFixableError Void Calendar
+parseVCalendar ::
+  Text ->
+  Conform
+    ICalParseError
+    ICalParseFixableError
+    ICalParseWarning
+    Calendar
 parseVCalendar contents = do
-  unfoldedLines <- conformMapErrors UnfoldingError absurd $ parseUnfoldedLines contents
-  contentLines <- conformMapErrors ContentLineParseError absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
-  conformMapErrors CalendarParseError CalendarParseFixableError $ parseVCalendarFromContentLines contentLines
+  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+  conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseVCalendarFromContentLines contentLines
 
 -- | Render an ICalendar as a ByteString using the UTF8 encoding.
 --
