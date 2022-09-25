@@ -37,12 +37,27 @@ import Text.Read
 
 data PropertyParseError
   = PropertyTypeParseError !PropertyTypeParseError
+  | MismatchedPropertyName
+      !ContentLineName
+      -- ^ Expected
+      !ContentLineName
+      -- ^ Actual
+  | UnknownCalendarScale !Text
   | OtherPropertyParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyParseError where
   displayException = \case
     PropertyTypeParseError ptpe -> displayException ptpe
+    MismatchedPropertyName expected actual ->
+      unwords
+        [ "Expected content line with name",
+          show expected,
+          "but got",
+          show actual,
+          "instead."
+        ]
+    UnknownCalendarScale t -> unwords ["Unknown Calendar Scale:", show t]
     OtherPropertyParseError s -> s
 
 -- |
@@ -88,16 +103,7 @@ propertyContentLineP ContentLine {..} =
   let name = propertyName (Proxy :: Proxy property)
    in if contentLineName == name
         then propertyP contentLineValue
-        else
-          unfixableError $
-            OtherPropertyParseError $
-              unwords
-                [ "Expected content line with name",
-                  show name,
-                  "but got",
-                  show contentLineName,
-                  "instead."
-                ]
+        else unfixableError $ MismatchedPropertyName name contentLineName
 
 propertyContentLineB :: forall property. IsProperty property => property -> ContentLine
 propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . propertyB
@@ -304,7 +310,7 @@ instance IsProperty CalendarScale where
   propertyP = viaPropertyTypeP $ \t ->
     case t :: Text of
       "GREGORIAN" -> pure CalendarScaleGregorian
-      _ -> unfixableError $ OtherPropertyParseError $ unwords ["Unknown Calendar Scale:", show t]
+      _ -> unfixableError $ UnknownCalendarScale t
   propertyB =
     propertyTypeB . \case
       CalendarScaleGregorian -> "GREGORIAN" :: Text
