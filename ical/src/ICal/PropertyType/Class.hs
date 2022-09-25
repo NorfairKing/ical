@@ -58,7 +58,6 @@ data PropertyTypeParseError
   | UnReadableByMonth !Text
   | UnReadableBySetPos !Text
   | UnReadableDayOfWeek !(CI Text)
-  | OtherPropertyTypeParseError !String
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyTypeParseError where
@@ -94,7 +93,6 @@ instance Exception PropertyTypeParseError where
     UnReadableByMonth s -> unwords ["Unreadable BYMONTH value:", show s]
     UnReadableBySetPos s -> unwords ["Unreadable BYSETPOS value:", show s]
     UnReadableDayOfWeek s -> unwords ["Unknown day of week value:", show s]
-    OtherPropertyTypeParseError s -> s
 
 -- | Property type
 --
