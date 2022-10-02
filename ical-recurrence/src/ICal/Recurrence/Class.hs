@@ -6,6 +6,7 @@ module ICal.Recurrence.Class
     EventOccurrence (..),
     R,
     RecurrenceError (..),
+    RecurrenceFixableError (..),
     resolveEndOrDurationDate,
   )
 where
@@ -45,13 +46,17 @@ data EventOccurrence = EventOccurrence
 
 instance Validity EventOccurrence
 
-type R = Conform RecurrenceError Void Void
-
 data RecurrenceError
   = StartStartMismatch !DateTimeStart !DateTimeStart -- Internal error, should not happen.
   | StartEndMismatch !DateTimeStart !DateTimeEnd
   | ExactDurationMismatch !DateTime !DateTime
   deriving (Show, Eq, Ord)
+
+data RecurrenceFixableError
+  = RecurrenceMultipleRecurrenceRules !(Set RecurrenceRule)
+  deriving (Show, Eq, Ord)
+
+type R = Conform RecurrenceError RecurrenceFixableError Void
 
 resolveEndOrDurationDate ::
   DateTimeStart ->

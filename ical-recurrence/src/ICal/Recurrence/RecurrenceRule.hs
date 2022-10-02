@@ -9,17 +9,12 @@ import Control.Monad
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
+import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
 
 -- | Compute the occurrences that the recurrence rules imply
---
--- TODO implement this:
--- @
--- The recurrence set generated with multiple "RRULE" properties is
--- undefined.
--- @
 recurRecurrenceRules ::
   -- | Limit
   Day ->
@@ -32,7 +27,16 @@ recurRecurrenceRules limit start mEndOrDuration recurrenceRules = do
     [] -> pure S.empty
     [recurrenceRule] -> recurRecurrenceRule limit start mEndOrDuration recurrenceRule
     l -> do
-      -- TODO emit a fixable warning
+      -- The spec says:
+      --
+      -- @
+      -- The recurrence set generated with multiple "RRULE" properties is
+      -- undefined.
+      -- @
+      --
+      -- However, we choose to define it as the union of the
+      -- reccurence sets defined by the recurrence rules.
+      emitFixableError $ RecurrenceMultipleRecurrenceRules recurrenceRules
       S.unions <$> mapM (recurRecurrenceRule limit start mEndOrDuration) l
 
 recurRecurrenceRule ::
