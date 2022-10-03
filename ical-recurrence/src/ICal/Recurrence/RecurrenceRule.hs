@@ -18,6 +18,10 @@ import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
+import ICal.Recurrence.RecurrenceRule.Daily
+import ICal.Recurrence.RecurrenceRule.Monthly
+import ICal.Recurrence.RecurrenceRule.Weekly
+import ICal.Recurrence.RecurrenceRule.Yearly
 
 -- | Compute the occurrences that the recurrence rules imply
 recurRecurrenceRules ::
@@ -211,65 +215,6 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
         recurrenceRuleBySecond
         recurrenceRuleBySetPos
   _ -> error $ "not implemented yet: " <> show recurrenceRuleFrequency
-
-dailyDateTimeRecurrence ::
-  Day ->
-  LocalTime ->
-  Interval ->
-  Set ByMonth ->
-  Set ByMonthDay ->
-  Set DayOfWeek ->
-  Set ByHour ->
-  Set ByMinute ->
-  Set BySecond ->
-  Set BySetPos ->
-  [LocalTime]
-dailyDateTimeRecurrence = undefined
-
-weeklyDateTimeRecurrence ::
-  Day ->
-  LocalTime ->
-  Interval ->
-  Set ByMonth ->
-  WeekStart ->
-  Set DayOfWeek ->
-  Set ByHour ->
-  Set ByMinute ->
-  Set BySecond ->
-  Set BySetPos ->
-  [LocalTime]
-weeklyDateTimeRecurrence = undefined
-
-monthlyDateTimeRecurrence ::
-  Day ->
-  LocalTime ->
-  Interval ->
-  Set ByMonth ->
-  Set ByMonthDay ->
-  Set ByDay ->
-  Set ByHour ->
-  Set ByMinute ->
-  Set BySecond ->
-  Set BySetPos ->
-  [LocalTime]
-monthlyDateTimeRecurrence = undefined
-
-yearlyDateTimeRecurrence ::
-  Day ->
-  LocalTime ->
-  Interval ->
-  Set ByMonth ->
-  WeekStart ->
-  Set ByWeekNo ->
-  Set ByYearDay ->
-  Set ByMonthDay ->
-  Set ByDay ->
-  Set ByHour ->
-  Set ByMinute ->
-  Set BySecond ->
-  Set BySetPos ->
-  [LocalTime]
-yearlyDateTimeRecurrence = undefined
 
 -- | Filter the 'Every' to implement the fixable error defined by this part of the spec:
 --

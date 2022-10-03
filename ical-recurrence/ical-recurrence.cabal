@@ -14,6 +14,10 @@ library
       ICal.Recurrence.Class
       ICal.Recurrence.RecurrenceDateTimes
       ICal.Recurrence.RecurrenceRule
+      ICal.Recurrence.RecurrenceRule.Daily
+      ICal.Recurrence.RecurrenceRule.Monthly
+      ICal.Recurrence.RecurrenceRule.Weekly
+      ICal.Recurrence.RecurrenceRule.Yearly
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:
