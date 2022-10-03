@@ -108,11 +108,11 @@ recurUntilCount leFunc limit start recurrenceRule =
     Just (Left u) -> goUntil u
     Just (Right c) -> goCount c
   where
-    localTimes :: [LocalTime]
+    localTimes :: R [LocalTime]
     localTimes = recurrenceRuleDateTimeOccurrences limit start recurrenceRule
 
     goUntil :: Until -> R (Set LocalTime)
-    goUntil u = recurUntil u localTimes
+    goUntil u = localTimes >>= recurUntil u
 
     recurUntil :: Until -> [LocalTime] -> R (Set LocalTime)
     recurUntil _ [] = pure S.empty
@@ -122,29 +122,30 @@ recurUntilCount leFunc limit start recurrenceRule =
         else pure S.empty
 
     goCount :: Count -> R (Set LocalTime)
-    goCount (Count c) = recurCount (c - 1) localTimes
+    goCount (Count c) = localTimes >>= recurCount (c - 1)
     recurCount _ [] = pure S.empty
     recurCount 0 _ = pure S.empty
     recurCount c (a : as) = S.insert a <$> recurCount (pred c) as
 
     goIndefinitely :: R (Set LocalTime)
     goIndefinitely =
-      pure $
-        iterateMaybeSet
-          -- TODO make this faster by not recomputing the list for
-          -- every set element
-          (\cur -> listToMaybe $ recurrenceRuleDateTimeOccurrences limit cur recurrenceRule)
-          start
+      iterateMaybeSet
+        -- TODO make this faster by not recomputing the list for
+        -- every set element
+        (\cur -> listToMaybe <$> recurrenceRuleDateTimeOccurrences limit cur recurrenceRule)
+        start
 
-iterateMaybeSet :: Ord a => (a -> Maybe a) -> a -> Set a
+iterateMaybeSet :: (Ord a, Monad m) => (a -> m (Maybe a)) -> a -> m (Set a)
 iterateMaybeSet func start = go start
   where
-    go cur = case func cur of
-      Nothing -> S.singleton start
-      Just next -> S.insert next $ go next
+    go cur = do
+      mRes <- func cur
+      case mRes of
+        Nothing -> pure $ S.singleton start
+        Just next -> S.insert next <$> go next
 
 -- This function takes care of the 'rRuleFrequency' part.
-recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> [LocalTime]
+recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> R [LocalTime]
 recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrenceRuleFrequency of
   -- 1. From the spec:
   --
@@ -152,57 +153,61 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
   --    > the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
   --
   --    So we 'filterEvery' on the 'byDay's for every frequency except 'MONTHLY' and 'YEARLY'.
-  Daily ->
-    dailyDateTimeRecurrence
-      limit
-      lt
-      recurrenceRuleInterval
-      recurrenceRuleByMonth
-      recurrenceRuleByMonthDay
-      (filterEvery recurrenceRuleByDay)
-      recurrenceRuleByHour
-      recurrenceRuleByMinute
-      recurrenceRuleBySecond
-      recurrenceRuleBySetPos
-  Weekly ->
-    weeklyDateTimeRecurrence
-      limit
-      lt
-      recurrenceRuleInterval
-      recurrenceRuleByMonth
-      recurrenceRuleWeekStart
-      (filterEvery recurrenceRuleByDay)
-      recurrenceRuleByHour
-      recurrenceRuleByMinute
-      recurrenceRuleBySecond
-      recurrenceRuleBySetPos
+  Daily -> do
+    pure $
+      dailyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleByMonthDay
+        (filterEvery recurrenceRuleByDay)
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
+  Weekly -> do
+    pure $
+      weeklyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleWeekStart
+        (filterEvery recurrenceRuleByDay)
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
   Monthly ->
-    monthlyDateTimeRecurrence
-      limit
-      lt
-      recurrenceRuleInterval
-      recurrenceRuleByMonth
-      recurrenceRuleByMonthDay
-      recurrenceRuleByDay
-      recurrenceRuleByHour
-      recurrenceRuleByMinute
-      recurrenceRuleBySecond
-      recurrenceRuleBySetPos
+    pure $
+      monthlyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleByMonthDay
+        recurrenceRuleByDay
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
   Yearly ->
-    yearlyDateTimeRecurrence
-      limit
-      lt
-      recurrenceRuleInterval
-      recurrenceRuleByMonth
-      recurrenceRuleWeekStart
-      recurrenceRuleByWeekNo
-      recurrenceRuleByYearDay
-      recurrenceRuleByMonthDay
-      recurrenceRuleByDay
-      recurrenceRuleByHour
-      recurrenceRuleByMinute
-      recurrenceRuleBySecond
-      recurrenceRuleBySetPos
+    pure $
+      yearlyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleWeekStart
+        recurrenceRuleByWeekNo
+        recurrenceRuleByYearDay
+        recurrenceRuleByMonthDay
+        recurrenceRuleByDay
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
   _ -> error $ "not implemented yet: " <> show recurrenceRuleFrequency
 
 dailyDateTimeRecurrence ::
