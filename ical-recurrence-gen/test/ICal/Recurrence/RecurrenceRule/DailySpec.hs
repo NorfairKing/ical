@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 
-module ICal.Recurrence.RecurrenceRule.DailySpec
-  ( spec,
-  )
-where
+module ICal.Recurrence.RecurrenceRule.DailySpec (spec) where
 
 import Data.GenValidity.Time ()
 import Data.Maybe
@@ -88,73 +85,73 @@ spec = do
                              LocalTime (d 2020 08 09) (t 22 00 00)
                            ]
   describe "dailyDateTimeRecurrence" $ do
-    let dailyDateTimeNextRecurrence lim start i ba bb bc bd be bf bg =
+    let dailyDateTimeNextOccurrence lim start i ba bb bc bd be bf bg =
           listToMaybe $ dailyDateTimeRecurrence lim start i ba bb bc bd be bf bg
     --  An unimportant limit because we don't specify any rules that have no occurrances
     let limit = d 2021 01 01
     describe "No ByX's" $ do
       specify "Every day" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) tod) (Interval 1) [] [] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) tod) (Interval 1) [] [] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 08 07) tod)
       specify "Every other day" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) tod) (Interval 2) [] [] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) tod) (Interval 2) [] [] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 08 08) tod)
     describe "ByMonth" $ do
       specify "Every three days in September" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) tod) (Interval 3) [ByMonth September] [] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) tod) (Interval 3) [ByMonth September] [] [] [] [] [] []
             `shouldBe` Just
               (LocalTime (d 2020 09 02) tod)
       specify "Every four days in August" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) tod) (Interval 4) [ByMonth August] [] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) tod) (Interval 4) [ByMonth August] [] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 08 10) tod)
     describe "ByMonthDay" $ do
       specify "Every tenth day of the month" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 10) tod) (Interval 1) [] [ByMonthDay 10] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 10) tod) (Interval 1) [] [ByMonthDay 10] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 09 10) tod)
       specify "Every tenth of September" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2019 09 10) tod) (Interval 1) [ByMonth September] [ByMonthDay 10] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2019 09 10) tod) (Interval 1) [ByMonth September] [ByMonthDay 10] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 09 10) tod)
       specify "Every last day of February in a non-leap year" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2018 02 28) tod) (Interval 1) [ByMonth February] [ByMonthDay (-1)] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2018 02 28) tod) (Interval 1) [ByMonth February] [ByMonthDay (-1)] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2019 02 28) tod)
       specify "Every last day of February in a leap year" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2019 02 28) tod) (Interval 1) [ByMonth February] [ByMonthDay (-1)] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2019 02 28) tod) (Interval 1) [ByMonth February] [ByMonthDay (-1)] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 02 29) tod)
       specify "Every second-to-last day of September" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2019 09 33) tod) (Interval 1) [ByMonth September] [ByMonthDay (-1)] [] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2019 09 33) tod) (Interval 1) [ByMonth September] [ByMonthDay (-1)] [] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 09 33) tod)
     describe "ByDay" $ do
       specify "Every tuesday" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 04) tod) (Interval 1) [] [] [Tuesday] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 04) tod) (Interval 1) [] [] [Tuesday] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 08 11) tod)
       specify "Every tuesday in September" $
         forAllValid $ \tod ->
-          dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 04) tod) (Interval 1) [ByMonth September] [] [Tuesday] [] [] [] []
+          dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 04) tod) (Interval 1) [ByMonth September] [] [Tuesday] [] [] [] []
             `shouldBe` Just (LocalTime (d 2020 09 01) tod)
     describe "ByHour" $ do
       specify "16h every other day" $
-        dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) (t 16 00 00)) (Interval 2) [] [] [] [ByHour 16] [] [] []
+        dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 16 00 00)) (Interval 2) [] [] [] [ByHour 16] [] [] []
           `shouldBe` Just (LocalTime (d 2020 08 08) (t 16 00 00))
     describe "ByMinute" $ do
       specify "16h20 every third day" $
-        dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) (t 16 20 00)) (Interval 3) [] [] [] [ByHour 16] [ByMinute 20] [] []
+        dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 16 20 00)) (Interval 3) [] [] [] [ByHour 16] [ByMinute 20] [] []
           `shouldBe` Just (LocalTime (d 2020 08 09) (t 16 20 00))
     describe "BySecond" $ do
       specify "16h20m30s every fourth day" $
-        dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) (t 15 00 00)) (Interval 4) [] [] [] [ByHour 16] [ByMinute 20] [BySecond 30] []
+        dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 15 00 00)) (Interval 4) [] [] [] [ByHour 16] [ByMinute 20] [BySecond 30] []
           `shouldBe` Just (LocalTime (d 2020 08 06) (t 16 20 30))
       specify "every 15th and 20th second" $
-        dailyDateTimeNextRecurrence limit (LocalTime (d 2020 08 06) (t 15 00 15)) (Interval 1) [] [] [] [] [] [BySecond 15, BySecond 20] []
+        dailyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 15 00 15)) (Interval 1) [] [] [] [] [] [BySecond 15, BySecond 20] []
           `shouldBe` Just (LocalTime (d 2020 08 06) (t 15 00 20))
   describe "rruleDateOccurrencesUntil" $ do
     specify "it works for this complex example" $
@@ -195,45 +192,45 @@ spec = do
                                LocalTime (d 2020 08 08) tod,
                                LocalTime (d 2020 08 09) tod
                              ]
-  describe "dailyDateNextRecurrence" $ do
-    let dailyDateNextRecurrence lim start i ba bb bc =
-          fmap localDay $ listToMaybe $ dailyDateTimeRecurrence lim (LocalTime start midnight) i ba bb bc [] [] [] []
+  describe "dailyDateNextOccurrence" $ do
+    let dailyDateNextOccurrence lim start i ba bb bc =
+          fmap localDay . listToMaybe $ dailyDateTimeRecurrence lim (LocalTime start midnight) i ba bb bc [] [] [] []
     --  An unimportant limit because we don't specify any rules that have no occurrances
     let limit = d 2021 01 01
     describe "No ByX's" $ do
       specify "Every day" $
-        dailyDateNextRecurrence limit (d 2020 08 06) (Interval 1) [] [] []
+        dailyDateNextOccurrence limit (d 2020 08 06) (Interval 1) [] [] []
           `shouldBe` Just (d 2020 08 07)
       specify "Every other day" $
-        dailyDateNextRecurrence limit (d 2020 08 06) (Interval 2) [] [] []
+        dailyDateNextOccurrence limit (d 2020 08 06) (Interval 2) [] [] []
           `shouldBe` Just (d 2020 08 08)
     describe "ByMonth" $ do
       specify "Every three days in September" $
-        dailyDateNextRecurrence limit (d 2020 08 06) (Interval 3) [ByMonth September] [] []
+        dailyDateNextOccurrence limit (d 2020 08 06) (Interval 3) [ByMonth September] [] []
           `shouldBe` Just (d 2020 09 02)
       specify "Every four days in August" $
-        dailyDateNextRecurrence limit (d 2020 08 06) (Interval 4) [ByMonth August] [] []
+        dailyDateNextOccurrence limit (d 2020 08 06) (Interval 4) [ByMonth August] [] []
           `shouldBe` Just (d 2020 08 10)
     describe "ByMonthDay" $ do
       specify "Every tenth day of the month" $
-        dailyDateNextRecurrence limit (d 2020 08 10) (Interval 1) [] [ByMonthDay 10] []
+        dailyDateNextOccurrence limit (d 2020 08 10) (Interval 1) [] [ByMonthDay 10] []
           `shouldBe` Just (d 2020 09 10)
       specify "Every tenth of September" $
-        dailyDateNextRecurrence limit (d 2019 09 10) (Interval 1) [ByMonth September] [ByMonthDay 10] []
+        dailyDateNextOccurrence limit (d 2019 09 10) (Interval 1) [ByMonth September] [ByMonthDay 10] []
           `shouldBe` Just (d 2020 09 10)
       specify "Every last day of February in a non-leap year" $
-        dailyDateNextRecurrence limit (d 2018 02 28) (Interval 1) [ByMonth February] [ByMonthDay (-1)] []
+        dailyDateNextOccurrence limit (d 2018 02 28) (Interval 1) [ByMonth February] [ByMonthDay (-1)] []
           `shouldBe` Just (d 2019 02 28)
       specify "Every last day of February in a leap year" $
-        dailyDateNextRecurrence limit (d 2019 02 28) (Interval 1) [ByMonth February] [ByMonthDay (-1)] []
+        dailyDateNextOccurrence limit (d 2019 02 28) (Interval 1) [ByMonth February] [ByMonthDay (-1)] []
           `shouldBe` Just (d 2020 02 29)
       specify "Every second-to-last day of September" $
-        dailyDateNextRecurrence limit (d 2019 09 33) (Interval 1) [ByMonth September] [ByMonthDay (-1)] []
+        dailyDateNextOccurrence limit (d 2019 09 33) (Interval 1) [ByMonth September] [ByMonthDay (-1)] []
           `shouldBe` Just (d 2020 09 33)
     describe "ByDay" $ do
       specify "Every tuesday" $
-        dailyDateNextRecurrence limit (d 2020 08 04) (Interval 1) [] [] [Tuesday]
+        dailyDateNextOccurrence limit (d 2020 08 04) (Interval 1) [] [] [Tuesday]
           `shouldBe` Just (d 2020 08 11)
       specify "Every tuesday in September" $
-        dailyDateNextRecurrence limit (d 2020 08 04) (Interval 1) [ByMonth September] [] [Tuesday]
+        dailyDateNextOccurrence limit (d 2020 08 04) (Interval 1) [ByMonth September] [] [Tuesday]
           `shouldBe` Just (d 2020 09 01)
