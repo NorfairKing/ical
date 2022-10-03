@@ -16,6 +16,8 @@ library
       ICal.Recurrence.RecurrenceRule
       ICal.Recurrence.RecurrenceRule.Daily
       ICal.Recurrence.RecurrenceRule.Monthly
+      ICal.Recurrence.RecurrenceRule.Util
+      ICal.Recurrence.RecurrenceRule.WeekDate
       ICal.Recurrence.RecurrenceRule.Weekly
       ICal.Recurrence.RecurrenceRule.Yearly
   other-modules:
