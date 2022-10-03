@@ -18,6 +18,7 @@ library:
   - parser-combinators
   - text
   - time
+  - time-compat
   - validity
   - validity-bytestring
   - validity-case-insensitive

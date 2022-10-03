@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
@@ -24,6 +23,8 @@ import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time as Time
+import Data.Time.Compat ()
+-- Ord DayOfWeek and NFData DayOfWeek
 import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
@@ -37,16 +38,9 @@ import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import Text.Read
 
-#if !MIN_VERSION_time(1,9,5)
-deriving instance Ord DayOfWeek -- Silly that this doesn't exist. We need to be able to put days in a set
-#endif
-
 deriving instance Generic DayOfWeek
 
 deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
-
-instance NFData DayOfWeek where
-  rnf !_ = ()
 
 -- | Recurrence Rule
 --
