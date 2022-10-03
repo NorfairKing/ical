@@ -123,6 +123,15 @@ import Text.Printf
 --     133000Z
 --     TZID=America/New_York:083000
 -- @
+--
+-- TODO figure out if we can adhere to this SHOULD:
+-- @
+--    The recipient
+--    of an iCalendar object with a property value consisting of a local
+--    time, without any relative time zone information, SHOULD interpret
+--    the value as being fixed to whatever time zone the "ATTENDEE" is
+--    in at any given moment.
+-- @
 data Time
   = -- |
     -- @

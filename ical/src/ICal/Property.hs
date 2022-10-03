@@ -199,6 +199,13 @@ instance IsProperty End where
 --
 --     PRODID:-//ABC Corporation//NONSGML My Product//EN
 -- @
+--
+-- TODO fulfil this SHOULD:
+-- @
+-- Description:  The vendor of the implementation SHOULD assure that
+--    this is a globally unique identifier; using some technique such as
+--    an FPI value, as defined in [ISO.9070.1991].
+-- @
 newtype ProdId = ProdId {unProdId :: Text}
   deriving (Show, Eq, Generic)
 
@@ -1718,6 +1725,12 @@ instance IsProperty TimeZoneOffsetTo where
 -- Example:  The following is an example of this property:
 --
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
+-- @
+--
+-- TODO check this SHOULD:
+-- @
+--    defines the first instance in the recurrence set.  The "DTSTART"
+--    property value SHOULD match the pattern of the recurrence rule, if
 -- @
 data ExceptionDateTimes
   = ExceptionDateTimes !DateTimes

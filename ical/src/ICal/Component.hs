@@ -118,6 +118,14 @@ iCalendarB = foldMap componentSectionB
 -- component types defined in this document, and SHOULD NOT silently
 -- drop any components as that can lead to user data loss.
 -- @
+--
+-- TODO fulfill this SHOULD:
+-- @
+-- Applications that
+-- support importing iCalendar objects SHOULD support all of the
+-- component types defined in this document, and SHOULD NOT silently
+-- drop any components as that can lead to user data loss.
+-- @
 data Calendar = Calendar
   { calendarVersion :: !Version,
     calendarProdId :: !ProdId,
@@ -134,6 +142,13 @@ instance NFData Calendar
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
   componentP = do
+    -- TODO implement a warning for this SHOULD:
+    -- @
+    -- The Calendar Properties are attributes that apply to the iCalendar
+    -- object, as a whole.  These properties do not appear within a calendar
+    -- component.  They SHOULD be specified after the "BEGIN:VCALENDAR"
+    -- delimiter string and prior to any calendar component.
+    -- @
     calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
       not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VCALENDAR"
 

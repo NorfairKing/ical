@@ -11,6 +11,8 @@
 module ICal.Component.TimeZone where
 
 import Control.DeepSeq
+import Control.Monad
+import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -23,6 +25,7 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
+import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType.Class
@@ -633,6 +636,7 @@ observanceP = do
   observanceTimeZoneOffsetTo <- parseFirst observanceProperties
   observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
   observanceRecurrenceRules <- S.fromList <$> (parseList observanceProperties >>= traverse (fixUntil (Just dtstart)))
+  when (S.size observanceRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules observanceRecurrenceRules
 
   observanceComment <- parseSet observanceProperties
   observanceTimeZoneName <- parseSet observanceProperties
