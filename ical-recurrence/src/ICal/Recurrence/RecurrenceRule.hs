@@ -1,3 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module ICal.Recurrence.RecurrenceRule
   ( recurRecurrenceRules,
     recurRecurrenceRule,
@@ -6,6 +10,7 @@ module ICal.Recurrence.RecurrenceRule
 where
 
 import Control.Monad
+import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
@@ -86,4 +91,186 @@ recurRecurrenceRuleLocalTimes ::
   LocalTime ->
   RecurrenceRule ->
   R (Set LocalTime)
-recurRecurrenceRuleLocalTimes = undefined
+recurRecurrenceRuleLocalTimes = recurUntilCount lessThanUntil
+
+lessThanUntil :: LocalTime -> Until -> Bool
+lessThanUntil = undefined
+
+recurUntilCount ::
+  (LocalTime -> Until -> Bool) ->
+  Day ->
+  LocalTime ->
+  RecurrenceRule ->
+  R (Set LocalTime)
+recurUntilCount leFunc limit start recurrenceRule =
+  S.insert start <$> case recurrenceRuleUntilCount recurrenceRule of
+    Nothing -> goIndefinitely
+    Just (Left u) -> goUntil u
+    Just (Right c) -> goCount c
+  where
+    localTimes :: [LocalTime]
+    localTimes = recurrenceRuleDateTimeOccurrences limit start recurrenceRule
+
+    goUntil :: Until -> R (Set LocalTime)
+    goUntil u = recurUntil u localTimes
+
+    recurUntil :: Until -> [LocalTime] -> R (Set LocalTime)
+    recurUntil _ [] = pure S.empty
+    recurUntil u (l : ls) =
+      if l `leFunc` u
+        then S.insert l <$> recurUntil u ls
+        else pure S.empty
+
+    goCount :: Count -> R (Set LocalTime)
+    goCount (Count c) = recurCount (c - 1) localTimes
+    recurCount _ [] = pure S.empty
+    recurCount 0 _ = pure S.empty
+    recurCount c (a : as) = S.insert a <$> recurCount (pred c) as
+
+    goIndefinitely :: R (Set LocalTime)
+    goIndefinitely =
+      pure $
+        iterateMaybeSet
+          -- TODO make this faster by not recomputing the list for
+          -- every set element
+          (\cur -> listToMaybe $ recurrenceRuleDateTimeOccurrences limit cur recurrenceRule)
+          start
+
+iterateMaybeSet :: Ord a => (a -> Maybe a) -> a -> Set a
+iterateMaybeSet func start = go start
+  where
+    go cur = case func cur of
+      Nothing -> S.singleton start
+      Just next -> S.insert next $ go next
+
+-- This function takes care of the 'rRuleFrequency' part.
+recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> [LocalTime]
+recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrenceRuleFrequency of
+  -- 1. From the spec:
+  --
+  --    > The BYDAY rule part MUST NOT be specified with a numeric value when
+  --    > the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
+  --
+  --    So we 'filterEvery' on the 'byDay's for every frequency except 'MONTHLY' and 'YEARLY'.
+  Daily ->
+    dailyDateTimeRecurrence
+      limit
+      lt
+      recurrenceRuleInterval
+      recurrenceRuleByMonth
+      recurrenceRuleByMonthDay
+      (filterEvery recurrenceRuleByDay)
+      recurrenceRuleByHour
+      recurrenceRuleByMinute
+      recurrenceRuleBySecond
+      recurrenceRuleBySetPos
+  Weekly ->
+    weeklyDateTimeRecurrence
+      limit
+      lt
+      recurrenceRuleInterval
+      recurrenceRuleByMonth
+      recurrenceRuleWeekStart
+      (filterEvery recurrenceRuleByDay)
+      recurrenceRuleByHour
+      recurrenceRuleByMinute
+      recurrenceRuleBySecond
+      recurrenceRuleBySetPos
+  Monthly ->
+    monthlyDateTimeRecurrence
+      limit
+      lt
+      recurrenceRuleInterval
+      recurrenceRuleByMonth
+      recurrenceRuleByMonthDay
+      recurrenceRuleByDay
+      recurrenceRuleByHour
+      recurrenceRuleByMinute
+      recurrenceRuleBySecond
+      recurrenceRuleBySetPos
+  Yearly ->
+    yearlyDateTimeRecurrence
+      limit
+      lt
+      recurrenceRuleInterval
+      recurrenceRuleByMonth
+      recurrenceRuleWeekStart
+      recurrenceRuleByWeekNo
+      recurrenceRuleByYearDay
+      recurrenceRuleByMonthDay
+      recurrenceRuleByDay
+      recurrenceRuleByHour
+      recurrenceRuleByMinute
+      recurrenceRuleBySecond
+      recurrenceRuleBySetPos
+  _ -> error $ "not implemented yet: " <> show recurrenceRuleFrequency
+
+dailyDateTimeRecurrence ::
+  Day ->
+  LocalTime ->
+  Interval ->
+  Set ByMonth ->
+  Set ByMonthDay ->
+  Set DayOfWeek ->
+  Set ByHour ->
+  Set ByMinute ->
+  Set BySecond ->
+  Set BySetPos ->
+  [LocalTime]
+dailyDateTimeRecurrence = undefined
+
+weeklyDateTimeRecurrence ::
+  Day ->
+  LocalTime ->
+  Interval ->
+  Set ByMonth ->
+  WeekStart ->
+  Set DayOfWeek ->
+  Set ByHour ->
+  Set ByMinute ->
+  Set BySecond ->
+  Set BySetPos ->
+  [LocalTime]
+weeklyDateTimeRecurrence = undefined
+
+monthlyDateTimeRecurrence ::
+  Day ->
+  LocalTime ->
+  Interval ->
+  Set ByMonth ->
+  Set ByMonthDay ->
+  Set ByDay ->
+  Set ByHour ->
+  Set ByMinute ->
+  Set BySecond ->
+  Set BySetPos ->
+  [LocalTime]
+monthlyDateTimeRecurrence = undefined
+
+yearlyDateTimeRecurrence ::
+  Day ->
+  LocalTime ->
+  Interval ->
+  Set ByMonth ->
+  WeekStart ->
+  Set ByWeekNo ->
+  Set ByYearDay ->
+  Set ByMonthDay ->
+  Set ByDay ->
+  Set ByHour ->
+  Set ByMinute ->
+  Set BySecond ->
+  Set BySetPos ->
+  [LocalTime]
+yearlyDateTimeRecurrence = undefined
+
+-- TODO replace this by a fixable error
+filterEvery :: Set ByDay -> Set DayOfWeek
+filterEvery =
+  S.fromList
+    . mapMaybe
+      ( \case
+          Every d -> Just d
+          _ -> Nothing
+      )
+    . S.toList
