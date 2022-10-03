@@ -54,6 +54,7 @@ data RecurrenceError
 
 data RecurrenceFixableError
   = RecurrenceMultipleRecurrenceRules !(Set RecurrenceRule)
+  | RecurrenceByDayNumeric !ByDay
   deriving (Show, Eq, Ord)
 
 type R = Conform RecurrenceError RecurrenceFixableError Void

@@ -147,13 +147,14 @@ iterateMaybeSet func start = go start
 -- This function takes care of the 'rRuleFrequency' part.
 recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> R [LocalTime]
 recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrenceRuleFrequency of
-  -- 1. From the spec:
+  -- @
+  -- The BYDAY rule part MUST NOT be specified with a numeric value when
+  -- the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
+  -- @
   --
-  --    > The BYDAY rule part MUST NOT be specified with a numeric value when
-  --    > the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
-  --
-  --    So we 'filterEvery' on the 'byDay's for every frequency except 'MONTHLY' and 'YEARLY'.
+  -- So we 'filterEvery' on the 'byDay's for every frequency except 'MONTHLY' and 'YEARLY'.
   Daily -> do
+    every <- filterEvery recurrenceRuleByDay
     pure $
       dailyDateTimeRecurrence
         limit
@@ -161,12 +162,13 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
         recurrenceRuleInterval
         recurrenceRuleByMonth
         recurrenceRuleByMonthDay
-        (filterEvery recurrenceRuleByDay)
+        every
         recurrenceRuleByHour
         recurrenceRuleByMinute
         recurrenceRuleBySecond
         recurrenceRuleBySetPos
   Weekly -> do
+    every <- filterEvery recurrenceRuleByDay
     pure $
       weeklyDateTimeRecurrence
         limit
@@ -174,7 +176,7 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
         recurrenceRuleInterval
         recurrenceRuleByMonth
         recurrenceRuleWeekStart
-        (filterEvery recurrenceRuleByDay)
+        every
         recurrenceRuleByHour
         recurrenceRuleByMinute
         recurrenceRuleBySecond
@@ -269,13 +271,20 @@ yearlyDateTimeRecurrence ::
   [LocalTime]
 yearlyDateTimeRecurrence = undefined
 
--- TODO replace this by a fixable error
-filterEvery :: Set ByDay -> Set DayOfWeek
+-- | Filter the 'Every' to implement the fixable error defined by this part of the spec:
+--
+-- @
+-- The BYDAY rule part MUST NOT be specified with a numeric value when
+-- the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
+-- @
+filterEvery :: Set ByDay -> R (Set DayOfWeek)
 filterEvery =
-  S.fromList
-    . mapMaybe
+  fmap (S.fromList . catMaybes)
+    . mapM
       ( \case
-          Every d -> Just d
-          _ -> Nothing
+          Every d -> pure $ Just d
+          bd -> do
+            emitFixableError $ RecurrenceByDayNumeric bd
+            pure Nothing
       )
     . S.toList
