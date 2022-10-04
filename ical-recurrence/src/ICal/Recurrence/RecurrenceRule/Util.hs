@@ -103,7 +103,7 @@ byMonthDayExpandMonth year month s = NE.nonEmpty $
 byEveryWeekDayWeek :: Set DayOfWeek -> Maybe (NonEmpty DayOfWeek)
 byEveryWeekDayWeek = NE.nonEmpty . S.toList
 
-byEveryWeekDayExpandYear :: DayOfWeek -> Integer -> Set ByDay -> Maybe (NonEmpty Day)
+byEveryWeekDayExpandYear :: WeekStart -> Integer -> Set ByDay -> Maybe (NonEmpty Day)
 byEveryWeekDayExpandYear weekStart year s = NE.nonEmpty $
   sort $
     flip concatMap (S.toList s) $
@@ -119,7 +119,7 @@ byEveryWeekDayExpandYear weekStart year s = NE.nonEmpty $
           guard $ i == pn || i == nn
           pure d
 
-byWeekNoExpand :: DayOfWeek -> Integer -> Set ByWeekNo -> Maybe (NonEmpty Word)
+byWeekNoExpand :: WeekStart -> Integer -> Set ByWeekNo -> Maybe (NonEmpty Word)
 byWeekNoExpand weekStart year s =
   NE.nonEmpty $
     sort $

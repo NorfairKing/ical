@@ -23,7 +23,7 @@ dailyDateTimeRecurrence ::
   [LocalTime]
 dailyDateTimeRecurrence
   limit
-  lt@(LocalTime d_ tod_)
+  start
   interval
   byMonths
   byMonthDays
@@ -32,11 +32,12 @@ dailyDateTimeRecurrence
   byMinutes
   bySeconds
   bySetPoss = do
-    d <- dailyDayRecurrence d_ limit interval byMonths byMonthDays byDays
-    tod <- filterSetPos bySetPoss $ timeOfDayExpand tod_ byHours byMinutes bySeconds
+    d <- dailyDayRecurrence (localDay start) limit interval byMonths byMonthDays byDays
+    guard (d <= limit) -- Early check
+    tod <- filterSetPos bySetPoss $ timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
     let next = LocalTime d tod
-    guard (next > lt) -- Don't take the current one again
     guard (next < LocalTime (addDays 1 limit) midnight) -- Don't go beyond the limit
+    guard (next > start) -- Don't take the current one again
     pure next
 
 -- | Internal: Get all the relevant days until the limit, not considering any 'Set BySetPos'

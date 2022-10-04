@@ -2,13 +2,14 @@ module ICal.Recurrence.RecurrenceRule.WeekDate where
 
 import Control.Exception
 import Data.Time
+import ICal.PropertyType.RecurrenceRule
 
-nextWeek :: DayOfWeek -> Integer -> Word -> (Integer, Word)
+nextWeek :: WeekStart -> Integer -> Word -> (Integer, Word)
 nextWeek ws y wn
   | wn < weeksInYear ws y = (y, wn + 1)
   | otherwise = (y + 1, 1)
 
-weeksIntoTheFutureStartingFrom :: DayOfWeek -> Integer -> Word -> [(Integer, Word)]
+weeksIntoTheFutureStartingFrom :: WeekStart -> Integer -> Word -> [(Integer, Word)]
 weeksIntoTheFutureStartingFrom ws = go
   where
     go y wn =
@@ -33,7 +34,7 @@ weeksIntoTheFutureStartingFrom ws = go
 -- This means that in 2015, when Jan 1st was a thursday:
 -- - with a week start of Monday, the first week started on 29 dec 2014
 -- - with a week start of Sunday, the first week started on 4 jan 2015
-toWeekDateWithStart :: DayOfWeek -> Day -> (Integer, Word, DayOfWeek)
+toWeekDateWithStart :: WeekStart -> Day -> (Integer, Word, DayOfWeek)
 toWeekDateWithStart ws d =
   let dow = dayOfWeek d
       (year, _, _) = toGregorian d
@@ -45,7 +46,7 @@ toWeekDateWithStart ws d =
         | otherwise = (year, fromInteger $ (diffDays d firstDayOfTheFirstWsWeekThisYear `quot` 7) + 1)
    in (wsWeekYear, wsWeekNo, dow)
 
-weeksInYear :: DayOfWeek -> Integer -> Word
+weeksInYear :: WeekStart -> Integer -> Word
 weeksInYear ws y =
   -- From https://en.wikipedia.org/wiki/ISO_week_date#Last_week
   -- [The last week] has 28 December in it.
@@ -58,11 +59,11 @@ weeksInYear ws y =
 daysInYear :: Integer -> Int
 daysInYear y = if isLeapYear y then 366 else 365
 
-fromWeekDateWithStart :: DayOfWeek -> Integer -> Word -> DayOfWeek -> Maybe Day
-fromWeekDateWithStart ws year w dow =
+fromWeekDateWithStart :: WeekStart -> Integer -> Word -> DayOfWeek -> Maybe Day
+fromWeekDateWithStart ws@(WeekStart weekStartDow) year w dow =
   Just $
     let firstD = firstDayOfTheFirstWsWeekOf ws year
-        weekOffset = positiveMod 7 $ fromEnum dow - fromEnum ws
+        weekOffset = positiveMod 7 $ fromEnum dow - fromEnum weekStartDow
      in addDays (fromIntegral $ 7 * (w - 1) + fromIntegral weekOffset) firstD
 
 -- We want to know whethere the first 'ws' occurs in the first week of
@@ -85,10 +86,10 @@ fromWeekDateWithStart ws year w dow =
 -- If the 'firstDayOfTheWSWeekThatContainsJan1st' is on or after dec 29
 -- then it is the first day of the first ws week otherwise, the first
 -- week starts a week later.
-firstDayOfTheFirstWsWeekOf :: DayOfWeek -> Integer -> Day
-firstDayOfTheFirstWsWeekOf ws year =
+firstDayOfTheFirstWsWeekOf :: WeekStart -> Integer -> Day
+firstDayOfTheFirstWsWeekOf ws@(WeekStart weekStartDow) year =
   let firstDayOfTheWSWeekThatContainsJan1stForD = firstDayOfTheWSWeekThatContainsJan1st ws year
-   in assert (dayOfWeek firstDayOfTheWSWeekThatContainsJan1stForD == ws) $
+   in assert (dayOfWeek firstDayOfTheWSWeekThatContainsJan1stForD == weekStartDow) $
         if firstDayOfTheWSWeekThatContainsJan1stForD >= fromGregorian (year - 1) 12 29
           then firstDayOfTheWSWeekThatContainsJan1stForD
           else addDays 7 firstDayOfTheWSWeekThatContainsJan1stForD
@@ -102,11 +103,16 @@ firstDayOfTheFirstWsWeekOf ws year =
 -- Example 2: If Jan 1st is a thursday and the week starts on saturday
 -- then then dec 27 is the firstay day of the 'monday'-week start contains jan 1st
 -- so we have to subtract 5, which is positiveMod 7 (Thursday (4) - Saturday (6))
-firstDayOfTheWSWeekThatContainsJan1st :: DayOfWeek -> Integer -> Day
-firstDayOfTheWSWeekThatContainsJan1st ws year =
+firstDayOfTheWSWeekThatContainsJan1st :: WeekStart -> Integer -> Day
+firstDayOfTheWSWeekThatContainsJan1st (WeekStart weekStartDow) year =
   let firstDayOfTheYear = fromGregorian year 1 1
       dowFirstDayOfTheYear = dayOfWeek firstDayOfTheYear
-   in addDays (negate $ positiveMod 7 $ fromIntegral $ fromEnum dowFirstDayOfTheYear - fromEnum ws) firstDayOfTheYear
+   in addDays
+        ( negate $
+            positiveMod 7 $
+              fromIntegral $ fromEnum dowFirstDayOfTheYear - fromEnum weekStartDow
+        )
+        firstDayOfTheYear
 
 positiveMod :: Integral i => i -> i -> i
 positiveMod r n =
