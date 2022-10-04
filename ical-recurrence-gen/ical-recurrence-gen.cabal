@@ -31,6 +31,7 @@ test-suite ical-recurrence-test
       ICal.Recurrence.ClassSpec
       ICal.Recurrence.RecurrenceDateTimesSpec
       ICal.Recurrence.RecurrenceRule.DailySpec
+      ICal.Recurrence.RecurrenceRule.MonthlySpec
       ICal.Recurrence.RecurrenceRule.WeeklySpec
       ICal.Recurrence.RecurrenceRuleSpec
       Paths_ical_recurrence_gen
