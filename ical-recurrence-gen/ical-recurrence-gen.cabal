@@ -33,6 +33,7 @@ test-suite ical-recurrence-test
       ICal.Recurrence.RecurrenceRule.DailySpec
       ICal.Recurrence.RecurrenceRule.MonthlySpec
       ICal.Recurrence.RecurrenceRule.WeeklySpec
+      ICal.Recurrence.RecurrenceRule.YearlySpec
       ICal.Recurrence.RecurrenceRuleSpec
       Paths_ical_recurrence_gen
   hs-source-dirs:
