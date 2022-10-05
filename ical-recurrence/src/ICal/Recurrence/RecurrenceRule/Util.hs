@@ -100,8 +100,15 @@ byMonthDayExpandMonth year month s = NE.nonEmpty $
             GT -> Just $ fromIntegral md
             LT -> Just $ fromIntegral $ days + md + 1 -- Must be positive
 
-byEveryWeekDayWeek :: Set DayOfWeek -> Maybe (NonEmpty DayOfWeek)
-byEveryWeekDayWeek = NE.nonEmpty . S.toList
+byEveryWeekDayWeek :: Set ByDay -> Maybe (NonEmpty DayOfWeek)
+byEveryWeekDayWeek =
+  NE.nonEmpty
+    . mapMaybe
+      ( \case
+          Every dow -> Just dow
+          _ -> Nothing
+      )
+    . S.toList
 
 byEveryWeekDayExpandYear :: WeekStart -> Integer -> Set ByDay -> Maybe (NonEmpty Day)
 byEveryWeekDayExpandYear weekStart year s = NE.nonEmpty $
@@ -153,8 +160,8 @@ byDayExpand y m md s =
       (maybeToList $ fromGregorianValid y m md)
       s
 
-byMonthExpand :: Set Month -> Maybe (NonEmpty Month)
-byMonthExpand = NE.nonEmpty . S.toList
+byMonthExpand :: Set ByMonth -> Maybe (NonEmpty Month)
+byMonthExpand = NE.nonEmpty . map unByMonth . S.toList
 
 byMonthDayExpand :: Integer -> Month -> Int -> Set ByMonthDay -> [Int]
 byMonthDayExpand y m = expandM $ \(ByMonthDay md) ->

@@ -139,23 +139,23 @@ spec = do
     describe "ByHour" $ do
       specify "16h every other year" $
         yearlyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 16 00 00)) (Interval 2) [] (WeekStart Monday) [] [] [] [] [ByHour 16] [] [] []
-          `shouldBe` Just (LocalTime (d 2020 10 06) (t 16 00 00))
+          `shouldBe` Just (LocalTime (d 2022 08 06) (t 16 00 00))
     describe "ByMinute" $ do
       specify "16h20 every third year" $
         yearlyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 16 20 00)) (Interval 3) [] (WeekStart Monday) [] [] [] [] [ByHour 16] [ByMinute 20] [] []
-          `shouldBe` Just (LocalTime (d 2020 11 06) (t 16 20 00))
+          `shouldBe` Just (LocalTime (d 2023 08 06) (t 16 20 00))
     describe "BySecond" $ do
       specify "16h20m30s every fourth year" $
         yearlyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 16 20 30)) (Interval 4) [] (WeekStart Monday) [] [] [] [] [ByHour 16] [ByMinute 20] [BySecond 30] []
-          `shouldBe` Just (LocalTime (d 2020 12 06) (t 16 20 30))
+          `shouldBe` Just (LocalTime (d 2024 08 06) (t 16 20 30))
       specify "every 15th and 20th second" $
         yearlyDateTimeNextOccurrence limit (LocalTime (d 2020 08 06) (t 15 00 15)) (Interval 1) [] (WeekStart Monday) [] [] [] [] [] [] [BySecond 15, BySecond 20] []
           `shouldBe` Just (LocalTime (d 2020 08 06) (t 15 00 20))
     describe "BySetPos" $ do
       specify "The last weekday of the year" $
         forAllValid $ \tod ->
-          yearlyDateTimeNextOccurrence limit (LocalTime (d 2020 04 30) tod) (Interval 1) [] (WeekStart Monday) [] [] [] [Every Monday, Every Tuesday, Every Wednesday, Every Thursday, Every Friday] [] [] [] [BySetPos (-1)]
-            `shouldBe` Just (LocalTime (d 2020 05 29) tod)
+          yearlyDateTimeNextOccurrence limit (LocalTime (d 2022 10 05) tod) (Interval 1) [] (WeekStart Monday) [] [] [] [Every Monday, Every Tuesday, Every Wednesday, Every Thursday, Every Friday] [] [] [] [BySetPos (-1)]
+            `shouldBe` Just (LocalTime (d 2022 12 30) tod)
   describe "yearlyDateNextOccurrence limit" $ do
     --  An unimportant limit because we don't specify any rules that have no occurrences
     let limit = d 2030 01 01
@@ -255,8 +255,3 @@ spec = do
       specify "Every Monday and Tuesday in the first week of every year" $
         yearlyDateNextOccurrence limit (d 2019 12 31) (Interval 1) [] (WeekStart Monday) [ByWeekNo 1] [] [] [Every Monday, Every Tuesday] []
           `shouldBe` Just (d 2021 01 04)
-
-    describe "BySetPos" $ do
-      specify "This special case" $
-        yearlyDateNextOccurrence limit (d 2021 08 31) (Interval 2) [ByMonth March, ByMonth April, ByMonth August] (WeekStart Monday) [] [] [] [Every Tuesday, Every Sunday] [BySetPos (-1)]
-          `shouldBe` Just (d 2022 04 26)
