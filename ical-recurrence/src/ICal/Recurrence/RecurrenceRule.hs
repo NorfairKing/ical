@@ -116,37 +116,22 @@ recurUntilCount leFunc limit start recurrenceRule =
     localTimes = recurrenceRuleDateTimeOccurrences limit start recurrenceRule
 
     goUntil :: Until -> R (Set LocalTime)
-    goUntil u = localTimes >>= recurUntil u
-
-    recurUntil :: Until -> [LocalTime] -> R (Set LocalTime)
-    recurUntil _ [] = pure S.empty
+    goUntil u = recurUntil u <$> localTimes
+    recurUntil :: Until -> [LocalTime] -> Set LocalTime
+    recurUntil _ [] = S.empty
     recurUntil u (l : ls) =
       if l `leFunc` u
-        then S.insert l <$> recurUntil u ls
-        else pure S.empty
+        then S.insert l $ recurUntil u ls
+        else S.empty
 
     goCount :: Count -> R (Set LocalTime)
-    goCount (Count c) = localTimes >>= recurCount (c - 1)
-    recurCount _ [] = pure S.empty
-    recurCount 0 _ = pure S.empty
-    recurCount c (a : as) = S.insert a <$> recurCount (pred c) as
+    goCount (Count c) = recurCount (c - 1) <$> localTimes
+    recurCount _ [] = S.empty
+    recurCount 0 _ = S.empty
+    recurCount c (a : as) = S.insert a $ recurCount (pred c) as
 
     goIndefinitely :: R (Set LocalTime)
-    goIndefinitely =
-      iterateMaybeSet
-        -- TODO make this faster by not recomputing the list for
-        -- every set element
-        (\cur -> listToMaybe <$> recurrenceRuleDateTimeOccurrences limit cur recurrenceRule)
-        start
-
-iterateMaybeSet :: (Ord a, Monad m) => (a -> m (Maybe a)) -> a -> m (Set a)
-iterateMaybeSet func start = go start
-  where
-    go cur = do
-      mRes <- func cur
-      case mRes of
-        Nothing -> pure $ S.singleton start
-        Just next -> S.insert next <$> go next
+    goIndefinitely = S.fromList <$> localTimes
 
 -- This function takes care of the 'rRuleFrequency' part.
 recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> R [LocalTime]

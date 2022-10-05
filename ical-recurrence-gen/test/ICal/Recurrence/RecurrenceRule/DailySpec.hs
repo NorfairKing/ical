@@ -4,6 +4,7 @@ module ICal.Recurrence.RecurrenceRule.DailySpec (spec) where
 
 import Data.GenValidity.Time ()
 import Data.Maybe
+import qualified Data.Set as S
 import Data.Time
 import ICal.Conformance.TestUtils
 import ICal.PropertyType.RecurrenceRule
@@ -16,7 +17,7 @@ spec :: Spec
 spec = do
   let d = fromGregorian
       t = TimeOfDay
-  xdescribe "rruleDateTimeOccurrencesUntil" $ do
+  describe "rruleDateTimeOccurrencesUntil" $ do
     specify "it works for this complex example" $
       let limit = d 2024 01 01
           rule =
@@ -84,6 +85,19 @@ spec = do
                              LocalTime (d 2020 08 08) (t 23 00 00),
                              LocalTime (d 2020 08 09) (t 22 00 00)
                            ]
+    specify "It works for this meeting that occurs every day for a long time" $
+      forAllValid $ \tod -> do
+        let limit = d 2030 01 01
+            rule = makeRecurrenceRule Daily
+            start = LocalTime (d 2020 08 07) tod
+        set <- shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+        let intersection = S.filter ((>= d 2029 12 30) . localDay) set
+        intersection
+          `shouldBe` [ LocalTime (d 2029 12 30) tod,
+                       LocalTime (d 2029 12 31) tod,
+                       LocalTime (d 2030 01 01) tod
+                     ]
+
   describe "dailyDateTimeRecurrence" $ do
     let dailyDateTimeNextOccurrence lim start i ba bb bc bd be bf bg =
           listToMaybe $ dailyDateTimeRecurrence lim start i ba bb bc bd be bf bg
