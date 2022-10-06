@@ -15,7 +15,7 @@ extra-deps:
 - timeout-0.1.1@sha256:56c1d3321d7139d1f7ebf04d46c95d3a3f1c8c9e0f15666ae3ccd6bae6204b6e,1427
 
 - github: NorfairKing/autodocodec
-  commit: 98135d2b24c4c52f56f53c6650a169aeec61c7f1
+  commit: 49ff93b4e60a6725e49cb38db11bacffc7e0047c
   subdirs:
   - autodocodec
   - autodocodec-schema
@@ -27,12 +27,12 @@ extra-deps:
   - safe-coloured-text-layout
   - safe-coloured-text-terminfo
 - github: NorfairKing/sydtest
-  commit: 9db39de44641f28a2c26de80fcfe08616fcf3054
+  commit: 1050a44ab2e51a43fdbcda0b11bae122f501e716
   subdirs:
   - sydtest
   - sydtest-discover
 - github: NorfairKing/validity
-  commit: 2e9198bdaaa8c80a5dbe2b7b860b5c26558c6374
+  commit: 657cf4bdc2731387abea6e707b88d381d5218616
   subdirs:
   - genvalidity
   - genvalidity-aeson
