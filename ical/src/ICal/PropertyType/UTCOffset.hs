@@ -59,7 +59,7 @@ instance Validity UTCOffset where
     mconcat
       [ genericValidate uo,
         declare "the offset is in a sensible range" $
-          -utcOffsetAbsBound < offsetSeconds && offsetSeconds < utcOffsetAbsBound
+          - utcOffsetAbsBound < offsetSeconds && offsetSeconds < utcOffsetAbsBound
       ]
 
 utcOffsetAbsBound :: Int32

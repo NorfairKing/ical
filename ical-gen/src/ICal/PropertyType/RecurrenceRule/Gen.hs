@@ -122,7 +122,7 @@ instance GenValid BySetPos where
         ( \s ->
             oneof
               [ choose (1, max 1 s),
-                choose (min (-1) (-s), -1)
+                choose (min (-1) (- s), -1)
               ]
         )
 
