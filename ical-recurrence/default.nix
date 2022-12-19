@@ -5,5 +5,4 @@ mkDerivation {
   src = ./.;
   libraryHaskellDepends = [ base containers ical mtl time validity ];
   license = "unknown";
-  hydraPlatforms = lib.platforms.none;
 }

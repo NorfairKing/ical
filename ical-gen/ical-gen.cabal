@@ -7,6 +7,49 @@ cabal-version: 1.12
 name:           ical-gen
 version:        0.0.0.0
 build-type:     Simple
+extra-source-files:
+    test_resources/calendars/fixable/invalid-until.ics
+    test_resources/calendars/valid/daily-bysetpos.ics
+    test_resources/calendars/valid/date.ics
+    test_resources/calendars/valid/duration-time.ics
+    test_resources/calendars/valid/duration-weeks.ics
+    test_resources/calendars/valid/duration.ics
+    test_resources/calendars/valid/empty.ics
+    test_resources/calendars/valid/example.ics
+    test_resources/calendars/valid/exception.ics
+    test_resources/calendars/valid/funky.ics
+    test_resources/calendars/valid/ignored.ics
+    test_resources/calendars/valid/minimal.ics
+    test_resources/calendars/valid/museum.ics
+    test_resources/calendars/valid/one-recurrence-invalid.ics
+    test_resources/calendars/valid/rdate-period.ics
+    test_resources/calendars/valid/rdate.ics
+    test_resources/calendars/valid/spec-3.4.ics
+    test_resources/calendars/valid/spec-4-1.ics
+    test_resources/calendars/valid/spec-4-2.ics
+    test_resources/calendars/valid/spec-4-3.ics
+    test_resources/calendars/valid/spec-4-4.ics
+    test_resources/calendars/valid/spec-4-5.ics
+    test_resources/calendars/valid/spec-4-6.ics
+    test_resources/calendars/valid/uid.ics
+    test_resources/calendars/valid/visit.ics
+    test_resources/calendars/valid/zoned-border.ics
+    test_resources/calendars/valid/zoned-complex.ics
+    test_resources/calendars/valid/zoned-rdate.ics
+    test_resources/calendars/valid/zoned-recurring.ics
+    test_resources/calendars/valid/zoned.ics
+    test_resources/events/spec-3.6.1-1
+    test_resources/events/spec-3.6.1-2
+    test_resources/events/spec-3.6.1-3
+    test_resources/events/spec-3.6.1-4
+    test_resources/timezones/inbetween
+    test_resources/timezones/only-daylight
+    test_resources/timezones/spec-3.6.5-1
+    test_resources/timezones/spec-3.6.5-2
+    test_resources/timezones/spec-3.6.5-3
+    test_resources/timezones/spec-3.6.5-4
+    test_resources/timezones/spec-3.6.5-5
+    test_resources/unfolded-lines.txt
 
 library
   exposed-modules:

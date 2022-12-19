@@ -5,6 +5,9 @@ dependencies:
 - base >= 4.7 && < 5
 - ical
 
+extra-source-files:
+- test_resources/**/*
+
 library:
   source-dirs: src
   dependencies:

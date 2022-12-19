@@ -24,5 +24,4 @@ mkDerivation {
   testToolDepends = [ sydtest-discover ];
   doHaddock = false;
   license = "unknown";
-  hydraPlatforms = lib.platforms.none;
 }

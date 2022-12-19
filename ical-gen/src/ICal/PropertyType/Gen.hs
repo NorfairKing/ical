@@ -150,10 +150,10 @@ instance GenValid URI where
 instance GenValid UTCOffset where
   genValid =
     let inclusiveBound = utcOffsetAbsBound - 1
-     in UTCOffset <$> choose (- inclusiveBound, inclusiveBound)
+     in UTCOffset <$> choose (-inclusiveBound, inclusiveBound)
   shrinkValid =
     let inclusiveBound = utcOffsetAbsBound - 1
-     in fmap UTCOffset . shrinkRange2 (- inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
+     in fmap UTCOffset . shrinkRange2 (-inclusiveBound, 0) (0, inclusiveBound) . unUTCOffset
 
 propertyTypeRenderExampleSpec ::
   ( Show propertyType,

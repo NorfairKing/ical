@@ -18,5 +18,4 @@ mkDerivation {
   ];
   testHaskellDepends = [ base ];
   license = "unknown";
-  hydraPlatforms = lib.platforms.none;
 }

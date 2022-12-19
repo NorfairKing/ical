@@ -36,5 +36,5 @@ mkDerivation {
     genvalidity-vector ical QuickCheck vector
   ];
   license = "unknown";
-  hydraPlatforms = lib.platforms.none;
+  mainProgram = "ical-spec-coverage";
 }
