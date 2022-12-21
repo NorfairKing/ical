@@ -506,7 +506,7 @@ instance IsProperty DateTimeStamp where
 --     TZID:/example.org/America/New_York
 -- @
 newtype TZID = TZID {unTZID :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity TZID
 
@@ -1586,7 +1586,7 @@ instance IsProperty Comment where
 --     TZOFFSETFROM:+1345
 -- @
 newtype TimeZoneOffsetFrom = TimeZoneOffsetFrom {unTimeZoneOffsetFrom :: UTCOffset}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZoneOffsetFrom
 
@@ -1638,7 +1638,7 @@ instance IsProperty TimeZoneOffsetFrom where
 --
 -- @
 newtype TimeZoneOffsetTo = TimeZoneOffsetTo {unTimeZoneOffsetTo :: UTCOffset}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZoneOffsetTo
 

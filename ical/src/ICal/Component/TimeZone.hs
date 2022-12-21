@@ -479,7 +479,7 @@ data TimeZone = TimeZone
     -- x-prop / iana-prop
     -- @
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZone
 
@@ -520,7 +520,7 @@ vTimeZoneB TimeZone {..} =
 data TimeZoneObservance
   = StandardObservance !Standard
   | DaylightObservance !Daylight
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZoneObservance
 
@@ -537,7 +537,7 @@ timeZoneObservanceB = \case
   DaylightObservance d -> componentSectionB d
 
 newtype Standard = Standard {unStandard :: Observance}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Standard
 
@@ -549,7 +549,7 @@ instance IsComponent Standard where
   componentB = observanceB . unStandard
 
 newtype Daylight = Daylight {unDaylight :: Observance}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Daylight
 
@@ -592,7 +592,7 @@ data Observance = Observance
     observanceComment :: !(Set Comment),
     observanceTimeZoneName :: !(Set TimeZoneName)
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Observance where
   validate o@Observance {..} =
