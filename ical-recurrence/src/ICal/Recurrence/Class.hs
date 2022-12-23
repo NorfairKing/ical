@@ -26,7 +26,7 @@ data Recurrence = Recurrence
     recurrenceRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
     recurrenceRecurrenceRules :: !(Set RecurrenceRule)
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Recurrence
 
@@ -35,7 +35,7 @@ data RecurringEvent = RecurringEvent
     recurringEventEndOrDuration :: !(Maybe (Either DateTimeEnd Duration)),
     recurringEventRecurrence :: !Recurrence
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity RecurringEvent
 

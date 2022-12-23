@@ -65,6 +65,10 @@ data CalendarParseWarning
   = WarnMultipleRecurrenceRules !(Set RecurrenceRule)
   deriving (Show, Eq, Ord)
 
+instance Exception CalendarParseWarning where
+  displayException = \case
+    WarnMultipleRecurrenceRules rrs -> unwords ["Component has multiple recurrence rules:", show rrs]
+
 parseComponentFromContentLines ::
   (Validity component, IsComponent component) =>
   [ContentLine] ->

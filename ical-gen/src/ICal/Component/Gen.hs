@@ -252,3 +252,9 @@ componentSpec = do
        in context ctx $ do
             parsed <- shouldConform $ runCP componentSectionP rendered
             parsed `shouldBe` a
+
+  it "roundtrips through Text" $
+    forAllValid $ \a -> do
+      let renderedText = renderComponentText (a :: a)
+      parsed <- shouldConform $ parseComponentFromText renderedText
+      parsed `shouldBe` a

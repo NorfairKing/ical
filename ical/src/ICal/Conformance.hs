@@ -5,11 +5,11 @@
 
 module ICal.Conformance where
 
+import Control.Exception
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
 import Data.Functor.Identity
-import Data.Void
 
 -- | A conforming monad transformer to compute a result according to a spec.
 --
@@ -67,6 +67,11 @@ data HaltReason ue fe
   | HaltedBecauseOfStrictness !fe
   deriving (Show, Eq)
 
+instance (Exception ue, Exception fe) => Exception (HaltReason ue fe) where
+  displayException = \case
+    HaltedBecauseOfUnfixableError ue -> displayException ue
+    HaltedBecauseOfStrictness fe -> displayException fe
+
 data Notes fe w = Notes
   { notesFixableErrors :: ![fe],
     notesWarnings :: ![w]
@@ -100,12 +105,12 @@ runConformTFlexible predicate (ConformT func) = runExceptT (runWriterT (runReade
 runConformT ::
   Monad m =>
   ConformT ue fe w m a ->
-  m (Either (HaltReason ue fe) (a, Notes Void w))
+  m (Either (HaltReason ue fe) (a, [w]))
 runConformT func = do
   errOrTup <- runConformTFlexible fixNone func
   pure $ do
     (a, notes) <- errOrTup
-    pure (a, notes {notesFixableErrors = []})
+    pure (a, notesWarnings notes)
 
 -- | Don't fix any fixable errors, and don't allow any warnings either
 --
@@ -129,15 +134,13 @@ runConformTStrict func = do
 runConformTLenient ::
   Monad m =>
   ConformT ue fe w m a ->
-  m (Either (HaltReason ue Void) (a, Notes fe w))
+  m (Either ue (a, Notes fe w))
 runConformTLenient func = do
   errOrTup <- runConformTFlexible fixAll func
   pure $ case errOrTup of
     Left hr -> Left $ case hr of
-      HaltedBecauseOfStrictness _ ->
-        HaltedBecauseOfStrictness
-          (error "cannot happen, but this cannot be proven to the compiler.")
-      HaltedBecauseOfUnfixableError ue -> HaltedBecauseOfUnfixableError ue
+      HaltedBecauseOfStrictness _ -> error "cannot happen, but this cannot be proven to the compiler."
+      HaltedBecauseOfUnfixableError ue -> ue
     Right r -> Right r
 
 type Conform ue fe w = ConformT ue fe w Identity
@@ -154,7 +157,7 @@ runConformFlexible predicate = runIdentity . runConformTFlexible predicate
 -- This is standard-complient
 runConform ::
   Conform ue fe w a ->
-  Either (HaltReason ue fe) (a, Notes Void w)
+  Either (HaltReason ue fe) (a, [w])
 runConform = runIdentity . runConformT
 
 -- | Don't fix any fixable errors, and don't allow any warnings either
@@ -170,7 +173,7 @@ runConformStrict = runIdentity . runConformTStrict
 -- That this is __not__ standard-complient.
 runConformLenient ::
   Conform ue fe w a ->
-  Either (HaltReason ue Void) (a, Notes fe w)
+  Either ue (a, Notes fe w)
 runConformLenient = runIdentity . runConformTLenient
 
 fixAll :: fe -> Bool

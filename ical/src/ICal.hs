@@ -16,6 +16,7 @@ import qualified Data.DList as DList
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Encoding.Error as TE
+import Data.Validity (Validity)
 import Data.Void
 import ICal.Component
 import ICal.Conformance
@@ -56,8 +57,16 @@ instance Exception ICalParseError where
 data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)
 
+instance Exception ICalParseFixableError where
+  displayException = \case
+    CalendarParseFixableError fe -> displayException fe
+
 data ICalParseWarning = CalendarParseWarning !CalendarParseWarning
   deriving (Show, Eq)
+
+instance Exception ICalParseWarning where
+  displayException = \case
+    CalendarParseWarning pw -> displayException pw
 
 -- | Parse an ICalendar from a ByteString, assuming UTF8 encoding
 --
@@ -138,3 +147,31 @@ renderICalendar =
 -- | Render a single VCALENDAR
 renderVCalendar :: Calendar -> Text
 renderVCalendar = renderICalendar . (: [])
+
+-- | Parse an individual component from Text directly
+--
+-- You probably don't want to use this.
+-- Individual components are not described by the spec as text.
+parseComponentFromText ::
+  (Validity component, IsComponent component) =>
+  Text ->
+  Conform
+    ICalParseError
+    ICalParseFixableError
+    ICalParseWarning
+    component
+parseComponentFromText contents = do
+  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
+  conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseComponentFromContentLines contentLines
+
+-- | Render an individual component from Text directly
+--
+-- You probably don't want to use this.
+-- Individual components are not described by the spec as text.
+renderComponentText :: IsComponent component => component -> Text
+renderComponentText =
+  renderUnfoldedLines
+    . map renderContentLineToUnfoldedLine
+    . DList.toList
+    . componentSectionB
