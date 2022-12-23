@@ -48,9 +48,10 @@ import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceDateTimes
+import ICal.Recurrence.RecurrenceRule
 
 -- | Compute the recurrence set, up to a given limit
-recurEvents :: LocalTime -> RecurringEvent -> R (Set EventOccurrence)
+recurEvents :: Day -> RecurringEvent -> R (Set EventOccurrence)
 recurEvents limit RecurringEvent {..} =
   let -- @
       -- The "DTSTART" property for a "VEVENT" specifies the inclusive
@@ -85,30 +86,6 @@ recurEvents limit RecurringEvent {..} =
           -- @
           let preliminarySet = S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules
           pure $ removeExceptionDatetimes recurrenceExceptionDateTimes preliminarySet
-
--- For cases where a "VEVENT" calendar component
--- specifies a "DTSTART" property with a DATE value type but no
--- "DTEND" nor "DURATION" property, the event's duration is taken to
--- be one day.  For cases where a "VEVENT" calendar component
--- specifies a "DTSTART" property with a DATE-TIME value type but no
--- "DTEND" property, the event ends on the same calendar date and
--- time of day specified by the "DTSTART" property.
-
--- | Compute the occurrences that the recurrence rules imply
---
--- TODO implement this:
--- @
--- The recurrence set generated with multiple "RRULE" properties is
--- undefined.
--- @
-recurRecurrenceRules ::
-  -- | Limit
-  LocalTime ->
-  DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
-  Set RecurrenceRule ->
-  R (Set EventOccurrence)
-recurRecurrenceRules = undefined
 
 -- TODO about why we need the start date
 -- @

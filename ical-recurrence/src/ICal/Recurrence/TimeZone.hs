@@ -65,7 +65,7 @@ offsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w
 
 chooseOffset :: TimeZone -> Time.LocalTime -> Resolv UTCOffset
 chooseOffset zone localTime = do
-  offsetMap <- timeZoneRuleOccurrences localTime zone
+  offsetMap <- timeZoneRuleOccurrences (Time.localDay localTime) zone
   let mTransition = M.lookupLE localTime offsetMap <|> M.lookupGE localTime offsetMap
   case mTransition of
     Nothing -> unfixableError NoApplicableOffset
@@ -79,7 +79,7 @@ chooseOffset zone localTime = do
 --
 -- It's a map of when the transition happened, to a tupled of the "from" offset
 -- and the "to" offset.
-timeZoneRuleOccurrences :: Time.LocalTime -> TimeZone -> Resolv (Map Time.LocalTime (UTCOffset, UTCOffset))
+timeZoneRuleOccurrences :: Time.Day -> TimeZone -> Resolv (Map Time.LocalTime (UTCOffset, UTCOffset))
 timeZoneRuleOccurrences limit zone = do
   let observances = NE.toList (timeZoneObservances zone)
   maps <- forM observances $ \tzo -> do
@@ -100,7 +100,7 @@ timeZoneRuleOccurrences limit zone = do
   pure $ M.unions maps
 
 -- | Compute when, until a given limit, the following observance changes the UTC offset
-observanceOccurrences :: Time.LocalTime -> Observance -> R (Set Time.LocalTime)
+observanceOccurrences :: Time.Day -> Observance -> R (Set Time.LocalTime)
 observanceOccurrences limit Observance {..} = do
   let recurringEvent =
         RecurringEvent

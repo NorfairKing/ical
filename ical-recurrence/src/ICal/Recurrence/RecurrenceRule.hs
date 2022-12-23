@@ -23,6 +23,22 @@ import ICal.Recurrence.RecurrenceRule.Monthly
 import ICal.Recurrence.RecurrenceRule.Weekly
 import ICal.Recurrence.RecurrenceRule.Yearly
 
+-- For cases where a "VEVENT" calendar component
+-- specifies a "DTSTART" property with a DATE value type but no
+-- "DTEND" nor "DURATION" property, the event's duration is taken to
+-- be one day.  For cases where a "VEVENT" calendar component
+-- specifies a "DTSTART" property with a DATE-TIME value type but no
+-- "DTEND" property, the event ends on the same calendar date and
+-- time of day specified by the "DTSTART" property.
+
+-- | Compute the occurrences that the recurrence rules imply
+--
+-- TODO implement this:
+-- @
+-- The recurrence set generated with multiple "RRULE" properties is
+-- undefined.
+-- @
+
 -- | Compute the occurrences that the recurrence rules imply
 recurRecurrenceRules ::
   -- | Limit
