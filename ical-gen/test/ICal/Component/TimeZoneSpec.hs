@@ -2,11 +2,8 @@
 
 module ICal.Component.TimeZoneSpec (spec) where
 
-import qualified Data.Time as Time
 import ICal.Component
 import ICal.Component.Gen
-import ICal.Property
-import ICal.PropertyType
 import Test.Syd
 import Test.Syd.Validity
 

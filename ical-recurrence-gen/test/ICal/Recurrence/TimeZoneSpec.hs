@@ -4,7 +4,7 @@ module ICal.Recurrence.TimeZoneSpec (spec) where
 
 import qualified Data.Time as Time
 import ICal.Component
-import ICal.Component.Gen
+import ICal.Component.Gen ()
 import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType

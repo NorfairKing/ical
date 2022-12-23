@@ -45,7 +45,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
 import ICal.Property
-import ICal.PropertyType
+import ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceDateTimes
 import ICal.Recurrence.RecurrenceRule
@@ -85,7 +85,7 @@ recurEvents limit RecurringEvent {..} =
           -- Duplicate instances are ignored.
           -- @
           let preliminarySet = S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules
-          pure $ removeExceptionDatetimes recurrenceExceptionDateTimes preliminarySet
+          pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- TODO about why we need the start date
 -- @
@@ -124,11 +124,24 @@ recurEvents limit RecurringEvent {..} =
 -- @
 
 -- | Remove the occurrences that the exception date times imply should be removed
-removeExceptionDatetimes ::
+removeExceptionDatetimesSet ::
   Set ExceptionDateTimes ->
   Set EventOccurrence ->
   Set EventOccurrence
-removeExceptionDatetimes exceptions occurrences =
-  if S.null exceptions
-    then occurrences
-    else undefined
+removeExceptionDatetimesSet exceptionSet occurrences =
+  S.foldl' (flip removeExceptionDatetimes) occurrences exceptionSet
+
+removeExceptionDatetimes ::
+  ExceptionDateTimes ->
+  Set EventOccurrence ->
+  Set EventOccurrence
+removeExceptionDatetimes exceptions = S.filter $ \occurrence ->
+  case eventOccurrenceStart occurrence of
+    Nothing -> False
+    Just start -> case start of
+      DateTimeStartDateTime dateTime -> case exceptions of
+        ExceptionDateTimes dateTimes -> dateTime `S.member` DateTimes.toSet dateTimes
+        _ -> False
+      DateTimeStartDate date -> case exceptions of
+        ExceptionDates dates -> date `S.member` dates
+        _ -> False

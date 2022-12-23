@@ -16,8 +16,6 @@ import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Map (Map)
-import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -33,7 +31,6 @@ import ICal.Property
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.RecurrenceRule
-import ICal.PropertyType.UTCOffset
 import Text.Megaparsec
 
 -- |
