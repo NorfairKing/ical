@@ -11,6 +11,7 @@ module ICal.Recurrence.Class
   )
 where
 
+import Control.Exception
 import Data.Set (Set)
 import qualified Data.Time as Time
 import Data.Validity
@@ -52,10 +53,14 @@ data RecurrenceError
   | ExactDurationMismatch !DateTime !DateTime
   deriving (Show, Eq, Ord)
 
+instance Exception RecurrenceError
+
 data RecurrenceFixableError
   = RecurrenceMultipleRecurrenceRules !(Set RecurrenceRule)
   | RecurrenceByDayNumeric !ByDay
   deriving (Show, Eq, Ord)
+
+instance Exception RecurrenceFixableError
 
 type R = Conform RecurrenceError RecurrenceFixableError Void
 
