@@ -20,6 +20,7 @@ library
       ICal.Recurrence.RecurrenceRule.WeekDate
       ICal.Recurrence.RecurrenceRule.Weekly
       ICal.Recurrence.RecurrenceRule.Yearly
+      ICal.Recurrence.TimeZone
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:

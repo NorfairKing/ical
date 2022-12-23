@@ -655,24 +655,3 @@ observanceB Observance {..} =
       propertySetB observanceComment,
       propertySetB observanceTimeZoneName
     ]
-
-resolveLocalTime :: TimeZone -> Time.LocalTime -> Time.UTCTime
-resolveLocalTime = undefined
-
-unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
-unresolveLocalTime = undefined
-
--- | Compute the closest timezone transition to the given local time in that
--- timezone.
-chooseRuleToApply ::
-  Time.LocalTime ->
-  TimeZone ->
-  Maybe (Time.LocalTime, (UTCOffset, UTCOffset))
-chooseRuleToApply = undefined
-
--- | Compute a map of the timezone utc offset transitions.
---
--- It's a map of when the transition happened, to a tupled of the "from" offset
--- and the "to" offset.
-timeZoneRuleOccurrences :: Time.LocalTime -> TimeZone -> Map Time.LocalTime (UTCOffset, UTCOffset)
-timeZoneRuleOccurrences limit = undefined
