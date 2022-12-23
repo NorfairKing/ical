@@ -16,6 +16,8 @@ import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -31,6 +33,7 @@ import ICal.Property
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.RecurrenceRule
+import ICal.PropertyType.UTCOffset
 import Text.Megaparsec
 
 -- |
@@ -658,3 +661,18 @@ resolveLocalTime = undefined
 
 unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
 unresolveLocalTime = undefined
+
+-- | Compute the closest timezone transition to the given local time in that
+-- timezone.
+chooseRuleToApply ::
+  Time.LocalTime ->
+  TimeZone ->
+  Maybe (Time.LocalTime, (UTCOffset, UTCOffset))
+chooseRuleToApply = undefined
+
+-- | Compute a map of the timezone utc offset transitions.
+--
+-- It's a map of when the transition happened, to a tupled of the "from" offset
+-- and the "to" offset.
+timeZoneRuleOccurrences :: Time.LocalTime -> TimeZone -> Map Time.LocalTime (UTCOffset, UTCOffset)
+timeZoneRuleOccurrences limit = undefined

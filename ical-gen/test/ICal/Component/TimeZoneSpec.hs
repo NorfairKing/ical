@@ -35,7 +35,7 @@ spec = do
   componentScenarioDir @TimeZone "test_resources/timezones"
 
   describe "resolveDateTime" $ do
-    xit "Works for any single-standard-observance timezone just like the time library would" $
+    it "Works for any single-standard-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
         forAllValid $ \start ->
           forAllValid $ \from ->
@@ -46,7 +46,7 @@ spec = do
                     timeTz = Time.minutesToTimeZone toMinutes
                  in resolveLocalTime tz lt `shouldBe` Time.localTimeToUTC timeTz lt
 
-    xit "Works for any single-daylight-observance timezone just like the time library would" $
+    it "Works for any single-daylight-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
         forAllValid $ \start ->
           forAllValid $ \from ->
@@ -58,7 +58,7 @@ spec = do
                  in resolveLocalTime tz lt `shouldBe` Time.localTimeToUTC timeTz lt
 
   describe "unresolveDateTime" $ do
-    xit "Works for any single-standard-observance timezone just like the time library would" $ do
+    it "Works for any single-standard-observance timezone just like the time library would" $ do
       forAllValid $ \tzid ->
         forAllValid $ \start ->
           forAllValid $ \from ->
@@ -69,7 +69,7 @@ spec = do
                     timeTz = Time.minutesToTimeZone toMinutes
                  in unresolveLocalTime tz ut `shouldBe` Time.utcToLocalTime timeTz ut
 
-    xit "Works for any single-daylight-observance timezone just like the time library would" $ do
+    it "Works for any single-daylight-observance timezone just like the time library would" $ do
       forAllValid $ \tzid ->
         forAllValid $ \start ->
           forAllValid $ \from ->
