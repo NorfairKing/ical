@@ -1016,7 +1016,7 @@ specificP ci =
             dow <- parseDayOfWeek (CI.mk (T.pack rest))
             pure $ Specific (negate i) dow
         d : rest -> case readMaybe [d] of
-          Nothing -> undefined
+          Nothing -> unfixableError $ UnReadableByDay t
           Just i -> do
             dow <- parseDayOfWeek (CI.mk (T.pack rest))
             pure $ Specific i dow
