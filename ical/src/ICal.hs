@@ -175,3 +175,35 @@ renderComponentText =
     . map renderContentLineToUnfoldedLine
     . DList.toList
     . componentSectionB
+
+-- | Parse an individual property from Text directly
+--
+-- You probably don't want to use this.
+-- Individual properties are not described by the spec as text.
+parsePropertyFromText ::
+  IsProperty property =>
+  Text ->
+  Conform
+    ICalParseError
+    ICalParseFixableError
+    ICalParseWarning
+    property
+parsePropertyFromText contents = do
+  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  case unfoldedLines of
+    [] -> unfixableError $ ContentLineParseError "No unfolded lines."
+    [unfoldedLine] -> do
+      contentLine <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ parseContentLineFromUnfoldedLine unfoldedLine
+      conformMapAll (ContentLineParseError . show) absurd absurd $ propertyContentLineP contentLine
+    _ -> unfixableError $ ContentLineParseError "More than one unfolded line."
+
+-- | Render an individual property from Text directly
+--
+-- You probably don't want to use this.
+-- Individual properties are not described by the spec as text.
+renderPropertyText :: IsProperty property => property -> Text
+renderPropertyText =
+  renderUnfoldedLines
+    . (: [])
+    . renderContentLineToUnfoldedLine
+    . propertyContentLineB

@@ -133,7 +133,7 @@ wrapPropertyTypeP ::
 wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
 newtype Begin = Begin {unBegin :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Begin
 
@@ -145,7 +145,7 @@ instance IsProperty Begin where
   propertyB = propertyTypeB . unBegin
 
 newtype End = End {unEnd :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity End
 
@@ -207,7 +207,7 @@ instance IsProperty End where
 --    an FPI value, as defined in [ISO.9070.1991].
 -- @
 newtype ProdId = ProdId {unProdId :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity ProdId
 
@@ -262,7 +262,7 @@ instance IsProperty ProdId where
 --     VERSION:2.0
 -- @
 newtype Version = Version {unVersion :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Version
 
@@ -316,7 +316,7 @@ version20 = Version "2.0"
 -- @
 data CalendarScale
   = CalendarScaleGregorian
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity CalendarScale
 
@@ -402,7 +402,7 @@ instance IsProperty CalendarScale where
 --     UID:19960401T080045Z-4000F192713-0052@example.com
 -- @
 newtype UID = UID {unUID :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity UID
 
@@ -467,7 +467,7 @@ instance IsProperty UID where
 --     DTSTAMP:19971210T080000Z
 -- @
 newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DateTimeStamp
 
@@ -658,7 +658,7 @@ data Classification
   | ClassificationPrivate
   | ClassificationConfidential
   | ClassificationOther !Text
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Classification
 
@@ -726,7 +726,7 @@ renderClassification = \case
 -- we will just store the 'LocalTime' (in the utc timezone) instead of a
 -- 'DateTime'
 newtype Created = Created {unCreated :: Time.UTCTime}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Created where
   validate c@Created {..} =
@@ -791,7 +791,7 @@ instance IsProperty Created where
 --     SUMMARY:Department Party
 -- @
 newtype Summary = Summary {unSummary :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Summary
 
@@ -859,7 +859,7 @@ instance IsProperty Summary where
 --       MUST attend this meeting.\nRSVP to team leader.
 -- @
 newtype Description = Description {unDescription :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Description
 
@@ -962,7 +962,7 @@ data GeographicPosition = GeographicPosition
   { geographicPositionLat :: !Double,
     geographicPositionLon :: !Double
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity GeographicPosition where
   validate gp@GeographicPosition {..} =
@@ -1034,7 +1034,7 @@ renderGeographicPosition GeographicPosition {..} =
 --     LAST-MODIFIED:19960817T133000Z
 -- @
 newtype LastModified = LastModified {unLastModified :: Time.UTCTime}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity LastModified where
   validate c@LastModified {..} =
@@ -1106,7 +1106,7 @@ instance IsProperty LastModified where
 -- @
 -- TODO add support for alternative representation and language
 newtype Location = Location {unLocation :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Location
 
@@ -1192,7 +1192,7 @@ data Status
   = StatusTentative
   | StatusConfirmed
   | StatusCancelled
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Status
 
@@ -1401,7 +1401,7 @@ instance IsProperty Duration where
 data Transparency
   = TransparencyTransparent
   | TransparencyOpaque
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Transparency
 
@@ -1462,7 +1462,7 @@ renderTransparency = \case
 --     URL:http://example.com/pub/calendars/jsmith/mytime.ics
 -- @
 newtype URL = URL {unURL :: URI}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity URL
 
