@@ -56,6 +56,7 @@ library
       ICal.Component.Gen
       ICal.Conformance.TestUtils
       ICal.ContentLine.Gen
+      ICal.Gen
       ICal.Parameter.Gen
       ICal.Property.Gen
       ICal.PropertyType.Duration.Gen
