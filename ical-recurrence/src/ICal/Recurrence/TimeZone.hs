@@ -51,11 +51,13 @@ instance Exception ResolutionFixableError where
 
 type Resolv = Conform ResolutionError ResolutionFixableError Void
 
-resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv Time.UTCTime
+resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
 resolveLocalTime zone localTime = do
-  offset <- chooseOffset zone localTime
-  let tz = offsetTimeZone offset
-  pure $ Time.localTimeToUTC tz localTime
+  mOffset <- chooseOffset zone localTime
+  pure $ do
+    offset <- mOffset
+    let tz = offsetTimeZone offset
+    pure $ Time.localTimeToUTC tz localTime
 
 unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
 unresolveLocalTime = undefined
@@ -63,17 +65,16 @@ unresolveLocalTime = undefined
 offsetTimeZone :: UTCOffset -> Time.TimeZone
 offsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w
 
-chooseOffset :: TimeZone -> Time.LocalTime -> Resolv UTCOffset
+chooseOffset :: TimeZone -> Time.LocalTime -> Resolv (Maybe UTCOffset)
 chooseOffset zone localTime = do
   offsetMap <- timeZoneRuleOccurrences (Time.localDay localTime) zone
   let mTransition = M.lookupLE localTime offsetMap <|> M.lookupGE localTime offsetMap
-  case mTransition of
-    Nothing -> unfixableError NoApplicableOffset
-    Just (transitionTime, (from, to)) ->
-      pure $
-        if localTime < transitionTime
-          then from
-          else to
+  pure $ do
+    (transitionTime, (from, to)) <- mTransition
+    pure $
+      if localTime < transitionTime
+        then from
+        else to
 
 -- | Compute a map of the timezone utc offset transitions.
 --

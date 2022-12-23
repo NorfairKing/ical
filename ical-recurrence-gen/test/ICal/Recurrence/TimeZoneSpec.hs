@@ -24,8 +24,10 @@ spec = do
                 let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
                     timeTz = Time.minutesToTimeZone toMinutes
-                resolved <- shouldConform $ resolveLocalTime tz lt
-                resolved `shouldBe` Time.localTimeToUTC timeTz lt
+                mResolved <- shouldConform $ resolveLocalTime tz lt
+                case mResolved of
+                  Nothing -> pure () -- Fine
+                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC timeTz lt
 
     it "Works for any single-daylight-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
@@ -36,8 +38,10 @@ spec = do
                 let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
                     timeTz = Time.minutesToTimeZone toMinutes
-                resolved <- shouldConform $ resolveLocalTime tz lt
-                resolved `shouldBe` Time.localTimeToUTC timeTz lt
+                mResolved <- shouldConform $ resolveLocalTime tz lt
+                case mResolved of
+                  Nothing -> pure () -- Fine
+                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC timeTz lt
 
   describe "unresolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $ do

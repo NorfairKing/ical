@@ -128,4 +128,7 @@ removeExceptionDatetimes ::
   Set ExceptionDateTimes ->
   Set EventOccurrence ->
   Set EventOccurrence
-removeExceptionDatetimes = undefined
+removeExceptionDatetimes exceptions occurrences =
+  if S.null exceptions
+    then occurrences
+    else undefined
