@@ -59,6 +59,7 @@ resolveLocalTime zone localTime = do
     let tz = offsetTimeZone offset
     pure $ Time.localTimeToUTC tz localTime
 
+-- TODO: It's not clear if un-resolution is something that's computable at all
 unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
 unresolveLocalTime = undefined
 

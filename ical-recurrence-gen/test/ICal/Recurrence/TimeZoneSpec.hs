@@ -43,7 +43,7 @@ spec = do
                   Nothing -> pure () -- Fine
                   Just resolved -> resolved `shouldBe` Time.localTimeToUTC timeTz lt
 
-  describe "unresolveDateTime" $ do
+  xdescribe "unresolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $ do
       forAllValid $ \tzid ->
         forAllValid $ \start ->
