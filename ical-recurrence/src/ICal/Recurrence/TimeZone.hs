@@ -110,8 +110,8 @@ observanceOccurrences limit Observance {..} = do
             recurringEventEndOrDuration = Nothing,
             recurringEventRecurrence =
               Recurrence
-                { recurrenceExceptionDateTimes = S.empty, -- TODO
-                  recurrenceRecurrenceDateTimes = S.empty,
+                { recurrenceExceptionDateTimes = S.empty,
+                  recurrenceRecurrenceDateTimes = observanceRecurrenceDateTimes,
                   recurrenceRecurrenceRules = observanceRecurrenceRules
                 }
           }

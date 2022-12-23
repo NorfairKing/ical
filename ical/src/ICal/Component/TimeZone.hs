@@ -587,6 +587,7 @@ data Observance = Observance
     -- comment / rdate / tzname / x-prop / iana-prop
     -- @
     observanceComment :: !(Set Comment),
+    observanceRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
     observanceTimeZoneName :: !(Set TimeZoneName)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -609,6 +610,7 @@ makeObservance start from to =
       observanceTimeZoneOffsetTo = to,
       observanceRecurrenceRules = S.empty,
       observanceComment = S.empty,
+      observanceRecurrenceDateTimes = S.empty,
       observanceTimeZoneName = S.empty
     }
 
@@ -639,6 +641,7 @@ observanceP = do
   when (S.size observanceRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules observanceRecurrenceRules
 
   observanceComment <- parseSet observanceProperties
+  observanceRecurrenceDateTimes <- parseSet observanceProperties
   observanceTimeZoneName <- parseSet observanceProperties
   pure Observance {..}
 
@@ -650,5 +653,6 @@ observanceB Observance {..} =
       propertyListB observanceTimeZoneOffsetFrom,
       propertySetB observanceRecurrenceRules,
       propertySetB observanceComment,
+      propertySetB observanceRecurrenceDateTimes,
       propertySetB observanceTimeZoneName
     ]

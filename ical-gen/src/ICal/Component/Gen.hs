@@ -140,26 +140,10 @@ instance GenValid Observance where
     observanceRecurrenceRules <- genSetOf $ genValid >>= fixUntilCount (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart))
 
     observanceComment <- genValid
+    observanceRecurrenceDateTimes <- genValid
     observanceTimeZoneName <- genValid
 
     pure Observance {..}
-
-  shrinkValid (Observance start to from rules comments name) = filter isValid $ do
-    ((start', to'), ((from', rules'), (comments', name'))) <-
-      shrinkTuple
-        (shrinkTuple shrinkImpreciseLocalTime shrinkValid)
-        ( shrinkTuple
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-        )
-        ((start, to), ((from, rules), (comments, name)))
-    pure (Observance start' to' from' rules' comments' name')
 
 instance GenValid TimeZoneObservance where
   shrinkValid = \case
