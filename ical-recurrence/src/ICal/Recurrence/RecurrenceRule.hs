@@ -3,13 +3,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module ICal.Recurrence.RecurrenceRule
-  ( recurRecurrenceRules,
-    recurRecurrenceRule,
+  ( recurRecurrenceRuleDateTimeStarts,
     recurRecurrenceRuleLocalTimes,
   )
 where
 
-import Control.Monad
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -18,70 +16,10 @@ import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
-import ICal.Recurrence.End
 import ICal.Recurrence.RecurrenceRule.Daily
 import ICal.Recurrence.RecurrenceRule.Monthly
 import ICal.Recurrence.RecurrenceRule.Weekly
 import ICal.Recurrence.RecurrenceRule.Yearly
-
--- For cases where a "VEVENT" calendar component
--- specifies a "DTSTART" property with a DATE value type but no
--- "DTEND" nor "DURATION" property, the event's duration is taken to
--- be one day.  For cases where a "VEVENT" calendar component
--- specifies a "DTSTART" property with a DATE-TIME value type but no
--- "DTEND" property, the event ends on the same calendar date and
--- time of day specified by the "DTSTART" property.
-
--- | Compute the occurrences that the recurrence rules imply
---
--- TODO implement this:
--- @
--- The recurrence set generated with multiple "RRULE" properties is
--- undefined.
--- @
-
--- | Compute the occurrences that the recurrence rules imply
-recurRecurrenceRules ::
-  -- | Limit
-  Day ->
-  DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
-  Set RecurrenceRule ->
-  R (Set EventOccurrence)
-recurRecurrenceRules limit start mEndOrDuration recurrenceRules = do
-  case S.toList recurrenceRules of
-    [] -> pure S.empty
-    [recurrenceRule] -> recurRecurrenceRule limit start mEndOrDuration recurrenceRule
-    l -> do
-      -- The spec says:
-      --
-      -- @
-      -- The recurrence set generated with multiple "RRULE" properties is
-      -- undefined.
-      -- @
-      --
-      -- However, we choose to define it as the union of the
-      -- reccurence sets defined by the recurrence rules.
-      emitFixableError $ RecurrenceMultipleRecurrenceRules recurrenceRules
-      S.unions <$> mapM (recurRecurrenceRule limit start mEndOrDuration) l
-
-recurRecurrenceRule ::
-  -- | Limit
-  Day ->
-  DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
-  RecurrenceRule ->
-  R (Set EventOccurrence)
-recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
-  starts <- recurRecurrenceRuleDateTimeStarts limit start recurrenceRule
-  fmap S.fromList $
-    forM (S.toList starts) $ \newStart -> do
-      newMEndOrDuration <- resolveEndOrDurationDate start mEndOrDuration newStart
-      pure
-        EventOccurrence
-          { eventOccurrenceStart = Just newStart,
-            eventOccurrenceEndOrDuration = newMEndOrDuration
-          }
 
 recurRecurrenceRuleDateTimeStarts ::
   -- | Limit

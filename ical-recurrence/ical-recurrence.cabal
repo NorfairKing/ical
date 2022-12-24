@@ -12,8 +12,6 @@ library
   exposed-modules:
       ICal.Recurrence
       ICal.Recurrence.Class
-      ICal.Recurrence.End
-      ICal.Recurrence.RecurrenceDateTimes
       ICal.Recurrence.RecurrenceRule
       ICal.Recurrence.RecurrenceRule.Daily
       ICal.Recurrence.RecurrenceRule.Monthly
@@ -21,7 +19,6 @@ library
       ICal.Recurrence.RecurrenceRule.WeekDate
       ICal.Recurrence.RecurrenceRule.Weekly
       ICal.Recurrence.RecurrenceRule.Yearly
-      ICal.Recurrence.TimeZone
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:
