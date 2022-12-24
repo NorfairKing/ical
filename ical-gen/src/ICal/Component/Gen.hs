@@ -87,50 +87,9 @@ instance GenValid Event where
       Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
 
     eventDateTimeEndDuration <- genValid
+    eventExceptionDateTimes <- genValid
+    eventRecurrenceDateTimes <- genValid
     pure Event {..}
-
-  shrinkValid (Event mp u rt cn cd d gp lm l ss sy t mu rrs med) = filter isValid $ do
-    ( (mp', (u', rt'), (cn', cd'), (d', gp')),
-      ((lm', l'), (ss', sy'), (t', mu'), (rrs', med'))
-      ) <-
-      shrinkTuple
-        ( shrinkQuadruple
-            shrinkValid
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-        )
-        ( shrinkQuadruple
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-            ( shrinkTuple
-                shrinkValid
-                shrinkValid
-            )
-        )
-        ( (mp, (u, rt), (cn, cd), (d, gp)),
-          ((lm, l), (ss, sy), (t, mu), (rrs, med))
-        )
-    pure (Event mp' u' rt' cn' cd' d' gp' lm' l' ss' sy' t' mu' rrs' med')
 
 instance GenValid Observance where
   genValid = do

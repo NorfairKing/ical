@@ -243,7 +243,7 @@ data Event = Event
     -- ;
     -- dtend / duration /
     -- @
-    eventDateTimeEndDuration :: !(Maybe (Either DateTimeEnd Duration))
+    eventDateTimeEndDuration :: !(Maybe (Either DateTimeEnd Duration)),
     -- @
     -- ;
     -- ; The following are OPTIONAL,
@@ -254,6 +254,8 @@ data Event = Event
     -- resources / rdate / x-prop / iana-prop
     -- ;
     -- @
+    eventExceptionDateTimes :: !(Set ExceptionDateTimes),
+    eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -304,6 +306,8 @@ vEventP = do
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
+  eventExceptionDateTimes <- parseSet eventProperties
+  eventRecurrenceDateTimes <- parseSet eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
@@ -333,7 +337,9 @@ vEventB Event {..} =
         Nothing -> mempty
         Just endOrDuration -> case endOrDuration of
           Left e -> propertyListB e
-          Right d -> propertyListB d
+          Right d -> propertyListB d,
+      propertySetB eventExceptionDateTimes,
+      propertySetB eventRecurrenceDateTimes
     ]
 
 makeEvent :: UID -> DateTimeStamp -> Event
@@ -359,5 +365,7 @@ makeEvent uid dateTimeStamp =
       eventTransparency = TransparencyOpaque,
       eventURL = Nothing,
       eventRecurrenceRules = S.empty,
-      eventDateTimeEndDuration = Nothing
+      eventDateTimeEndDuration = Nothing,
+      eventExceptionDateTimes = S.empty,
+      eventRecurrenceDateTimes = S.empty
     }
