@@ -12,6 +12,7 @@ library
   exposed-modules:
       ICal.Recurrence
       ICal.Recurrence.Class
+      ICal.Recurrence.End
       ICal.Recurrence.RecurrenceDateTimes
       ICal.Recurrence.RecurrenceRule
       ICal.Recurrence.RecurrenceRule.Daily

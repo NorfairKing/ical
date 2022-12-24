@@ -18,6 +18,7 @@ import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
+import ICal.Recurrence.End
 import ICal.Recurrence.RecurrenceRule.Daily
 import ICal.Recurrence.RecurrenceRule.Monthly
 import ICal.Recurrence.RecurrenceRule.Weekly

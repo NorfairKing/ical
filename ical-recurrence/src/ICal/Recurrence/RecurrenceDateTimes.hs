@@ -12,6 +12,7 @@ import ICal.Property
 import ICal.PropertyType
 import qualified ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.Class
+import ICal.Recurrence.End
 
 -- | Compute the occurrences that the recurrence date times imply
 recurRecurrenceDateTimes ::
