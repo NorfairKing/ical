@@ -29,7 +29,9 @@
 -- However, because recurrence sets can be infinite, we do not reify them
 -- entirely and instead provide only functions that produce finite results.
 module ICal.Recurrence
-  ( RecurringEvent (..),
+  ( HasRecurrence (..),
+    recur,
+    RecurringEvent (..),
     Recurrence (..),
     EventOccurrence (..),
     R,
@@ -44,11 +46,37 @@ where
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
+import ICal.Component.Event
 import ICal.Property
 import ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceDateTimes
 import ICal.Recurrence.RecurrenceRule
+
+class HasRecurrence a where
+  getRecurringEvent :: a -> RecurringEvent
+  makeOccurrence :: a -> EventOccurrence -> a
+
+instance HasRecurrence Event where
+  getRecurringEvent Event {..} =
+    let recurringEventStart = eventDateTimeStart
+        recurringEventEndOrDuration = eventDateTimeEndDuration
+        recurrenceExceptionDateTimes = eventExceptionDateTimes
+        recurrenceRecurrenceDateTimes = eventRecurrenceDateTimes
+        recurrenceRecurrenceRules = eventRecurrenceRules
+        recurringEventRecurrence = Recurrence {..}
+     in RecurringEvent {..}
+  makeOccurrence e EventOccurrence {..} =
+    e
+      { eventDateTimeStart = eventOccurrenceStart,
+        eventDateTimeEndDuration = eventOccurrenceEndOrDuration
+      }
+
+recur :: (Ord event, HasRecurrence event) => Day -> event -> R (Set event)
+recur limit event = do
+  let recurringEvent = getRecurringEvent event
+  occurrences <- recurEvents limit recurringEvent
+  pure $ S.map (makeOccurrence event) occurrences
 
 -- | Compute the recurrence set, up to a given limit
 recurEvents :: Day -> RecurringEvent -> R (Set EventOccurrence)
