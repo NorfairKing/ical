@@ -4,11 +4,11 @@
 module ICal.Recurrence.RecurrenceDateTimesSpec where
 
 import Data.Time
-import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence
 import ICal.Recurrence.Gen ()
+import ICal.Recurrence.TestUtils
 import Test.QuickCheck (property)
 import Test.Syd
 import Test.Syd.Validity
@@ -22,7 +22,7 @@ spec = do
                   Nothing -> forAllValid p
                   Just start -> property $ p start
              in supplyStart $ \dateTimeStart -> do
-                  actual <- shouldConformStrict $ recurRecurrenceDateTimes dateTimeStart mEndOrDuration recurrenceDateTimess
+                  actual <- shouldRecur $ recurRecurrenceDateTimes dateTimeStart mEndOrDuration recurrenceDateTimess
                   actual `shouldBe` expected
 
     -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)

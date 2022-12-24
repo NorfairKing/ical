@@ -8,7 +8,7 @@ import ICal.Component.Gen ()
 import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
-import ICal.Recurrence.TimeZone
+import ICal.Recurrence
 import Test.Syd
 import Test.Syd.Validity
 

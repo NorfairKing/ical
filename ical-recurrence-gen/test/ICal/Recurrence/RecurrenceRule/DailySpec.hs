@@ -6,10 +6,10 @@ import Data.GenValidity.Time ()
 import Data.Maybe
 import qualified Data.Set as S
 import Data.Time
-import ICal.Conformance.TestUtils
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Daily
+import ICal.Recurrence.TestUtils
 import Test.Syd
 import Test.Syd.Validity
 
@@ -30,7 +30,7 @@ spec = do
           tod = t 04 30 00
           start = LocalTime (d 2020 09 10) tod
        in --  This limit will be reached and cut of 2 recurrences
-          shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+          shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
             `shouldReturn` [ LocalTime (d 2020 09 10) tod,
                              LocalTime (d 2020 10 10) tod,
                              LocalTime (d 2021 09 20) tod,
@@ -58,7 +58,7 @@ spec = do
                 recurrenceRuleBySecond = [BySecond 0]
               }
           start = LocalTime (d 2020 08 07) (t 23 00 00)
-       in shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
             `shouldReturn` [ LocalTime (d 2020 08 07) (t 23 00 00),
                              LocalTime (d 2020 08 08) (t 23 00 00),
                              LocalTime (d 2020 08 09) (t 23 00 00)
@@ -79,7 +79,7 @@ spec = do
                 recurrenceRuleBySecond = [BySecond 0]
               }
           start = LocalTime (d 2020 08 07) (t 23 00 00)
-       in shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
             `shouldReturn` [ LocalTime (d 2020 08 07) (t 23 00 00),
                              LocalTime (d 2020 08 08) (t 22 00 00),
                              LocalTime (d 2020 08 08) (t 23 00 00),
@@ -90,7 +90,7 @@ spec = do
         let limit = d 2030 01 01
             rule = makeRecurrenceRule Daily
             start = LocalTime (d 2020 08 07) tod
-        set <- shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+        set <- shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
         let intersection = S.filter ((>= d 2029 12 30) . localDay) set
         intersection
           `shouldBe` [ LocalTime (d 2029 12 30) tod,
@@ -180,7 +180,7 @@ spec = do
                 }
             start = LocalTime (d 2020 09 10) tod
          in --  This limit will be reached and cut of 2 recurrences
-            shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+            shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
               `shouldReturn` [ LocalTime (d 2020 09 10) tod,
                                LocalTime (d 2020 10 10) tod,
                                LocalTime (d 2021 09 20) tod,
@@ -201,7 +201,7 @@ spec = do
                   recurrenceRuleBySetPos = [BySetPos (-1)]
                 }
             start = LocalTime (d 2020 08 07) tod
-         in shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+         in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
               `shouldReturn` [ LocalTime (d 2020 08 07) tod,
                                LocalTime (d 2020 08 08) tod,
                                LocalTime (d 2020 08 09) tod

@@ -5,10 +5,10 @@ module ICal.Recurrence.RecurrenceRule.MonthlySpec (spec) where
 import Data.GenValidity.Time ()
 import Data.Maybe
 import Data.Time
-import ICal.Conformance.TestUtils
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Monthly
+import ICal.Recurrence.TestUtils
 import Test.Syd
 import Test.Syd.Validity
 
@@ -32,7 +32,7 @@ spec = do
                 }
             start = LocalTime (d 2020 08 30) tod
          in --  This limit will be reached and cut of 2 recurrences
-            shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+            shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
               `shouldReturn` [ LocalTime (d 2020 08 30) tod,
                                LocalTime (d 2021 04 27) tod,
                                LocalTime (d 2021 08 31) tod,

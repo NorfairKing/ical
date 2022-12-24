@@ -48,14 +48,16 @@ module ICal.Recurrence
     recurEvents,
     recurRecurrenceDateTimes,
     recurRecurrenceRules,
+    recurRecurrenceRuleLocalTimes,
     removeExceptionDatetimes,
+    resolveLocalTime,
+    unresolveLocalTime,
   )
 where
 
 import Control.Applicative
-import Control.Exception
 import Control.Monad
-import Data.List.NonEmpty (NonEmpty (..))
+import Control.Monad.Trans
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -63,10 +65,8 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Time as Time
-import Data.Void
 import ICal.Component.Event
 import ICal.Component.TimeZone
-import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
@@ -170,7 +170,7 @@ recurRecurrenceRules limit start mEndOrDuration recurrenceRules = do
       --
       -- However, we choose to define it as the union of the
       -- reccurence sets defined by the recurrence rules.
-      emitFixableError $ RecurrenceMultipleRecurrenceRules recurrenceRules
+      emitFixableErrorR $ RecurrenceMultipleRecurrenceRules recurrenceRules
       S.unions <$> mapM (recurRecurrenceRule limit start mEndOrDuration) l
 
 recurRecurrenceRule ::
@@ -326,12 +326,12 @@ computeNewEnd originalStart end newStart =
       let exactDuration = dateExactDuration startDate endDate
        in case newStart of
             DateTimeStartDate newDate -> pure $ DateTimeEndDate (dateAddDays exactDuration newDate)
-            _ -> unfixableError $ StartStartMismatch originalStart newStart
+            _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
     (DateTimeStartDateTime startDateTime, DateTimeEndDateTime endDateTime) ->
       let exactDuration = dateTimeExactDuration startDateTime endDateTime
        in case newStart of
             DateTimeStartDateTime newDateTime -> error "Not supported yet." exactDuration newDateTime
-            _ -> unfixableError $ StartStartMismatch originalStart newStart
+            _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
     -- These two cases represent invalid ical:
     -- @
     -- The "VEVENT" is also the calendar component used to specify an
@@ -350,9 +350,9 @@ computeNewEnd originalStart end newStart =
     -- value type of "DTSTART" property.
     -- @
     (DateTimeStartDate _, DateTimeEndDateTime _) ->
-      unfixableError $ StartEndMismatch originalStart end
+      unfixableErrorR $ StartEndMismatch originalStart end
     (DateTimeStartDateTime _, DateTimeEndDate _) ->
-      unfixableError $ StartEndMismatch originalStart end
+      unfixableErrorR $ StartEndMismatch originalStart end
 
 -- TODO it is not clear at all whether this is the intended interpretation.
 -- In fact, if these two dates are in a timezone with day light savings time, then the exact duration will not be an integer number of days.
@@ -368,10 +368,17 @@ dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> do
     tz1 <- requireTimeZone tzid1
     tz2 <- requireTimeZone tzid2
-    u1 <- resolveLocalTime tz1 lt1
-    u2 <- resolveLocalTime tz2 lt2
+    u1 <- resolveLocalTimeR tz1 lt1
+    u2 <- resolveLocalTimeR tz2 lt2
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
-  _ -> unfixableError $ ExactDurationMismatch dt1 dt2
+  _ -> unfixableErrorR $ ExactDurationMismatch dt1 dt2
+
+resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTimeR zone localTime = do
+  mUtcTime <- R $ lift $ resolveLocalTime zone localTime
+  case mUtcTime of
+    Nothing -> unfixableErrorR $ FailedToResolveLocalTime zone localTime
+    Just ut -> pure ut
 
 resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
 resolveLocalTime zone localTime = do
@@ -410,7 +417,9 @@ timeZoneRuleOccurrences limit zone = do
     let o@Observance {..} = case tzo of
           StandardObservance (Standard s) -> s
           DaylightObservance (Daylight d) -> d
-    occurrences <- observanceOccurrences limit o
+    -- We MUST use M.empty here, otherwise resolving timezones might use
+    -- timezone resolution recursively
+    occurrences <- runR M.empty $ observanceOccurrences limit o
     pure $
       M.fromSet
         ( const

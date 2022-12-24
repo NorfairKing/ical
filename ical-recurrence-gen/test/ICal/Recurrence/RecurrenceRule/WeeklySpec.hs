@@ -5,10 +5,10 @@ module ICal.Recurrence.RecurrenceRule.WeeklySpec (spec) where
 import Data.GenValidity.Time ()
 import Data.Maybe
 import Data.Time
-import ICal.Conformance.TestUtils
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Weekly
+import ICal.Recurrence.TestUtils
 import Test.Syd
 import Test.Syd.Validity
 
@@ -31,7 +31,7 @@ spec = do
                 }
             start = LocalTime (d 2020 08 20) tod
          in --  This limit will be reached and cut of 2 recurrences
-            shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+            shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
               `shouldReturn` [ LocalTime (d 2020 08 20) tod,
                                LocalTime (d 2020 09 02) tod,
                                LocalTime (d 2020 09 03) tod,
@@ -61,7 +61,7 @@ spec = do
                 recurrenceRuleWeekStart = WeekStart Monday
               }
           start = LocalTime (d 2020 08 09) (t 23 00 00)
-       in shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
             `shouldReturn` [ LocalTime (d 2020 08 09) (t 23 00 00),
                              LocalTime (d 2020 08 16) (t 23 00 00),
                              LocalTime (d 2020 08 23) (t 23 00 00)
@@ -83,7 +83,7 @@ spec = do
                 recurrenceRuleWeekStart = WeekStart Monday
               }
           start = LocalTime (d 2020 08 09) (t 22 00 00)
-       in shouldConform (recurRecurrenceRuleLocalTimes limit start rule)
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
             `shouldReturn` [ LocalTime (d 2020 08 09) (t 22 00 00),
                              LocalTime (d 2020 08 09) (t 23 00 00),
                              LocalTime (d 2020 08 16) (t 22 00 00),

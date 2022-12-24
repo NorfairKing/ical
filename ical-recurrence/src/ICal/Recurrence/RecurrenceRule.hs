@@ -12,7 +12,6 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
-import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
@@ -169,7 +168,7 @@ filterEvery =
       ( \case
           Every d -> pure $ Just d
           bd -> do
-            emitFixableError $ RecurrenceByDayNumeric bd
+            emitFixableErrorR $ RecurrenceByDayNumeric bd
             pure Nothing
       )
     . S.toList

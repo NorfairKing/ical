@@ -11,12 +11,14 @@ build-type:     Simple
 library
   exposed-modules:
       ICal.Recurrence.Gen
+      ICal.Recurrence.TestUtils
   other-modules:
       Paths_ical_recurrence_gen
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , containers
     , genvalidity
     , genvalidity-containers
     , ical
