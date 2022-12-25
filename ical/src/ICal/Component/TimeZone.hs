@@ -638,7 +638,8 @@ observanceP = do
   observanceTimeZoneOffsetTo <- parseFirst observanceProperties
   observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
   observanceRecurrenceRules <- S.fromList <$> (parseList observanceProperties >>= traverse (fixUntil (Just dtstart)))
-  when (S.size observanceRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules observanceRecurrenceRules
+  when (S.size observanceRecurrenceRules > 1) $
+    lift $ emitWarning $ WarnMultipleRecurrenceRules observanceRecurrenceRules
 
   observanceComment <- parseSet observanceProperties
   observanceRecurrenceDateTimes <- parseSet observanceProperties

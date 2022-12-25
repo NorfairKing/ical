@@ -18,30 +18,32 @@ spec = do
     it "Works for any single-standard-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
         forAllValid $ \start ->
-          forAllValid $ \from ->
-            forAllValid $ \toMinutes ->
+          forAllValid $ \fromOffset ->
+            forAllValid $ \toOffset ->
               forAllValid $ \lt -> do
-                let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
+                let from = TimeZoneOffsetFrom fromOffset
+                    to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
-                    timeTz = Time.minutesToTimeZone toMinutes
+                    expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
                 mResolved <- shouldConform $ resolveLocalTime tz lt
                 case mResolved of
-                  Nothing -> pure () -- Fine
-                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC timeTz lt
+                  Nothing -> expectationFailure "Should resolve."
+                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
     it "Works for any single-daylight-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
         forAllValid $ \start ->
-          forAllValid $ \from ->
-            forAllValid $ \toMinutes ->
+          forAllValid $ \fromOffset ->
+            forAllValid $ \toOffset ->
               forAllValid $ \lt -> do
-                let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
+                let from = TimeZoneOffsetFrom fromOffset
+                    to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
-                    timeTz = Time.minutesToTimeZone toMinutes
+                    expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
                 mResolved <- shouldConform $ resolveLocalTime tz lt
                 case mResolved of
-                  Nothing -> pure () -- Fine
-                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC timeTz lt
+                  Nothing -> expectationFailure "Should resolve."
+                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
   xdescribe "unresolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $ do

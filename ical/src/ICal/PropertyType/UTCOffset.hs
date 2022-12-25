@@ -7,6 +7,7 @@ import Control.DeepSeq
 import Data.Int
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
@@ -113,3 +114,6 @@ renderUTCOffset =
            in sign : hoursStr ++ minutesStr ++ (if seconds == 0 then "" else secondStr)
       )
     . unUTCOffset
+
+utcOffsetTimeZone :: UTCOffset -> Time.TimeZone
+utcOffsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w

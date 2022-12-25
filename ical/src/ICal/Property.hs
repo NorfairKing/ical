@@ -18,6 +18,7 @@ module ICal.Property where
 
 import Control.DeepSeq
 import Control.Exception
+import qualified Data.CaseInsensitive as CI
 import Data.Proxy
 import Data.Set
 import Data.Text (Text)
@@ -516,6 +517,9 @@ instance IsProperty TZID where
   propertyName Proxy = "TZID"
   propertyP = wrapPropertyTypeP TZID
   propertyB = propertyTypeB . unTZID
+
+tzidParam :: TZID -> TZIDParam
+tzidParam = TZIDParam . CI.mk . unTZID
 
 -- |
 --

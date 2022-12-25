@@ -137,7 +137,7 @@ recurEvents limit RecurringEvent {..} =
           -- and "RDATE" properties, only one recurrence is considered.
           -- Duplicate instances are ignored.
           -- @
-          let preliminarySet = S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules
+          let preliminarySet = S.insert startEvent (S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules)
           pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
@@ -328,10 +328,11 @@ computeNewEnd originalStart end newStart =
             DateTimeStartDate newDate -> pure $ DateTimeEndDate (dateAddDays exactDuration newDate)
             _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
     (DateTimeStartDateTime startDateTime, DateTimeEndDateTime endDateTime) ->
-      let exactDuration = dateTimeExactDuration startDateTime endDateTime
-       in case newStart of
-            DateTimeStartDateTime newDateTime -> error "Not supported yet." exactDuration newDateTime
-            _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
+      case newStart of
+        DateTimeStartDateTime newDateTime -> do
+          exactDuration <- dateTimeExactDuration startDateTime endDateTime
+          pure $ DateTimeEndDateTime $ addExactDuration exactDuration newDateTime
+        _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
     -- These two cases represent invalid ical:
     -- @
     -- The "VEVENT" is also the calendar component used to specify an
@@ -373,6 +374,12 @@ dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
   _ -> unfixableErrorR $ ExactDurationMismatch dt1 dt2
 
+addExactDuration :: Time.NominalDiffTime -> DateTime -> DateTime
+addExactDuration ndt = \case
+  DateTimeFloating lt -> DateTimeFloating $ Time.addLocalTime ndt lt
+  DateTimeUTC ut -> DateTimeUTC $ Time.addUTCTime ndt ut
+  DateTimeZoned _ _ -> error "unsupported so far"
+
 resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
 resolveLocalTimeR zone localTime = do
   mUtcTime <- R $ lift $ resolveLocalTime zone localTime
@@ -385,15 +392,12 @@ resolveLocalTime zone localTime = do
   mOffset <- chooseOffset zone localTime
   pure $ do
     offset <- mOffset
-    let tz = offsetTimeZone offset
+    let tz = utcOffsetTimeZone offset
     pure $ Time.localTimeToUTC tz localTime
 
 -- TODO: It's not clear if un-resolution is something that's computable at all
 unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
 unresolveLocalTime = undefined
-
-offsetTimeZone :: UTCOffset -> Time.TimeZone
-offsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w
 
 chooseOffset :: TimeZone -> Time.LocalTime -> Resolv (Maybe UTCOffset)
 chooseOffset zone localTime = do
