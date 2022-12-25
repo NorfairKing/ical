@@ -38,20 +38,9 @@
 -- resolveEndOrDuration -> resolveLocalTime
 -- resolveLocalTime -> recurEvents
 module ICal.Recurrence
-  ( HasRecurrence (..),
-    recur,
-    RecurringEvent (..),
-    Recurrence (..),
-    EventOccurrence (..),
-    R,
-    RecurrenceError (..),
-    recurEvents,
-    recurRecurrenceDateTimes,
-    recurRecurrenceRules,
-    recurRecurrenceRuleLocalTimes,
-    removeExceptionDatetimes,
-    resolveLocalTime,
-    unresolveLocalTime,
+  ( module ICal.Recurrence,
+    module ICal.Recurrence.RecurrenceRule,
+    module ICal.Recurrence.Class,
   )
 where
 
@@ -65,16 +54,8 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Time as Time
-import ICal.Component.Event
-import ICal.Component.TimeZone
-import ICal.Property
-import ICal.PropertyType.Date
-import ICal.PropertyType.DateTime
+import ICal
 import ICal.PropertyType.DateTimes as DateTimes
-import ICal.PropertyType.Duration
-import ICal.PropertyType.Period
-import ICal.PropertyType.RecurrenceRule
-import ICal.PropertyType.UTCOffset
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule
 

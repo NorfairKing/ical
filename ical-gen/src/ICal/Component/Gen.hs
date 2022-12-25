@@ -22,13 +22,11 @@ import Data.Void
 import ICal
 import ICal.Conformance
 import ICal.Conformance.TestUtils
-import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration.Gen ()
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule.Gen ()
-import ICal.UnfoldedLine
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity

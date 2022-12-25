@@ -10,7 +10,6 @@ import Data.Time
 import ICal
 import ICal.Conformance.TestUtils
 import ICal.Recurrence
-import ICal.Recurrence.Class
 import Test.Syd
 
 spec :: Spec

@@ -6,6 +6,9 @@ module ICal
     module ICal.PropertyType,
     module ICal.Property,
     module ICal.Component,
+    module ICal.Parameter,
+    module ICal.UnfoldedLine,
+    module ICal.ContentLine,
   )
 where
 
@@ -21,6 +24,7 @@ import Data.Void
 import ICal.Component
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine

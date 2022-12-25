@@ -10,7 +10,6 @@ import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence
-import ICal.Recurrence.Class
 import Test.Syd
 import Test.Syd.Validity
 
