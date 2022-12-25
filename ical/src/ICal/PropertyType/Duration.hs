@@ -10,6 +10,7 @@ import Data.Data
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Data.Validity
 import Data.Void
 import GHC.Generics (Generic)
@@ -102,6 +103,12 @@ durationOneDay =
         durDateSecond = 0
       }
 
+durationNominalDiffTime :: Duration -> Time.NominalDiffTime
+durationNominalDiffTime = \case
+  DurationDate durDate -> durDateNominalDiffTime durDate
+  DurationTime durTime -> durTimeNominalDiffTime durTime
+  DurationWeek durWeek -> durWeekNominalDiffTime durWeek
+
 data DurDate = DurDate
   { durDateSign :: !Sign,
     durDateDay :: !Word,
@@ -115,6 +122,15 @@ instance Validity DurDate
 
 instance NFData DurDate
 
+durDateNominalDiffTime :: DurDate -> Time.NominalDiffTime
+durDateNominalDiffTime DurDate {..} =
+  product
+    [ signSignum durDateSign,
+      fromIntegral durDateDay * Time.nominalDay
+        + (fromIntegral durDateHour * 60 + fromIntegral durDateMinute) * 60
+        + fromIntegral durDateSecond
+    ]
+
 data DurTime = DurTime
   { durTimeSign :: !Sign,
     durTimeHour :: !Word,
@@ -127,6 +143,14 @@ instance Validity DurTime
 
 instance NFData DurTime
 
+durTimeNominalDiffTime :: DurTime -> Time.NominalDiffTime
+durTimeNominalDiffTime DurTime {..} =
+  product
+    [ signSignum durTimeSign,
+      (fromIntegral durTimeHour * 60 + fromIntegral durTimeMinute) * 60
+        + fromIntegral durTimeSecond
+    ]
+
 data DurWeek = DurWeek
   { durWeekSign :: !Sign,
     durWeekWeek :: !Word
@@ -136,6 +160,15 @@ data DurWeek = DurWeek
 instance Validity DurWeek
 
 instance NFData DurWeek
+
+durWeekNominalDiffTime :: DurWeek -> Time.NominalDiffTime
+durWeekNominalDiffTime DurWeek {..} =
+  product
+    [ signSignum durWeekSign,
+      fromIntegral durWeekWeek,
+      7,
+      Time.nominalDay
+    ]
 
 data Sign = Positive | Negative
   deriving (Show, Eq, Ord, Generic, Typeable)
@@ -149,6 +182,11 @@ durationSign = \case
   DurationDate dd -> durDateSign dd
   DurationTime dt -> durTimeSign dt
   DurationWeek dw -> durWeekSign dw
+
+signSignum :: Sign -> Time.NominalDiffTime
+signSignum = \case
+  Positive -> 1
+  Negative -> -1
 
 -- @
 -- dur-value  = (["+"] / "-") "P" (dur-date / dur-time / dur-week)
