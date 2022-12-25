@@ -2,6 +2,7 @@
 
 module ICal.Recurrence.TimeZoneSpec (spec) where
 
+import qualified Data.Map as M
 import qualified Data.Time as Time
 import ICal.Component
 import ICal.Component.Gen ()
@@ -9,6 +10,7 @@ import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence
+import ICal.Recurrence.Class
 import Test.Syd
 import Test.Syd.Validity
 
@@ -25,10 +27,9 @@ spec = do
                     to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
                     expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
-                mResolved <- shouldConform $ resolveLocalTime tz lt
-                case mResolved of
-                  Nothing -> expectationFailure "Should resolve."
-                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC expectedTz lt
+                    m = M.singleton (tzidParam tzid) tz
+                resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
+                resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
     it "Works for any single-daylight-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
@@ -40,10 +41,9 @@ spec = do
                     to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
                     expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
-                mResolved <- shouldConform $ resolveLocalTime tz lt
-                case mResolved of
-                  Nothing -> expectationFailure "Should resolve."
-                  Just resolved -> resolved `shouldBe` Time.localTimeToUTC expectedTz lt
+                    m = M.singleton (tzidParam tzid) tz
+                resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
+                resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
   xdescribe "unresolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $ do

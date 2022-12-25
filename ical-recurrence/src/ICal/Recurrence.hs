@@ -370,8 +370,8 @@ dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> do
     tz1 <- requireTimeZone tzid1
     tz2 <- requireTimeZone tzid2
-    u1 <- resolveLocalTimeR tz1 lt1
-    u2 <- resolveLocalTimeR tz2 lt2
+    u1 <- resolveLocalTime tz1 lt1
+    u2 <- resolveLocalTime tz2 lt2
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
   _ -> unfixableErrorR $ ExactDurationMismatch dt1 dt2
 
@@ -381,19 +381,66 @@ addExactDuration ndt = \case
   DateTimeUTC ut -> pure $ DateTimeUTC $ Time.addUTCTime ndt ut
   DateTimeZoned tzid lt -> do
     zone <- requireTimeZone tzid
-    ut <- resolveLocalTimeR zone lt
+    ut <- resolveLocalTime zone lt
     -- TODO if we could unresolve, we could implement this using DateTimeZoned.
     pure $ DateTimeUTC ut
 
-resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
-resolveLocalTimeR zone localTime = do
-  mUtcTime <- R $ lift $ resolveLocalTime zone localTime
+resolveEventOccurrence :: Time.TimeZone -> EventOccurrence -> R ResolvedEvent
+resolveEventOccurrence myZone EventOccurrence {..} = do
+  resolvedEventStart <- mapM (resolveDateTimeStart myZone) eventOccurrenceStart
+  resolvedEventEnd <- case eventOccurrenceEndOrDuration of
+    Just ced -> resolveEndDuration myZone resolvedEventStart ced
+    Nothing -> pure Nothing
+  pure ResolvedEvent {..}
+
+resolveEndDuration :: Time.TimeZone -> Maybe (Either Time.Day Time.LocalTime) -> Either DateTimeEnd Duration -> R (Maybe (Either Time.Day Time.LocalTime))
+resolveEndDuration myZone mts = \case
+  Left end -> Just <$> resolveDateTimeEnd myZone end
+  Right duration -> pure $ case mts of
+    Nothing -> Nothing -- Start timestamp but no end timestamp: Nothing we can do.
+    Just ts ->
+      Just $
+        let ndt = durationNominalDiffTime duration
+         in case ts of
+              Left d ->
+                let (diff, _) = Time.timeToDaysAndTimeOfDay ndt
+                 in Left $ Time.addDays diff d
+              Right ut -> Right $ Time.addLocalTime ndt ut
+
+resolveDateTimeEnd :: Time.TimeZone -> DateTimeEnd -> R (Either Time.Day Time.LocalTime)
+resolveDateTimeEnd myZone = \case
+  DateTimeEndDate date -> pure $ Left $ resolveDate date
+  DateTimeEndDateTime dateTime -> Right <$> resolveDateTime myZone dateTime
+
+resolveDateTimeStart :: Time.TimeZone -> DateTimeStart -> R (Either Time.Day Time.LocalTime)
+resolveDateTimeStart myZone = \case
+  DateTimeStartDate date -> pure $ Left $ resolveDate date
+  DateTimeStartDateTime dateTime -> Right <$> resolveDateTime myZone dateTime
+
+resolveDate :: Date -> Time.Day
+resolveDate = unDate
+
+resolveDateTime :: Time.TimeZone -> DateTime -> R Time.LocalTime
+resolveDateTime myZone = \case
+  DateTimeFloating lt -> pure lt
+  DateTimeUTC utcTime -> pure $ resolveUTCTime myZone utcTime
+  DateTimeZoned tzid lt -> do
+    zone <- requireTimeZone tzid
+    ut <- resolveLocalTime zone lt
+    pure $ resolveUTCTime myZone ut
+
+resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
+resolveUTCTime = Time.utcToLocalTime
+
+resolveLocalTime :: TimeZone -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTime zone localTime = do
+  mUtcTime <- R $ lift $ tryToResolveLocalTime zone localTime
   case mUtcTime of
     Nothing -> unfixableErrorR $ FailedToResolveLocalTime zone localTime
     Just ut -> pure ut
 
-resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
-resolveLocalTime zone localTime = do
+tryToResolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
+tryToResolveLocalTime zone localTime = do
   mOffset <- chooseOffset zone localTime
   pure $ do
     offset <- mOffset
