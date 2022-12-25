@@ -52,7 +52,7 @@ recurRecurrenceRuleLocalTimes ::
 recurRecurrenceRuleLocalTimes = recurUntilCount lessThanUntil
 
 lessThanUntil :: LocalTime -> Until -> Bool
-lessThanUntil = undefined
+lessThanUntil = error "not implemented yet."
 
 recurUntilCount ::
   (LocalTime -> Until -> Bool) ->

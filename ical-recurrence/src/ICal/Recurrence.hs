@@ -331,7 +331,8 @@ computeNewEnd originalStart end newStart =
       case newStart of
         DateTimeStartDateTime newDateTime -> do
           exactDuration <- dateTimeExactDuration startDateTime endDateTime
-          pure $ DateTimeEndDateTime $ addExactDuration exactDuration newDateTime
+          newEndDateTime <- addExactDuration exactDuration newDateTime
+          pure $ DateTimeEndDateTime newEndDateTime
         _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
     -- These two cases represent invalid ical:
     -- @
@@ -374,11 +375,15 @@ dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
   _ -> unfixableErrorR $ ExactDurationMismatch dt1 dt2
 
-addExactDuration :: Time.NominalDiffTime -> DateTime -> DateTime
+addExactDuration :: Time.NominalDiffTime -> DateTime -> R DateTime
 addExactDuration ndt = \case
-  DateTimeFloating lt -> DateTimeFloating $ Time.addLocalTime ndt lt
-  DateTimeUTC ut -> DateTimeUTC $ Time.addUTCTime ndt ut
-  DateTimeZoned _ _ -> error "unsupported so far"
+  DateTimeFloating lt -> pure $ DateTimeFloating $ Time.addLocalTime ndt lt
+  DateTimeUTC ut -> pure $ DateTimeUTC $ Time.addUTCTime ndt ut
+  DateTimeZoned tzid lt -> do
+    zone <- requireTimeZone tzid
+    ut <- resolveLocalTimeR zone lt
+    -- TODO if we could unresolve, we could implement this using DateTimeZoned.
+    pure $ DateTimeUTC ut
 
 resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
 resolveLocalTimeR zone localTime = do
