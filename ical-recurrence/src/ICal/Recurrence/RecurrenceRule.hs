@@ -51,8 +51,12 @@ recurRecurrenceRuleLocalTimes ::
   R (Set LocalTime)
 recurRecurrenceRuleLocalTimes = recurUntilCount lessThanUntil
 
+-- TODO: < or <=?
 lessThanUntil :: LocalTime -> Until -> Bool
-lessThanUntil = error "not implemented yet."
+lessThanUntil lt = \case
+  UntilDate d -> localDay lt <= unDate d
+  UntilDateTimeFloating lt' -> lt <= lt'
+  UntilDateTimeUTC ut -> lt <= utcToLocalTime utc ut -- TODO is this correct?!
 
 recurUntilCount ::
   (LocalTime -> Until -> Bool) ->
