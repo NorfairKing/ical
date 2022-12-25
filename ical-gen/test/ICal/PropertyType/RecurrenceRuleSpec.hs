@@ -9,6 +9,8 @@ module ICal.PropertyType.RecurrenceRuleSpec where
 import Data.Set (Set)
 import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal
+import ICal.PropertyType.Gen
+import ICal.PropertyType.RecurrenceRule.Gen
 import Test.Syd
 import Test.Syd.Validity
 

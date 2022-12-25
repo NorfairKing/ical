@@ -7,6 +7,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-22.11";
+    nixpkgs-22_05.url = "github:NixOS/nixpkgs?ref=nixos-22.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     validity.url = "github:NorfairKing/validity";
     validity.flake = false;
@@ -16,7 +17,8 @@
     safe-coloured-text.flake = false;
     sydtest.url = "github:NorfairKing/sydtest";
     sydtest.flake = false;
-    nixpkgs-22_05.url = "github:NixOS/nixpkgs?ref=nixos-22.05";
+    dekking.url = "github:NorfairKing/dekking";
+    dekking.flake = false;
   };
 
   outputs =
@@ -28,6 +30,7 @@
     , safe-coloured-text
     , autodocodec
     , sydtest
+    , dekking
     }:
     let
       system = "x86_64-linux";
@@ -39,6 +42,7 @@
           (import (autodocodec + "/nix/overlay.nix"))
           (import (safe-coloured-text + "/nix/overlay.nix"))
           (import (sydtest + "/nix/overlay.nix"))
+          (import (dekking + "/nix/overlay.nix"))
         ];
       };
       pkgs = pkgsFor nixpkgs;
@@ -58,6 +62,18 @@
           backwardCompatibilityChecks = pkgs.lib.mapAttrs (_: nixpkgs: backwardCompatibilityCheckFor nixpkgs) allNixpkgs;
         in
         backwardCompatibilityChecks // {
+          coverage-report = pkgs.dekking.makeCoverageReport {
+            name = "test-coverage-report";
+            packages = [
+              "ical"
+              "ical-recurrence"
+            ];
+            coverage = [
+              "ical-gen"
+              "ical-recurrence-gen"
+              "ical-interop-test"
+            ];
+          };
           pre-commit = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks = {
