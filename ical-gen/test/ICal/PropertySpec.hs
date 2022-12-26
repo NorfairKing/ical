@@ -27,6 +27,31 @@ spec = do
     propertySpec @Version
     propertyExampleSpec "VERSION:2.0" (Version "2.0")
 
+  describe "RecurrenceID" $ do
+    genValidSpec @RecurrenceID
+    propertySpec @RecurrenceID
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --     RECURRENCE-ID;VALUE=DATE:19960401
+    --
+    --     RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z
+    -- @
+    propertyExampleSpec
+      "RECURRENCE-ID;VALUE=DATE:19960401"
+      (RecurrenceIDDate (Date (fromGregorian 1996 04 01)))
+    -- TODO make this roundtrip
+    propertyParseExampleSpec
+      "RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z"
+      ( RecurrenceIDDateTime
+          ( DateTimeUTC
+              ( UTCTime
+                  (fromGregorian 1996 01 20)
+                  (timeOfDayToTime (TimeOfDay 12 00 00))
+              )
+          )
+      )
+
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID

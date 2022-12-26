@@ -9,12 +9,12 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
 
 ## Implementation checklist
 
-   - [X] 1.  Introduction
-   - [X] 2.  Basic Grammar and Conventions
-     - [X] 2.1.  Formatting Conventions
-     - [X] 2.2.  Related Memos
-   - [X] 3.  iCalendar Object Specification
-     - [X] 3.1.  Content Lines
+   - [x] 1.  Introduction
+   - [x] 2.  Basic Grammar and Conventions
+     - [x] 2.1.  Formatting Conventions
+     - [x] 2.2.  Related Memos
+   - [x] 3.  iCalendar Object Specification
+     - [x] 3.1.  Content Lines
        - [ ] 3.1.1.  List and Field Separators
        - [ ] 3.1.2.  Multiple Values
        - [ ] 3.1.3.  Binary Content

@@ -1255,6 +1255,13 @@ spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 08 19) (TimeOfDay 09 00 00),
         LocalTime (fromGregorian 1997 08 31) (TimeOfDay 09 00 00)
       ]
+  -- @
+  -- Recurrence rules may generate recurrence instances with an invalid
+  -- date (e.g., February 30) or nonexistent local time (e.g., 1:30 AM
+  -- on a day where the local time is moved forward by an hour at 1:00
+  -- AM).  Such recurrence instances MUST be ignored and MUST NOT be
+  -- counted as part of the recurrence set.
+  -- @
   it "An example where an invalid date (i.e., February 30) is ignored" $ do
     -- @
     -- DTSTART;TZID=America/New_York:20070115T090000

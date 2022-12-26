@@ -227,6 +227,7 @@ data Event = Event
     eventSummary :: !(Maybe Summary),
     eventTransparency :: !Transparency,
     eventURL :: !(Maybe URL),
+    eventRecurrenceID :: !(Maybe RecurrenceID),
     -- @
     -- ;
     -- ; The following is OPTIONAL,
@@ -263,7 +264,8 @@ instance Validity Event where
   validate e@Event {..} =
     mconcat
       [ genericValidate e,
-        validateMDateTimeStartRRule eventDateTimeStart eventRecurrenceRules
+        validateMDateTimeStartRRule eventDateTimeStart eventRecurrenceRules,
+        validateMRecurrenceIDMDateTimeStart eventDateTimeStart eventRecurrenceID
       ]
 
 instance NFData Event
@@ -296,6 +298,7 @@ vEventP = do
   -- @
   eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
   eventURL <- parseFirstMaybe eventProperties
+  eventRecurrenceID <- parseFirstMaybe eventProperties
 
   eventRecurrenceRules <- S.fromList <$> (parseList eventProperties >>= traverse (fixUntil eventDateTimeStart))
   when (S.size eventRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
@@ -332,6 +335,7 @@ vEventB Event {..} =
       -- @
       propertyDListB TransparencyOpaque eventTransparency,
       propertyMListB eventURL,
+      propertyMListB eventRecurrenceID,
       propertySetB eventRecurrenceRules,
       case eventDateTimeEndDuration of
         Nothing -> mempty
@@ -364,6 +368,7 @@ makeEvent uid dateTimeStamp =
       -- @
       eventTransparency = TransparencyOpaque,
       eventURL = Nothing,
+      eventRecurrenceID = Nothing,
       eventRecurrenceRules = S.empty,
       eventDateTimeEndDuration = Nothing,
       eventExceptionDateTimes = S.empty,

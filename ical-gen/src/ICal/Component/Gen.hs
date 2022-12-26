@@ -80,6 +80,15 @@ instance GenValid Event where
     eventSummary <- genValid
     eventTransparency <- genValid
     eventURL <- genValid
+    eventRecurrenceID <- case eventDateTimeStart of
+      Nothing -> genValid
+      Just dtstart ->
+        oneof
+          [ pure Nothing,
+            Just <$> case dtstart of
+              DateTimeStartDate _ -> RecurrenceIDDate <$> genValid
+              DateTimeStartDateTime _ -> RecurrenceIDDateTime <$> genValid
+          ]
     eventRecurrenceRules <- case eventDateTimeStart of
       Nothing -> pure S.empty
       Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
