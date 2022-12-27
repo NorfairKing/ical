@@ -118,7 +118,9 @@ recurEvents limit RecurringEvent {..} =
           -- and "RDATE" properties, only one recurrence is considered.
           -- Duplicate instances are ignored.
           -- @
-          let preliminarySet = S.insert startEvent (S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules)
+          let preliminarySet =
+                S.insert startEvent $
+                  S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules
           pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
@@ -264,14 +266,14 @@ removeExceptionDatetimes ::
   Set EventOccurrence
 removeExceptionDatetimes exceptions = S.filter $ \occurrence ->
   case eventOccurrenceStart occurrence of
-    Nothing -> False
+    Nothing -> True
     Just start -> case start of
       DateTimeStartDateTime dateTime -> case exceptions of
-        ExceptionDateTimes dateTimes -> dateTime `S.member` DateTimes.toSet dateTimes
-        _ -> False
+        ExceptionDateTimes dateTimes -> not $ dateTime `S.member` DateTimes.toSet dateTimes
+        _ -> True
       DateTimeStartDate date -> case exceptions of
-        ExceptionDates dates -> date `S.member` dates
-        _ -> False
+        ExceptionDates dates -> not $ date `S.member` dates
+        _ -> True
 
 resolveEndOrDurationDate ::
   DateTimeStart ->
@@ -342,19 +344,20 @@ computeNewEnd originalStart end newStart =
 dateExactDuration :: Date -> Date -> Integer
 dateExactDuration = diffDates
 
+-- Compute the exact duration difference between two 'DateTime's
 dateTimeExactDuration :: DateTime -> DateTime -> R Time.NominalDiffTime
-dateTimeExactDuration dt1 dt2 = case (dt1, dt2) of
+dateTimeExactDuration start end = case (start, end) of
   (DateTimeFloating lt1, DateTimeFloating lt2) ->
     -- Assuming the same timezone
-    pure $ Time.diffLocalTime lt1 lt2
-  (DateTimeUTC ut1, DateTimeUTC ut2) -> pure $ Time.diffUTCTime ut1 ut2
+    pure $ Time.diffLocalTime lt2 lt1
+  (DateTimeUTC ut1, DateTimeUTC ut2) -> pure $ Time.diffUTCTime ut2 ut1
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> do
     tz1 <- requireTimeZone tzid1
     tz2 <- requireTimeZone tzid2
     u1 <- resolveLocalTime tz1 lt1
     u2 <- resolveLocalTime tz2 lt2
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
-  _ -> unfixableErrorR $ ExactDurationMismatch dt1 dt2
+  _ -> unfixableErrorR $ ExactDurationMismatch start end
 
 addExactDuration :: Time.NominalDiffTime -> DateTime -> R DateTime
 addExactDuration ndt = \case

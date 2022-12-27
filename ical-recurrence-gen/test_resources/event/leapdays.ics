@@ -1,0 +1,10 @@
+BEGIN:VEVENT
+DTSTAMP:20000101T000000Z
+UID:0
+DTSTART:20000229T120000Z
+SUMMARY:The second occurence of the event has an invalid start date
+DESCRIPTION:Every day in February on the 29th for 3 times.
+ I.e.every leap year on the 29th of february.
+RRULE:FREQ=DAILY;COUNT=3;BYMONTHDAY=29;BYMONTH=2
+DTEND;VALUE=DATE-TIME:20000301T120000Z
+END:VEVENT

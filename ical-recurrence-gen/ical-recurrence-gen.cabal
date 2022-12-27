@@ -7,6 +7,19 @@ cabal-version: 1.12
 name:           ical-recurrence-gen
 version:        0.0.0.0
 build-type:     Simple
+extra-source-files:
+    test_resources/event/daily-bysetpos.ics
+    test_resources/event/daily-bysetpos.occ
+    test_resources/event/leapdays.ics
+    test_resources/event/leapdays.occ
+    test_resources/event/one-recurrence-invalid-end.ics
+    test_resources/event/one-recurrence-invalid-end.occ
+    test_resources/event/one-recurrence-invalid-start.ics
+    test_resources/event/one-recurrence-invalid-start.occ
+    test_resources/event/rdate-period.ics
+    test_resources/event/rdate-period.occ
+    test_resources/event/rdate.ics
+    test_resources/event/rdate.occ
 
 library
   exposed-modules:
@@ -38,6 +51,7 @@ test-suite ical-recurrence-test
       ICal.Recurrence.RecurrenceRule.YearlySpec
       ICal.Recurrence.RecurrenceRuleSpec
       ICal.Recurrence.TimeZoneSpec
+      ICal.RecurrenceSpec
       Paths_ical_recurrence_gen
   hs-source-dirs:
       test
@@ -47,6 +61,7 @@ test-suite ical-recurrence-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , containers
     , genvalidity-sydtest
     , genvalidity-time
@@ -54,6 +69,9 @@ test-suite ical-recurrence-test
     , ical-gen
     , ical-recurrence
     , ical-recurrence-gen
+    , path
+    , path-io
     , sydtest
+    , text
     , time
   default-language: Haskell2010

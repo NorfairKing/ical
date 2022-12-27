@@ -1,6 +1,9 @@
 name: ical-recurrence-gen
 version: 0.0.0.0
 
+extra-source-files:
+- test_resources/**/*
+
 dependencies:
 - base >= 4.7 && < 5
 - containers
@@ -25,9 +28,13 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - QuickCheck
+    - bytestring
     - containers
     - genvalidity-sydtest
     - genvalidity-time
     - ical-recurrence-gen
+    - path
+    - path-io
     - sydtest
+    - text
     - time

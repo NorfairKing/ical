@@ -1,7 +1,7 @@
-{ mkDerivation, base, containers, genvalidity
+{ mkDerivation, base, bytestring, containers, genvalidity
 , genvalidity-containers, genvalidity-sydtest, genvalidity-time
-, ical, ical-gen, ical-recurrence, lib, QuickCheck, sydtest
-, sydtest-discover, time
+, ical, ical-gen, ical-recurrence, lib, path, path-io, QuickCheck
+, sydtest, sydtest-discover, text, time
 }:
 mkDerivation {
   pname = "ical-recurrence-gen";
@@ -12,8 +12,9 @@ mkDerivation {
     ical-recurrence
   ];
   testHaskellDepends = [
-    base containers genvalidity-sydtest genvalidity-time ical ical-gen
-    ical-recurrence QuickCheck sydtest time
+    base bytestring containers genvalidity-sydtest genvalidity-time
+    ical ical-gen ical-recurrence path path-io QuickCheck sydtest text
+    time
   ];
   testToolDepends = [ sydtest-discover ];
   license = "unknown";
