@@ -75,7 +75,10 @@ instance HasRecurrence Event where
   makeOccurrence e EventOccurrence {..} =
     e
       { eventDateTimeStart = eventOccurrenceStart,
-        eventDateTimeEndDuration = eventOccurrenceEndOrDuration
+        eventDateTimeEndDuration = eventOccurrenceEndOrDuration,
+        eventRecurrenceRules = S.empty,
+        eventExceptionDateTimes = S.empty,
+        eventRecurrenceDateTimes = S.empty
       }
 
 recur :: (Ord event, HasRecurrence event) => Time.Day -> event -> R (Set event)
