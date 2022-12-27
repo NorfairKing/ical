@@ -46,7 +46,7 @@ data PropertyParseError
   | UnReadableGeographicPosition !Text
   | UnknownStatus !Text
   | UnknownTransparency !Text
-  | ValueMismatch !ContentLineName !(Maybe ValueDataType) ![ValueDataType]
+  | ValueMismatch !ContentLineName !(Maybe ValueDataType) ValueDataType ![ValueDataType]
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyParseError where
@@ -64,11 +64,12 @@ instance Exception PropertyParseError where
     UnReadableGeographicPosition t -> unwords ["UnReadable Geographic position:", show t]
     UnknownStatus t -> unwords ["Unknown Status:", show t]
     UnknownTransparency t -> unwords ["Unknown Transparency:", show t]
-    ValueMismatch name actual expecteds ->
+    ValueMismatch name actualType defaultType otherTypes ->
       unlines
         [ unwords ["Mismatched value type for:", show name],
-          unwords ["Actual:", show actual],
-          unwords ["Expecteds:", show expecteds]
+          unwords ["Actual:", show actualType],
+          unwords ["Default:", show defaultType],
+          unwords ["Other options:", show otherTypes]
         ]
 
 -- |
@@ -451,12 +452,22 @@ instance NFData RecurrenceID
 
 instance IsProperty RecurrenceID where
   propertyName Proxy = "RECURRENCE-ID"
-  propertyP cl =
-    wrapPropertyTypeP RecurrenceIDDate cl
-      `altConform` wrapPropertyTypeP RecurrenceIDDateTime cl
+  propertyP clv = do
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    case mValue of
+      Just TypeDateTime -> wrapPropertyTypeP RecurrenceIDDateTime clv
+      Just TypeDate -> wrapPropertyTypeP RecurrenceIDDate clv
+      Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue TypeDateTime [TypeDate]
+      -- @
+      -- Value Type:  The default value type is DATE-TIME.
+      -- @
+      Nothing -> wrapPropertyTypeP RecurrenceIDDateTime clv
   propertyB = \case
-    RecurrenceIDDate d -> propertyTypeB d
     RecurrenceIDDateTime dt -> propertyTypeB dt
+    -- @
+    -- Value Type:  The default value type is DATE-TIME.
+    -- @
+    RecurrenceIDDate d -> insertParam TypeDate $ propertyTypeB d
 
 validateMRecurrenceIDMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceID -> Validation
 validateMRecurrenceIDMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
@@ -743,12 +754,22 @@ instance NFData DateTimeStart
 
 instance IsProperty DateTimeStart where
   propertyName Proxy = "DTSTART"
-  propertyP cl =
-    wrapPropertyTypeP DateTimeStartDate cl
-      `altConform` wrapPropertyTypeP DateTimeStartDateTime cl
+  propertyP clv = do
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    case mValue of
+      Just TypeDateTime -> wrapPropertyTypeP DateTimeStartDateTime clv
+      Just TypeDate -> wrapPropertyTypeP DateTimeStartDate clv
+      Just _ -> unfixableError $ ValueMismatch "DTSTART" mValue TypeDateTime [TypeDate]
+      -- @
+      -- Value Type:  The default value type is DATE-TIME.
+      -- @
+      Nothing -> wrapPropertyTypeP DateTimeStartDateTime clv
   propertyB = \case
-    DateTimeStartDate date -> propertyTypeB date
     DateTimeStartDateTime dateTime -> propertyTypeB dateTime
+    -- @
+    -- Value Type:  The default value type is DATE-TIME.
+    -- @
+    DateTimeStartDate date -> insertParam TypeDate $ propertyTypeB date
 
 -- | Classification
 --
@@ -1439,12 +1460,23 @@ instance NFData DateTimeEnd
 
 instance IsProperty DateTimeEnd where
   propertyName Proxy = "DTEND"
-  propertyP cl =
-    wrapPropertyTypeP DateTimeEndDate cl
-      `altConform` wrapPropertyTypeP DateTimeEndDateTime cl
+  propertyP clv = do
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    case mValue of
+      Just TypeDateTime -> wrapPropertyTypeP DateTimeEndDateTime clv
+      Just TypeDate -> wrapPropertyTypeP DateTimeEndDate clv
+      Just _ -> unfixableError $ ValueMismatch "DTEND" mValue TypeDateTime [TypeDate]
+      -- @
+      -- Value Type:  The default value type is DATE-TIME.
+      -- @
+      Nothing -> wrapPropertyTypeP DateTimeEndDateTime clv
+
   propertyB = \case
-    DateTimeEndDate date -> propertyTypeB date
     DateTimeEndDateTime dateTime -> propertyTypeB dateTime
+    -- @
+    -- Value Type:  The default value type is DATE-TIME.
+    -- @
+    DateTimeEndDate date -> insertParam TypeDate $ propertyTypeB date
 
 -- | Duration
 --
@@ -1894,15 +1926,21 @@ instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
   propertyP clv = do
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    -- @
+    -- Value Type:  The default value type for this property is DATE-TIME.
+    -- @
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP ExceptionDateTimes clv
       Just TypeDate -> wrapPropertyTypeP ExceptionDates clv
-      Just _ -> unfixableError $ ValueMismatch "EXDATE" mValue [TypeDateTime, TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "EXDATE" mValue TypeDateTime [TypeDate]
       Nothing -> wrapPropertyTypeP ExceptionDateTimes clv
 
   propertyB = \case
     ExceptionDateTimes dts -> propertyTypeB dts
-    ExceptionDates ds -> propertyTypeB ds
+    -- @
+    -- Value Type:  The default value type for this property is DATE-TIME.
+    -- @
+    ExceptionDates ds -> insertParam TypeDate $ propertyTypeB ds
 
 -- | Recurrence Date-Times
 --
@@ -2009,10 +2047,16 @@ instance IsProperty RecurrenceDateTimes where
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv
       Just TypeDate -> wrapPropertyTypeP RecurrenceDates clv
-      Just _ -> unfixableError $ ValueMismatch "RDATE" mValue [TypeDateTime, TypePeriod, TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "RDATE" mValue TypeDateTime [TypePeriod, TypeDate]
+      -- @
+      -- Value Type:  The default value type for this property is DATE-TIME.
+      -- @
       Nothing -> wrapPropertyTypeP RecurrenceDateTimes clv
 
   propertyB = \case
     RecurrenceDateTimes dts -> propertyTypeB dts
-    RecurrenceDates ds -> propertyTypeB ds
-    RecurrencePeriods ps -> propertyTypeB ps
+    -- @
+    -- Value Type:  The default value type for this property is DATE-TIME.
+    -- @
+    RecurrenceDates ds -> insertParam TypeDate $ propertyTypeB ds
+    RecurrencePeriods ps -> insertParam TypePeriod $ propertyTypeB ps

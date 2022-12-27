@@ -92,7 +92,7 @@ dateTimesP ContentLineValue {..} = do
           <*> parseTimesSetText dateTimeZonedFormatStr contentLineValueRaw
 
 dateTimesB :: DateTimes -> ContentLineValue
-dateTimesB = insertParam TypeDateTime . propertyTypeSetB . toSet
+dateTimesB = propertyTypeSetB . toSet
 
 toSet :: DateTimes -> Set DateTime
 toSet = \case

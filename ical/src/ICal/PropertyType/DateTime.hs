@@ -257,7 +257,7 @@ dateTimeUTCP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Tim
 dateTimeUTCP = parseDateTimeUTC . contentLineValueRaw
 
 dateTimeB :: DateTime -> ContentLineValue
-dateTimeB dt = insertParam TypeDateTime $ case dt of
+dateTimeB = \case
   DateTimeFloating lt -> dateTimeFloatingB lt
   DateTimeUTC lt -> dateTimeUTCB lt
   DateTimeZoned tzidParam lt -> dateTimeZonedB tzidParam lt

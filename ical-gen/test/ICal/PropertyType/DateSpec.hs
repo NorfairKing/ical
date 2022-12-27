@@ -24,17 +24,12 @@ spec = do
 
   describe "dateP" $ do
     it "renders this date correctly" $
-      dateB
-        (Date (fromGregorian 1997 07 14))
-        `shouldBe` ( ContentLineValue
-                       { contentLineValueParams = M.singleton "VALUE" ["DATE"],
-                         contentLineValueRaw = "19970714"
-                       }
-                   )
-    propertyTypeParseExampleSpec
+      dateB (Date (fromGregorian 1997 07 14))
+        `shouldBe` mkSimpleContentLineValue "19970714"
+    propertyTypeExampleSpec
       (mkSimpleContentLineValue "19970714")
       (Date (fromGregorian 1997 07 14))
-    propertyTypeRenderExampleSpec
+    propertyTypeParseExampleSpec
       ( ContentLineValue
           { contentLineValueRaw = "19970714",
             contentLineValueParams = M.singleton "VALUE" ["DATE"]

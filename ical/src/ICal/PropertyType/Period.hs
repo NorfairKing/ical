@@ -109,7 +109,7 @@ instance IsPropertyType Period where
           Right duration -> PeriodStartDuration startDateTime duration
       _ -> unfixableError $ UnparseablePeriod t
   propertyTypeB =
-    insertParam TypePeriod . mkSimpleContentLineValue
+    mkSimpleContentLineValue
       . T.intercalate "/"
       . ( \case
             PeriodStartEnd start end ->
@@ -124,4 +124,4 @@ instance IsPropertyType Period where
 
 instance IsPropertyType (Set Period) where
   propertyTypeP = propertyTypeSetP
-  propertyTypeB = insertParam TypePeriod . propertyTypeSetB
+  propertyTypeB = propertyTypeSetB

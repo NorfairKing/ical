@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module ICal.PropertyType.UTCOffset where
 
@@ -14,6 +15,7 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import Text.Read
 
@@ -69,9 +71,10 @@ utcOffsetAbsBound = ((24 * 60) + 60) * 60 + 60
 instance NFData UTCOffset
 
 instance IsPropertyType UTCOffset where
-  propertyTypeP clv =
-    let t = contentLineValueRaw clv
-     in maybe (unfixableError $ UnparseableUTCOffset t) pure $ parseUTCOffset t
+  propertyTypeP ContentLineValue {..} = do
+    parseOfValue TypeUTCOffset contentLineValueParams
+    let t = contentLineValueRaw
+    maybe (unfixableError $ UnparseableUTCOffset t) pure $ parseUTCOffset t
   propertyTypeB = mkSimpleContentLineValue . renderUTCOffset
 
 parseUTCOffset :: Text -> Maybe UTCOffset

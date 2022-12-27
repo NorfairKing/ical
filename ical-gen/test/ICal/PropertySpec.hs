@@ -69,26 +69,26 @@ spec = do
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "DTSTAMP;VALUE=DATE-TIME:19971210T080000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00)))))
-    propertyParseExampleSpec
+    propertyExampleSpec
       "DTSTAMP:19971210T080000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 10) (TimeOfDay 08 00 00)))))
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "DTSTAMP;VALUE=DATE-TIME:18581117T000000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
-    propertyParseExampleSpec
+    propertyExampleSpec
       "DTSTAMP:18581117T000000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
 
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
-    propertyParseExampleSpec
+    propertyExampleSpec
       "DTSTART:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
@@ -187,10 +187,10 @@ spec = do
     --
     --     DTEND;VALUE=DATE:19980704
     -- @
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "DTEND;VALUE=DATE-TIME:19960401T150000Z"
       (DateTimeEndDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
-    propertyParseExampleSpec
+    propertyExampleSpec
       "DTEND:19960401T150000Z"
       (DateTimeEndDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
     propertyExampleSpec
@@ -334,10 +334,10 @@ spec = do
                     ]
                 )
             )
-    propertyParseExampleSpec
+    propertyExampleSpec
       "EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z"
       val
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "EXDATE;VALUE=DATE-TIME:19960402T010000Z,19960403T010000Z,19960404T010000Z"
       val
 
@@ -368,10 +368,10 @@ spec = do
                       (timeOfDayToTime (TimeOfDay 12 30 00))
                   ]
               )
-    propertyParseExampleSpec
+    propertyExampleSpec
       "RDATE:19970714T123000Z"
       ex1
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "RDATE;VALUE=DATE-TIME:19970714T123000Z"
       ex1
     --     RDATE;TZID=America/New_York:19970714T083000
@@ -383,10 +383,10 @@ spec = do
                   [LocalTime (fromGregorian 1997 7 14) (TimeOfDay 08 30 00)]
               )
 
-    propertyParseExampleSpec
+    propertyExampleSpec
       "RDATE;TZID=America/New_York:19970714T083000"
       ex2
-    propertyRenderExampleSpec
+    propertyParseExampleSpec
       "RDATE;VALUE=DATE-TIME;TZID=America/New_York:19970714T083000"
       ex2
 

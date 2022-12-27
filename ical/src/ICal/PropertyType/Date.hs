@@ -89,7 +89,7 @@ instance IsPropertyType Date where
 
 instance IsPropertyType (Set Date) where
   propertyTypeP = propertyTypeSetP
-  propertyTypeB = insertParam TypeDate . propertyTypeSetB
+  propertyTypeB = propertyTypeSetB
 
 diffDates :: Date -> Date -> Integer
 diffDates (Date a) (Date b) = Time.diffDays a b
@@ -103,7 +103,7 @@ dateP ContentLineValue {..} = do
   parseDate contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
-dateB = insertParam TypeDate . mkSimpleContentLineValue . renderDate
+dateB = mkSimpleContentLineValue . renderDate
 
 parseDate :: Text -> Conform PropertyTypeParseError void void Date
 parseDate = fmap Date . parseTimeStr dateFormatStr . T.unpack

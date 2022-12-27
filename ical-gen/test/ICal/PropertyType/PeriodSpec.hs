@@ -35,10 +35,10 @@ spec = do
           (UTCTime (fromGregorian 1997 01 01) (timeOfDayToTime (TimeOfDay 18 00 00)))
           (UTCTime (fromGregorian 1997 01 02) (timeOfDayToTime (TimeOfDay 07 00 00)))
 
-  propertyTypeParseExampleSpec
+  propertyTypeExampleSpec
     (mkSimpleContentLineValue "19970101T180000Z/19970102T070000Z")
     ex1
-  propertyTypeRenderExampleSpec
+  propertyTypeParseExampleSpec
     ( ContentLineValue
         { contentLineValueParams = M.singleton "VALUE" ["PERIOD"],
           contentLineValueRaw = "19970101T180000Z/19970102T070000Z"
@@ -57,10 +57,10 @@ spec = do
                   durTimeSecond = 0
                 }
           )
-  propertyTypeParseExampleSpec
+  propertyTypeExampleSpec
     (mkSimpleContentLineValue "19970101T180000Z/PT5H30M")
     ex2
-  propertyTypeRenderExampleSpec
+  propertyTypeParseExampleSpec
     ( ContentLineValue
         { contentLineValueParams = M.singleton "VALUE" ["PERIOD"],
           contentLineValueRaw = "19970101T180000Z/PT5H30M"

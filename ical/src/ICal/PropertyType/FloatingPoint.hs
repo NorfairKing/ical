@@ -11,6 +11,7 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import Text.Printf
 import Text.Read
@@ -56,7 +57,8 @@ instance Validity FloatingPoint where
 instance NFData FloatingPoint
 
 instance IsPropertyType FloatingPoint where
-  propertyTypeP ContentLineValue {..} =
+  propertyTypeP ContentLineValue {..} = do
+    parseOfValue TypeFloat contentLineValueParams
     case readMaybe (T.unpack contentLineValueRaw) of
       Nothing -> unfixableError $ UnparseableFloatingPoint contentLineValueRaw
       Just f -> pure (FloatingPoint f)
