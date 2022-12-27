@@ -6,6 +6,7 @@ module ICal.PropertyType.UTCOffset where
 
 import Control.DeepSeq
 import Data.Int
+import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -71,8 +72,8 @@ utcOffsetAbsBound = ((24 * 60) + 60) * 60 + 60
 instance NFData UTCOffset
 
 instance IsPropertyType UTCOffset where
+  propertyTypeValueType Proxy = TypeUTCOffset
   propertyTypeP ContentLineValue {..} = do
-    parseOfValue TypeUTCOffset contentLineValueParams
     let t = contentLineValueRaw
     maybe (unfixableError $ UnparseableUTCOffset t) pure $ parseUTCOffset t
   propertyTypeB = mkSimpleContentLineValue . renderUTCOffset

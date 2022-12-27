@@ -16,6 +16,7 @@ import Data.Void
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -89,6 +90,7 @@ instance Validity Duration
 instance NFData Duration
 
 instance IsPropertyType Duration where
+  propertyTypeValueType Proxy = TypeDuration
   propertyTypeP = parseDuration . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . renderDuration
 

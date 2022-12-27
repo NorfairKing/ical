@@ -4,6 +4,7 @@
 module ICal.PropertyType.FloatingPoint where
 
 import Control.DeepSeq
+import Data.Proxy
 import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
@@ -57,8 +58,8 @@ instance Validity FloatingPoint where
 instance NFData FloatingPoint
 
 instance IsPropertyType FloatingPoint where
+  propertyTypeValueType Proxy = TypeFloat
   propertyTypeP ContentLineValue {..} = do
-    parseOfValue TypeFloat contentLineValueParams
     case readMaybe (T.unpack contentLineValueRaw) of
       Nothing -> unfixableError $ UnparseableFloatingPoint contentLineValueRaw
       Just f -> pure (FloatingPoint f)

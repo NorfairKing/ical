@@ -2,7 +2,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -10,6 +9,7 @@
 module ICal.PropertyType.Date where
 
 import Control.DeepSeq
+import Data.Proxy
 import Data.Set (Set)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -84,10 +84,12 @@ instance Validity Date
 instance NFData Date
 
 instance IsPropertyType Date where
+  propertyTypeValueType Proxy = TypeDate
   propertyTypeP = dateP
   propertyTypeB = dateB
 
 instance IsPropertyType (Set Date) where
+  propertyTypeValueType Proxy = TypeDate
   propertyTypeP = propertyTypeSetP
   propertyTypeB = propertyTypeSetB
 
@@ -98,9 +100,7 @@ dateAddDays :: Integer -> Date -> Date
 dateAddDays diff (Date a) = Date $ Time.addDays diff a
 
 dateP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Date
-dateP ContentLineValue {..} = do
-  parseOfValue TypeDate contentLineValueParams
-  parseDate contentLineValueRaw
+dateP = parseDate . contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
 dateB = mkSimpleContentLineValue . renderDate

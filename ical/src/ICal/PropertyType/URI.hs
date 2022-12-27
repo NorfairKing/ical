@@ -8,6 +8,7 @@
 module ICal.PropertyType.URI where
 
 import Control.DeepSeq
+import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -17,6 +18,7 @@ import Data.Validity.URI
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.PropertyType.Class
 import qualified Network.URI as Network
 
@@ -61,6 +63,7 @@ instance Validity URI
 instance NFData URI
 
 instance IsPropertyType URI where
+  propertyTypeValueType Proxy = TypeURI
   propertyTypeP clv =
     let t = contentLineValueRaw clv
      in maybe (unfixableError $ UnparseableURI t) pure $ parseURI t

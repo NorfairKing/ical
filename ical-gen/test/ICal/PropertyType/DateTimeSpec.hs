@@ -9,8 +9,10 @@ module ICal.PropertyType.DateTimeSpec where
 import Data.Either
 import qualified Data.Map as M
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
+import Data.Void
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.Gen
 import Test.Syd
@@ -108,4 +110,4 @@ spec = do
               { contentLineValueRaw = "19970714T173000Z",
                 contentLineValueParams = M.singleton "VALUE" ["DATE"]
               }
-       in runConformStrict (dateTimeP clv) `shouldSatisfy` isLeft
+       in runConformStrict (typedPropertyTypeP clv :: Conform PropertyTypeParseError Void Void DateTime) `shouldSatisfy` isLeft

@@ -10,8 +10,6 @@ module ICal.PropertyType.Class where
 
 import Control.Exception
 import Data.CaseInsensitive (CI)
-import Data.List.NonEmpty (NonEmpty)
-import Data.Map (Map)
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -115,6 +113,8 @@ instance Exception PropertyTypeParseError where
 --
 -- >>> forAllValid $ \property -> propertyTypeP (propertyTypeB property) == Right property
 class IsPropertyType propertyType where
+  propertyTypeValueType :: Proxy propertyType -> ValueDataType
+
   -- | Parser for the property type
   propertyTypeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void propertyType
 
@@ -180,6 +180,7 @@ class IsPropertyType propertyType where
 --     Project XYZ Final Review\nConference Room - 3B\nCome Prepared.
 -- @
 instance IsPropertyType Text where
+  propertyTypeValueType Proxy = TypeText
   propertyTypeP = pure . unEscapeText . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
@@ -191,7 +192,7 @@ propertyTypeListP clv =
       let clvs = do
             raw <- T.splitOn "," (contentLineValueRaw clv)
             pure (clv {contentLineValueRaw = raw})
-       in mapM propertyTypeP clvs
+       in mapM typedPropertyTypeP clvs
 
 propertyTypeListB :: IsPropertyType propertyType => [propertyType] -> ContentLineValue
 propertyTypeListB = \case
@@ -209,15 +210,28 @@ propertyTypeSetP = fmap S.fromList . propertyTypeListP
 propertyTypeSetB :: IsPropertyType propertyType => Set propertyType -> ContentLineValue
 propertyTypeSetB = propertyTypeListB . S.toList
 
-parseOfValue :: ValueDataType -> Map ParamName (NonEmpty ParamValue) -> Conform PropertyTypeParseError Void Void ()
-parseOfValue typ params = do
-  mValueDataType <- conformMapError ParameterParseError $ optionalParam params
+typedPropertyTypeP ::
+  forall propertyType.
+  IsPropertyType propertyType =>
+  ContentLineValue ->
+  Conform PropertyTypeParseError Void Void propertyType
+typedPropertyTypeP clv = do
+  mValueDataType <- conformMapError ParameterParseError $ optionalParam (contentLineValueParams clv)
+  let typ = propertyTypeValueType (Proxy :: Proxy propertyType)
   case mValueDataType of
     Just typ' ->
       if typ == typ'
         then pure ()
         else unfixableError $ UnexpectedValueType typ' typ
     _ -> pure ()
+  propertyTypeP clv
+
+typedPropertyTypeB ::
+  forall propertyType.
+  IsPropertyType propertyType =>
+  propertyType ->
+  ContentLineValue
+typedPropertyTypeB = insertParam (propertyTypeValueType (Proxy :: Proxy propertyType)) . propertyTypeB
 
 -- | Escape 'Text'
 --

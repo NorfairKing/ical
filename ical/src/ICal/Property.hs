@@ -121,11 +121,12 @@ propertyContentLineB :: forall property. IsProperty property => property -> Cont
 propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . propertyB
 
 viaPropertyTypeP ::
+  forall propertyType property.
   IsPropertyType propertyType =>
   (propertyType -> Conform PropertyParseError Void Void property) ->
   (ContentLineValue -> Conform PropertyParseError Void Void property)
 viaPropertyTypeP func clv = do
-  propertyType <- conformMapError PropertyTypeParseError $ propertyTypeP clv
+  propertyType <- conformMapError PropertyTypeParseError $ typedPropertyTypeP clv
   func propertyType
 
 wrapPropertyTypeP ::
@@ -467,7 +468,7 @@ instance IsProperty RecurrenceID where
     -- @
     -- Value Type:  The default value type is DATE-TIME.
     -- @
-    RecurrenceIDDate d -> insertParam TypeDate $ propertyTypeB d
+    RecurrenceIDDate d -> typedPropertyTypeB d
 
 validateMRecurrenceIDMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceID -> Validation
 validateMRecurrenceIDMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
@@ -769,7 +770,7 @@ instance IsProperty DateTimeStart where
     -- @
     -- Value Type:  The default value type is DATE-TIME.
     -- @
-    DateTimeStartDate date -> insertParam TypeDate $ propertyTypeB date
+    DateTimeStartDate date -> typedPropertyTypeB date
 
 -- | Classification
 --
@@ -1476,7 +1477,7 @@ instance IsProperty DateTimeEnd where
     -- @
     -- Value Type:  The default value type is DATE-TIME.
     -- @
-    DateTimeEndDate date -> insertParam TypeDate $ propertyTypeB date
+    DateTimeEndDate date -> typedPropertyTypeB date
 
 -- | Duration
 --
@@ -1940,7 +1941,7 @@ instance IsProperty ExceptionDateTimes where
     -- @
     -- Value Type:  The default value type for this property is DATE-TIME.
     -- @
-    ExceptionDates ds -> insertParam TypeDate $ propertyTypeB ds
+    ExceptionDates ds -> typedPropertyTypeB ds
 
 -- | Recurrence Date-Times
 --
@@ -2058,5 +2059,5 @@ instance IsProperty RecurrenceDateTimes where
     -- @
     -- Value Type:  The default value type for this property is DATE-TIME.
     -- @
-    RecurrenceDates ds -> insertParam TypeDate $ propertyTypeB ds
-    RecurrencePeriods ps -> insertParam TypePeriod $ propertyTypeB ps
+    RecurrenceDates ds -> typedPropertyTypeB ds
+    RecurrencePeriods ps -> typedPropertyTypeB ps

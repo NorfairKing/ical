@@ -9,6 +9,7 @@ module ICal.PropertyType.DateSpec where
 import Data.Either
 import qualified Data.Map as M
 import Data.Time (fromGregorian)
+import Data.Void
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.PropertyType
@@ -38,11 +39,12 @@ spec = do
       (Date (fromGregorian 1997 07 14))
     it "fails to parse this date, correctly" $
       runConformStrict
-        ( dateP
+        ( typedPropertyTypeP
             ( ContentLineValue
                 { contentLineValueRaw = "19970714",
                   contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
                 }
-            )
+            ) ::
+            Conform PropertyTypeParseError Void Void Date
         )
         `shouldSatisfy` isLeft

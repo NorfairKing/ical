@@ -12,6 +12,7 @@
 module ICal.PropertyType.DateTimes where
 
 import Control.DeepSeq
+import Data.Proxy
 import Data.Set
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -74,12 +75,12 @@ setShowsPrec go d set =
 instance NFData DateTimes
 
 instance IsPropertyType DateTimes where
+  propertyTypeValueType Proxy = TypeDateTime
   propertyTypeP = dateTimesP
   propertyTypeB = dateTimesB
 
 dateTimesP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTimes
-dateTimesP ContentLineValue {..} = do
-  parseOfValue TypeDateTime contentLineValueParams
+dateTimesP ContentLineValue {..} =
   if T.null contentLineValueRaw
     then pure DateTimesEmpty
     else case lookupParam contentLineValueParams of

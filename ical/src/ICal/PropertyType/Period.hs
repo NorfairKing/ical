@@ -95,8 +95,8 @@ instance Validity Period where
 instance NFData Period
 
 instance IsPropertyType Period where
+  propertyTypeValueType Proxy = TypePeriod
   propertyTypeP clv = do
-    parseOfValue TypePeriod $ contentLineValueParams clv
     let t = contentLineValueRaw clv
     case T.splitOn "/" t of
       [startStr, endOrDurationStr] -> do
@@ -123,5 +123,6 @@ instance IsPropertyType Period where
         )
 
 instance IsPropertyType (Set Period) where
+  propertyTypeValueType Proxy = TypePeriod
   propertyTypeP = propertyTypeSetP
   propertyTypeB = propertyTypeSetB

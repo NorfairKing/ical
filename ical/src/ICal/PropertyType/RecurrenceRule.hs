@@ -536,6 +536,7 @@ instance Validity RecurrenceRule where
 instance NFData RecurrenceRule
 
 instance IsPropertyType RecurrenceRule where
+  propertyTypeValueType Proxy = TypeRecur
   propertyTypeP = recurrenceRuleP
   propertyTypeB = recurrenceRuleB
 
@@ -543,7 +544,6 @@ recurrenceRuleP ::
   ContentLineValue ->
   Conform PropertyTypeParseError Void Void RecurrenceRule
 recurrenceRuleP ContentLineValue {..} = do
-  parseOfValue TypeRecur contentLineValueParams
   let parts = T.splitOn ";" contentLineValueRaw
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
     [] -> error "cannot happen because T.splitOn never returns an empty list."

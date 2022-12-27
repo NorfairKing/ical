@@ -11,6 +11,7 @@
 module ICal.PropertyType.Time where
 
 import Control.DeepSeq
+import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
@@ -171,6 +172,7 @@ instance Show Time where
 instance NFData Time
 
 instance IsPropertyType Time where
+  propertyTypeValueType Proxy = TypeTime
   propertyTypeP = timeP
   propertyTypeB = timeB
 
@@ -189,7 +191,6 @@ timeOfDayShowsPrec d (Time.TimeOfDay h_ m_ s_) =
 
 timeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time
 timeP ContentLineValue {..} = do
-  parseOfValue TypeTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
     Nothing ->

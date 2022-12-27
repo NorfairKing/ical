@@ -13,6 +13,7 @@ module ICal.PropertyType.DateTime where
 
 import Control.DeepSeq
 import qualified Data.Map as M
+import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -220,6 +221,7 @@ diffTimeShowsPrec d diffTime =
 instance NFData DateTime
 
 instance IsPropertyType DateTime where
+  propertyTypeValueType Proxy = TypeDateTime
   propertyTypeP = dateTimeP
   propertyTypeB = dateTimeB
 
@@ -239,7 +241,6 @@ dateTimeDate =
 
 dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTime
 dateTimeP clv@ContentLineValue {..} = do
-  parseOfValue TypeDateTime contentLineValueParams
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
     Nothing ->
