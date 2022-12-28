@@ -1,5 +1,5 @@
 { mkDerivation, base, bytestring, case-insensitive, containers
-, criterion, deepseq, dlist, genvalidity, genvalidity-bytestring
+, criterion, deepseq, dlist, genvalidity
 , genvalidity-case-insensitive, genvalidity-containers
 , genvalidity-criterion, genvalidity-network-uri
 , genvalidity-sydtest, genvalidity-text, genvalidity-time
@@ -16,13 +16,12 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     base bytestring case-insensitive containers dlist genvalidity
-    genvalidity-bytestring genvalidity-case-insensitive
-    genvalidity-containers genvalidity-network-uri genvalidity-sydtest
-    genvalidity-text genvalidity-time ical megaparsec network-uri
-    QuickCheck sydtest text time
+    genvalidity-case-insensitive genvalidity-containers
+    genvalidity-network-uri genvalidity-sydtest genvalidity-text
+    genvalidity-time ical QuickCheck sydtest text time
   ];
   executableHaskellDepends = [
-    base containers ical path path-io safe-coloured-text
+    base containers path path-io safe-coloured-text
     safe-coloured-text-terminfo text vector
   ];
   testHaskellDepends = [

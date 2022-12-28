@@ -8,7 +8,7 @@ mkDerivation {
   version = "0.0.0.0";
   src = ./.;
   libraryHaskellDepends = [
-    base containers genvalidity genvalidity-containers ical ical-gen
+    base containers genvalidity genvalidity-containers ical-gen
     ical-recurrence
   ];
   testHaskellDepends = [

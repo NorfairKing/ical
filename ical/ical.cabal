@@ -46,12 +46,10 @@ library
     , megaparsec
     , mtl
     , network-uri
-    , parser-combinators
     , text
     , time
     , time-compat
     , validity
-    , validity-bytestring
     , validity-case-insensitive
     , validity-containers
     , validity-network-uri

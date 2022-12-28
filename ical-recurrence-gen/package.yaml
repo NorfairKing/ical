@@ -6,16 +6,15 @@ extra-source-files:
 
 dependencies:
 - base >= 4.7 && < 5
-- containers
-- ical
-- ical-gen
-- ical-recurrence
 
 library:
   source-dirs: src
   dependencies:
+  - containers
   - genvalidity
   - genvalidity-containers
+  - ical-gen
+  - ical-recurrence
 
 tests:
   ical-recurrence-test:
@@ -32,6 +31,9 @@ tests:
     - containers
     - genvalidity-sydtest
     - genvalidity-time
+    - ical
+    - ical-gen
+    - ical-recurrence
     - ical-recurrence-gen
     - path
     - path-io

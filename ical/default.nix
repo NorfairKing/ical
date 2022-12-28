@@ -1,7 +1,6 @@
 { mkDerivation, base, bytestring, case-insensitive, containers
-, deepseq, dlist, lib, megaparsec, mtl, network-uri
-, parser-combinators, text, time, time-compat, validity
-, validity-bytestring, validity-case-insensitive
+, deepseq, dlist, lib, megaparsec, mtl, network-uri, text, time
+, time-compat, validity, validity-case-insensitive
 , validity-containers, validity-network-uri, validity-text
 , validity-time
 }:
@@ -11,10 +10,9 @@ mkDerivation {
   src = ./.;
   libraryHaskellDepends = [
     base bytestring case-insensitive containers deepseq dlist
-    megaparsec mtl network-uri parser-combinators text time time-compat
-    validity validity-bytestring validity-case-insensitive
-    validity-containers validity-network-uri validity-text
-    validity-time
+    megaparsec mtl network-uri text time time-compat validity
+    validity-case-insensitive validity-containers validity-network-uri
+    validity-text validity-time
   ];
   testHaskellDepends = [ base ];
   license = "unknown";

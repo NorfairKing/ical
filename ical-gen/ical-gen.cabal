@@ -75,7 +75,6 @@ library
     , containers
     , dlist
     , genvalidity
-    , genvalidity-bytestring
     , genvalidity-case-insensitive
     , genvalidity-containers
     , genvalidity-network-uri
@@ -83,8 +82,6 @@ library
     , genvalidity-text
     , genvalidity-time
     , ical
-    , megaparsec
-    , network-uri
     , sydtest
     , text
     , time
@@ -100,7 +97,6 @@ executable ical-spec-coverage
   build-depends:
       base >=4.7 && <5
     , containers
-    , ical
     , path
     , path-io
     , safe-coloured-text

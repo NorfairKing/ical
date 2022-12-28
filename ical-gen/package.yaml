@@ -3,7 +3,6 @@ version: 0.0.0.0
 
 dependencies:
 - base >= 4.7 && < 5
-- ical
 
 extra-source-files:
 - test_resources/**/*
@@ -17,15 +16,13 @@ library:
   - containers
   - dlist
   - genvalidity
-  - genvalidity-bytestring
   - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-network-uri
   - genvalidity-sydtest
   - genvalidity-text
   - genvalidity-time
-  - megaparsec
-  - network-uri
+  - ical
   - sydtest
   - text
   - time
@@ -84,6 +81,7 @@ tests:
     - dlist
     - genvalidity
     - genvalidity-sydtest
+    - ical
     - ical-gen
     - megaparsec
     - network-uri
