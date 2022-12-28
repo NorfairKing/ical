@@ -66,7 +66,7 @@ renderEventOccurrence EventOccurrence {..} =
     ]
 
 spec :: Spec
-spec =
+spec = do
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $
@@ -74,7 +74,25 @@ spec =
         contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
         event <- shouldConform $ parseComponentFromText contents
         goldenFile <- replaceExtension ".occ" eventFile
-        pure $ pureGoldenEventRecurrenceFile goldenFile (fromGregorian 2022 12 27) event
+        pure $ pureGoldenEventRecurrenceFile goldenFile (fromGregorian 2023 01 01) event
+  scenarioDir "test_resources/calendar" $ \fp -> do
+    eventFile <- liftIO $ parseRelFile fp
+    when (fileExtension eventFile == Just ".ics") $
+      it "recurs this file correctly" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
+        cal <- shouldConform $ parseVCalendar contents
+        goldenFile <- replaceExtension ".occ" eventFile
+        pure $ pureGoldenCalendarRecurrenceFile goldenFile (fromGregorian 2022 12 27) cal
+
+pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set EventOccurrence)
+pureGoldenCalendarRecurrenceFile goldenFile day calendar =
+  goldenEventOccurrenceFile goldenFile $
+    shouldConform $ do
+      runR (calendarTimeZoneMap calendar) $
+        fmap S.unions $
+          mapM
+            (recurEvents day . getRecurringEvent)
+            (calendarEvents calendar)
 
 pureGoldenEventRecurrenceFile :: Path Rel File -> Day -> Event -> GoldenTest (Set EventOccurrence)
 pureGoldenEventRecurrenceFile goldenFile day event =

@@ -8,6 +8,18 @@ name:           ical-recurrence-gen
 version:        0.0.0.0
 build-type:     Simple
 extra-source-files:
+    test_resources/calendar/zoned-border.ics
+    test_resources/calendar/zoned-border.occ
+    test_resources/calendar/zoned-complex.ics
+    test_resources/calendar/zoned-complex.occ
+    test_resources/calendar/zoned-rdate.ics
+    test_resources/calendar/zoned-rdate.occ
+    test_resources/calendar/zoned-recurring.ics
+    test_resources/calendar/zoned-recurring.occ
+    test_resources/calendar/zoned.ics
+    test_resources/calendar/zoned.occ
+    test_resources/calendar/zurich.ics
+    test_resources/calendar/zurich.occ
     test_resources/event/daily-bysetpos.ics
     test_resources/event/daily-bysetpos.occ
     test_resources/event/leapdays.ics

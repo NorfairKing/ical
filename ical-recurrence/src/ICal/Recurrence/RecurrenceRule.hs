@@ -49,22 +49,7 @@ recurRecurrenceRuleLocalTimes ::
   LocalTime ->
   RecurrenceRule ->
   R (Set LocalTime)
-recurRecurrenceRuleLocalTimes = recurUntilCount lessThanUntil
-
--- TODO: < or <=?
-lessThanUntil :: LocalTime -> Until -> Bool
-lessThanUntil lt = \case
-  UntilDate d -> localDay lt <= unDate d
-  UntilDateTimeFloating lt' -> lt <= lt'
-  UntilDateTimeUTC ut -> lt <= utcToLocalTime utc ut -- TODO is this correct?!
-
-recurUntilCount ::
-  (LocalTime -> Until -> Bool) ->
-  Day ->
-  LocalTime ->
-  RecurrenceRule ->
-  R (Set LocalTime)
-recurUntilCount leFunc limit start recurrenceRule =
+recurRecurrenceRuleLocalTimes limit start recurrenceRule =
   S.insert start <$> case recurrenceRuleUntilCount recurrenceRule of
     Nothing -> goIndefinitely
     Just (Left u) -> goUntil u
@@ -78,7 +63,7 @@ recurUntilCount leFunc limit start recurrenceRule =
     recurUntil :: Until -> [LocalTime] -> Set LocalTime
     recurUntil _ [] = S.empty
     recurUntil u (l : ls) =
-      if l `leFunc` u
+      if l `lessThanUntil` u
         then S.insert l $ recurUntil u ls
         else S.empty
 
@@ -90,6 +75,13 @@ recurUntilCount leFunc limit start recurrenceRule =
 
     goIndefinitely :: R (Set LocalTime)
     goIndefinitely = S.fromList <$> localTimes
+
+-- TODO: < or <=?
+lessThanUntil :: LocalTime -> Until -> Bool
+lessThanUntil lt = \case
+  UntilDate d -> localDay lt <= unDate d
+  UntilDateTimeFloating lt' -> lt <= lt'
+  UntilDateTimeUTC ut -> lt <= utcToLocalTime utc ut -- TODO is this correct?!
 
 -- This function takes care of the 'rRuleFrequency' part.
 recurrenceRuleDateTimeOccurrences :: Day -> LocalTime -> RecurrenceRule -> R [LocalTime]

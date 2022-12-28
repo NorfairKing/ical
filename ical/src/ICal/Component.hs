@@ -17,6 +17,8 @@ where
 
 import Control.DeepSeq
 import Data.DList (DList (..))
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.Validity
@@ -28,6 +30,7 @@ import ICal.Component.Event
 import ICal.Component.TimeZone
 import ICal.Conformance
 import ICal.ContentLine
+import ICal.Parameter
 import ICal.Property
 import Text.Megaparsec
 
@@ -191,3 +194,6 @@ makeCalendar prodId =
       calendarEvents = [],
       calendarTimeZones = []
     }
+
+calendarTimeZoneMap :: Calendar -> Map TZIDParam TimeZone
+calendarTimeZoneMap = M.fromList . map (\tz -> (tzidParam $ timeZoneId tz, tz)) . calendarTimeZones
