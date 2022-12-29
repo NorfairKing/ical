@@ -120,4 +120,4 @@ renderUTCOffset =
     . unUTCOffset
 
 utcOffsetTimeZone :: UTCOffset -> Time.TimeZone
-utcOffsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w
+utcOffsetTimeZone (UTCOffset w) = Time.minutesToTimeZone $ fromIntegral w `quot` 60

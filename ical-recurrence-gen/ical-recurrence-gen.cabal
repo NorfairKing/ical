@@ -10,16 +10,22 @@ build-type:     Simple
 extra-source-files:
     test_resources/calendar/zoned-border.ics
     test_resources/calendar/zoned-border.occ
+    test_resources/calendar/zoned-border.res
     test_resources/calendar/zoned-complex.ics
     test_resources/calendar/zoned-complex.occ
+    test_resources/calendar/zoned-complex.res
     test_resources/calendar/zoned-rdate.ics
     test_resources/calendar/zoned-rdate.occ
+    test_resources/calendar/zoned-rdate.res
     test_resources/calendar/zoned-recurring.ics
     test_resources/calendar/zoned-recurring.occ
+    test_resources/calendar/zoned-recurring.res
     test_resources/calendar/zoned.ics
     test_resources/calendar/zoned.occ
+    test_resources/calendar/zoned.res
     test_resources/calendar/zurich.ics
     test_resources/calendar/zurich.occ
+    test_resources/calendar/zurich.res
     test_resources/event/daily-bysetpos.ics
     test_resources/event/daily-bysetpos.occ
     test_resources/event/leapdays.ics
