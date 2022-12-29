@@ -55,6 +55,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Time as Time
 import ICal
+import ICal.Conformance
 import ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule
@@ -349,8 +350,8 @@ dateTimeExactDuration start end = case (start, end) of
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> do
     tz1 <- requireTimeZone tzid1
     tz2 <- requireTimeZone tzid2
-    u1 <- resolveLocalTime tz1 lt1
-    u2 <- resolveLocalTime tz2 lt2
+    u1 <- resolveLocalTimeR tz1 lt1
+    u2 <- resolveLocalTimeR tz2 lt2
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
   _ -> unfixableErrorR $ ExactDurationMismatch start end
 
@@ -360,8 +361,8 @@ addExactDuration ndt = \case
   DateTimeUTC ut -> pure $ DateTimeUTC $ Time.addUTCTime ndt ut
   DateTimeZoned tzid lt -> do
     zone <- requireTimeZone tzid
-    ut <- resolveLocalTime zone lt
-    lt' <- unresolveUTCTime zone (Time.addUTCTime ndt ut)
+    ut <- resolveLocalTimeR zone lt
+    lt' <- unresolveUTCTimeR zone (Time.addUTCTime ndt ut)
     pure $ DateTimeZoned tzid lt'
 
 resolveEventOccurrence :: Time.TimeZone -> EventOccurrence -> R ResolvedEvent
@@ -405,17 +406,20 @@ resolveDateTime myZone = \case
   DateTimeUTC utcTime -> pure $ resolveUTCTime myZone utcTime
   DateTimeZoned tzid lt -> do
     zone <- requireTimeZone tzid
-    ut <- resolveLocalTime zone lt
+    ut <- resolveLocalTimeR zone lt
     pure $ resolveUTCTime myZone ut
 
 resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
 resolveUTCTime = Time.utcToLocalTime
 
-resolveLocalTime :: TimeZone -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTimeR zone localTime = R $ lift $ resolveLocalTime zone localTime
+
+resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv Time.UTCTime
 resolveLocalTime zone localTime = do
-  mUtcTime <- R $ lift $ tryToResolveLocalTime zone localTime
+  mUtcTime <- tryToResolveLocalTime zone localTime
   case mUtcTime of
-    Nothing -> unfixableErrorR $ FailedToResolveLocalTime zone localTime
+    Nothing -> unfixableError $ FailedToResolveLocalTime zone localTime
     Just ut -> pure ut
 
 tryToResolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
@@ -461,11 +465,14 @@ timeZoneRuleOccurrences limit zone = do
         occurrences
   pure $ M.unions maps
 
-unresolveUTCTime :: TimeZone -> Time.UTCTime -> R Time.LocalTime
+unresolveUTCTimeR :: TimeZone -> Time.UTCTime -> R Time.LocalTime
+unresolveUTCTimeR zone utcTime = R $ lift $ unresolveUTCTime zone utcTime
+
+unresolveUTCTime :: TimeZone -> Time.UTCTime -> Resolv Time.LocalTime
 unresolveUTCTime zone utcTime = do
-  mUtcTime <- R $ lift $ tryToUnresolveUTCTime zone utcTime
+  mUtcTime <- tryToUnresolveUTCTime zone utcTime
   case mUtcTime of
-    Nothing -> unfixableErrorR $ FailedToUnresolveUTCTime zone utcTime
+    Nothing -> unfixableError $ FailedToUnresolveUTCTime zone utcTime
     Just lt -> pure lt
 
 tryToUnresolveUTCTime :: TimeZone -> Time.UTCTime -> Resolv (Maybe Time.LocalTime)

@@ -2,7 +2,6 @@
 
 module ICal.Recurrence.TimeZoneSpec (spec) where
 
-import qualified Data.Map as M
 import qualified Data.Time as Time
 import ICal.Component
 import ICal.Component.Gen ()
@@ -15,6 +14,19 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  it "resolution and unresolution roundtrip with a single observance" $ do
+    forAllValid $ \tzid ->
+      forAllValid $ \start ->
+        forAllValid $ \fromOffset ->
+          forAllValid $ \toOffset ->
+            forAllValid $ \lt -> do
+              let from = TimeZoneOffsetFrom fromOffset
+                  to = TimeZoneOffsetTo toOffset
+                  tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
+              actual <- shouldConform $ do
+                resolved <- resolveLocalTime tz lt
+                unresolveUTCTime tz resolved
+              actual `shouldBe` lt
   describe "resolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
@@ -30,8 +42,7 @@ spec = do
                         if lt < start
                           then fromOffset
                           else toOffset
-                    m = M.singleton (tzidParam tzid) tz
-                resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
+                resolved <- shouldConform $ resolveLocalTime tz lt
                 resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
     it "Works for any single-daylight-observance timezone just like the time library would" $
@@ -48,8 +59,7 @@ spec = do
                         if lt < start
                           then fromOffset
                           else toOffset
-                    m = M.singleton (tzidParam tzid) tz
-                resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
+                resolved <- shouldConform $ resolveLocalTime tz lt
                 resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
   describe "unresolveDateTime" $ do
@@ -64,11 +74,10 @@ spec = do
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
                     expectedTz =
                       utcOffsetTimeZone $
-                        if ut < Time.localTimeToUTC (utcOffsetTimeZone (unTimeZoneOffsetFrom from)) start
+                        if ut < Time.localTimeToUTC (utcOffsetTimeZone fromOffset) start
                           then fromOffset
                           else toOffset
-                    m = M.singleton (tzidParam tzid) tz
-                resolved <- shouldConform $ runR m $ unresolveUTCTime tz ut
+                resolved <- shouldConform $ unresolveUTCTime tz ut
                 resolved `shouldBe` Time.utcToLocalTime expectedTz ut
 
     it "Works for any single-daylight-observance timezone just like the time library would" $ do
@@ -82,9 +91,8 @@ spec = do
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
                     expectedTz =
                       utcOffsetTimeZone $
-                        if ut < Time.localTimeToUTC (utcOffsetTimeZone (unTimeZoneOffsetFrom from)) start
+                        if ut < Time.localTimeToUTC (utcOffsetTimeZone fromOffset) start
                           then fromOffset
                           else toOffset
-                    m = M.singleton (tzidParam tzid) tz
-                resolved <- shouldConform $ runR m $ unresolveUTCTime tz ut
+                resolved <- shouldConform $ unresolveUTCTime tz ut
                 resolved `shouldBe` Time.utcToLocalTime expectedTz ut
