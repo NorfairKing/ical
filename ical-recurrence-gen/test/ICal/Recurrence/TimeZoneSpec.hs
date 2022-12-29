@@ -25,7 +25,11 @@ spec = do
                 let from = TimeZoneOffsetFrom fromOffset
                     to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
-                    expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
+                    expectedTz =
+                      utcOffsetTimeZone $
+                        if lt < start
+                          then fromOffset
+                          else toOffset
                     m = M.singleton (tzidParam tzid) tz
                 resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
                 resolved `shouldBe` Time.localTimeToUTC expectedTz lt
@@ -39,30 +43,48 @@ spec = do
                 let from = TimeZoneOffsetFrom fromOffset
                     to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
-                    expectedTz = utcOffsetTimeZone $ if lt < start then fromOffset else toOffset
+                    expectedTz =
+                      utcOffsetTimeZone $
+                        if lt < start
+                          then fromOffset
+                          else toOffset
                     m = M.singleton (tzidParam tzid) tz
                 resolved <- shouldConform $ runR m $ resolveLocalTime tz lt
                 resolved `shouldBe` Time.localTimeToUTC expectedTz lt
 
-  xdescribe "unresolveDateTime" $ do
+  describe "unresolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $ do
       forAllValid $ \tzid ->
         forAllValid $ \start ->
-          forAllValid $ \from ->
-            forAllValid $ \toMinutes ->
-              forAllValid $ \ut ->
-                let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
+          forAllValid $ \fromOffset ->
+            forAllValid $ \toOffset ->
+              forAllValid $ \ut -> do
+                let from = TimeZoneOffsetFrom fromOffset
+                    to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [StandardObservance $ Standard $ makeObservance start from to]
-                    timeTz = Time.minutesToTimeZone toMinutes
-                 in unresolveLocalTime tz ut `shouldBe` Time.utcToLocalTime timeTz ut
+                    expectedTz =
+                      utcOffsetTimeZone $
+                        if ut < Time.localTimeToUTC (utcOffsetTimeZone (unTimeZoneOffsetFrom from)) start
+                          then fromOffset
+                          else toOffset
+                    m = M.singleton (tzidParam tzid) tz
+                resolved <- shouldConform $ runR m $ unresolveUTCTime tz ut
+                resolved `shouldBe` Time.utcToLocalTime expectedTz ut
 
     it "Works for any single-daylight-observance timezone just like the time library would" $ do
       forAllValid $ \tzid ->
         forAllValid $ \start ->
-          forAllValid $ \from ->
-            forAllValid $ \toMinutes ->
-              forAllValid $ \ut ->
-                let to = TimeZoneOffsetTo $ UTCOffset $ fromIntegral toMinutes
+          forAllValid $ \fromOffset ->
+            forAllValid $ \toOffset ->
+              forAllValid $ \ut -> do
+                let from = TimeZoneOffsetFrom fromOffset
+                    to = TimeZoneOffsetTo toOffset
                     tz = makeTimeZone tzid [DaylightObservance $ Daylight $ makeObservance start from to]
-                    timeTz = Time.minutesToTimeZone toMinutes
-                 in unresolveLocalTime tz ut `shouldBe` Time.utcToLocalTime timeTz ut
+                    expectedTz =
+                      utcOffsetTimeZone $
+                        if ut < Time.localTimeToUTC (utcOffsetTimeZone (unTimeZoneOffsetFrom from)) start
+                          then fromOffset
+                          else toOffset
+                    m = M.singleton (tzidParam tzid) tz
+                resolved <- shouldConform $ runR m $ unresolveUTCTime tz ut
+                resolved `shouldBe` Time.utcToLocalTime expectedTz ut

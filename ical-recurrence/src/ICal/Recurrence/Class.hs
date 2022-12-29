@@ -74,6 +74,7 @@ data RecurrenceError
   | ExactDurationMismatch !DateTime !DateTime
   | TimeZoneNotFound !TZIDParam
   | FailedToResolveLocalTime !TimeZone !Time.LocalTime
+  | FailedToUnresolveUTCTime !TimeZone !Time.UTCTime
   deriving (Show, Eq, Ord)
 
 instance Exception RecurrenceError

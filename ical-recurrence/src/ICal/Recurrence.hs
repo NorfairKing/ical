@@ -127,14 +127,6 @@ recurEvents limit RecurringEvent {..} =
           pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
---
--- TODO implement this:
--- @
--- The recurrence set generated with multiple "RRULE" properties is
--- undefined.
--- @
-
--- | Compute the occurrences that the recurrence rules imply
 recurRecurrenceRules ::
   -- | Limit
   Time.Day ->
@@ -369,8 +361,8 @@ addExactDuration ndt = \case
   DateTimeZoned tzid lt -> do
     zone <- requireTimeZone tzid
     ut <- resolveLocalTime zone lt
-    -- TODO if we could unresolve, we could implement this using DateTimeZoned.
-    pure $ DateTimeUTC ut
+    lt' <- unresolveUTCTime zone (Time.addUTCTime ndt ut)
+    pure $ DateTimeZoned tzid lt'
 
 resolveEventOccurrence :: Time.TimeZone -> EventOccurrence -> R ResolvedEvent
 resolveEventOccurrence myZone EventOccurrence {..} = do
@@ -428,18 +420,14 @@ resolveLocalTime zone localTime = do
 
 tryToResolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
 tryToResolveLocalTime zone localTime = do
-  mOffset <- chooseOffset zone localTime
+  mOffset <- chooseResolutionOffset zone localTime
   pure $ do
     offset <- mOffset
     let tz = utcOffsetTimeZone offset
     pure $ Time.localTimeToUTC tz localTime
 
--- TODO: It's not clear if un-resolution is something that's computable at all
-unresolveLocalTime :: TimeZone -> Time.UTCTime -> Time.LocalTime
-unresolveLocalTime = undefined
-
-chooseOffset :: TimeZone -> Time.LocalTime -> Resolv (Maybe UTCOffset)
-chooseOffset zone localTime = do
+chooseResolutionOffset :: TimeZone -> Time.LocalTime -> Resolv (Maybe UTCOffset)
+chooseResolutionOffset zone localTime = do
   offsetMap <- timeZoneRuleOccurrences (Time.localDay localTime) zone
   let mTransition = M.lookupLE localTime offsetMap <|> M.lookupGE localTime offsetMap
   pure $ do
@@ -451,7 +439,7 @@ chooseOffset zone localTime = do
 
 -- | Compute a map of the timezone utc offset transitions.
 --
--- It's a map of when the transition happened, to a tupled of the "from" offset
+-- It's a map of when the transition happened, to a tuple of the "from" offset
 -- and the "to" offset.
 timeZoneRuleOccurrences :: Time.Day -> TimeZone -> Resolv (Map Time.LocalTime (UTCOffset, UTCOffset))
 timeZoneRuleOccurrences limit zone = do
@@ -472,6 +460,46 @@ timeZoneRuleOccurrences limit zone = do
         )
         occurrences
   pure $ M.unions maps
+
+unresolveUTCTime :: TimeZone -> Time.UTCTime -> R Time.LocalTime
+unresolveUTCTime zone utcTime = do
+  mUtcTime <- R $ lift $ tryToUnresolveUTCTime zone utcTime
+  case mUtcTime of
+    Nothing -> unfixableErrorR $ FailedToUnresolveUTCTime zone utcTime
+    Just lt -> pure lt
+
+tryToUnresolveUTCTime :: TimeZone -> Time.UTCTime -> Resolv (Maybe Time.LocalTime)
+tryToUnresolveUTCTime zone utcTime = do
+  mOffset <- chooseUnresolutionOffset zone utcTime
+  pure $ do
+    offset <- mOffset
+    let tz = utcOffsetTimeZone offset
+    pure $ Time.utcToLocalTime tz utcTime
+
+chooseUnresolutionOffset :: TimeZone -> Time.UTCTime -> Resolv (Maybe UTCOffset)
+chooseUnresolutionOffset zone utcTime = do
+  offsetMap <- timeZoneRuleUTCOccurrences (Time.utctDay utcTime) zone
+  let mTransition = M.lookupLE utcTime offsetMap <|> M.lookupGE utcTime offsetMap
+  pure $ do
+    (transitionTime, (from, to)) <- mTransition
+    pure $
+      if utcTime < transitionTime
+        then from
+        else to
+
+-- | Compute a map of the timezone utc offset transitions, from UTC's perspective.
+--
+-- It's a map of when the transition happened (from UTC's perspective), to a tuple of the "from" offset and the "to" offset.
+--
+-- We use the 'from' part to compute the corresponding UTC time.
+timeZoneRuleUTCOccurrences :: Time.Day -> TimeZone -> Resolv (Map Time.UTCTime (UTCOffset, UTCOffset))
+timeZoneRuleUTCOccurrences limit zone = do
+  m <- timeZoneRuleOccurrences limit zone
+  let modify (lt, (from, to)) =
+        let tz = utcOffsetTimeZone from
+            ut = Time.localTimeToUTC tz lt
+         in (ut, (from, to))
+  pure $ M.fromList $ map modify $ M.toList m
 
 -- | Compute when, until a given limit, the following observance changes the UTC offset
 observanceOccurrences :: Time.Day -> Observance -> R (Set Time.LocalTime)
