@@ -365,49 +365,50 @@ addExactDuration ndt = \case
     lt' <- unresolveUTCTimeR zone (Time.addUTCTime ndt ut)
     pure $ DateTimeZoned tzid lt'
 
-resolveEventOccurrence :: Time.TimeZone -> EventOccurrence -> R ResolvedEvent
-resolveEventOccurrence myZone EventOccurrence {..} = do
-  resolvedEventStart <- mapM (resolveDateTimeStart myZone) eventOccurrenceStart
+resolveEventOccurrence :: EventOccurrence -> R ResolvedEvent
+resolveEventOccurrence EventOccurrence {..} = do
+  resolvedEventStart <- mapM resolveDateTimeStart eventOccurrenceStart
   resolvedEventEnd <- case eventOccurrenceEndOrDuration of
-    Just ced -> resolveEndDuration myZone resolvedEventStart ced
+    Just ced -> resolveEndDuration resolvedEventStart ced
     Nothing -> pure Nothing
   pure ResolvedEvent {..}
 
-resolveEndDuration :: Time.TimeZone -> Maybe (Either Time.Day Time.LocalTime) -> Either DateTimeEnd Duration -> R (Maybe (Either Time.Day Time.LocalTime))
-resolveEndDuration myZone mts = \case
-  Left end -> Just <$> resolveDateTimeEnd myZone end
+resolveEndDuration :: Maybe Timestamp -> Either DateTimeEnd Duration -> R (Maybe Timestamp)
+resolveEndDuration mts = \case
+  Left end -> Just <$> resolveDateTimeEnd end
   Right duration -> pure $ case mts of
     Nothing -> Nothing -- Start timestamp but no end timestamp: Nothing we can do.
     Just ts ->
       Just $
         let ndt = durationNominalDiffTime duration
          in case ts of
-              Left d ->
+              TimestampDay d ->
                 let (diff, _) = Time.timeToDaysAndTimeOfDay ndt
-                 in Left $ Time.addDays diff d
-              Right ut -> Right $ Time.addLocalTime ndt ut
+                 in TimestampDay $ Time.addDays diff d
+              TimestampLocalTime lt -> TimestampLocalTime $ Time.addLocalTime ndt lt
+              TimestampUTCTime ut -> TimestampUTCTime $ Time.addUTCTime ndt ut
 
-resolveDateTimeEnd :: Time.TimeZone -> DateTimeEnd -> R (Either Time.Day Time.LocalTime)
-resolveDateTimeEnd myZone = \case
-  DateTimeEndDate date -> pure $ Left $ resolveDate date
-  DateTimeEndDateTime dateTime -> Right <$> resolveDateTime myZone dateTime
+resolveDateTimeEnd :: DateTimeEnd -> R Timestamp
+resolveDateTimeEnd = \case
+  DateTimeEndDate date -> pure $ resolveDate date
+  DateTimeEndDateTime dateTime -> resolveDateTime dateTime
 
-resolveDateTimeStart :: Time.TimeZone -> DateTimeStart -> R (Either Time.Day Time.LocalTime)
-resolveDateTimeStart myZone = \case
-  DateTimeStartDate date -> pure $ Left $ resolveDate date
-  DateTimeStartDateTime dateTime -> Right <$> resolveDateTime myZone dateTime
+resolveDateTimeStart :: DateTimeStart -> R Timestamp
+resolveDateTimeStart = \case
+  DateTimeStartDate date -> pure $ resolveDate date
+  DateTimeStartDateTime dateTime -> resolveDateTime dateTime
 
-resolveDate :: Date -> Time.Day
-resolveDate = unDate
+resolveDate :: Date -> Timestamp
+resolveDate = TimestampDay . unDate
 
-resolveDateTime :: Time.TimeZone -> DateTime -> R Time.LocalTime
-resolveDateTime myZone = \case
-  DateTimeFloating lt -> pure lt
-  DateTimeUTC utcTime -> pure $ resolveUTCTime myZone utcTime
+resolveDateTime :: DateTime -> R Timestamp
+resolveDateTime = \case
+  DateTimeFloating lt -> pure $ TimestampLocalTime lt
+  DateTimeUTC ut -> pure $ TimestampUTCTime ut
   DateTimeZoned tzid lt -> do
     zone <- requireTimeZone tzid
     ut <- resolveLocalTimeR zone lt
-    pure $ resolveUTCTime myZone ut
+    pure $ TimestampUTCTime ut
 
 resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
 resolveUTCTime = Time.utcToLocalTime

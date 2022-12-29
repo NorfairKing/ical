@@ -15,7 +15,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
-import Data.Time.Format.ISO8601
 import ICal
 import ICal.Conformance
 import ICal.Conformance.TestUtils
@@ -53,7 +52,7 @@ spec = do
                 mapM
                   (recurEvents limit . getRecurringEvent)
                   (calendarEvents calendar)
-            S.fromList <$> mapM (resolveEventOccurrence utc) (S.toList occurrences)
+            S.fromList <$> mapM resolveEventOccurrence (S.toList occurrences)
         goldenFile <- replaceExtension ".res" eventFile
         pure $ goldenResolvedEventFile goldenFile $ pure resolvedEvents
 
@@ -172,13 +171,14 @@ parseResolvedEvent t = case T.splitOn "\n" t of
     pure ResolvedEvent {..}
   _ -> Nothing
   where
-    goM :: Text -> Maybe (Maybe (Either Day LocalTime))
+    goM :: Text -> Maybe (Maybe Timestamp)
     goM "" = pure Nothing
     goM s = Just <$> go (T.unpack s)
-    go :: String -> Maybe (Either Day LocalTime)
+    go :: String -> Maybe Timestamp
     go s =
-      (Right <$> iso8601ParseM s)
-        <|> (Left <$> iso8601ParseM s)
+      (TimestampLocalTime <$> parseTimeM False defaultTimeLocale localTimeFormat s)
+        <|> (TimestampUTCTime <$> parseTimeM False defaultTimeLocale utcTimeFormat s)
+        <|> (TimestampDay <$> parseTimeM False defaultTimeLocale dayFormat s)
 
 renderResolvedEvents :: Set ResolvedEvent -> Text
 renderResolvedEvents = foldMap renderResolvedEvent . S.toAscList
@@ -192,5 +192,15 @@ renderResolvedEvent ResolvedEvent {..} =
       ]
   where
     go = \case
-      Left d -> iso8601Show d
-      Right lt -> iso8601Show lt
+      TimestampDay d -> formatTime defaultTimeLocale dayFormat d
+      TimestampLocalTime lt -> formatTime defaultTimeLocale localTimeFormat lt
+      TimestampUTCTime lt -> formatTime defaultTimeLocale utcTimeFormat lt
+
+dayFormat :: String
+dayFormat = "Day %F"
+
+localTimeFormat :: String
+localTimeFormat = "Local %F %T"
+
+utcTimeFormat :: String
+utcTimeFormat = "UTC %F %T"

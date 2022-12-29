@@ -6,6 +6,7 @@ module ICal.Recurrence.Class
     Recurrence (..),
     EventOccurrence (..),
     ResolvedEvent (..),
+    Timestamp (..),
     R (..),
     runR,
     RecurrenceError (..),
@@ -61,12 +62,20 @@ instance Validity EventOccurrence
 
 -- An event occurrence, but with the exact start and end computed in a give Time.TimeZone.
 data ResolvedEvent = ResolvedEvent
-  { resolvedEventStart :: !(Maybe (Either Time.Day Time.LocalTime)),
-    resolvedEventEnd :: !(Maybe (Either Time.Day Time.LocalTime))
+  { resolvedEventStart :: !(Maybe Timestamp),
+    resolvedEventEnd :: !(Maybe Timestamp)
   }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity ResolvedEvent
+
+data Timestamp
+  = TimestampDay !Time.Day
+  | TimestampUTCTime !Time.UTCTime
+  | TimestampLocalTime !Time.LocalTime
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Timestamp
 
 data RecurrenceError
   = StartStartMismatch !DateTimeStart !DateTimeStart -- Internal error, should not happen.
