@@ -338,7 +338,7 @@ computeNewEnd originalStart end newStart =
 -- TODO it is not clear at all whether this is the intended interpretation.
 -- In fact, if these two dates are in a timezone with day light savings time, then the exact duration will not be an integer number of days.
 dateExactDuration :: Date -> Date -> Integer
-dateExactDuration = diffDates
+dateExactDuration = flip diffDates
 
 -- Compute the exact duration difference between two 'DateTime's
 dateTimeExactDuration :: DateTime -> DateTime -> R Time.NominalDiffTime

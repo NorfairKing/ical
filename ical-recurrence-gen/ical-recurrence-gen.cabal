@@ -38,6 +38,8 @@ extra-source-files:
     test_resources/event/rdate-period.occ
     test_resources/event/rdate.ics
     test_resources/event/rdate.occ
+    test_resources/event/weekly.ics
+    test_resources/event/weekly.occ
 
 library
   exposed-modules:
