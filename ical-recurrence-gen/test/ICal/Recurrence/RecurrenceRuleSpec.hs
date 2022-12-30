@@ -13,7 +13,7 @@ import ICal.Recurrence
 import Test.Syd
 
 spec :: Spec
-spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
+spec = describe "Examples from the spec in section 3.8.5.3" $ do
   let exampleSpec limit dtstart rule expected = do
         actual <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule
         actual `shouldBe` expected
@@ -1072,7 +1072,7 @@ spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1998 02 26) (TimeOfDay 09 00 00),
         LocalTime (fromGregorian 1998 03 30) (TimeOfDay 09 00 00)
       ]
-  it "Every 3 hours from 9:00 AM to 5:00 PM on a specific day" $ do
+  xit "Every 3 hours from 9:00 AM to 5:00 PM on a specific day" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T170000Z
@@ -1095,7 +1095,7 @@ spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 12 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 15 00 00)
       ]
-  it "Every 15 minutes for 6 occurrences" $ do
+  xit "Every 15 minutes for 6 occurrences" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=MINUTELY;INTERVAL=15;COUNT=6
@@ -1121,7 +1121,7 @@ spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 10 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 10 15 00)
       ]
-  it "Every hour and a half for 4 occurrences" $ do
+  xit "Every hour and a half for 4 occurrences" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=MINUTELY;INTERVAL=90;COUNT=4
@@ -1145,7 +1145,7 @@ spec = xdescribe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 12 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 13 30 00)
       ]
-  it "Every 20 minutes from 9:00 AM to 4:40 PM every day" $ do
+  xit "Every 20 minutes from 9:00 AM to 4:40 PM every day" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=DAILY;BYHOUR=9,10,11,12,13,14,15,16;BYMINUTE=0,20,40
