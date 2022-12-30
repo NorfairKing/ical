@@ -7,7 +7,6 @@ module ICal.RecurrenceSpec (spec) where
 import Control.Applicative
 import Control.Monad
 import qualified Data.ByteString as SB
-import qualified Data.Map as M
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -46,7 +45,7 @@ spec = do
         contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
         calendar <- shouldConform $ parseVCalendar contents
         resolvedEvents <- shouldConform $ do
-          runR (calendarTimeZoneMap calendar) $ do
+          runR limit (calendarTimeZoneMap calendar) $ do
             occurrences <-
               fmap S.unions $
                 mapM
@@ -57,18 +56,18 @@ spec = do
         pure $ goldenResolvedEventFile goldenFile $ pure resolvedEvents
 
 pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set EventOccurrence)
-pureGoldenCalendarRecurrenceFile goldenFile day calendar =
+pureGoldenCalendarRecurrenceFile goldenFile limit calendar =
   goldenEventOccurrenceFile goldenFile $
     shouldConform $ do
-      runR (calendarTimeZoneMap calendar) $
+      runR limit (calendarTimeZoneMap calendar) $
         fmap S.unions $
           mapM
-            (recurEvents day . getRecurringEvent)
+            (recurEvents limit . getRecurringEvent)
             (calendarEvents calendar)
 
 pureGoldenEventRecurrenceFile :: Path Rel File -> Day -> Event -> GoldenTest (Set EventOccurrence)
-pureGoldenEventRecurrenceFile goldenFile day event =
-  goldenEventOccurrenceFile goldenFile $ shouldConform $ runR M.empty (recurEvents day (getRecurringEvent event))
+pureGoldenEventRecurrenceFile goldenFile limit event =
+  goldenEventOccurrenceFile goldenFile $ shouldConform $ runRWithoutZones (recurEvents limit (getRecurringEvent event))
 
 goldenEventOccurrenceFile :: Path Rel File -> IO (Set EventOccurrence) -> GoldenTest (Set EventOccurrence)
 goldenEventOccurrenceFile goldenFile produceOccurrences =

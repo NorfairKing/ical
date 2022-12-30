@@ -46,7 +46,7 @@ where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.Reader
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -348,10 +348,8 @@ dateTimeExactDuration start end = case (start, end) of
     pure $ Time.diffLocalTime lt2 lt1
   (DateTimeUTC ut1, DateTimeUTC ut2) -> pure $ Time.diffUTCTime ut2 ut1
   (DateTimeZoned tzid1 lt1, DateTimeZoned tzid2 lt2) -> do
-    tz1 <- requireTimeZone tzid1
-    tz2 <- requireTimeZone tzid2
-    u1 <- resolveLocalTimeR tz1 lt1
-    u2 <- resolveLocalTimeR tz2 lt2
+    u1 <- resolveLocalTimeR tzid1 lt1
+    u2 <- resolveLocalTimeR tzid2 lt2
     dateTimeExactDuration (DateTimeUTC u1) (DateTimeUTC u2)
   _ -> unfixableErrorR $ ExactDurationMismatch start end
 
@@ -360,9 +358,8 @@ addExactDuration ndt = \case
   DateTimeFloating lt -> pure $ DateTimeFloating $ Time.addLocalTime ndt lt
   DateTimeUTC ut -> pure $ DateTimeUTC $ Time.addUTCTime ndt ut
   DateTimeZoned tzid lt -> do
-    zone <- requireTimeZone tzid
-    ut <- resolveLocalTimeR zone lt
-    lt' <- unresolveUTCTimeR zone (Time.addUTCTime ndt ut)
+    ut <- resolveLocalTimeR tzid lt
+    lt' <- unresolveUTCTimeR tzid (Time.addUTCTime ndt ut)
     pure $ DateTimeZoned tzid lt'
 
 resolveEventOccurrence :: EventOccurrence -> R ResolvedEvent
@@ -406,21 +403,29 @@ resolveDateTime = \case
   DateTimeFloating lt -> pure $ TimestampLocalTime lt
   DateTimeUTC ut -> pure $ TimestampUTCTime ut
   DateTimeZoned tzid lt -> do
-    zone <- requireTimeZone tzid
-    ut <- resolveLocalTimeR zone lt
+    ut <- resolveLocalTimeR tzid lt
     pure $ TimestampUTCTime ut
 
 resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
 resolveUTCTime = Time.utcToLocalTime
 
-resolveLocalTimeR :: TimeZone -> Time.LocalTime -> R Time.UTCTime
-resolveLocalTimeR zone localTime = R $ lift $ resolveLocalTime zone localTime
+resolveLocalTimeR :: TZIDParam -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTimeR tzid localTime = do
+  rctx <- requireResolutionCtx tzid
+  R $ lift $ resolveLocalTime' rctx localTime
 
 resolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv Time.UTCTime
 resolveLocalTime zone localTime = do
   mUtcTime <- tryToResolveLocalTime zone localTime
   case mUtcTime of
     Nothing -> unfixableError $ FailedToResolveLocalTime zone localTime
+    Just ut -> pure ut
+
+resolveLocalTime' :: ResolutionCtx -> Time.LocalTime -> Resolv Time.UTCTime
+resolveLocalTime' offsetMap localTime = do
+  let mUtcTime = tryToResolveLocalTime' offsetMap localTime
+  case mUtcTime of
+    Nothing -> unfixableError $ FailedToResolveLocalTimeCached offsetMap localTime
     Just ut -> pure ut
 
 tryToResolveLocalTime :: TimeZone -> Time.LocalTime -> Resolv (Maybe Time.UTCTime)
@@ -431,49 +436,46 @@ tryToResolveLocalTime zone localTime = do
     let tz = utcOffsetTimeZone offset
     pure $ Time.localTimeToUTC tz localTime
 
+tryToResolveLocalTime' :: ResolutionCtx -> Time.LocalTime -> Maybe Time.UTCTime
+tryToResolveLocalTime' offsetMap localTime =
+  let mOffset = chooseResolutionOffset' offsetMap localTime
+   in do
+        offset <- mOffset
+        let tz = utcOffsetTimeZone offset
+        pure $ Time.localTimeToUTC tz localTime
+
 chooseResolutionOffset :: TimeZone -> Time.LocalTime -> Resolv (Maybe UTCOffset)
 chooseResolutionOffset zone localTime = do
   offsetMap <- timeZoneRuleOccurrences (Time.localDay localTime) zone
+  pure $ chooseResolutionOffset' offsetMap localTime
+
+chooseResolutionOffset' :: ResolutionCtx -> Time.LocalTime -> Maybe UTCOffset
+chooseResolutionOffset' offsetMap localTime =
   let mTransition = M.lookupLE localTime offsetMap <|> M.lookupGE localTime offsetMap
-  pure $ do
-    (transitionTime, (from, to)) <- mTransition
-    pure $
-      if localTime < transitionTime
-        then from
-        else to
+   in do
+        (transitionTime, (from, to)) <- mTransition
+        pure $
+          if localTime < transitionTime
+            then from
+            else to
 
--- | Compute a map of the timezone utc offset transitions.
---
--- It's a map of when the transition happened, to a tuple of the "from" offset
--- and the "to" offset.
-timeZoneRuleOccurrences :: Time.Day -> TimeZone -> Resolv (Map Time.LocalTime (UTCOffset, UTCOffset))
-timeZoneRuleOccurrences limit zone = do
-  let observances = NE.toList (timeZoneObservances zone)
-  maps <- forM observances $ \tzo -> do
-    let o@Observance {..} = case tzo of
-          StandardObservance (Standard s) -> s
-          DaylightObservance (Daylight d) -> d
-    -- We MUST use M.empty here, otherwise resolving timezones might use
-    -- timezone resolution recursively
-    occurrences <- runR M.empty $ observanceOccurrences limit o
-    pure $
-      M.fromSet
-        ( const
-            ( unTimeZoneOffsetFrom observanceTimeZoneOffsetFrom,
-              unTimeZoneOffsetTo observanceTimeZoneOffsetTo
-            )
-        )
-        occurrences
-  pure $ M.unions maps
-
-unresolveUTCTimeR :: TimeZone -> Time.UTCTime -> R Time.LocalTime
-unresolveUTCTimeR zone utcTime = R $ lift $ unresolveUTCTime zone utcTime
+unresolveUTCTimeR :: TZIDParam -> Time.UTCTime -> R Time.LocalTime
+unresolveUTCTimeR tzid utcTime = do
+  uctx <- requireUnresolutionCtx tzid
+  R $ lift $ unresolveUTCTime' uctx utcTime
 
 unresolveUTCTime :: TimeZone -> Time.UTCTime -> Resolv Time.LocalTime
 unresolveUTCTime zone utcTime = do
   mUtcTime <- tryToUnresolveUTCTime zone utcTime
   case mUtcTime of
     Nothing -> unfixableError $ FailedToUnresolveUTCTime zone utcTime
+    Just lt -> pure lt
+
+unresolveUTCTime' :: UnresolutionCtx -> Time.UTCTime -> Resolv Time.LocalTime
+unresolveUTCTime' offsetMap utcTime = do
+  let mUtcTime = tryToUnresolveUTCTime' offsetMap utcTime
+  case mUtcTime of
+    Nothing -> unfixableError $ FailedToUnresolveUTCTimeCached offsetMap utcTime
     Just lt -> pure lt
 
 tryToUnresolveUTCTime :: TimeZone -> Time.UTCTime -> Resolv (Maybe Time.LocalTime)
@@ -484,23 +486,85 @@ tryToUnresolveUTCTime zone utcTime = do
     let tz = utcOffsetTimeZone offset
     pure $ Time.utcToLocalTime tz utcTime
 
+tryToUnresolveUTCTime' :: UnresolutionCtx -> Time.UTCTime -> Maybe Time.LocalTime
+tryToUnresolveUTCTime' offsetMap utcTime =
+  let mOffset = chooseUnresolutionOffset' offsetMap utcTime
+   in do
+        offset <- mOffset
+        let tz = utcOffsetTimeZone offset
+        pure $ Time.utcToLocalTime tz utcTime
+
 chooseUnresolutionOffset :: TimeZone -> Time.UTCTime -> Resolv (Maybe UTCOffset)
 chooseUnresolutionOffset zone utcTime = do
   offsetMap <- timeZoneRuleUTCOccurrences (Time.utctDay utcTime) zone
+  pure $ chooseUnresolutionOffset' offsetMap utcTime
+
+chooseUnresolutionOffset' :: UnresolutionCtx -> Time.UTCTime -> Maybe UTCOffset
+chooseUnresolutionOffset' offsetMap utcTime =
   let mTransition = M.lookupLE utcTime offsetMap <|> M.lookupGE utcTime offsetMap
-  pure $ do
-    (transitionTime, (from, to)) <- mTransition
+   in do
+        (transitionTime, (from, to)) <- mTransition
+        pure $
+          if utcTime < transitionTime
+            then from
+            else to
+
+runRWithoutZones :: R a -> Resolv a
+runRWithoutZones = runR (Time.fromGregorian 2022 12 30) M.empty
+
+runR :: Time.Day -> Map TZIDParam TimeZone -> R a -> Resolv a
+runR limit m (R func) = do
+  m' <- forM m $ \zone -> do
+    (,)
+      <$> timeZoneRuleOccurrences limit zone
+      <*> timeZoneRuleUTCOccurrences limit zone -- Reuse rule occurrences.
+  runReaderT func m'
+
+requireResolutionCtx :: TZIDParam -> R ResolutionCtx
+requireResolutionCtx = fmap fst . requireTimeZoneCtx
+
+requireUnresolutionCtx :: TZIDParam -> R UnresolutionCtx
+requireUnresolutionCtx = fmap snd . requireTimeZoneCtx
+
+requireTimeZoneCtx ::
+  TZIDParam ->
+  R (ResolutionCtx, UnresolutionCtx)
+requireTimeZoneCtx tzid = do
+  ctxMap <- ask
+  case M.lookup tzid ctxMap of
+    Nothing -> unfixableErrorR $ TimeZoneNotFound tzid
+    Just tup -> pure tup
+
+-- | Compute a map of the timezone utc offset transitions.
+--
+-- It's a map of when the transition happened, to a tuple of the "from" offset
+-- and the "to" offset.
+timeZoneRuleOccurrences :: Time.Day -> TimeZone -> Resolv ResolutionCtx
+timeZoneRuleOccurrences limit zone = do
+  let observances = NE.toList (timeZoneObservances zone)
+  maps <- forM observances $ \tzo -> do
+    let o@Observance {..} = case tzo of
+          StandardObservance (Standard s) -> s
+          DaylightObservance (Daylight d) -> d
+    -- We MUST use runRWithoutZones here, otherwise resolving timezones might
+    -- use timezone resolution recursively.
+    occurrences <- runRWithoutZones $ observanceOccurrences limit o
     pure $
-      if utcTime < transitionTime
-        then from
-        else to
+      M.fromSet
+        ( const
+            ( unTimeZoneOffsetFrom observanceTimeZoneOffsetFrom,
+              unTimeZoneOffsetTo observanceTimeZoneOffsetTo
+            )
+        )
+        occurrences
+  pure $ M.unions maps
 
 -- | Compute a map of the timezone utc offset transitions, from UTC's perspective.
 --
 -- It's a map of when the transition happened (from UTC's perspective), to a tuple of the "from" offset and the "to" offset.
 --
 -- We use the 'from' part to compute the corresponding UTC time.
-timeZoneRuleUTCOccurrences :: Time.Day -> TimeZone -> Resolv (Map Time.UTCTime (UTCOffset, UTCOffset))
+timeZoneRuleUTCOccurrences :: Time.Day -> TimeZone -> Resolv UnresolutionCtx
 timeZoneRuleUTCOccurrences limit zone = do
   m <- timeZoneRuleOccurrences limit zone
   let modify (lt, (from, to)) =

@@ -8,11 +8,10 @@ module ICal.Recurrence.Class
     ResolvedEvent (..),
     Timestamp (..),
     R (..),
-    runR,
+    ResolutionCtx,
+    UnresolutionCtx,
     RecurrenceError (..),
     RecurrenceFixableError (..),
-    askTimeZoneMap,
-    requireTimeZone,
     unfixableErrorR,
     emitFixableErrorR,
     Resolv,
@@ -22,7 +21,6 @@ where
 import Control.Exception
 import Control.Monad.Reader
 import Data.Map (Map)
-import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Time as Time
 import Data.Validity
@@ -83,7 +81,9 @@ data RecurrenceError
   | ExactDurationMismatch !DateTime !DateTime
   | TimeZoneNotFound !TZIDParam
   | FailedToResolveLocalTime !TimeZone !Time.LocalTime
+  | FailedToResolveLocalTimeCached !ResolutionCtx !Time.LocalTime
   | FailedToUnresolveUTCTime !TimeZone !Time.UTCTime
+  | FailedToUnresolveUTCTimeCached !UnresolutionCtx !Time.UTCTime
   deriving (Show, Eq, Ord)
 
 instance Exception RecurrenceError
@@ -95,21 +95,14 @@ data RecurrenceFixableError
 
 instance Exception RecurrenceFixableError
 
-newtype R a = R {unR :: ReaderT (Map TZIDParam TimeZone) (Conform RecurrenceError RecurrenceFixableError Void) a}
-  deriving (Functor, Applicative, Monad)
+newtype R a = R {unR :: ReaderT TimeZoneCtx (Conform RecurrenceError RecurrenceFixableError Void) a}
+  deriving (Functor, Applicative, Monad, MonadReader TimeZoneCtx)
 
-runR :: Map TZIDParam TimeZone -> R a -> Conform RecurrenceError RecurrenceFixableError Void a
-runR m (R func) = runReaderT func m
+type TimeZoneCtx = Map TZIDParam (ResolutionCtx, UnresolutionCtx)
 
-askTimeZoneMap :: R (Map TZIDParam TimeZone)
-askTimeZoneMap = R ask
+type ResolutionCtx = Map Time.LocalTime (UTCOffset, UTCOffset)
 
-requireTimeZone :: TZIDParam -> R TimeZone
-requireTimeZone tzid = do
-  m <- askTimeZoneMap
-  case M.lookup tzid m of
-    Nothing -> unfixableErrorR $ TimeZoneNotFound tzid
-    Just tz -> pure tz
+type UnresolutionCtx = Map Time.UTCTime (UTCOffset, UTCOffset)
 
 unfixableErrorR :: RecurrenceError -> R a
 unfixableErrorR = R . lift . unfixableError

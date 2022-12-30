@@ -4,7 +4,6 @@
 
 module ICal.Recurrence.RecurrenceRuleSpec (spec) where
 
-import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Time
 import ICal
@@ -15,7 +14,7 @@ import Test.Syd
 spec :: Spec
 spec = describe "Examples from the spec in section 3.8.5.3" $ do
   let exampleSpec limit dtstart rule expected = do
-        actual <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule
+        actual <- shouldConformStrict $ runRWithoutZones $ recurRecurrenceRuleLocalTimes limit dtstart rule
         actual `shouldBe` expected
   it "Daily for 10 occurrences" $ do
     -- @
@@ -256,8 +255,8 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
             }
         -- Limit: the set is finite so the limit will just be some point beyond the end
         limit = fromGregorian 2000 01 01
-    res1 <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule1
-    res2 <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule2
+    res1 <- shouldConformStrict $ runRWithoutZones $ recurRecurrenceRuleLocalTimes limit dtstart rule1
+    res2 <- shouldConformStrict $ runRWithoutZones $ recurRecurrenceRuleLocalTimes limit dtstart rule2
     res1
       `shouldBe` [ LocalTime (fromGregorian 1997 09 02) (TimeOfDay 09 00 00),
                    LocalTime (fromGregorian 1997 09 04) (TimeOfDay 09 00 00),
@@ -1192,8 +1191,8 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
                 ]
             }
         limit = fromGregorian 1997 09 03
-    res1 <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule1
-    res2 <- shouldConformStrict $ runR M.empty $ recurRecurrenceRuleLocalTimes limit dtstart rule2
+    res1 <- shouldConformStrict $ runRWithoutZones $ recurRecurrenceRuleLocalTimes limit dtstart rule1
+    res2 <- shouldConformStrict $ runRWithoutZones $ recurRecurrenceRuleLocalTimes limit dtstart rule2
     res1
       `shouldBe` S.fromList
         ( do
