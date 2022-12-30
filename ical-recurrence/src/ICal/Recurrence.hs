@@ -515,9 +515,8 @@ runRWithoutZones = runR (Time.fromGregorian 2022 12 30) M.empty
 runR :: Time.Day -> Map TZIDParam TimeZone -> R a -> Resolv a
 runR limit m (R func) = do
   m' <- forM m $ \zone -> do
-    (,)
-      <$> timeZoneRuleOccurrences limit zone
-      <*> timeZoneRuleUTCOccurrences limit zone -- Reuse rule occurrences.
+    resolutionCtx <- timeZoneRuleOccurrences limit zone
+    pure (resolutionCtx, buildUnresolutionCtx resolutionCtx)
   runReaderT func m'
 
 requireResolutionCtx :: TZIDParam -> R ResolutionCtx
@@ -567,11 +566,15 @@ timeZoneRuleOccurrences limit zone = do
 timeZoneRuleUTCOccurrences :: Time.Day -> TimeZone -> Resolv UnresolutionCtx
 timeZoneRuleUTCOccurrences limit zone = do
   m <- timeZoneRuleOccurrences limit zone
+  pure $ buildUnresolutionCtx m
+
+buildUnresolutionCtx :: ResolutionCtx -> UnresolutionCtx
+buildUnresolutionCtx m =
   let modify (lt, (from, to)) =
         let tz = utcOffsetTimeZone from
             ut = Time.localTimeToUTC tz lt
          in (ut, (from, to))
-  pure $ M.fromList $ map modify $ M.toList m
+   in M.fromList $ map modify $ M.toList m
 
 -- | Compute when, until a given limit, the following observance changes the UTC offset
 observanceOccurrences :: Time.Day -> Observance -> R (Set Time.LocalTime)
