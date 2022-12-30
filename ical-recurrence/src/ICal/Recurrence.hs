@@ -382,6 +382,9 @@ resolveEndDuration mts = \case
               TimestampDay d ->
                 let (diff, _) = Time.timeToDaysAndTimeOfDay ndt
                  in TimestampDay $ Time.addDays diff d
+              -- This is not correct, because we don't know anything about when
+              -- the timezone that this floating time refers to changes, but
+              -- there's nothing better we can do.
               TimestampLocalTime lt -> TimestampLocalTime $ Time.addLocalTime ndt lt
               TimestampUTCTime ut -> TimestampUTCTime $ Time.addUTCTime ndt ut
 
