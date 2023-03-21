@@ -10,6 +10,7 @@ build-type:     Simple
 extra-source-files:
     test_resources/calendars/fixable/invalid-until.ics
     test_resources/calendars/valid/daily-bysetpos.ics
+    test_resources/calendars/valid/dash.ics
     test_resources/calendars/valid/date.ics
     test_resources/calendars/valid/duration-time.ics
     test_resources/calendars/valid/duration-weeks.ics
@@ -38,6 +39,7 @@ extra-source-files:
     test_resources/calendars/valid/zoned-rdate.ics
     test_resources/calendars/valid/zoned-recurring.ics
     test_resources/calendars/valid/zoned.ics
+    test_resources/events/dash.ics
     test_resources/events/spec-3.6.1-1
     test_resources/events/spec-3.6.1-2
     test_resources/events/spec-3.6.1-3
