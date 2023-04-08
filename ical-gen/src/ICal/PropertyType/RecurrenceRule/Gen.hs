@@ -139,9 +139,9 @@ instance GenValid RecurrenceRule where
     recurrenceRuleByDay <-
       genSetOf
         ( case recurrenceRuleFrequency of
-            Monthly -> genSpecificByDay
-            Yearly -> genSpecificByDay
-            _ -> genValid
+            Monthly -> genValid
+            Yearly -> genValid
+            _ -> Every <$> genValid
         )
     recurrenceRuleByMonthDay <- case recurrenceRuleFrequency of
       Weekly -> pure S.empty

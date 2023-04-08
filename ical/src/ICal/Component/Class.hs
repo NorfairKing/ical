@@ -197,12 +197,12 @@ parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenPro
 parseProperty :: IsProperty property => CP property
 parseProperty = do
   contentLine <- anySingle
-  liftConformToCP $
-    conformMapAll
+  liftConformToCP
+    $ conformMapAll
       PropertyParseError
       absurd
       absurd
-      $ propertyContentLineP contentLine
+    $ propertyContentLineP contentLine
 
 componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
 componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB

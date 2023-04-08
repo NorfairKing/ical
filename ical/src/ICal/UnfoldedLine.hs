@@ -84,34 +84,34 @@ parseUnfoldedLines :: Text -> Conform UnfoldingError Void Void [UnfoldedLine]
 parseUnfoldedLines t
   | T.null t = pure []
   | T.takeEnd 2 t == "\r\n" =
-    pure
-      . map UnfoldedLine
-      . init -- Ignore the last, empty, line
-      -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-      -- @
-      -- Content lines are delimited by a line break,
-      -- which is a CRLF sequence (CR character followed by LF character).
-      -- @
-      . T.splitOn "\r\n"
-      -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-      -- @
-      -- Any sequence of CRLF followed immediately by a
-      -- single linear white-space character is ignored (i.e., removed) when
-      -- processing the content type.
-      -- @
-      -- Replace a newline + tab character.
-      . T.replace "\r\n\t" ""
-      -- Replace a newline + space character.
-      --
-      -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-      -- @
-      -- The process of moving from this folded multiple-line representation
-      -- to its single-line representation is called "unfolding".  Unfolding
-      -- is accomplished by removing the CRLF and the linear white-space
-      -- character that immediately follows.
-      -- @
-      . T.replace "\r\n " ""
-      $ t
+      pure
+        . map UnfoldedLine
+        . init -- Ignore the last, empty, line
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+        -- @
+        -- Content lines are delimited by a line break,
+        -- which is a CRLF sequence (CR character followed by LF character).
+        -- @
+        . T.splitOn "\r\n"
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+        -- @
+        -- Any sequence of CRLF followed immediately by a
+        -- single linear white-space character is ignored (i.e., removed) when
+        -- processing the content type.
+        -- @
+        -- Replace a newline + tab character.
+        . T.replace "\r\n\t" ""
+        -- Replace a newline + space character.
+        --
+        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+        -- @
+        -- The process of moving from this folded multiple-line representation
+        -- to its single-line representation is called "unfolding".  Unfolding
+        -- is accomplished by removing the CRLF and the linear white-space
+        -- character that immediately follows.
+        -- @
+        . T.replace "\r\n " ""
+        $ t
   | otherwise = unfixableError NoCRLFAtEnd
 
 renderUnfoldedLines :: [UnfoldedLine] -> Text

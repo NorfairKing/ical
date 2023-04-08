@@ -110,7 +110,8 @@ firstDayOfTheWSWeekThatContainsJan1st (WeekStart weekStartDow) year =
    in addDays
         ( negate $
             positiveMod 7 $
-              fromIntegral $ fromEnum dowFirstDayOfTheYear - fromEnum weekStartDow
+              fromIntegral $
+                fromEnum dowFirstDayOfTheYear - fromEnum weekStartDow
         )
         firstDayOfTheYear
 

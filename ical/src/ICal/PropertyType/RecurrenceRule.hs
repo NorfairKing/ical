@@ -496,12 +496,12 @@ instance Validity RecurrenceRule where
         decorateList (S.toList recurrenceRuleByDay) $ \bd ->
           declare "The BYDAY rule part MUST NOT be specified with a numeric value when the FREQ rule part is not set to MONTHLY or YEARLY." $
             let care = case bd of
-                  Every _ -> False
-                  Specific _ _ -> True
+                  Every _ -> True
+                  Specific _ _ -> False
              in case recurrenceRuleFrequency of
-                  Monthly -> care
-                  Yearly -> care
-                  _ -> True,
+                  Monthly -> True
+                  Yearly -> True
+                  _ -> care,
         declare "The BYMONTHDAY rule part MUST NOT be specified when the FREQ rule part is set to WEEKLY" $
           case recurrenceRuleFrequency of
             Weekly -> S.null recurrenceRuleByMonthDay

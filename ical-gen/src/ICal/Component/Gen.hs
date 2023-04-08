@@ -115,8 +115,8 @@ instance GenValid TimeZoneObservance where
   shrinkValid = \case
     StandardObservance s -> StandardObservance <$> shrinkValid s
     DaylightObservance d@(Daylight o) ->
-      StandardObservance (Standard o) :
-      (DaylightObservance <$> shrinkValid d)
+      StandardObservance (Standard o)
+        : (DaylightObservance <$> shrinkValid d)
 
 instance GenValid Standard where
   genValid = genValidStructurallyWithoutExtraChecking

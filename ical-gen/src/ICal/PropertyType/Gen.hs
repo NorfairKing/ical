@@ -43,15 +43,15 @@ instance GenValid Time where
   shrinkValid = \case
     TimeFloating tod -> TimeFloating <$> shrinkImpreciseTimeOfDay tod
     TimeUTC tod ->
-      TimeFloating tod :
-      (TimeUTC <$> shrinkImpreciseTimeOfDay tod)
+      TimeFloating tod
+        : (TimeUTC <$> shrinkImpreciseTimeOfDay tod)
     TimeZoned tzid tod ->
-      TimeFloating tod :
-      TimeUTC tod :
-      ( do
-          (tzid', tod') <- shrinkTuple shrinkValid shrinkImpreciseTimeOfDay (tzid, tod)
-          pure (TimeZoned tzid' tod')
-      )
+      TimeFloating tod
+        : TimeUTC tod
+        : ( do
+              (tzid', tod') <- shrinkTuple shrinkValid shrinkImpreciseTimeOfDay (tzid, tod)
+              pure (TimeZoned tzid' tod')
+          )
 
 instance GenValid DateTime where
   genValid =
@@ -63,15 +63,15 @@ instance GenValid DateTime where
   shrinkValid = \case
     DateTimeFloating lt -> DateTimeFloating <$> shrinkImpreciseLocalTime lt
     DateTimeUTC ut ->
-      DateTimeFloating (utcToLocalTime utc ut) :
-      (DateTimeUTC <$> shrinkImpreciseUTCTime ut)
+      DateTimeFloating (utcToLocalTime utc ut)
+        : (DateTimeUTC <$> shrinkImpreciseUTCTime ut)
     DateTimeZoned tzid lt ->
-      DateTimeFloating lt :
-      DateTimeUTC (localTimeToUTC utc lt) :
-      ( do
-          (tzid', lt') <- shrinkTuple shrinkValid shrinkImpreciseLocalTime (tzid, lt)
-          pure (DateTimeZoned tzid' lt')
-      )
+      DateTimeFloating lt
+        : DateTimeUTC (localTimeToUTC utc lt)
+        : ( do
+              (tzid', lt') <- shrinkTuple shrinkValid shrinkImpreciseLocalTime (tzid, lt)
+              pure (DateTimeZoned tzid' lt')
+          )
 
 instance GenValid DateTimes
 
