@@ -9,6 +9,7 @@ module ICal.PropertyType.URI where
 
 import Control.DeepSeq
 import Data.Proxy
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -61,6 +62,11 @@ newtype URI = URI {unURI :: Network.URI} -- Consider not making this a newtype.
 instance Validity URI
 
 instance NFData URI
+
+instance IsString URI where
+  fromString s = case parseURI (fromString s) of
+    Nothing -> error "unparseable calendar address"
+    Just ca -> ca
 
 instance IsPropertyType URI where
   propertyTypeValueType Proxy = TypeURI

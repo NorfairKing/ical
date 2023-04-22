@@ -131,6 +131,12 @@ setParamMap params = case NE.nonEmpty (map parameterB (S.toList params)) of
 insertParam :: forall param. IsParameter param => param -> ContentLineValue -> ContentLineValue
 insertParam param clv = clv {contentLineValueParams = M.insert (parameterName (Proxy :: Proxy param)) (parameterB param) (contentLineValueParams clv)}
 
+insertParamWithDefault :: forall param. (Eq param, IsParameter param) => param -> param -> ContentLineValue -> ContentLineValue
+insertParamWithDefault defaultParam param clv =
+  if param == defaultParam
+    then clv
+    else insertParam param clv
+
 singleParamP :: (ParamValue -> Conform ParameterParseError Void Void a) -> NonEmpty ParamValue -> Conform ParameterParseError Void Void a
 singleParamP func = \case
   value :| [] -> func value
@@ -392,6 +398,14 @@ instance IsParameter ParticipationRole where
     ParticipationRoleOptionalParticipant -> "OPT-PARTICIPANT"
     ParticipationRoleNonParticipant -> "NON-PARTICIPANT"
     ParticipationRoleOther pv -> pv
+
+-- | Default participation role
+--
+-- @
+--     ; Default is REQ-PARTICIPANT
+-- @
+defaultParticipationRole :: ParticipationRole
+defaultParticipationRole = ParticipationRoleRequiredParticipant
 
 -- | Time Zone Identifier
 --

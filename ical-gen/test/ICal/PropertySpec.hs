@@ -6,15 +6,12 @@
 module ICal.PropertySpec where
 
 import qualified Data.Set as S
-import Data.Text (Text)
 import Data.Time
-import GHC.Stack (HasCallStack, withFrozenCallStack)
-import ICal.ContentLine
+import ICal.Parameter
 import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType
 import ICal.PropertyType.Duration.Gen ()
-import qualified Network.URI as Network
 import Test.Syd
 import Test.Syd.Validity hiding (Location)
 
@@ -247,10 +244,9 @@ spec = do
     --
     --     URL:http://example.com/pub/calendars/jsmith/mytime.ics
     -- @
-    uri <- liftIO $ maybe (expectationFailure "could not parse URI") pure $ Network.parseURI "http://example.com/pub/calendars/jsmith/mytime.ics"
     propertyExampleSpec
       "URL:http://example.com/pub/calendars/jsmith/mytime.ics"
-      (URL (URI uri))
+      (URL "http://example.com/pub/calendars/jsmith/mytime.ics")
 
   describe "TimeZoneName" $ do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName
@@ -316,19 +312,6 @@ spec = do
     genValidSpec @Attendee
     propertySpec @Attendee
     -- From the spec:
-    let attendeeExampleSpec :: HasCallStack => ContentLine -> Text -> Spec
-        attendeeExampleSpec line result =
-          withFrozenCallStack $ do
-            -- TODO: This is propertyParseExampleSpec until we understand all the
-            -- role parameters after that we should be able to use
-            -- propertyExampleSpec instead.
-            case parseCalAddress result of
-              Nothing -> liftIO $ expectationFailure "invalid test."
-              Just calAddress ->
-                propertyParseExampleSpec
-                  line
-                  (Attendee calAddress)
-
     -- @
     -- Example:  The following are examples of this property's use for a
     --    to-do:
@@ -347,18 +330,18 @@ spec = do
     --      example.com
     --
     -- @
-    attendeeExampleSpec
+    propertyParseExampleSpec
       "ATTENDEE;MEMBER=\"mailto:DEV-GROUP@example.com\":mailto:joecool@example.com"
-      "mailto:joecool@example.com"
-    attendeeExampleSpec
+      (mkAttendee "mailto:joecool@example.com")
+    propertyParseExampleSpec
       "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
-      "mailto:ildoit@example.com"
-    attendeeExampleSpec
+      (mkAttendee "mailto:ildoit@example.com")
+    propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
-      "mailto:hcabot@example.com"
-    attendeeExampleSpec
+      ((mkAttendee "mailto:hcabot@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
+    propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM=\"mailto:bob@example.com\";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      "mailto:jdoe@example.com"
+      ((mkAttendee "mailto:jdoe@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
 
     -- @
     --    The following is an example of this property with a URI to the
@@ -369,9 +352,9 @@ spec = do
     --      example.com
     --
     -- @
-    attendeeExampleSpec
+    propertyParseExampleSpec
       "ATTENDEE;CN=John Smith;DIR=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":mailto:jimdo@example.com"
-      "mailto:jimdo@example.com"
+      (mkAttendee "mailto:jimdo@example.com")
 
     -- @
     --    The following is an example of this property with "delegatee" and
@@ -386,15 +369,16 @@ spec = do
     --     ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe
     --      :mailto:jdoe@example.com
     -- @
-    attendeeExampleSpec
+    propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=\"mailto:iamboss@example.com\";CN=Henry Cabot:mailto:hcabot@example.com"
-      "mailto:hcabot@example.com"
-    attendeeExampleSpec
+      ((mkAttendee "mailto:hcabot@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
+
+    propertyParseExampleSpec
       "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
-      "mailto:iamboss@example.com"
-    attendeeExampleSpec
+      ((mkAttendee "mailto:iamboss@example.com") {attendeeParticipationRole = ParticipationRoleNonParticipant})
+    propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      "mailto:jdoe@example.com"
+      ((mkAttendee "mailto:jdoe@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
 
     -- @
     -- Example:  The following is an example of this property's use when
@@ -430,9 +414,9 @@ spec = do
     --
     -- sentbyparam = "SENT-BY" "=" DQUOTE cal-address DQUOTE
     -- @
-    attendeeExampleSpec
+    propertyParseExampleSpec
       "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
-      "mailto:jsmith@example.com"
+      (mkAttendee "mailto:jsmith@example.com")
 
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes

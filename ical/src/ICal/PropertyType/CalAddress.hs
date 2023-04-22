@@ -9,6 +9,7 @@ module ICal.PropertyType.CalAddress where
 
 import Control.DeepSeq
 import Data.Proxy
+import Data.String
 import Data.Text (Text)
 import Data.Validity
 import GHC.Generics (Generic)
@@ -50,6 +51,11 @@ newtype CalAddress = CalAddress {unCalAddress :: Network.URI} -- Consider not ma
 instance Validity CalAddress
 
 instance NFData CalAddress
+
+instance IsString CalAddress where
+  fromString s = case parseCalAddress (fromString s) of
+    Nothing -> error "unparseable calendar address"
+    Just ca -> ca
 
 instance IsPropertyType CalAddress where
   propertyTypeValueType Proxy = TypeCalendarAddress
