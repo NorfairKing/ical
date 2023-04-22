@@ -338,10 +338,18 @@ spec = do
       (mkAttendee "mailto:ildoit@example.com")
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
-      ((mkAttendee "mailto:hcabot@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
+      ( (mkAttendee "mailto:hcabot@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusTentative
+          }
+      )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM=\"mailto:bob@example.com\";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      ((mkAttendee "mailto:jdoe@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
+      ( (mkAttendee "mailto:jdoe@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusAccepted
+          }
+      )
 
     -- @
     --    The following is an example of this property with a URI to the
@@ -371,14 +379,25 @@ spec = do
     -- @
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=\"mailto:iamboss@example.com\";CN=Henry Cabot:mailto:hcabot@example.com"
-      ((mkAttendee "mailto:hcabot@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
-
+      ( (mkAttendee "mailto:hcabot@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusTentative
+          }
+      )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
-      ((mkAttendee "mailto:iamboss@example.com") {attendeeParticipationRole = ParticipationRoleNonParticipant})
+      ( (mkAttendee "mailto:iamboss@example.com")
+          { attendeeParticipationRole = ParticipationRoleNonParticipant,
+            attendeeParticipationStatus = ParticipationStatusDelegated
+          }
+      )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      ((mkAttendee "mailto:jdoe@example.com") {attendeeParticipationRole = ParticipationRoleRequiredParticipant})
+      ( (mkAttendee "mailto:jdoe@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusAccepted
+          }
+      )
 
     -- @
     -- Example:  The following is an example of this property's use when

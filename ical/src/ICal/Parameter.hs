@@ -282,6 +282,14 @@ instance IsParameter ParticipationStatus where
     ParticipationStatusInProcess -> "IN-PROCESS"
     ParticipationStatusOther pv -> pv
 
+-- | Default participation status
+--
+-- @
+--     ; Default is NEEDS-ACTION.
+-- @
+defaultParticipationStatus :: ParticipationStatus
+defaultParticipationStatus = ParticipationStatusNeedsAction
+
 -- | RSVP Expectation
 --
 -- [section 3.2.17](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.17)

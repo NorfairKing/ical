@@ -1961,7 +1961,8 @@ instance IsProperty TimeZoneOffsetTo where
 -- @
 data Attendee = Attendee
   { attendeeCalAddress :: !CalAddress,
-    attendeeParticipationRole :: !ParticipationRole
+    attendeeParticipationRole :: !ParticipationRole,
+    attendeeParticipationStatus :: !ParticipationStatus
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -1975,17 +1976,22 @@ instance IsProperty Attendee where
     attendeeParticipationRole <-
       fromMaybe defaultParticipationRole
         <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
+    attendeeParticipationStatus <-
+      fromMaybe defaultParticipationStatus
+        <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
 
     pure Attendee {..}
   propertyB Attendee {..} =
-    insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
-      propertyTypeB attendeeCalAddress
+    insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
+      insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
+        propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
 mkAttendee calAddress =
   Attendee
     { attendeeCalAddress = calAddress,
-      attendeeParticipationRole = defaultParticipationRole
+      attendeeParticipationRole = defaultParticipationRole,
+      attendeeParticipationStatus = defaultParticipationStatus
     }
 
 -- | Exception Date-Times
