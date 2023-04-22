@@ -61,6 +61,10 @@ instance GenValid Classification where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid Organizer where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance GenValid Created where
   genValid = Created <$> genImpreciseUTCTime
   shrinkValid = fmap Created . shrinkImpreciseUTCTime . unCreated

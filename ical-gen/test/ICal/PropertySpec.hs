@@ -110,6 +110,38 @@ spec = do
       "CLASS:PUBLIC"
       ClassificationPublic
 
+  describe "Organizer" $ do
+    genValidSpec @Organizer
+    propertySpec @Organizer
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     ORGANIZER;CN=John Smith:mailto:jsmith@example.com
+    --
+    --    The following is an example of this property with a pointer to the
+    --    directory information associated with the organizer:
+    --
+    --     ORGANIZER;CN=JohnSmith;DIR="ldap://example.com:6666/o=DC%20Ass
+    --      ociates,c=US???(cn=John%20Smith)":mailto:jsmith@example.com
+    --
+    --    The following is an example of this property used by another
+    --    calendar user who is acting on behalf of the organizer, with
+    --    responses intended to be sent back to the organizer, not the other
+    --    calendar user:
+    --
+    --     ORGANIZER;SENT-BY="mailto:jane_doe@example.com":
+    --      mailto:jsmith@example.com
+    -- @
+    propertyExampleSpec
+      "ORGANIZER;CN=John Smith:mailto:jsmith@example.com"
+      ((mkOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "John Smith"})
+    propertyParseExampleSpec
+      "ORGANIZER;CN=JohnSmith;DIR=\"ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)\":mailto:jsmith@example.com"
+      ((mkOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "JohnSmith"})
+    propertyParseExampleSpec
+      "ORGANIZER;SENT-BY=\"mailto:jane_doe@example.com\":mailto:jsmith@example.com"
+      (mkOrganizer "mailto:jsmith@example.com")
+
   describe "Created" $ do
     genValidSpec @Created
     propertySpec @Created

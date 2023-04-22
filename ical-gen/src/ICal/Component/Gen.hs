@@ -76,6 +76,7 @@ instance GenValid Event where
     eventGeographicPosition <- genValid
     eventLastModified <- genValid
     eventLocation <- genValid
+    eventOrganizer <- genValid
     eventStatus <- genValid
     eventSummary <- genValid
     eventTransparency <- genValid

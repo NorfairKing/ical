@@ -223,6 +223,7 @@ data Event = Event
     eventGeographicPosition :: !(Maybe GeographicPosition),
     eventLastModified :: !(Maybe LastModified),
     eventLocation :: !(Maybe Location),
+    eventOrganizer :: !(Maybe Organizer),
     eventStatus :: !(Maybe Status),
     eventSummary :: !(Maybe Summary),
     eventTransparency :: !Transparency,
@@ -292,6 +293,7 @@ vEventP = do
   eventGeographicPosition <- parseFirstMaybe eventProperties
   eventLastModified <- parseFirstMaybe eventProperties
   eventLocation <- parseFirstMaybe eventProperties
+  eventOrganizer <- parseFirstMaybe eventProperties
   eventStatus <- parseFirstMaybe eventProperties
   eventSummary <- parseFirstMaybe eventProperties
   -- @
@@ -330,6 +332,7 @@ vEventB Event {..} =
       propertyMListB eventGeographicPosition,
       propertyMListB eventLastModified,
       propertyMListB eventLocation,
+      propertyMListB eventOrganizer,
       propertyMListB eventStatus,
       propertyMListB eventSummary,
       -- @
@@ -364,6 +367,7 @@ makeEvent uid dateTimeStamp =
       eventGeographicPosition = Nothing,
       eventLastModified = Nothing,
       eventLocation = Nothing,
+      eventOrganizer = Nothing,
       eventStatus = Nothing,
       eventSummary = Nothing,
       -- @
