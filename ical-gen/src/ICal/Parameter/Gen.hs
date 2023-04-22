@@ -24,6 +24,8 @@ instance GenValid ParticipationStatus
 
 instance GenValid RSVPExpectation
 
+instance GenValid ParticipationRole
+
 instance GenValid TZIDParam where
   genValid = genValidStructurally
 

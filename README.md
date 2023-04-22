@@ -31,30 +31,30 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
        - [ ] 3.2.9.  Free/Busy Time Type
        - [ ] 3.2.10. Language
        - [ ] 3.2.11. Group or List Membership
-       - [ ] 3.2.12. Participation Status
+       - [X] 3.2.12. Participation Status
        - [ ] 3.2.13. Recurrence Identifier Range
        - [ ] 3.2.14. Alarm Trigger Relationship
        - [ ] 3.2.15. Relationship Type
-       - [ ] 3.2.16. Participation Role
-       - [ ] 3.2.17. RSVP Expectation
+       - [X] 3.2.16. Participation Role
+       - [X] 3.2.17. RSVP Expectation
        - [ ] 3.2.18. Sent By
        - [ ] 3.2.19. Time Zone Identifier
-       - [ ] 3.2.20. Value Data Types
+       - [X] 3.2.20. Value Data Types
      - [ ] 3.3.  Property Value Data Types
        - [ ] 3.3.1.  Binary
        - [ ] 3.3.2.  Boolean
-       - [ ] 3.3.3.  Calendar User Address
-       - [ ] 3.3.4.  Date
-       - [ ] 3.3.5.  Date-Time
-       - [ ] 3.3.6.  Duration
-       - [ ] 3.3.7.  Float
+       - [X] 3.3.3.  Calendar User Address
+       - [X] 3.3.4.  Date
+       - [X] 3.3.5.  Date-Time
+       - [X] 3.3.6.  Duration
+       - [X] 3.3.7.  Float
        - [ ] 3.3.8.  Integer
-       - [ ] 3.3.9.  Period of Time
-       - [ ] 3.3.10. Recurrence Rule
-       - [ ] 3.3.11. Text
-       - [ ] 3.3.12. Time
-       - [ ] 3.3.13. URI
-       - [ ] 3.3.14. UTC Offset
+       - [X] 3.3.9.  Period of Time
+       - [X] 3.3.10. Recurrence Rule
+       - [X] 3.3.11. Text
+       - [X] 3.3.12. Time
+       - [X] 3.3.13. URI
+       - [X] 3.3.14. UTC Offset
      - [ ] 3.4.  iCalendar Object
      - [ ] 3.5.  Property
      - [ ] 3.6.  Calendar Components
@@ -73,30 +73,30 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
        - [ ] 3.8.1.  Descriptive Component Properties
          - [ ] 3.8.1.1.  Attachment
          - [ ] 3.8.1.2.  Categories
-         - [ ] 3.8.1.3.  Classification
-         - [ ] 3.8.1.4.  Comment
-         - [ ] 3.8.1.5.  Description
-         - [ ] 3.8.1.6.  Geographic Position
+         - [X] 3.8.1.3.  Classification
+         - [X] 3.8.1.4.  Comment
+         - [X] 3.8.1.5.  Description
+         - [X] 3.8.1.6.  Geographic Position
          - [ ] 3.8.1.7.  Location
          - [ ] 3.8.1.8.  Percent Complete
          - [ ] 3.8.1.9.  Priority
          - [ ] 3.8.1.10. Resources
-         - [ ] 3.8.1.11. Status
-         - [ ] 3.8.1.12. Summary
+         - [X] 3.8.1.11. Status
+         - [X] 3.8.1.12. Summary
        - [ ] 3.8.2.  Date and Time Component Properties
          - [ ] 3.8.2.1.  Date-Time Completed
-         - [ ] 3.8.2.2.  Date-Time End
+         - [X] 3.8.2.2.  Date-Time End
          - [ ] 3.8.2.3.  Date-Time Due
-         - [ ] 3.8.2.4.  Date-Time Start
-         - [ ] 3.8.2.5.  Duration
+         - [X] 3.8.2.4.  Date-Time Start
+         - [X] 3.8.2.5.  Duration
          - [ ] 3.8.2.6.  Free/Busy Time
-         - [ ] 3.8.2.7.  Time Transparency
-       - [ ] 3.8.3.  Time Zone Component Properties
-         - [ ] 3.8.3.1.  Time Zone Identifier
-         - [ ] 3.8.3.2.  Time Zone Name
-         - [ ] 3.8.3.3.  Time Zone Offset From
-         - [ ] 3.8.3.4.  Time Zone Offset To
-         - [ ] 3.8.3.5.  Time Zone URL
+         - [X] 3.8.2.7.  Time Transparency
+       - [X] 3.8.3.  Time Zone Component Properties
+         - [X] 3.8.3.1.  Time Zone Identifier
+         - [X] 3.8.3.2.  Time Zone Name
+         - [X] 3.8.3.3.  Time Zone Offset From
+         - [X] 3.8.3.4.  Time Zone Offset To
+         - [X] 3.8.3.5.  Time Zone URL
        - [ ] 3.8.4.  Relationship Component Properties
          - [ ] 3.8.4.1.  Attendee
          - [ ] 3.8.4.2.  Contact
@@ -105,10 +105,10 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
          - [ ] 3.8.4.5.  Related To
          - [ ] 3.8.4.6.  Uniform Resource Locator
          - [ ] 3.8.4.7.  Unique Identifier
-       - [ ] 3.8.5.  Recurrence Component Properties
-         - [ ] 3.8.5.1.  Exception Date-Times
-         - [ ] 3.8.5.2.  Recurrence Date-Times
-         - [ ] 3.8.5.3.  Recurrence Rule
+       - [X] 3.8.5.  Recurrence Component Properties
+         - [X] 3.8.5.1.  Exception Date-Times
+         - [X] 3.8.5.2.  Recurrence Date-Times
+         - [X] 3.8.5.3.  Recurrence Rule
        - [ ] 3.8.6.  Alarm Component Properties
          - [ ] 3.8.6.1.  Action
          - [ ] 3.8.6.2.  Repeat Count

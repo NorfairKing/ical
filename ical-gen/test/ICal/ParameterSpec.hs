@@ -37,6 +37,19 @@ spec = do
     parameterExampleSpec ["TRUE"] RSVPExpectationTrue
     parameterExampleSpec ["FALSE"] RSVPExpectationFalse
 
+  describe "ParticipationRole" $ do
+    genValidSpec @ParticipationRole
+    parameterSpec @ParticipationRole
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;ROLE=CHAIR:mailto:mrbig@example.com
+    -- @
+    parameterExampleSpec ["CHAIR"] ParticipationRoleChair
+    parameterExampleSpec ["REQ-PARTICIPANT"] ParticipationRoleRequiredParticipant
+    parameterExampleSpec ["OPT-PARTICIPANT"] ParticipationRoleOptionalParticipant
+
   describe "TZIDParam" $ do
     genValidSpec @TZIDParam
     parameterSpec @TZIDParam
