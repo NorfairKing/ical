@@ -160,6 +160,44 @@ anySingleParamB func = singleParamB $ \a ->
         then QuotedParam o
         else UnquotedParam ci
 
+-- | Common name
+--
+-- [section 3.2.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.2)
+-- @
+-- Parameter Name:  CN
+--
+-- Purpose:  To specify the common name to be associated with the
+--    calendar user specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--   cnparam    = "CN" "=" param-value
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter specifies the common name
+--    to be associated with the calendar user specified by the property.
+--    The parameter value is text.  The parameter value can be used for
+--    display text to be associated with the calendar address specified
+--    by the property.
+--
+-- Example:
+--
+--     ORGANIZER;CN="John Smith":mailto:jsmith@example.com
+-- @
+newtype CommonName = CommonName {unCommonName :: ParamValue}
+  deriving stock (Show, Eq, Ord, Generic)
+  deriving newtype (IsString)
+
+instance Validity CommonName
+
+instance NFData CommonName
+
+instance IsParameter CommonName where
+  parameterName Proxy = "CN"
+  parameterP = singleParamP $ pure . CommonName
+  parameterB = singleParamB unCommonName
+
 -- | Participation status
 --
 -- [section 3.2.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.12)
@@ -336,6 +374,14 @@ instance IsParameter RSVPExpectation where
   parameterB = singleParamB $ \case
     RSVPExpectationTrue -> "TRUE"
     RSVPExpectationFalse -> "FALSE"
+
+-- | Default RSVP Expectation
+--
+-- @
+--     ; Default is FALSE
+-- @
+defaultRSVPExpectation :: RSVPExpectation
+defaultRSVPExpectation = RSVPExpectationFalse
 
 -- | Participation role
 --

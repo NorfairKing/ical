@@ -1962,7 +1962,9 @@ instance IsProperty TimeZoneOffsetTo where
 data Attendee = Attendee
   { attendeeCalAddress :: !CalAddress,
     attendeeParticipationRole :: !ParticipationRole,
-    attendeeParticipationStatus :: !ParticipationStatus
+    attendeeParticipationStatus :: !ParticipationStatus,
+    attendeeRSVPExpectation :: !RSVPExpectation,
+    attendeeCommonName :: !(Maybe CommonName)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -1979,19 +1981,28 @@ instance IsProperty Attendee where
     attendeeParticipationStatus <-
       fromMaybe defaultParticipationStatus
         <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
+    attendeeRSVPExpectation <-
+      fromMaybe defaultRSVPExpectation
+        <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
+    attendeeCommonName <-
+      conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
 
     pure Attendee {..}
   propertyB Attendee {..} =
     insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
       insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
-        propertyTypeB attendeeCalAddress
+        insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation $
+          maybe id insertParam attendeeCommonName $
+            propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
 mkAttendee calAddress =
   Attendee
     { attendeeCalAddress = calAddress,
       attendeeParticipationRole = defaultParticipationRole,
-      attendeeParticipationStatus = defaultParticipationStatus
+      attendeeParticipationStatus = defaultParticipationStatus,
+      attendeeRSVPExpectation = defaultRSVPExpectation,
+      attendeeCommonName = Nothing
     }
 
 -- | Exception Date-Times

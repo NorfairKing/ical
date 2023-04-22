@@ -20,6 +20,8 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
+instance GenValid CommonName
+
 instance GenValid ParticipationStatus
 
 instance GenValid RSVPExpectation

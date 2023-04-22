@@ -340,14 +340,24 @@ spec = do
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
       ( (mkAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
-            attendeeParticipationStatus = ParticipationStatusTentative
+            attendeeParticipationStatus = ParticipationStatusTentative,
+            attendeeCommonName = Just "HenryCabot"
+          }
+      )
+    propertyRenderExampleSpec
+      "ATTENDEE;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
+      ( (mkAttendee "mailto:hcabot@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusTentative,
+            attendeeCommonName = Just "HenryCabot"
           }
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM=\"mailto:bob@example.com\";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
       ( (mkAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
-            attendeeParticipationStatus = ParticipationStatusAccepted
+            attendeeParticipationStatus = ParticipationStatusAccepted,
+            attendeeCommonName = Just "Jane Doe"
           }
       )
 
@@ -362,7 +372,7 @@ spec = do
     -- @
     propertyParseExampleSpec
       "ATTENDEE;CN=John Smith;DIR=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":mailto:jimdo@example.com"
-      (mkAttendee "mailto:jimdo@example.com")
+      ((mkAttendee "mailto:jimdo@example.com") {attendeeCommonName = Just "John Smith"})
 
     -- @
     --    The following is an example of this property with "delegatee" and
@@ -381,21 +391,32 @@ spec = do
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=\"mailto:iamboss@example.com\";CN=Henry Cabot:mailto:hcabot@example.com"
       ( (mkAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
-            attendeeParticipationStatus = ParticipationStatusTentative
+            attendeeParticipationStatus = ParticipationStatusTentative,
+            attendeeCommonName = Just "Henry Cabot"
           }
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
       ( (mkAttendee "mailto:iamboss@example.com")
           { attendeeParticipationRole = ParticipationRoleNonParticipant,
-            attendeeParticipationStatus = ParticipationStatusDelegated
+            attendeeParticipationStatus = ParticipationStatusDelegated,
+            attendeeCommonName = Just "The Big Cheese"
           }
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
       ( (mkAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
-            attendeeParticipationStatus = ParticipationStatusAccepted
+            attendeeParticipationStatus = ParticipationStatusAccepted,
+            attendeeCommonName = Just "Jane Doe"
+          }
+      )
+    propertyRenderExampleSpec
+      "ATTENDEE;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
+      ( (mkAttendee "mailto:jdoe@example.com")
+          { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
+            attendeeParticipationStatus = ParticipationStatusAccepted,
+            attendeeCommonName = Just "Jane Doe"
           }
       )
 
@@ -435,7 +456,7 @@ spec = do
     -- @
     propertyParseExampleSpec
       "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
-      (mkAttendee "mailto:jsmith@example.com")
+      ((mkAttendee "mailto:jsmith@example.com") {attendeeCommonName = Just "John Smith"})
 
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes

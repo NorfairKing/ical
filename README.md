@@ -21,7 +21,7 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
        - [ ] 3.1.4.  Character Set
      - [ ] 3.2.  Property Parameters
        - [ ] 3.2.1.  Alternate Text Representation
-       - [ ] 3.2.2.  Common Name
+       - [X] 3.2.2.  Common Name
        - [ ] 3.2.3.  Calendar User Type
        - [ ] 3.2.4.  Delegators
        - [ ] 3.2.5.  Delegatees

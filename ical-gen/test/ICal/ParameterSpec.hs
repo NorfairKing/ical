@@ -13,6 +13,17 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "CommonName" $ do
+    genValidSpec @CommonName
+    parameterSpec @CommonName
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     ORGANIZER;CN="John Smith":mailto:jsmith@example.com
+    -- @
+    parameterExampleSpec ["John Smith"] (CommonName "John Smith")
+
   describe "ParticipationStatus" $ do
     genValidSpec @ParticipationStatus
     parameterSpec @ParticipationStatus
