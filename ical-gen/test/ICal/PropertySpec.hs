@@ -17,6 +17,17 @@ import Test.Syd.Validity hiding (Location)
 
 spec :: Spec
 spec = do
+  describe "Method" $ do
+    genValidSpec @Method
+    propertySpec @Method
+    -- @
+    -- Example:  The following is a hypothetical example of this property to
+    --    convey that the iCalendar object is a scheduling request:
+    --
+    --     METHOD:REQUEST
+    -- @
+    propertyExampleSpec "METHOD:REQUEST" (Method "REQUEST")
+
   describe "ProdId" $ do
     genValidSpec @ProdId
     propertySpec @ProdId

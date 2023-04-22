@@ -130,9 +130,37 @@ iCalendarB = foldMap componentSectionB
 -- drop any components as that can lead to user data loss.
 -- @
 data Calendar = Calendar
-  { calendarVersion :: !Version,
+  { -- @
+    --                ; The following are REQUIRED,
+    --                ; but MUST NOT occur more than once.
+    --                ;
+    --                prodid / version /
+    -- @
     calendarProdId :: !ProdId,
+    calendarVersion :: !Version,
+    -- @
+    --                ;
+    --                ; The following are OPTIONAL,
+    --                ; but MUST NOT occur more than once.
+    --                ;
+    --                calscale / method /
+    -- @
     calendarCalendarScale :: !CalendarScale,
+    calendarMethod :: !(Maybe Method),
+    -- TODO:
+    -- @
+    --                ;
+    --                ; The following are OPTIONAL,
+    --                ; and MAY occur more than once.
+    --                ;
+    --                x-prop / iana-prop
+    --                ;
+    --                )
+    -- @
+    -- @
+    --     component  = 1*(eventc / todoc / journalc / freebusyc /
+    --                  timezonec / iana-comp / x-comp)
+    -- @
     calendarEvents :: ![Event],
     calendarTimeZones :: ![TimeZone]
   }
@@ -155,13 +183,11 @@ instance IsComponent Calendar where
     calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
       not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VCALENDAR"
 
-    calendarVersion <- parseFirst calPropLines
     calendarProdId <- parseFirst calPropLines
+    calendarVersion <- parseFirst calPropLines
 
-    -- @
-    -- The default value is "GREGORIAN".
-    -- @
-    calendarCalendarScale <- fromMaybe CalendarScaleGregorian <$> parseFirstMaybe calPropLines
+    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> parseFirstMaybe calPropLines
+    calendarMethod <- parseFirstMaybe calPropLines
 
     calendarTimeZones <- parseManySubcomponents calPropLines
     calendarEvents <- parseManySubcomponents calPropLines
@@ -171,12 +197,10 @@ instance IsComponent Calendar where
   componentB Calendar {..} =
     mconcat $
       concat
-        [ [ propertyListB calendarVersion,
-            propertyListB calendarProdId,
-            -- @
-            -- The default value is "GREGORIAN".
-            -- @
-            propertyDListB CalendarScaleGregorian calendarCalendarScale
+        [ [ propertyListB calendarProdId,
+            propertyListB calendarVersion,
+            propertyDListB defaultCalendarScale calendarCalendarScale,
+            propertyMListB calendarMethod
           ],
           map componentSectionB calendarEvents,
           map componentSectionB calendarTimeZones
@@ -187,10 +211,8 @@ makeCalendar prodId =
   Calendar
     { calendarProdId = prodId,
       calendarVersion = version20,
-      -- @
-      -- The default value is "GREGORIAN".
-      -- @
-      calendarCalendarScale = CalendarScaleGregorian,
+      calendarCalendarScale = defaultCalendarScale,
+      calendarMethod = Nothing,
       calendarEvents = [],
       calendarTimeZones = []
     }

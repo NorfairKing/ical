@@ -21,6 +21,10 @@ import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
+instance GenValid Method where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance GenValid ProdId where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
