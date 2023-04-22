@@ -13,6 +13,18 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "ParticipationStatus" $ do
+    genValidSpec @ParticipationStatus
+    parameterSpec @ParticipationStatus
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;PARTSTAT=DECLINED:mailto:jsmith@example.com
+    -- @
+    parameterExampleSpec ["ACCEPTED"] ParticipationStatusAccepted
+    parameterExampleSpec ["DECLINED"] ParticipationStatusDeclined
+
   describe "TZIDParam" $ do
     genValidSpec @TZIDParam
     parameterSpec @TZIDParam

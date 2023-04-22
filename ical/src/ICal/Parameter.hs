@@ -148,6 +148,128 @@ anySingleParamB func = singleParamB $ \a ->
         then QuotedParam o
         else UnquotedParam ci
 
+-- | Participation status
+--
+-- [section 3.2.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.12)
+--
+-- @
+-- Parameter Name:  PARTSTAT
+--
+-- Purpose:  To specify the participation status for the calendar user
+--    specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     partstatparam    = "PARTSTAT" "="
+--                       (partstat-event
+--                      / partstat-todo
+--                      / partstat-jour)
+--
+--     partstat-event   = ("NEEDS-ACTION"    ; Event needs action
+--                      / "ACCEPTED"         ; Event accepted
+--                      / "DECLINED"         ; Event declined
+--                      / "TENTATIVE"        ; Event tentatively
+--                                           ; accepted
+--                      / "DELEGATED"        ; Event delegated
+--                      / x-name             ; Experimental status
+--                      / iana-token)        ; Other IANA-registered
+--                                           ; status
+--     ; These are the participation statuses for a "VEVENT".
+--     ; Default is NEEDS-ACTION.
+--
+--     partstat-todo    = ("NEEDS-ACTION"    ; To-do needs action
+--                      / "ACCEPTED"         ; To-do accepted
+--                      / "DECLINED"         ; To-do declined
+--                      / "TENTATIVE"        ; To-do tentatively
+--                                           ; accepted
+--
+--
+--
+-- ruisseaux                Standards Track                    [Page 22]
+--
+--
+--  5545                       iCalendar                  September 2009
+--
+--
+--                      / "DELEGATED"        ; To-do delegated
+--                      / "COMPLETED"        ; To-do completed
+--                                           ; COMPLETED property has
+--                                           ; DATE-TIME completed
+--                      / "IN-PROCESS"       ; To-do in process of
+--                                           ; being completed
+--                      / x-name             ; Experimental status
+--                      / iana-token)        ; Other IANA-registered
+--                                           ; status
+--     ; These are the participation statuses for a "VTODO".
+--     ; Default is NEEDS-ACTION.
+--
+--
+--
+--     partstat-jour    = ("NEEDS-ACTION"    ; Journal needs action
+--                      / "ACCEPTED"         ; Journal accepted
+--                      / "DECLINED"         ; Journal declined
+--                      / x-name             ; Experimental status
+--                      / iana-token)        ; Other IANA-registered
+--                                           ; status
+--     ; These are the participation statuses for a "VJOURNAL".
+--     ; Default is NEEDS-ACTION.
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter identifies the
+--    participation status for the calendar user specified by the
+--    property value.  The parameter values differ depending on whether
+--    they are associated with a group-scheduled "VEVENT", "VTODO", or
+--    "VJOURNAL".  The values MUST match one of the values allowed for
+--    the given calendar component.  If not specified on a property that
+--    allows this parameter, the default value is NEEDS-ACTION.
+--    Applications MUST treat x-name and iana-token values they don't
+--    recognize the same way as they would the NEEDS-ACTION value.
+--
+-- Example:
+--
+--     ATTENDEE;PARTSTAT=DECLINED:mailto:jsmith@example.com
+-- @
+data ParticipationStatus
+  = ParticipationStatusNeedsAction
+  | ParticipationStatusAccepted
+  | ParticipationStatusDeclined
+  | ParticipationStatusTentative
+  | ParticipationStatusDelegated
+  | ParticipationStatusCompleted
+  | ParticipationStatusInProcess
+  | ParticipationStatusOther !ParamValue
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity ParticipationStatus
+
+instance NFData ParticipationStatus
+
+instance IsParameter ParticipationStatus where
+  parameterName Proxy = "PARTSTAT"
+  parameterP =
+    singleParamP $
+      pure
+        . ( \pv -> case paramValueCI pv of
+              "NEEDS-ACTION" -> ParticipationStatusNeedsAction
+              "ACCEPTED" -> ParticipationStatusAccepted
+              "DECLINED" -> ParticipationStatusDeclined
+              "TENTATIVE" -> ParticipationStatusTentative
+              "DELEGATED" -> ParticipationStatusDelegated
+              "COMPLETED" -> ParticipationStatusCompleted
+              "IN-PROCESS" -> ParticipationStatusInProcess
+              _ -> ParticipationStatusOther pv
+          )
+  parameterB = singleParamB $ \case
+    ParticipationStatusNeedsAction -> "NEEDS-ACTION"
+    ParticipationStatusAccepted -> "ACCEPTED"
+    ParticipationStatusDeclined -> "DECLINED"
+    ParticipationStatusTentative -> "TENTATIVE"
+    ParticipationStatusDelegated -> "DELEGATED"
+    ParticipationStatusCompleted -> "COMPLETED"
+    ParticipationStatusInProcess -> "IN-PROCESS"
+    ParticipationStatusOther pv -> pv
+
 -- | Time Zone Identifier
 --
 -- [section 3.2.19](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)
@@ -311,7 +433,7 @@ data ValueDataType
     -- token values that they don't recognize without attempting to
     -- interpret or parse the value data.
     -- @
-    OtherType !ParamValue
+    TypeOther !ParamValue
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity ValueDataType
@@ -338,7 +460,7 @@ instance IsParameter ValueDataType where
               "TIME" -> TypeTime
               "URI" -> TypeURI
               "UTC-OFFSET" -> TypeUTCOffset
-              _ -> OtherType pv
+              _ -> TypeOther pv
           )
   parameterB = singleParamB $ \case
     TypeBinary -> "BINARY"
@@ -355,4 +477,4 @@ instance IsParameter ValueDataType where
     TypeTime -> "TIME"
     TypeURI -> "URI"
     TypeUTCOffset -> "UTC-OFFSET"
-    OtherType pv -> pv
+    TypeOther pv -> pv

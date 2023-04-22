@@ -20,6 +20,8 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
+instance GenValid ParticipationStatus
+
 instance GenValid TZIDParam where
   genValid = genValidStructurally
 
