@@ -50,3 +50,17 @@ spec = do
               durWeekWeek = 7
             }
       )
+  describe "durationOneDay" $
+    it "is valid" $
+      shouldBeValid durationOneDay
+  describe "durationNominalDiffTime" $
+    it "produces valid valid" $
+      producesValid durationNominalDiffTime
+  describe "nominalDiffTimeDuration" $ do
+    it "produces valid" $
+      producesValid
+        nominalDiffTimeDuration
+    it "roundtrips for whole seconds" $
+      forAllValid $ \seconds ->
+        let ndt = fromIntegral (seconds :: Int)
+         in durationNominalDiffTime (nominalDiffTimeDuration ndt) `shouldBe` ndt

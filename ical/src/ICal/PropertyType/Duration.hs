@@ -105,6 +105,40 @@ durationOneDay =
         durDateSecond = 0
       }
 
+nominalDiffTimeDuration :: Time.NominalDiffTime -> Duration
+nominalDiffTimeDuration ndt =
+  let sign = if ndt < 0 then Negative else Positive
+      andt = abs ndt
+      totalDays = andt / Time.nominalDay
+      days = floor totalDays
+      totalHours = andt / 60 / 60
+      wholeHours = floor totalHours
+      hoursOnly = wholeHours - days * 24
+      totalMinutes = andt / 60
+      wholeMinutes = floor totalMinutes
+      minutesOnly = wholeMinutes - wholeHours * 60
+      totalSeconds = andt
+      wholeSeconds = floor totalSeconds
+      secondsOnly = wholeSeconds - wholeMinutes * 60
+   in if days > 0
+        then
+          DurationDate
+            DurDate
+              { durDateSign = sign,
+                durDateDay = days,
+                durDateHour = hoursOnly,
+                durDateMinute = minutesOnly,
+                durDateSecond = secondsOnly
+              }
+        else
+          DurationTime
+            DurTime
+              { durTimeSign = sign,
+                durTimeHour = hoursOnly,
+                durTimeMinute = minutesOnly,
+                durTimeSecond = secondsOnly
+              }
+
 durationNominalDiffTime :: Duration -> Time.NominalDiffTime
 durationNominalDiffTime = \case
   DurationDate durDate -> durDateNominalDiffTime durDate
