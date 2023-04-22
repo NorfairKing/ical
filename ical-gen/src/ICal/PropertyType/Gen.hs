@@ -143,6 +143,10 @@ clampMaybe lower upper value =
     then Just value
     else Nothing
 
+instance GenValid CalAddress where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance GenValid URI where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

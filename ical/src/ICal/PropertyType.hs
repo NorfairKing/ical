@@ -1,5 +1,7 @@
 module ICal.PropertyType
-  ( module ICal.PropertyType.Date,
+  ( module ICal.PropertyType.CalAddress,
+    module ICal.PropertyType.Class,
+    module ICal.PropertyType.Date,
     module ICal.PropertyType.DateTime,
     module ICal.PropertyType.DateTimes,
     module ICal.PropertyType.Duration,
@@ -9,10 +11,10 @@ module ICal.PropertyType
     module ICal.PropertyType.Time,
     module ICal.PropertyType.URI,
     module ICal.PropertyType.UTCOffset,
-    module ICal.PropertyType.Class,
   )
 where
 
+import ICal.PropertyType.CalAddress
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime

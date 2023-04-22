@@ -20,6 +20,7 @@ library
       ICal.Parameter
       ICal.Property
       ICal.PropertyType
+      ICal.PropertyType.CalAddress
       ICal.PropertyType.Class
       ICal.PropertyType.Date
       ICal.PropertyType.DateTime

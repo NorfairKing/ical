@@ -255,6 +255,7 @@ data Event = Event
     -- resources / rdate / x-prop / iana-prop
     -- ;
     -- @
+    eventAttendees :: !(Set Attendee),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes)
   }
@@ -309,6 +310,7 @@ vEventP = do
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
+  eventAttendees <- parseSet eventProperties
   eventExceptionDateTimes <- parseSet eventProperties
   eventRecurrenceDateTimes <- parseSet eventProperties
   pure Event {..}
@@ -342,6 +344,7 @@ vEventB Event {..} =
         Just endOrDuration -> case endOrDuration of
           Left e -> propertyListB e
           Right d -> propertyListB d,
+      propertySetB eventAttendees,
       propertySetB eventExceptionDateTimes,
       propertySetB eventRecurrenceDateTimes
     ]
@@ -371,6 +374,7 @@ makeEvent uid dateTimeStamp =
       eventRecurrenceID = Nothing,
       eventRecurrenceRules = S.empty,
       eventDateTimeEndDuration = Nothing,
+      eventAttendees = S.empty,
       eventExceptionDateTimes = S.empty,
       eventRecurrenceDateTimes = S.empty
     }

@@ -6,7 +6,10 @@
 module ICal.PropertySpec where
 
 import qualified Data.Set as S
+import Data.Text (Text)
 import Data.Time
+import GHC.Stack (HasCallStack, withFrozenCallStack)
+import ICal.ContentLine
 import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType
@@ -308,6 +311,128 @@ spec = do
     propertyExampleSpec
       "TRANSP:OPAQUE"
       TransparencyOpaque
+
+  describe "Attendee" $ do
+    genValidSpec @Attendee
+    propertySpec @Attendee
+    -- From the spec:
+    let attendeeExampleSpec :: HasCallStack => ContentLine -> Text -> Spec
+        attendeeExampleSpec line result =
+          withFrozenCallStack $ do
+            -- TODO: This is propertyParseExampleSpec until we understand all the
+            -- role parameters after that we should be able to use
+            -- propertyExampleSpec instead.
+            case parseCalAddress result of
+              Nothing -> liftIO $ expectationFailure "invalid test."
+              Just calAddress ->
+                propertyParseExampleSpec
+                  line
+                  (Attendee calAddress)
+
+    -- @
+    -- Example:  The following are examples of this property's use for a
+    --    to-do:
+    --
+    --     ATTENDEE;MEMBER="mailto:DEV-GROUP@example.com":
+    --      mailto:joecool@example.com
+    --     ATTENDEE;DELEGATED-FROM="mailto:immud@example.com":
+    --      mailto:ildoit@example.com
+    --    The following is an example of this property used for specifying
+    --    multiple attendees to an event:
+    --
+    --     ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=Henry
+    --      Cabot:mailto:hcabot@example.com
+    --     ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM="mailto:bob@
+    --      example.com";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@
+    --      example.com
+    --
+    -- @
+    attendeeExampleSpec
+      "ATTENDEE;MEMBER=\"mailto:DEV-GROUP@example.com\":mailto:joecool@example.com"
+      "mailto:joecool@example.com"
+    attendeeExampleSpec
+      "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
+      "mailto:ildoit@example.com"
+    attendeeExampleSpec
+      "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
+      "mailto:hcabot@example.com"
+    attendeeExampleSpec
+      "ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM=\"mailto:bob@example.com\";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
+      "mailto:jdoe@example.com"
+
+    -- @
+    --    The following is an example of this property with a URI to the
+    --    directory information associated with the attendee:
+    --
+    --     ATTENDEE;CN=John Smith;DIR="ldap://example.com:6666/o=ABC%
+    --      20Industries,c=US???(cn=Jim%20Dolittle)":mailto:jimdo@
+    --      example.com
+    --
+    -- @
+    attendeeExampleSpec
+      "ATTENDEE;CN=John Smith;DIR=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":mailto:jimdo@example.com"
+      "mailto:jimdo@example.com"
+
+    -- @
+    --    The following is an example of this property with "delegatee" and
+    --    "delegator" information for an event:
+    --
+    --     ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=
+    --      "mailto:iamboss@example.com";CN=Henry Cabot:mailto:hcabot@
+    --      example.com
+    --     ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=
+    --      "mailto:hcabot@example.com";CN=The Big Cheese:mailto:iamboss
+    --      @example.com
+    --     ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe
+    --      :mailto:jdoe@example.com
+    -- @
+    attendeeExampleSpec
+      "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=\"mailto:iamboss@example.com\";CN=Henry Cabot:mailto:hcabot@example.com"
+      "mailto:hcabot@example.com"
+    attendeeExampleSpec
+      "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
+      "mailto:iamboss@example.com"
+    attendeeExampleSpec
+      "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
+      "mailto:jdoe@example.com"
+
+    -- @
+    -- Example:  The following is an example of this property's use when
+    --    another calendar user is acting on behalf of the "Attendee":
+    --
+    --     ATTENDEE;SENT-BY=mailto:jan_doe@example.com;CN=John Smith:
+    --      mailto:jsmith@example.com
+    -- @
+    --
+    -- with the erratum:
+    --
+    -- @
+    -- Section 3.8.4.1 says:
+    --
+    -- Example:  The following is an example of this property's use when
+    --       another calendar user is acting on behalf of the "Attendee":
+    --
+    --        ATTENDEE;SENT-BY=mailto:jan_doe@example.com;CN=John Smith:
+    --         mailto:jsmith@example.com
+    --
+    -- It should say:
+    --
+    -- Example:  The following is an example of this property's use when
+    --       another calendar user is acting on behalf of the "Attendee":
+    --
+    --        ATTENDEE;SENT-BY="mailto:jan_doe@example.com";CN=John Smith:
+    --                         ^                          ^
+    --         mailto:jsmith@example.com
+    --
+    -- Notes:
+    --
+    -- In the specification for SENT-BY (3.2.18), the r-value MUST be explicitly bound by DQUOTEs (ABNF follows)
+    --
+    -- sentbyparam = "SENT-BY" "=" DQUOTE cal-address DQUOTE
+    -- @
+    attendeeExampleSpec
+      "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
+      "mailto:jsmith@example.com"
 
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes

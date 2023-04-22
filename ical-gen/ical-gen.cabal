@@ -118,6 +118,7 @@ test-suite ical-test
       ICal.ContentLineSpec
       ICal.ParameterSpec
       ICal.PropertySpec
+      ICal.PropertyType.CalAddressSpec
       ICal.PropertyType.DateSpec
       ICal.PropertyType.DateTimeSpec
       ICal.PropertyType.DateTimesSpec

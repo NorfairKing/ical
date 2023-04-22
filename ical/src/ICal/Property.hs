@@ -1831,6 +1831,18 @@ instance IsProperty TimeZoneOffsetTo where
   propertyP = wrapPropertyTypeP TimeZoneOffsetTo
   propertyB = propertyTypeB . unTimeZoneOffsetTo
 
+newtype Attendee = Attendee {unAttendee :: CalAddress}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Attendee
+
+instance NFData Attendee
+
+instance IsProperty Attendee where
+  propertyName Proxy = "ATTENDEE"
+  propertyP = wrapPropertyTypeP Attendee
+  propertyB = propertyTypeB . unAttendee
+
 -- | Exception Date-Times
 --
 -- === [section 3.8.5.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.1)
