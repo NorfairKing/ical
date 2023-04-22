@@ -2,6 +2,11 @@
 
 An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
 
+## Status
+
+This library does not cover even close to all parts of the spec yet, but it is good at the parts that it does cover already.
+It's already being used in production at https://smos.online and https://social-dance.today.
+
 ## Goals
 
 * Strict RFC Compliance
