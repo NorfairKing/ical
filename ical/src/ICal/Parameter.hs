@@ -45,6 +45,7 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
   | MultipleParametersfound !(NonEmpty ParamValue)
+  | UnknownRSVPExpectation ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   deriving (Show, Eq, Ord)
 
 instance Exception ParameterParseError where
@@ -60,6 +61,11 @@ instance Exception ParameterParseError where
         [ "Multiple parameter values found where one was expected.",
           "values:",
           show values
+        ]
+    UnknownRSVPExpectation pv ->
+      unlines
+        [ "Unknown RSVP Value:",
+          show pv
         ]
 
 -- | Parameters
@@ -269,6 +275,53 @@ instance IsParameter ParticipationStatus where
     ParticipationStatusCompleted -> "COMPLETED"
     ParticipationStatusInProcess -> "IN-PROCESS"
     ParticipationStatusOther pv -> pv
+
+-- | RSVP Expectation
+--
+-- [section 3.2.17](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.17)
+--
+-- @
+-- Parameter Name:  RSVP
+--
+-- Purpose:  To specify whether there is an expectation of a favor of a
+--    reply from the calendar user specified by the property value.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     rsvpparam = "RSVP" "=" ("TRUE" / "FALSE")
+--     ; Default is FALSE
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter identifies the expectation
+--    of a reply from the calendar user specified by the property value.
+--    This parameter is used by the "Organizer" to request a
+--    participation status reply from an "Attendee" of a group-scheduled
+--    event or to-do.  If not specified on a property that allows this
+--    parameter, the default value is FALSE.
+--
+-- Example:
+--
+--     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
+-- @
+data RSVPExpectation
+  = RSVPExpectationTrue
+  | RSVPExpectationFalse
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity RSVPExpectation
+
+instance NFData RSVPExpectation
+
+instance IsParameter RSVPExpectation where
+  parameterName Proxy = "RSVP"
+  parameterP = singleParamP $ \pv -> case paramValueCI pv of
+    "TRUE" -> pure RSVPExpectationTrue
+    "FALSE" -> pure RSVPExpectationFalse
+    _ -> unfixableError $ UnknownRSVPExpectation pv
+  parameterB = singleParamB $ \case
+    RSVPExpectationTrue -> "TRUE"
+    RSVPExpectationFalse -> "FALSE"
 
 -- | Time Zone Identifier
 --

@@ -25,6 +25,18 @@ spec = do
     parameterExampleSpec ["ACCEPTED"] ParticipationStatusAccepted
     parameterExampleSpec ["DECLINED"] ParticipationStatusDeclined
 
+  describe "RSVPExpectation" $ do
+    genValidSpec @RSVPExpectation
+    parameterSpec @RSVPExpectation
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
+    -- @
+    parameterExampleSpec ["TRUE"] RSVPExpectationTrue
+    parameterExampleSpec ["FALSE"] RSVPExpectationFalse
+
   describe "TZIDParam" $ do
     genValidSpec @TZIDParam
     parameterSpec @TZIDParam

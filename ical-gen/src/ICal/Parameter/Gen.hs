@@ -22,6 +22,8 @@ import Test.Syd.Validity
 
 instance GenValid ParticipationStatus
 
+instance GenValid RSVPExpectation
+
 instance GenValid TZIDParam where
   genValid = genValidStructurally
 
