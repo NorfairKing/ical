@@ -45,10 +45,28 @@ import Text.Megaparsec
 data Component = Component
   { -- TODO rename
     componentName' :: Text,
+    -- TODO consider if
+    -- 1. order of the values matters
+    -- 2. duplicates matter
+    --
+    -- If both don't matter then use a set.
     componentProperties :: Map ContentLineName (NonEmpty ContentLineValue),
     componentSubcomponents :: [Component]
   }
   deriving (Show, Eq, Ord)
+
+-- TODO rename
+renderGeneralComponents :: [Component] -> DList ContentLine
+renderGeneralComponents = foldMap renderGeneralComponent
+
+renderGeneralComponent :: Component -> DList ContentLine
+renderGeneralComponent Component {..} =
+  mconcat
+    [ propertyListB (Begin componentName'),
+      DList.fromList $ concatMap (\(name, values) -> map (ContentLine name) (NE.toList values)) (M.toList componentProperties),
+      foldMap renderGeneralComponent componentSubcomponents,
+      propertyListB (End componentName')
+    ]
 
 -- TODO rename
 parseGeneralComponents ::
