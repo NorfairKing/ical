@@ -545,6 +545,9 @@ instance IsComponent Standard where
   componentP = Standard <$> observanceP
   componentB = observanceB . unStandard
 
+standardComponentParser :: Component -> CP Standard
+standardComponentParser = fmap Standard . observanceComponentParser
+
 newtype Daylight = Daylight {unDaylight :: Observance}
   deriving (Show, Eq, Ord, Generic)
 
@@ -556,6 +559,9 @@ instance IsComponent Daylight where
   componentName Proxy = "DAYLIGHT"
   componentP = Daylight <$> observanceP
   componentB = observanceB . unDaylight
+
+daylightComponentParser :: Component -> CP Daylight
+daylightComponentParser = fmap Daylight . observanceComponentParser
 
 data Observance = Observance
   { -- @
@@ -613,6 +619,40 @@ makeObservance start from to =
       observanceRecurrenceDateTimes = S.empty,
       observanceTimeZoneName = S.empty
     }
+
+observanceComponentParser :: Component -> CP Observance
+observanceComponentParser Component {..} = do
+  case componentName' of
+    "STANDARD" -> pure ()
+    "DAYLIGHT" -> pure ()
+    _ -> fail "not an observance component"
+  -- @
+  -- The mandatory "DTSTART" property gives the effective onset date
+  -- and local time for the time zone sub-component definition.
+  -- "DTSTART" in this usage MUST be specified as a date with a local
+  -- time value.
+  -- @
+  dtstart <- requiredProperty componentProperties
+  observanceDateTimeStart <- case dtstart of
+    DateTimeStartDate _ -> fail "DTSTART must be specified as a datetime, not a date."
+    DateTimeStartDateTime dt -> case dt of
+      DateTimeFloating lt -> pure lt
+      _ -> fail "DTSTART must be specified as a date with a local time value."
+
+  observanceTimeZoneOffsetTo <- requiredProperty componentProperties
+  observanceTimeZoneOffsetFrom <- requiredProperty componentProperties
+  observanceRecurrenceRules <-
+    S.fromList
+      <$> (listOfProperties componentProperties >>= traverse (fixUntil (Just dtstart)))
+  when (S.size observanceRecurrenceRules > 1) $
+    lift $
+      emitWarning $
+        WarnMultipleRecurrenceRules observanceRecurrenceRules
+
+  observanceComment <- setOfProperties componentProperties
+  observanceRecurrenceDateTimes <- setOfProperties componentProperties
+  observanceTimeZoneName <- setOfProperties componentProperties
+  pure Observance {..}
 
 observanceP :: CP Observance
 observanceP = do

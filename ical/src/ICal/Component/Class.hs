@@ -345,6 +345,18 @@ propertyDListB defaultValue value =
 propertySetB :: IsProperty property => Set property -> DList ContentLine
 propertySetB = DList.fromList . map propertyContentLineB . S.toList
 
+requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
+requiredProperty m = case M.lookup name m of
+  Nothing -> fail $ "Did not find required property " <> show name
+  Just values -> case values of
+    (value :| _) ->
+      liftConformToCP $
+        conformMapAll PropertyParseError absurd absurd $
+          propertyContentLineP (ContentLine name value)
+          -- TODO warning when there are multiple.
+  where
+    name = propertyName (Proxy :: Proxy a)
+
 parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
 parseFirst = go
   where
@@ -356,6 +368,19 @@ parseFirst = go
         if contentLineName contentLine == name
           then liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
+
+optionalProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP (Maybe a)
+optionalProperty m = case M.lookup name m of
+  Nothing -> pure Nothing
+  Just values -> case values of
+    (value :| _) ->
+      fmap Just $
+        liftConformToCP $
+          conformMapAll PropertyParseError absurd absurd $
+            propertyContentLineP (ContentLine name value)
+            -- TODO warning when there are multiple.
+  where
+    name = propertyName (Proxy :: Proxy a)
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
 parseFirstMaybe = go
@@ -370,6 +395,17 @@ parseFirstMaybe = go
           then fmap Just $ liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
 
+listOfProperties ::
+  forall a.
+  IsProperty a =>
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP [a]
+listOfProperties m = do
+  let values = maybe [] NE.toList $ M.lookup name m
+  mapM (liftConformToCP . conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
+  where
+    name = propertyName (Proxy :: Proxy a)
+
 parseList ::
   forall a.
   IsProperty a =>
@@ -380,6 +416,13 @@ parseList cls =
     filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)
+
+setOfProperties ::
+  forall a.
+  (Ord a, IsProperty a) =>
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP (Set a)
+setOfProperties = fmap S.fromList . listOfProperties
 
 parseSet ::
   forall a.
