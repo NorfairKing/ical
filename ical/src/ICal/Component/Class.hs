@@ -51,21 +51,28 @@ data Component = Component
   deriving (Show, Eq, Ord)
 
 -- TODO rename
-parseGeneralComponent ::
+parseGeneralComponents ::
   [ContentLine] ->
-  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning Component
-parseGeneralComponent cls = case cls of
-  [] -> error "fail: Not enough content lines."
-  (firstCL : restCLs) -> do
-    Begin name <-
-      conformMapAll
-        PropertyParseError
-        absurd
-        absurd
-        $ propertyContentLineP firstCL
-
-    fst <$> goComponent name M.empty [] restCLs
+  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning [Component]
+parseGeneralComponents = goComponents
   where
+    goComponents ::
+      [ContentLine] ->
+      Conform CalendarParseError CalendarParseFixableError CalendarParseWarning [Component]
+    goComponents = \case
+      [] -> pure []
+      (firstCL : restCLs) -> do
+        Begin name <-
+          conformMapAll
+            PropertyParseError
+            absurd
+            absurd
+            $ propertyContentLineP firstCL
+
+        (component, leftovers) <- goComponent name M.empty [] restCLs
+        restComponents <- goComponents leftovers
+        pure (component : restComponents)
+
     goComponent ::
       Text ->
       Map ContentLineName (NonEmpty ContentLineValue) ->
