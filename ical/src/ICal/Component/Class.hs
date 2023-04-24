@@ -23,6 +23,8 @@ import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -39,6 +41,96 @@ import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine
 import Text.Megaparsec
+
+data Component = Component
+  { -- TODO rename
+    componentName' :: Text,
+    componentProperties :: Map ContentLineName (NonEmpty ContentLineValue),
+    componentSubcomponents :: [Component]
+  }
+  deriving (Show, Eq, Ord)
+
+-- TODO rename
+parseGeneralComponent ::
+  [ContentLine] ->
+  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning Component
+parseGeneralComponent cls = case cls of
+  [] -> error "fail: Not enough content lines."
+  (firstCL : restCLs) -> do
+    Begin name <-
+      conformMapAll
+        PropertyParseError
+        absurd
+        absurd
+        $ propertyContentLineP firstCL
+
+    fst <$> goComponent name M.empty [] restCLs
+  where
+    goComponent ::
+      Text ->
+      Map ContentLineName (NonEmpty ContentLineValue) ->
+      [Component] ->
+      -- TODO use a DList
+      [ContentLine] ->
+      Conform CalendarParseError CalendarParseFixableError CalendarParseWarning (Component, [ContentLine])
+    goComponent name properties subComponents = \case
+      [] -> error "fail: only a begin, but nothing else."
+      [lastCL] -> do
+        End name' <-
+          conformMapAll
+            PropertyParseError
+            absurd
+            absurd
+            $ propertyContentLineP
+              lastCL
+        if name' == name
+          then
+            pure
+              ( Component
+                  { componentName' = name,
+                    componentProperties = properties,
+                    componentSubcomponents = subComponents
+                  },
+                []
+              )
+          else error "fail: end had the wrong name"
+      (cl : rest) ->
+        case contentLineName cl of
+          "END" -> do
+            End name' <-
+              conformMapAll
+                PropertyParseError
+                absurd
+                absurd
+                $ propertyContentLineP
+                  cl
+            if name' == name
+              then
+                pure
+                  ( Component
+                      { componentName' = name,
+                        componentProperties = properties,
+                        componentSubcomponents = subComponents
+                      },
+                    rest
+                  )
+              else error "fail: end had the wrong name"
+          "BEGIN" -> do
+            Begin name' <-
+              conformMapAll
+                PropertyParseError
+                absurd
+                absurd
+                $ propertyContentLineP
+                  cl
+            (subcomponent, leftovers) <- goComponent name' M.empty [] rest
+            goComponent name properties (subComponents <> [subcomponent]) leftovers
+          _ ->
+            goComponent
+              name
+              (M.insertWith (<>) (contentLineName cl) (contentLineValue cl :| []) properties)
+              subComponents
+              rest
 
 data CalendarParseError
   = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)
