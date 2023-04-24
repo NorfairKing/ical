@@ -16,6 +16,7 @@ import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -494,12 +495,9 @@ makeTimeZone tzid observances =
       timeZoneObservances = observances
     }
 
-vTimeZoneP :: CP TimeZone
-vTimeZoneP = do
-  timeZoneProperties <- takeWhileP (Just "timeZoneProperties") $ \ContentLine {..} ->
-    not $
-      contentLineName == "END" && (contentLineValueRaw contentLineValue == "VTIMEZONE")
-  timeZoneId <- parseFirst timeZoneProperties
+vTimeZoneP :: Map ContentLineName (NonEmpty ContentLineValue) -> CP TimeZone
+vTimeZoneP timeZoneProperties = do
+  timeZoneId <- requiredProperty timeZoneProperties
   eithers <- parseManySubcomponents2 timeZoneProperties
   let os = map (either StandardObservance DaylightObservance) eithers
   timeZoneObservances <- case NE.nonEmpty os of

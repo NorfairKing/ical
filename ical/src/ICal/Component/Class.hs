@@ -23,6 +23,8 @@ import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -172,17 +174,25 @@ class IsComponent component where
   componentName :: Proxy component -> Text
 
   -- | Parser for this component
-  componentP :: CP component
+  componentP :: Map ContentLineName (NonEmpty ContentLineValue) -> CP component
 
   -- | Builder for this component
   componentB :: component -> DList ContentLine
 
 componentSectionP :: forall component. (Validity component, IsComponent component) => CP component
 componentSectionP = do
-  c <- sectionP (componentName (Proxy :: Proxy component)) componentP
+  c <- sectionP (componentName (Proxy :: Proxy component)) $ do
+    componentProperties <- takeWhileP (Just "componentProperties") $ \ContentLine {..} ->
+      not $ contentLineName == "END" && contentLineValueRaw contentLineValue == (componentName (Proxy :: Proxy component))
+    componentP (makeContentLineMap componentProperties)
   case prettyValidate c of
     Left err -> fail err
     Right c' -> pure c'
+
+makeContentLineMap :: [ContentLine] -> Map ContentLineName (NonEmpty ContentLineValue)
+makeContentLineMap =
+  M.fromListWith (<>)
+    . map (\ContentLine {..} -> (contentLineName, contentLineValue :| []))
 
 sectionP :: Text -> CP a -> CP a
 sectionP name parser = do
@@ -228,6 +238,18 @@ propertyDListB defaultValue value =
 propertySetB :: IsProperty property => Set property -> DList ContentLine
 propertySetB = DList.fromList . map propertyContentLineB . S.toList
 
+requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
+requiredProperty m = case M.lookup name m of
+  Nothing -> fail $ "Did not find required property " <> show name
+  Just values -> case values of
+    (value :| _) ->
+      liftConformToCP $
+        conformMapAll PropertyParseError absurd absurd $
+          propertyContentLineP (ContentLine name value)
+          -- TODO warning when there are multiple.
+  where
+    name = propertyName (Proxy :: Proxy a)
+
 parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
 parseFirst = go
   where
@@ -239,6 +261,19 @@ parseFirst = go
         if contentLineName contentLine == name
           then liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
+
+optionalProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP (Maybe a)
+optionalProperty m = case M.lookup name m of
+  Nothing -> pure Nothing
+  Just values -> case values of
+    (value :| _) ->
+      fmap Just $
+        liftConformToCP $
+          conformMapAll PropertyParseError absurd absurd $
+            propertyContentLineP (ContentLine name value)
+            -- TODO warning when there are multiple.
+  where
+    name = propertyName (Proxy :: Proxy a)
 
 parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
 parseFirstMaybe = go
@@ -253,6 +288,17 @@ parseFirstMaybe = go
           then fmap Just $ liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
 
+listOfProperty ::
+  forall a.
+  IsProperty a =>
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP [a]
+listOfProperty m = do
+  let values = maybe [] NE.toList $ M.lookup name m
+  mapM (liftConformToCP . conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
+  where
+    name = propertyName (Proxy :: Proxy a)
+
 parseList ::
   forall a.
   IsProperty a =>
@@ -263,6 +309,13 @@ parseList cls =
     filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)
+
+setOfProperty ::
+  forall a.
+  (Ord a, IsProperty a) =>
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP (Set a)
+setOfProperty = fmap S.fromList . listOfProperty
 
 parseSet ::
   forall a.
@@ -284,7 +337,7 @@ parseSubcomponent = go1
               then go2 $ takeWhile (not . isEnd) rest
               else go1 rest
     go2 :: [ContentLine] -> CP a
-    go2 = liftCP componentP
+    go2 cls = liftCP (componentP (makeContentLineMap cls)) cls
 
     name = componentName (Proxy :: Proxy a)
 
@@ -303,7 +356,7 @@ parseManySubcomponents = go1
                  in (:) <$> go2 subComponentLines <*> go1 restAfterSubcomponent
               else go1 rest
     go2 :: [ContentLine] -> CP a
-    go2 = liftCP componentP
+    go2 cls = liftCP (componentP (makeContentLineMap cls)) cls
 
     name = componentName (Proxy :: Proxy a)
 
@@ -332,7 +385,7 @@ parseManySubcomponents2 = go1
                      in (:) <$> (Right <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
               else go1 rest
     go2 :: forall c. IsComponent c => [ContentLine] -> CP c
-    go2 = liftCP componentP
+    go2 cls = liftCP (componentP (makeContentLineMap cls)) cls
 
     nameA = componentName (Proxy :: Proxy a)
     nameB = componentName (Proxy :: Proxy b)

@@ -13,6 +13,8 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Trans
 import Data.DList (DList (..))
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map (Map)
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -26,7 +28,6 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
-import Text.Megaparsec
 
 -- |
 --
@@ -277,44 +278,42 @@ instance IsComponent Event where
   componentP = vEventP
   componentB = vEventB
 
-vEventP :: CP Event
-vEventP = do
-  eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
-  eventDateTimeStamp <- parseFirst eventProperties
-  eventUID <- parseFirst eventProperties
-  eventDateTimeStart <- parseFirstMaybe eventProperties
+vEventP :: Map ContentLineName (NonEmpty ContentLineValue) -> CP Event
+vEventP eventProperties = do
+  eventDateTimeStamp <- requiredProperty eventProperties
+  eventUID <- requiredProperty eventProperties
+  eventDateTimeStart <- optionalProperty eventProperties
   -- @
   -- ;Default is PUBLIC
   -- @
-  eventClassification <- fromMaybe ClassificationPublic <$> parseFirstMaybe eventProperties
-  eventCreated <- parseFirstMaybe eventProperties
-  eventDescription <- parseFirstMaybe eventProperties
-  eventGeographicPosition <- parseFirstMaybe eventProperties
-  eventLastModified <- parseFirstMaybe eventProperties
-  eventLocation <- parseFirstMaybe eventProperties
-  eventOrganizer <- parseFirstMaybe eventProperties
-  eventStatus <- parseFirstMaybe eventProperties
-  eventSummary <- parseFirstMaybe eventProperties
+  eventClassification <- fromMaybe ClassificationPublic <$> optionalProperty eventProperties
+  eventCreated <- optionalProperty eventProperties
+  eventDescription <- optionalProperty eventProperties
+  eventGeographicPosition <- optionalProperty eventProperties
+  eventLastModified <- optionalProperty eventProperties
+  eventLocation <- optionalProperty eventProperties
+  eventOrganizer <- optionalProperty eventProperties
+  eventStatus <- optionalProperty eventProperties
+  eventSummary <- optionalProperty eventProperties
   -- @
   -- ;Default value is OPAQUE
   -- @
-  eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
-  eventURL <- parseFirstMaybe eventProperties
-  eventRecurrenceID <- parseFirstMaybe eventProperties
+  eventTransparency <- fromMaybe TransparencyOpaque <$> optionalProperty eventProperties
+  eventURL <- optionalProperty eventProperties
+  eventRecurrenceID <- optionalProperty eventProperties
 
-  eventRecurrenceRules <- S.fromList <$> (parseList eventProperties >>= traverse (fixUntil eventDateTimeStart))
+  eventRecurrenceRules <- S.fromList <$> (listOfProperty eventProperties >>= traverse (fixUntil eventDateTimeStart))
   when (S.size eventRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
 
-  mEnd <- parseFirstMaybe eventProperties
-  mDuration <- parseFirstMaybe eventProperties
+  mEnd <- optionalProperty eventProperties
+  mDuration <- optionalProperty eventProperties
   let eventDateTimeEndDuration = case (mEnd, mDuration) of
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
-  eventAttendees <- parseSet eventProperties
-  eventExceptionDateTimes <- parseSet eventProperties
-  eventRecurrenceDateTimes <- parseSet eventProperties
+  eventAttendees <- setOfProperty eventProperties
+  eventExceptionDateTimes <- setOfProperty eventProperties
+  eventRecurrenceDateTimes <- setOfProperty eventProperties
   pure Event {..}
 
 vEventB :: Event -> DList ContentLine
