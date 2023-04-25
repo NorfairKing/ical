@@ -7,7 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.Component.Event where
+module ICal.Component.Event
+  ( Event (..),
+    makeEvent,
+  )
+where
 
 import Control.DeepSeq
 import Control.Monad

@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ICal.PropertyType.FloatingPoint where
+module ICal.PropertyType.FloatingPoint
+  ( FloatingPoint (..),
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

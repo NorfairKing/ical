@@ -5,7 +5,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.CalAddress where
+module ICal.PropertyType.CalAddress
+  ( CalAddress (..),
+    parseCalAddress,
+    renderCalAddress,
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

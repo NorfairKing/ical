@@ -9,7 +9,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.DateTimes where
+module ICal.PropertyType.DateTimes
+  ( DateTimes (..),
+    dateTimesB,
+    dateTimesP,
+    toSet,
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

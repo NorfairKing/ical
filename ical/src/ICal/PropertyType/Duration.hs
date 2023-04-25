@@ -2,7 +2,23 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ICal.PropertyType.Duration where
+module ICal.PropertyType.Duration
+  ( Duration (..),
+    durationNominalDiffTime,
+    nominalDiffTimeDuration,
+    durationOneDay,
+    parseDuration,
+    renderDuration,
+    Sign (..),
+    durationSign,
+    DurTime (..),
+    durTimeNominalDiffTime,
+    DurDate (..),
+    durDateNominalDiffTime,
+    DurWeek (..),
+    durWeekNominalDiffTime,
+  )
+where
 
 import Control.DeepSeq
 import Control.Monad

@@ -6,7 +6,22 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.Date where
+module ICal.PropertyType.Date
+  ( Date (..),
+    parseDate,
+    renderDate,
+    dateB,
+    dateP,
+
+    -- * Computation
+    dateAddDays,
+    diffDates,
+
+    -- * Helpers
+    dayShowsPrec,
+    dateFormatStr,
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

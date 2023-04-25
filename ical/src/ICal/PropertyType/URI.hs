@@ -5,7 +5,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.URI where
+module ICal.PropertyType.URI
+  ( URI (..),
+    parseURI,
+    renderURI,
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

@@ -8,7 +8,15 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.Time where
+module ICal.PropertyType.Time
+  ( Time (..),
+    timeP,
+    timeB,
+
+    -- * Helpers
+    timeOfDayShowsPrec,
+  )
+where
 
 import Control.DeepSeq
 import Data.Proxy

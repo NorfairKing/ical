@@ -8,7 +8,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.Component.TimeZone where
+module ICal.Component.TimeZone
+  ( TimeZone (..),
+    makeTimeZone,
+    TimeZoneObservance (..),
+    Daylight (..),
+    Standard (..),
+    Observance (..),
+    makeObservance,
+  )
+where
 
 import Control.DeepSeq
 import Control.Monad

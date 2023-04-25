@@ -6,7 +6,36 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module ICal.PropertyType.Class where
+module ICal.PropertyType.Class
+  ( PropertyTypeParseError (..),
+    IsPropertyType (..),
+
+    -- * Helpers for defining IsPropertyType
+
+    -- ** Parsers
+    typedPropertyTypeP,
+    propertyTypeListP,
+    propertyTypeSetP,
+    parseTimesSetText,
+    parseTimesListText,
+    parseTimeStr,
+
+    -- ** Builders
+    typedPropertyTypeB,
+    propertyTypeListB,
+    propertyTypeSetB,
+
+    -- ** Other
+    proxyOf,
+    escapeText,
+    unEscapeText,
+
+    -- * Validation Helpers
+    validateImpreciseLocalTime,
+    validateImpreciseTimeOfDay,
+    validateImpreciseUTCTime,
+  )
+where
 
 import Control.Exception
 import Data.CaseInsensitive (CI)
@@ -204,10 +233,16 @@ propertyTypeListB = \case
             contentLineValueRaw clv : map (contentLineValueRaw . propertyTypeB) pts
      in clv {contentLineValueRaw = raw}
 
-propertyTypeSetP :: (Ord propertyType, IsPropertyType propertyType) => ContentLineValue -> Conform PropertyTypeParseError Void Void (Set propertyType)
+propertyTypeSetP ::
+  (Ord propertyType, IsPropertyType propertyType) =>
+  ContentLineValue ->
+  Conform PropertyTypeParseError Void Void (Set propertyType)
 propertyTypeSetP = fmap S.fromList . propertyTypeListP
 
-propertyTypeSetB :: IsPropertyType propertyType => Set propertyType -> ContentLineValue
+propertyTypeSetB ::
+  IsPropertyType propertyType =>
+  Set propertyType ->
+  ContentLineValue
 propertyTypeSetB = propertyTypeListB . S.toList
 
 typedPropertyTypeP ::
@@ -231,7 +266,9 @@ typedPropertyTypeB ::
   IsPropertyType propertyType =>
   propertyType ->
   ContentLineValue
-typedPropertyTypeB = insertParam (propertyTypeValueType (Proxy :: Proxy propertyType)) . propertyTypeB
+typedPropertyTypeB =
+  insertParam (propertyTypeValueType (Proxy :: Proxy propertyType))
+    . propertyTypeB
 
 -- | Escape 'Text'
 --

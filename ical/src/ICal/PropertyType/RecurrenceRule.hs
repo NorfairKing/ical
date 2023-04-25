@@ -10,7 +10,31 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.RecurrenceRule where
+module ICal.PropertyType.RecurrenceRule
+  ( RecurrenceRule (..),
+    makeRecurrenceRule,
+    recurrenceRuleP,
+    recurrenceRuleB,
+    Until (..),
+    Count (..),
+    Month (..),
+    monthToMonthNo,
+    monthNoToMonth,
+    Frequency (..),
+    Interval (..),
+    BySecond (..),
+    ByMinute (..),
+    ByHour (..),
+    ByDay (..),
+    ByWeekNo (..),
+    ByMonth (..),
+    ByMonthDay (..),
+    ByYearDay (..),
+    BySetPos (..),
+    WeekStart (..),
+    IsRecurrenceRulePart (..),
+  )
+where
 
 import Control.DeepSeq
 import Control.Monad

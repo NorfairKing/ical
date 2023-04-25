@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ICal.PropertyType.Period where
+module ICal.PropertyType.Period (Period (..)) where
 
 import Control.DeepSeq
 import Data.Data

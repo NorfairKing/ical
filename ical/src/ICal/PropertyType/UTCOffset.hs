@@ -2,7 +2,18 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ICal.PropertyType.UTCOffset where
+module ICal.PropertyType.UTCOffset
+  ( UTCOffset (..),
+    parseUTCOffset,
+    renderUTCOffset,
+
+    -- * Computation
+    utcOffsetTimeZone,
+
+    -- * Helpers
+    utcOffsetAbsBound,
+  )
+where
 
 import Control.DeepSeq
 import Data.Int

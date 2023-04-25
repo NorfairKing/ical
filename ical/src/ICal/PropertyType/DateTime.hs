@@ -9,7 +9,28 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.PropertyType.DateTime where
+module ICal.PropertyType.DateTime
+  ( DateTime (..),
+    dateTimeDate,
+    parseDateTimeFloating,
+    parseDateTimeUTC,
+    renderDateTimeUTC,
+    renderDateTimeFloating,
+    dateTimeP,
+    dateTimeB,
+    dateTimeUTCB,
+    dateTimeUTCP,
+    dateTimeFloatingB,
+    dateTimeFloatingP,
+
+    -- * Helpers
+    dateTimeFloatingFormatStr,
+    dateTimeZonedFormatStr,
+    dateTimeUTCFormatStr,
+    utcTimeShowsPrec,
+    localTimeShowsPrec,
+  )
+where
 
 import Control.DeepSeq
 import qualified Data.Map.Strict as M
