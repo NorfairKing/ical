@@ -113,8 +113,9 @@ spec = do
       ical <- shouldConformStrict $ parseICalendarByteString contents
       shouldBeValid ical
       let rendered = renderICalendarByteString ical
-      ical' <- shouldConformStrict $ parseICalendarByteString rendered
-      ical' `shouldBe` ical
+      context (show rendered) $ do
+        ical' <- shouldConformStrict $ parseICalendarByteString rendered
+        ical' `shouldBe` ical
 
   scenarioDirRecur "test_resources/calendars/fixable" $ \calFile -> do
     it "cannot parse this calendar strictly" $ do
@@ -133,12 +134,12 @@ spec = do
 
   describe "renderVCalendar" $
     it "roundtrips with parseVCalendar" $
-      forAllValid $ \vCalendar ->
+      forAllValid $ \vCalendar -> do
         let rendered = renderVCalendar vCalendar
             ctx = unlines ["Rendered VCALENDAR:", T.unpack rendered]
-         in context ctx $ do
-              vCalendar' <- shouldConform $ parseVCalendar rendered
-              vCalendar' `shouldBe` vCalendar
+        context ctx $ do
+          vCalendar' <- shouldConform $ parseVCalendar rendered
+          vCalendar' `shouldBe` vCalendar
 
   describe "renderICalendar" $
     it "roundtrips with parseICalendar" $
@@ -153,5 +154,6 @@ spec = do
     it "roundtrips with parseICalendarByteString" $
       forAllValid $ \iCalendar -> do
         let rendered = renderICalendarByteString iCalendar
-        iCalendar' <- shouldConform $ parseICalendarByteString rendered
-        iCalendar' `shouldBe` iCalendar
+        context (show rendered) $ do
+          iCalendar' <- shouldConform $ parseICalendarByteString rendered
+          iCalendar' `shouldBe` iCalendar

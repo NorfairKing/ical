@@ -35,6 +35,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
+import Debug.Trace
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
@@ -85,7 +86,7 @@ parseGeneralComponents ::
     CalendarParseError
     CalendarParseFixableError
     CalendarParseWarning
-    (Map ComponentName Component)
+    (Map ComponentName (NonEmpty Component))
 parseGeneralComponents = go
   where
     go ::
@@ -94,13 +95,13 @@ parseGeneralComponents = go
         CalendarParseError
         CalendarParseFixableError
         CalendarParseWarning
-        (Map ComponentName Component)
+        (Map ComponentName (NonEmpty Component))
     go = \case
       [] -> pure M.empty
       cls -> do
         ((name, component), leftovers) <- parseGeneralComponentHelper cls
         restComponents <- go leftovers
-        pure (M.insert name component restComponents)
+        pure (M.insertWith (<>) name (component :| []) restComponents)
 
 parseGeneralComponent ::
   [ContentLine] ->
@@ -109,7 +110,9 @@ parseGeneralComponent ::
     CalendarParseFixableError
     CalendarParseWarning
     (Text, Component)
-parseGeneralComponent = fmap fst . parseGeneralComponentHelper
+parseGeneralComponent =
+  -- TODO check that there were no other lines after this.
+  fmap fst . parseGeneralComponentHelper
 
 -- TODO rename
 parseGeneralComponentHelper ::
@@ -124,9 +127,9 @@ parseGeneralComponentHelper = \case
         absurd
         absurd
         $ propertyContentLineP firstCL
-    goComponent name M.empty M.empty restCLs
+    go name M.empty M.empty restCLs
   where
-    goComponent ::
+    go ::
       Text ->
       Map ContentLineName (NonEmpty ContentLineValue) ->
       Map ComponentName (NonEmpty Component) ->
@@ -137,28 +140,8 @@ parseGeneralComponentHelper = \case
         CalendarParseFixableError
         CalendarParseWarning
         ((ComponentName, Component), [ContentLine])
-    goComponent name properties subComponents = \case
+    go name properties subComponents = \case
       [] -> error "fail: only a begin, but nothing else."
-      [lastCL] -> do
-        End name' <-
-          conformMapAll
-            PropertyParseError
-            absurd
-            absurd
-            $ propertyContentLineP
-              lastCL
-        if name' == name
-          then
-            pure
-              ( ( name,
-                  Component
-                    { componentProperties = properties,
-                      componentSubcomponents = subComponents
-                    }
-                ),
-                []
-              )
-          else error "fail: end had the wrong name"
       (cl : rest) ->
         case contentLineName cl of
           "END" -> do
@@ -180,23 +163,22 @@ parseGeneralComponentHelper = \case
                     ),
                     rest
                   )
-              else error "fail: end had the wrong name"
+              else
+                error $
+                  unlines
+                    [ "fail: end had the wrong name",
+                      unwords ["found", show name'],
+                      unwords ["instead of", show name]
+                    ]
           "BEGIN" -> do
-            Begin name' <-
-              conformMapAll
-                PropertyParseError
-                absurd
-                absurd
-                $ propertyContentLineP
-                  cl
-            ((name, subComponent), leftovers) <- goComponent name' M.empty M.empty rest
-            goComponent
+            ((name', subComponent), leftovers) <- parseGeneralComponentHelper (cl : rest)
+            go
               name
               properties
-              (M.insertWith (flip (<>)) name (subComponent :| []) subComponents)
+              (M.insertWith (flip (<>)) name' (subComponent :| []) subComponents)
               leftovers
           _ ->
-            goComponent
+            go
               name
               (M.insertWith (flip (<>)) (contentLineName cl) (contentLineValue cl :| []) properties)
               subComponents
@@ -285,11 +267,20 @@ namedComponentB ::
   forall component.
   IsComponent component =>
   component ->
-  Map ComponentName (NonEmpty Component)
+  (ComponentName, Component)
 namedComponentB component =
-  M.singleton
-    (componentName (Proxy :: Proxy component))
-    (componentB component :| [])
+  ( componentName (Proxy :: Proxy component),
+    componentB component
+  )
+
+namedComponentMapB ::
+  forall component.
+  IsComponent component =>
+  component ->
+  Map ComponentName (NonEmpty Component)
+namedComponentMapB component =
+  let (name, generalComponent) = namedComponentB component
+   in M.singleton name (generalComponent :| [])
 
 requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredProperty m = case M.lookup name m of
@@ -427,7 +418,7 @@ subComponentsB ::
   IsComponent component =>
   [component] ->
   Map ComponentName (NonEmpty Component)
-subComponentsB = M.unionsWith (<>) . map namedComponentB
+subComponentsB = M.unionsWith (<>) . map namedComponentMapB
 
 validateMDateTimeStartRRule :: Maybe DateTimeStart -> Set RecurrenceRule -> Validation
 validateMDateTimeStartRRule mDateTimeStart recurrenceRules =

@@ -469,8 +469,7 @@ data TimeZone = TimeZone
     -- ;
     -- standardc / daylightc /
     -- @
-    -- API Note: The order does not matter but duplicates are allowed so we cannot use a set.
-    timeZoneObservances :: !(NonEmpty TimeZoneObservance)
+    timeZoneObservances :: !(Set TimeZoneObservance)
     -- @
     -- ; The following are OPTIONAL,
     -- ; and MAY occur more than once.
@@ -480,7 +479,14 @@ data TimeZone = TimeZone
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity TimeZone
+instance Validity TimeZone where
+  validate tz@TimeZone {..} =
+    mconcat
+      [ genericValidate tz,
+        declare "there is at least one timezone observance" $
+          not $
+            S.null timeZoneObservances
+      ]
 
 instance NFData TimeZone
 
@@ -489,7 +495,7 @@ instance IsComponent TimeZone where
   componentP = vTimeZoneP
   componentB = vTimeZoneB
 
-makeTimeZone :: TZID -> NonEmpty TimeZoneObservance -> TimeZone
+makeTimeZone :: TZID -> Set TimeZoneObservance -> TimeZone
 makeTimeZone tzid observances =
   TimeZone
     { timeZoneId = tzid,
@@ -497,17 +503,16 @@ makeTimeZone tzid observances =
     }
 
 vTimeZoneP :: Component -> CP TimeZone
-vTimeZoneP c = do
-  timeZoneId <- requiredProperty (componentProperties c)
+vTimeZoneP Component {..} = do
+  timeZoneId <- requiredProperty componentProperties
 
-  let standardName = componentName (Proxy :: Proxy Standard)
-  let daylightName = componentName (Proxy :: Proxy Daylight)
-  standards <- mapM componentP (maybe [] NE.toList (M.lookup standardName (componentSubcomponents c)))
-  daylights <- mapM componentP (maybe [] NE.toList (M.lookup daylightName (componentSubcomponents c)))
+  standards <- subComponentsP componentSubcomponents
+  daylights <- subComponentsP componentSubcomponents
   let os = map StandardObservance standards <> map DaylightObservance daylights
   timeZoneObservances <- case NE.nonEmpty os of
     Nothing -> error "fail: Must have at least one standardc or daylightc"
-    Just ne -> pure ne
+    Just ne -> pure $ S.fromList $ NE.toList ne
+
   pure TimeZone {..}
 
 vTimeZoneB :: TimeZone -> Component
@@ -519,10 +524,10 @@ vTimeZoneB TimeZone {..} =
         M.unionsWith (<>) $
           map
             ( \case
-                StandardObservance s -> namedComponentB s
-                DaylightObservance d -> namedComponentB d
+                StandardObservance s -> namedComponentMapB s
+                DaylightObservance d -> namedComponentMapB d
             )
-            (NE.toList timeZoneObservances)
+            (S.toList timeZoneObservances)
     }
 
 data TimeZoneObservance

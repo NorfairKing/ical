@@ -18,6 +18,7 @@ where
 import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -43,7 +44,7 @@ parseICalendarFromContentLines ::
     CalendarParseWarning
     [Calendar]
 parseICalendarFromContentLines =
-  parseGeneralComponents >=> mapM (uncurry namedComponentP) . M.toList
+  parseGeneralComponents >=> subComponentsP
 
 parseVCalendarFromContentLines ::
   [ContentLine] ->
@@ -56,7 +57,7 @@ parseVCalendarFromContentLines =
   parseGeneralComponent >=> uncurry namedComponentP
 
 iCalendarB :: [Calendar] -> DList ContentLine
-iCalendarB = foldMap renderGeneralComponents . map namedComponentB
+iCalendarB = foldMap (uncurry renderGeneralComponent . namedComponentB)
 
 -- |
 --

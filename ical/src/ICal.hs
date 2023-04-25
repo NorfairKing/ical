@@ -178,7 +178,7 @@ renderComponentText =
   renderUnfoldedLines
     . map renderContentLineToUnfoldedLine
     . DList.toList
-    . renderGeneralComponents
+    . uncurry renderGeneralComponent
     . namedComponentB
 
 -- | Parse an individual property from Text directly

@@ -15,6 +15,7 @@ import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -36,7 +37,6 @@ instance GenValid Component where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = sized $ \s -> do
     (a, b, c) <- genSplit3 s
-    componentName' <- genValid
     componentProperties <- resize (a + b) genValid
     componentSubcomponents <- resize c genValid
     pure Component {..}
@@ -139,8 +139,10 @@ instance GenValid Daylight where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid TimeZone where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    timeZoneId <- genValid
+    timeZoneObservances <- S.fromList . NE.toList <$> genValid
+    pure TimeZone {..}
 
 componentScenarioDir ::
   forall a.
@@ -160,7 +162,7 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
             . renderUnfoldedLines
             . map renderContentLineToUnfoldedLine
             . DList.toList
-            . renderGeneralComponents
+            . uncurry renderGeneralComponent
             . namedComponentB
 
     contents <- SB.readFile tzFile
@@ -202,23 +204,23 @@ componentSpec = do
 
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
-      let rendered = namedComponentB (a :: a)
+      let (name, component) = namedComponentB (a :: a)
           renderedText :: Text
           renderedText =
             renderUnfoldedLines $
               map renderContentLineToUnfoldedLine $
                 DList.toList $
-                  renderGeneralComponents rendered
+                  renderGeneralComponent name component
           ctx =
             unlines
               [ "Internal representation:",
-                ppShow rendered,
+                ppShow component,
                 "",
                 "Textual representation:",
                 T.unpack renderedText
               ]
        in context ctx $ do
-            parsed <- shouldConform $ namedComponentP rendered
+            parsed <- shouldConform $ namedComponentP name component
             parsed `shouldBe` a
 
   it "roundtrips through Text" $

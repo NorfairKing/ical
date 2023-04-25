@@ -19,11 +19,12 @@ spec = do
   describe "Component" $ do
     genValidSpec @Component
     it "roundtrips through content lines" $
-      forAllValid $ \component -> do
-        let rendered = DList.toList $ renderGeneralComponent component
-        parsed <- shouldConform $ parseGeneralComponents rendered
-        context (T.unpack (renderContentLines rendered)) $
-          parsed `shouldBe` [component]
+      forAllValid $ \name ->
+        forAllValid $ \component -> do
+          let rendered = DList.toList $ renderGeneralComponent name component
+          context (T.unpack (renderContentLines rendered)) $ do
+            parsed <- shouldConform $ parseGeneralComponent rendered
+            parsed `shouldBe` (name, component)
   describe "Calendar" $ do
     genValidSpec @Calendar
     componentSpec @Calendar
