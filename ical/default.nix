@@ -14,6 +14,5 @@ mkDerivation {
     validity-case-insensitive validity-containers validity-network-uri
     validity-text validity-time
   ];
-  testHaskellDepends = [ base ];
   license = "unknown";
 }
