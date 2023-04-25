@@ -502,10 +502,9 @@ vTimeZoneP c = do
 
   let standardName = componentName (Proxy :: Proxy Standard)
   let daylightName = componentName (Proxy :: Proxy Daylight)
-  -- TODO parse faster by only trying one parser instead of both.
-  os <-
-    mapM timeZoneObservanceP $
-      filter ((\n -> n == standardName || n == daylightName) . componentName') (componentSubcomponents c)
+  standards <- mapM componentP (maybe [] NE.toList (M.lookup standardName (componentSubcomponents c)))
+  daylights <- mapM componentP (maybe [] NE.toList (M.lookup daylightName (componentSubcomponents c)))
+  let os = map StandardObservance standards <> map DaylightObservance daylights
   timeZoneObservances <- case NE.nonEmpty os of
     Nothing -> error "fail: Must have at least one standardc or daylightc"
     Just ne -> pure ne
@@ -514,11 +513,16 @@ vTimeZoneP c = do
 vTimeZoneB :: TimeZone -> Component
 vTimeZoneB TimeZone {..} =
   Component
-    { componentName' = "VTIMEZONE",
-      componentProperties =
+    { componentProperties =
         requiredPropertyB timeZoneId,
       componentSubcomponents =
-        map timeZoneObservanceB (NE.toList timeZoneObservances)
+        M.unionsWith (<>) $
+          map
+            ( \case
+                StandardObservance s -> namedComponentB s
+                DaylightObservance d -> namedComponentB d
+            )
+            (NE.toList timeZoneObservances)
     }
 
 data TimeZoneObservance
@@ -530,17 +534,6 @@ instance Validity TimeZoneObservance
 
 instance NFData TimeZoneObservance
 
-timeZoneObservanceP :: Component -> CP TimeZoneObservance
-timeZoneObservanceP c = case componentName' c of
-  "STANDARD" -> StandardObservance <$> componentP c
-  "DAYLIGHT" -> DaylightObservance <$> componentP c
-  _ -> error "not an observance component"
-
-timeZoneObservanceB :: TimeZoneObservance -> Component
-timeZoneObservanceB = \case
-  StandardObservance s -> componentB s
-  DaylightObservance d -> componentB d
-
 newtype Standard = Standard {unStandard :: Observance}
   deriving (Show, Eq, Ord, Generic)
 
@@ -551,7 +544,7 @@ instance NFData Standard
 instance IsComponent Standard where
   componentName Proxy = "STANDARD"
   componentP = fmap Standard . observanceP
-  componentB = observanceB "STANDARD" . unStandard
+  componentB = observanceB . unStandard
 
 newtype Daylight = Daylight {unDaylight :: Observance}
   deriving (Show, Eq, Ord, Generic)
@@ -563,7 +556,7 @@ instance NFData Daylight
 instance IsComponent Daylight where
   componentName Proxy = "DAYLIGHT"
   componentP = fmap Daylight . observanceP
-  componentB = observanceB "DAYLIGHT" . unDaylight
+  componentB = observanceB . unDaylight
 
 data Observance = Observance
   { -- @
@@ -624,10 +617,6 @@ makeObservance start from to =
 
 observanceP :: Component -> CP Observance
 observanceP Component {..} = do
-  case componentName' of
-    "STANDARD" -> pure ()
-    "DAYLIGHT" -> pure ()
-    _ -> error "fail: not an observance component"
   -- @
   -- The mandatory "DTSTART" property gives the effective onset date
   -- and local time for the time zone sub-component definition.
@@ -655,11 +644,10 @@ observanceP Component {..} = do
   observanceTimeZoneName <- setOfProperties componentProperties
   pure Observance {..}
 
-observanceB :: Text -> Observance -> Component
-observanceB name Observance {..} =
+observanceB :: Observance -> Component
+observanceB Observance {..} =
   Component
-    { componentName' = name,
-      componentProperties =
+    { componentProperties =
         M.unionsWith
           (<>)
           [ requiredPropertyB (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
@@ -670,5 +658,5 @@ observanceB name Observance {..} =
             setOfPropertiesB observanceRecurrenceDateTimes,
             setOfPropertiesB observanceTimeZoneName
           ],
-      componentSubcomponents = []
+      componentSubcomponents = M.empty
     }

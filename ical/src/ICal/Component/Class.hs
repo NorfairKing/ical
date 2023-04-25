@@ -43,16 +43,11 @@ import ICal.PropertyType
 import ICal.UnfoldedLine
 import Text.Megaparsec
 
+type ComponentName = Text
+
 data Component = Component
-  { -- TODO rename
-    componentName' :: !Text,
-    -- TODO consider if
-    -- 1. order of the values matters
-    -- 2. duplicates matter
-    --
-    -- If both don't matter then use a set.
-    componentProperties :: !(Map ContentLineName (NonEmpty ContentLineValue)),
-    componentSubcomponents :: ![Component]
+  { componentProperties :: !(Map ContentLineName (NonEmpty ContentLineValue)),
+    componentSubcomponents :: !(Map ComponentName (NonEmpty Component))
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -61,48 +56,65 @@ instance Validity Component
 instance NFData Component
 
 -- TODO rename
-renderGeneralComponents :: [Component] -> DList ContentLine
-renderGeneralComponents = foldMap renderGeneralComponent
+renderGeneralComponents :: Map ComponentName (NonEmpty Component) -> DList ContentLine
+renderGeneralComponents =
+  foldMap
+    ( \(name, components) ->
+        foldMap (renderGeneralComponent name) (NE.toList components)
+    )
+    . M.toList
 
-renderGeneralComponent :: Component -> DList ContentLine
-renderGeneralComponent Component {..} =
+renderGeneralComponent :: Text -> Component -> DList ContentLine
+renderGeneralComponent name Component {..} =
   mconcat
-    [ DList.singleton $ propertyContentLineB (Begin componentName'),
+    [ DList.singleton $ propertyContentLineB (Begin name),
       DList.fromList $
         concatMap
           ( \(name, values) ->
               map (ContentLine name) (NE.toList values)
           )
           (M.toList componentProperties),
-      foldMap renderGeneralComponent componentSubcomponents,
-      DList.singleton $ propertyContentLineB (End componentName')
+      renderGeneralComponents componentSubcomponents,
+      DList.singleton $ propertyContentLineB (End name)
     ]
 
 -- TODO rename
 parseGeneralComponents ::
   [ContentLine] ->
-  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning [Component]
-parseGeneralComponents = goComponents
+  Conform
+    CalendarParseError
+    CalendarParseFixableError
+    CalendarParseWarning
+    (Map ComponentName Component)
+parseGeneralComponents = go
   where
-    goComponents ::
+    go ::
       [ContentLine] ->
-      Conform CalendarParseError CalendarParseFixableError CalendarParseWarning [Component]
-    goComponents = \case
-      [] -> pure []
+      Conform
+        CalendarParseError
+        CalendarParseFixableError
+        CalendarParseWarning
+        (Map ComponentName Component)
+    go = \case
+      [] -> pure M.empty
       cls -> do
-        (component, leftovers) <- parseGeneralComponentHelper cls
-        restComponents <- goComponents leftovers
-        pure (component : restComponents)
+        ((name, component), leftovers) <- parseGeneralComponentHelper cls
+        restComponents <- go leftovers
+        pure (M.insert name component restComponents)
 
 parseGeneralComponent ::
   [ContentLine] ->
-  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning Component
+  Conform
+    CalendarParseError
+    CalendarParseFixableError
+    CalendarParseWarning
+    (Text, Component)
 parseGeneralComponent = fmap fst . parseGeneralComponentHelper
 
 -- TODO rename
 parseGeneralComponentHelper ::
   [ContentLine] ->
-  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning (Component, [ContentLine])
+  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning ((ComponentName, Component), [ContentLine])
 parseGeneralComponentHelper = \case
   [] -> error "fail: no begin for a component"
   (firstCL : restCLs) -> do
@@ -112,15 +124,19 @@ parseGeneralComponentHelper = \case
         absurd
         absurd
         $ propertyContentLineP firstCL
-    goComponent name M.empty [] restCLs
+    goComponent name M.empty M.empty restCLs
   where
     goComponent ::
       Text ->
       Map ContentLineName (NonEmpty ContentLineValue) ->
-      [Component] ->
+      Map ComponentName (NonEmpty Component) ->
       -- TODO use a DList
       [ContentLine] ->
-      Conform CalendarParseError CalendarParseFixableError CalendarParseWarning (Component, [ContentLine])
+      Conform
+        CalendarParseError
+        CalendarParseFixableError
+        CalendarParseWarning
+        ((ComponentName, Component), [ContentLine])
     goComponent name properties subComponents = \case
       [] -> error "fail: only a begin, but nothing else."
       [lastCL] -> do
@@ -134,11 +150,12 @@ parseGeneralComponentHelper = \case
         if name' == name
           then
             pure
-              ( Component
-                  { componentName' = name,
-                    componentProperties = properties,
-                    componentSubcomponents = subComponents
-                  },
+              ( ( name,
+                  Component
+                    { componentProperties = properties,
+                      componentSubcomponents = subComponents
+                    }
+                ),
                 []
               )
           else error "fail: end had the wrong name"
@@ -155,11 +172,12 @@ parseGeneralComponentHelper = \case
             if name' == name
               then
                 pure
-                  ( Component
-                      { componentName' = name,
-                        componentProperties = properties,
-                        componentSubcomponents = subComponents
-                      },
+                  ( ( name,
+                      Component
+                        { componentProperties = properties,
+                          componentSubcomponents = subComponents
+                        }
+                    ),
                     rest
                   )
               else error "fail: end had the wrong name"
@@ -171,8 +189,12 @@ parseGeneralComponentHelper = \case
                 absurd
                 $ propertyContentLineP
                   cl
-            (subcomponent, leftovers) <- goComponent name' M.empty [] rest
-            goComponent name properties (subComponents <> [subcomponent]) leftovers
+            ((name, subComponent), leftovers) <- goComponent name' M.empty M.empty rest
+            goComponent
+              name
+              properties
+              (M.insertWith (flip (<>)) name (subComponent :| []) subComponents)
+              leftovers
           _ ->
             goComponent
               name
@@ -214,7 +236,7 @@ parseComponentFromContentLines ::
   [ContentLine] ->
   CP component
 parseComponentFromContentLines cls = do
-  parseGeneralComponent cls >>= componentP
+  parseGeneralComponent cls >>= uncurry namedComponentP
 
 type CP a =
   Conform
@@ -248,11 +270,26 @@ class IsComponent component where
   -- | Builder for this component
   componentB :: component -> Component
 
-sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
-sectionB name func =
-  (DList.singleton (propertyContentLineB (Begin name)) <>)
-    . (<> DList.singleton (propertyContentLineB (End name)))
-    . func
+namedComponentP ::
+  forall component.
+  IsComponent component =>
+  Text ->
+  Component ->
+  CP component
+namedComponentP actualName component =
+  if actualName == componentName (Proxy :: Proxy component)
+    then componentP component
+    else error "fail: wrong name for component"
+
+namedComponentB ::
+  forall component.
+  IsComponent component =>
+  component ->
+  Map ComponentName (NonEmpty Component)
+namedComponentB component =
+  M.singleton
+    (componentName (Proxy :: Proxy component))
+    (componentB component :| [])
 
 requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredProperty m = case M.lookup name m of
@@ -374,6 +411,23 @@ parseSet ::
   [ContentLine] ->
   CP (Set a)
 parseSet = fmap S.fromList . parseList
+
+subComponentsP ::
+  forall component.
+  IsComponent component =>
+  Map ComponentName (NonEmpty Component) ->
+  CP [component]
+subComponentsP =
+  mapM componentP
+    . maybe [] NE.toList
+    . M.lookup (componentName (Proxy :: Proxy component))
+
+subComponentsB ::
+  forall component.
+  IsComponent component =>
+  [component] ->
+  Map ComponentName (NonEmpty Component)
+subComponentsB = M.unionsWith (<>) . map namedComponentB
 
 validateMDateTimeStartRRule :: Maybe DateTimeStart -> Set RecurrenceRule -> Validation
 validateMDateTimeStartRRule mDateTimeStart recurrenceRules =

@@ -43,7 +43,7 @@ parseICalendarFromContentLines ::
     CalendarParseWarning
     [Calendar]
 parseICalendarFromContentLines =
-  parseGeneralComponents >=> mapM componentP
+  parseGeneralComponents >=> mapM (uncurry namedComponentP) . M.toList
 
 parseVCalendarFromContentLines ::
   [ContentLine] ->
@@ -53,10 +53,10 @@ parseVCalendarFromContentLines ::
     CalendarParseWarning
     Calendar
 parseVCalendarFromContentLines =
-  parseGeneralComponent >=> componentP
+  parseGeneralComponent >=> uncurry namedComponentP
 
 iCalendarB :: [Calendar] -> DList ContentLine
-iCalendarB = renderGeneralComponents . map componentB
+iCalendarB = foldMap renderGeneralComponents . map namedComponentB
 
 -- |
 --
@@ -172,7 +172,7 @@ instance NFData Calendar
 
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
-  componentP c = do
+  componentP Component {..} = do
     -- TODO implement a warning for this SHOULD:
     -- @
     -- The Calendar Properties are attributes that apply to the iCalendar
@@ -180,25 +180,21 @@ instance IsComponent Calendar where
     -- component.  They SHOULD be specified after the "BEGIN:VCALENDAR"
     -- delimiter string and prior to any calendar component.
     -- @
-    let calPropLines = componentProperties c
 
-    calendarProdId <- requiredProperty calPropLines
-    calendarVersion <- requiredProperty calPropLines
+    calendarProdId <- requiredProperty componentProperties
+    calendarVersion <- requiredProperty componentProperties
 
-    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> optionalProperty calPropLines
-    calendarMethod <- optionalProperty calPropLines
+    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> optionalProperty componentProperties
+    calendarMethod <- optionalProperty componentProperties
 
-    let timeZoneName = componentName (Proxy :: Proxy TimeZone)
-    calendarTimeZones <- mapM componentP $ filter ((== timeZoneName) . componentName') (componentSubcomponents c)
-    let eventName = componentName (Proxy :: Proxy Event)
-    calendarEvents <- mapM componentP $ filter ((== eventName) . componentName') (componentSubcomponents c)
+    calendarTimeZones <- subComponentsP componentSubcomponents
+    calendarEvents <- subComponentsP componentSubcomponents
 
     pure $ Calendar {..}
 
   componentB Calendar {..} =
     Component
-      { componentName' = "VCALENDAR",
-        componentProperties =
+      { componentProperties =
           M.unionsWith
             (<>)
             [ requiredPropertyB calendarProdId,
@@ -207,9 +203,10 @@ instance IsComponent Calendar where
               optionalPropertyB calendarMethod
             ],
         componentSubcomponents =
-          concat
-            [ map componentB calendarEvents,
-              map componentB calendarTimeZones
+          M.unionsWith
+            (<>)
+            [ subComponentsB calendarEvents,
+              subComponentsB calendarTimeZones
             ]
       }
 

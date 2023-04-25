@@ -319,8 +319,7 @@ vEventP Component {..} = do
 vEventB :: Event -> Component
 vEventB Event {..} =
   Component
-    { componentName' = "VEVENT",
-      componentProperties =
+    { componentProperties =
         M.unionsWith
           (<>)
           [ requiredPropertyB eventDateTimeStamp,
@@ -354,7 +353,7 @@ vEventB Event {..} =
             setOfPropertiesB eventExceptionDateTimes,
             setOfPropertiesB eventRecurrenceDateTimes
           ],
-      componentSubcomponents = []
+      componentSubcomponents = M.empty
     }
 
 makeEvent :: UID -> DateTimeStamp -> Event

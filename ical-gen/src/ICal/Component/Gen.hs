@@ -160,8 +160,8 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
             . renderUnfoldedLines
             . map renderContentLineToUnfoldedLine
             . DList.toList
-            . renderGeneralComponent
-            . componentB
+            . renderGeneralComponents
+            . namedComponentB
 
     contents <- SB.readFile tzFile
     case parseBS contents of
@@ -202,14 +202,13 @@ componentSpec = do
 
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
-      let rendered :: Component
-          rendered = componentB (a :: a)
+      let rendered = namedComponentB (a :: a)
           renderedText :: Text
           renderedText =
             renderUnfoldedLines $
               map renderContentLineToUnfoldedLine $
                 DList.toList $
-                  renderGeneralComponent rendered
+                  renderGeneralComponents rendered
           ctx =
             unlines
               [ "Internal representation:",
@@ -219,7 +218,7 @@ componentSpec = do
                 T.unpack renderedText
               ]
        in context ctx $ do
-            parsed <- shouldConform $ componentP rendered
+            parsed <- shouldConform $ namedComponentP rendered
             parsed `shouldBe` a
 
   it "roundtrips through Text" $
