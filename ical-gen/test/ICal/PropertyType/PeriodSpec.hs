@@ -5,7 +5,7 @@
 
 module ICal.PropertyType.PeriodSpec where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Time
 import ICal.ContentLine
 import ICal.PropertyType.Duration

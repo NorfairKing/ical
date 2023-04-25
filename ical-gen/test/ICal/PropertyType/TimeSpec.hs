@@ -6,7 +6,7 @@
 
 module ICal.PropertyType.TimeSpec where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Time (TimeOfDay (..))
 import ICal.Conformance
 import ICal.ContentLine

@@ -20,7 +20,7 @@ where
 
 import Control.Exception
 import Control.Monad.Reader
-import Data.Map (Map)
+import Data.Map.Strict (Map)
 import Data.Set (Set)
 import qualified Data.Time as Time
 import Data.Validity

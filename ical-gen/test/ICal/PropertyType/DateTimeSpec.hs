@@ -7,7 +7,7 @@
 module ICal.PropertyType.DateTimeSpec where
 
 import Data.Either
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import Data.Void
 import ICal.Conformance

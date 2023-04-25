@@ -7,7 +7,7 @@
 module ICal.PropertyType.DateSpec where
 
 import Data.Either
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Time (fromGregorian)
 import Data.Void
 import ICal.Conformance

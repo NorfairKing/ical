@@ -18,8 +18,8 @@ where
 import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Proxy
 import Data.Validity
 import Data.Validity.Text ()

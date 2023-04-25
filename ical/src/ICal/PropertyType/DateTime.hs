@@ -12,7 +12,7 @@
 module ICal.PropertyType.DateTime where
 
 import Control.DeepSeq
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T

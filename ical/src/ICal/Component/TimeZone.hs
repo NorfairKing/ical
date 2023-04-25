@@ -13,7 +13,7 @@ module ICal.Component.TimeZone where
 import Control.DeepSeq
 import Control.Monad
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
