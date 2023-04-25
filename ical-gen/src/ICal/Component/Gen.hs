@@ -16,6 +16,7 @@ import Data.GenValidity.Containers
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Void
@@ -159,7 +160,8 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
             . renderUnfoldedLines
             . map renderContentLineToUnfoldedLine
             . DList.toList
-            . componentSectionB
+            . renderGeneralComponent
+            . componentB
 
     contents <- SB.readFile tzFile
     case parseBS contents of
@@ -188,20 +190,26 @@ componentSpec ::
   (Show a, Eq a, GenValid a, IsComponent a) =>
   Spec
 componentSpec = do
-  it "renders to a valid list of ContentLines" $
+  it "renders to a valid Component" $
     forAllValid $ \component ->
-      shouldBeValid $ DList.toList $ componentSectionB (component :: a)
+      shouldBeValid $ componentB (component :: a)
 
   it "parses only valid things" $
     forAllValid $ \component ->
-      case runConform (runCP componentSectionP (DList.toList (componentSectionB (component :: a)))) of
+      case runConform (componentP (componentB (component :: a))) of
         Left _ -> pure ()
         Right (a, _) -> shouldBeValid (a :: a)
 
   it "roundtrips through ContentLines" $
     forAllValid $ \a ->
-      let rendered = DList.toList $ componentSectionB (a :: a)
-          renderedText = renderUnfoldedLines $ map renderContentLineToUnfoldedLine rendered
+      let rendered :: Component
+          rendered = componentB (a :: a)
+          renderedText :: Text
+          renderedText =
+            renderUnfoldedLines $
+              map renderContentLineToUnfoldedLine $
+                DList.toList $
+                  renderGeneralComponent rendered
           ctx =
             unlines
               [ "Internal representation:",
@@ -211,7 +219,7 @@ componentSpec = do
                 T.unpack renderedText
               ]
        in context ctx $ do
-            parsed <- shouldConform $ runCP componentSectionP rendered
+            parsed <- shouldConform $ componentP rendered
             parsed `shouldBe` a
 
   it "roundtrips through Text" $

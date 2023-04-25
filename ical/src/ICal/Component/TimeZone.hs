@@ -16,9 +16,11 @@ import Control.Monad.Trans
 import Data.DList (DList (..))
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
@@ -494,25 +496,30 @@ makeTimeZone tzid observances =
       timeZoneObservances = observances
     }
 
-vTimeZoneP :: CP TimeZone
-vTimeZoneP = do
-  timeZoneProperties <- takeWhileP (Just "timeZoneProperties") $ \ContentLine {..} ->
-    not $
-      contentLineName == "END" && (contentLineValueRaw contentLineValue == "VTIMEZONE")
-  timeZoneId <- parseFirst timeZoneProperties
-  eithers <- parseManySubcomponents2 timeZoneProperties
-  let os = map (either StandardObservance DaylightObservance) eithers
+vTimeZoneP :: Component -> CP TimeZone
+vTimeZoneP c = do
+  timeZoneId <- requiredProperty (componentProperties c)
+
+  let standardName = componentName (Proxy :: Proxy Standard)
+  let daylightName = componentName (Proxy :: Proxy Daylight)
+  -- TODO parse faster by only trying one parser instead of both.
+  os <-
+    mapM timeZoneObservanceP $
+      filter ((\n -> n == standardName || n == daylightName) . componentName') (componentSubcomponents c)
   timeZoneObservances <- case NE.nonEmpty os of
-    Nothing -> fail "Must have at least one standardc or daylightc"
+    Nothing -> error "fail: Must have at least one standardc or daylightc"
     Just ne -> pure ne
   pure TimeZone {..}
 
-vTimeZoneB :: TimeZone -> DList ContentLine
+vTimeZoneB :: TimeZone -> Component
 vTimeZoneB TimeZone {..} =
-  mconcat
-    [ propertyListB timeZoneId,
-      foldMap timeZoneObservanceB timeZoneObservances
-    ]
+  Component
+    { componentName' = "VTIMEZONE",
+      componentProperties =
+        requiredPropertyB timeZoneId,
+      componentSubcomponents =
+        map timeZoneObservanceB (NE.toList timeZoneObservances)
+    }
 
 data TimeZoneObservance
   = StandardObservance !Standard
@@ -523,15 +530,16 @@ instance Validity TimeZoneObservance
 
 instance NFData TimeZoneObservance
 
-timeZoneObservanceP :: CP TimeZoneObservance
-timeZoneObservanceP =
-  StandardObservance <$> componentSectionP
-    <|> DaylightObservance <$> componentSectionP
+timeZoneObservanceP :: Component -> CP TimeZoneObservance
+timeZoneObservanceP c = case componentName' c of
+  "STANDARD" -> StandardObservance <$> componentP c
+  "DAYLIGHT" -> DaylightObservance <$> componentP c
+  _ -> error "not an observance component"
 
-timeZoneObservanceB :: TimeZoneObservance -> DList ContentLine
+timeZoneObservanceB :: TimeZoneObservance -> Component
 timeZoneObservanceB = \case
-  StandardObservance s -> componentSectionB s
-  DaylightObservance d -> componentSectionB d
+  StandardObservance s -> componentB s
+  DaylightObservance d -> componentB d
 
 newtype Standard = Standard {unStandard :: Observance}
   deriving (Show, Eq, Ord, Generic)
@@ -542,11 +550,8 @@ instance NFData Standard
 
 instance IsComponent Standard where
   componentName Proxy = "STANDARD"
-  componentP = Standard <$> observanceP
-  componentB = observanceB . unStandard
-
-standardComponentParser :: Component -> CP Standard
-standardComponentParser = fmap Standard . observanceComponentParser
+  componentP = fmap Standard . observanceP
+  componentB = observanceB "STANDARD" . unStandard
 
 newtype Daylight = Daylight {unDaylight :: Observance}
   deriving (Show, Eq, Ord, Generic)
@@ -557,11 +562,8 @@ instance NFData Daylight
 
 instance IsComponent Daylight where
   componentName Proxy = "DAYLIGHT"
-  componentP = Daylight <$> observanceP
-  componentB = observanceB . unDaylight
-
-daylightComponentParser :: Component -> CP Daylight
-daylightComponentParser = fmap Daylight . observanceComponentParser
+  componentP = fmap Daylight . observanceP
+  componentB = observanceB "DAYLIGHT" . unDaylight
 
 data Observance = Observance
   { -- @
@@ -620,12 +622,12 @@ makeObservance start from to =
       observanceTimeZoneName = S.empty
     }
 
-observanceComponentParser :: Component -> CP Observance
-observanceComponentParser Component {..} = do
+observanceP :: Component -> CP Observance
+observanceP Component {..} = do
   case componentName' of
     "STANDARD" -> pure ()
     "DAYLIGHT" -> pure ()
-    _ -> fail "not an observance component"
+    _ -> error "fail: not an observance component"
   -- @
   -- The mandatory "DTSTART" property gives the effective onset date
   -- and local time for the time zone sub-component definition.
@@ -634,10 +636,10 @@ observanceComponentParser Component {..} = do
   -- @
   dtstart <- requiredProperty componentProperties
   observanceDateTimeStart <- case dtstart of
-    DateTimeStartDate _ -> fail "DTSTART must be specified as a datetime, not a date."
+    DateTimeStartDate _ -> error "fail: DTSTART must be specified as a datetime, not a date."
     DateTimeStartDateTime dt -> case dt of
       DateTimeFloating lt -> pure lt
-      _ -> fail "DTSTART must be specified as a date with a local time value."
+      _ -> error "fail: DTSTART must be specified as a date with a local time value."
 
   observanceTimeZoneOffsetTo <- requiredProperty componentProperties
   observanceTimeZoneOffsetFrom <- requiredProperty componentProperties
@@ -645,57 +647,28 @@ observanceComponentParser Component {..} = do
     S.fromList
       <$> (listOfProperties componentProperties >>= traverse (fixUntil (Just dtstart)))
   when (S.size observanceRecurrenceRules > 1) $
-    lift $
-      emitWarning $
-        WarnMultipleRecurrenceRules observanceRecurrenceRules
+    emitWarning $
+      WarnMultipleRecurrenceRules observanceRecurrenceRules
 
   observanceComment <- setOfProperties componentProperties
   observanceRecurrenceDateTimes <- setOfProperties componentProperties
   observanceTimeZoneName <- setOfProperties componentProperties
   pure Observance {..}
 
-observanceP :: CP Observance
-observanceP = do
-  observanceProperties <- takeWhileP (Just "observanceProperties") $ \ContentLine {..} ->
-    not $
-      contentLineName == "END"
-        && ( contentLineValueRaw contentLineValue == "STANDARD"
-               || contentLineValueRaw contentLineValue == "DAYLIGHT"
-           )
-  -- @
-  -- The mandatory "DTSTART" property gives the effective onset date
-  -- and local time for the time zone sub-component definition.
-  -- "DTSTART" in this usage MUST be specified as a date with a local
-  -- time value.
-  -- @
-  dtstart <- parseFirst observanceProperties
-  observanceDateTimeStart <- case dtstart of
-    DateTimeStartDate _ -> fail "DTSTART must be specified as a datetime, not a date."
-    DateTimeStartDateTime dt -> case dt of
-      DateTimeFloating lt -> pure lt
-      _ -> fail "DTSTART must be specified as a date with a local time value."
-
-  observanceTimeZoneOffsetTo <- parseFirst observanceProperties
-  observanceTimeZoneOffsetFrom <- parseFirst observanceProperties
-  observanceRecurrenceRules <- S.fromList <$> (parseList observanceProperties >>= traverse (fixUntil (Just dtstart)))
-  when (S.size observanceRecurrenceRules > 1) $
-    lift $
-      emitWarning $
-        WarnMultipleRecurrenceRules observanceRecurrenceRules
-
-  observanceComment <- parseSet observanceProperties
-  observanceRecurrenceDateTimes <- parseSet observanceProperties
-  observanceTimeZoneName <- parseSet observanceProperties
-  pure Observance {..}
-
-observanceB :: Observance -> DList ContentLine
-observanceB Observance {..} =
-  mconcat
-    [ propertyListB (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
-      propertyListB observanceTimeZoneOffsetTo,
-      propertyListB observanceTimeZoneOffsetFrom,
-      propertySetB observanceRecurrenceRules,
-      propertySetB observanceComment,
-      propertySetB observanceRecurrenceDateTimes,
-      propertySetB observanceTimeZoneName
-    ]
+observanceB :: Text -> Observance -> Component
+observanceB name Observance {..} =
+  Component
+    { componentName' = name,
+      componentProperties =
+        M.unionsWith
+          (<>)
+          [ requiredPropertyB (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
+            requiredPropertyB observanceTimeZoneOffsetTo,
+            requiredPropertyB observanceTimeZoneOffsetFrom,
+            setOfPropertiesB observanceRecurrenceRules,
+            setOfPropertiesB observanceComment,
+            setOfPropertiesB observanceRecurrenceDateTimes,
+            setOfPropertiesB observanceTimeZoneName
+          ],
+      componentSubcomponents = []
+    }

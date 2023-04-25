@@ -13,6 +13,7 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Trans
 import Data.DList (DList (..))
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -277,80 +278,84 @@ instance IsComponent Event where
   componentP = vEventP
   componentB = vEventB
 
-vEventP :: CP Event
-vEventP = do
-  eventProperties <- takeWhileP (Just "eventProperties") $ \ContentLine {..} ->
-    not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VEVENT"
-  eventDateTimeStamp <- parseFirst eventProperties
-  eventUID <- parseFirst eventProperties
-  eventDateTimeStart <- parseFirstMaybe eventProperties
+vEventP :: Component -> CP Event
+vEventP Component {..} = do
+  eventDateTimeStamp <- requiredProperty componentProperties
+  eventUID <- requiredProperty componentProperties
+  eventDateTimeStart <- optionalProperty componentProperties
   -- @
   -- ;Default is PUBLIC
   -- @
-  eventClassification <- fromMaybe ClassificationPublic <$> parseFirstMaybe eventProperties
-  eventCreated <- parseFirstMaybe eventProperties
-  eventDescription <- parseFirstMaybe eventProperties
-  eventGeographicPosition <- parseFirstMaybe eventProperties
-  eventLastModified <- parseFirstMaybe eventProperties
-  eventLocation <- parseFirstMaybe eventProperties
-  eventOrganizer <- parseFirstMaybe eventProperties
-  eventStatus <- parseFirstMaybe eventProperties
-  eventSummary <- parseFirstMaybe eventProperties
+  eventClassification <- fromMaybe ClassificationPublic <$> optionalProperty componentProperties
+  eventCreated <- optionalProperty componentProperties
+  eventDescription <- optionalProperty componentProperties
+  eventGeographicPosition <- optionalProperty componentProperties
+  eventLastModified <- optionalProperty componentProperties
+  eventLocation <- optionalProperty componentProperties
+  eventOrganizer <- optionalProperty componentProperties
+  eventStatus <- optionalProperty componentProperties
+  eventSummary <- optionalProperty componentProperties
   -- @
   -- ;Default value is OPAQUE
   -- @
-  eventTransparency <- fromMaybe TransparencyOpaque <$> parseFirstMaybe eventProperties
-  eventURL <- parseFirstMaybe eventProperties
-  eventRecurrenceID <- parseFirstMaybe eventProperties
+  eventTransparency <- fromMaybe TransparencyOpaque <$> optionalProperty componentProperties
+  eventURL <- optionalProperty componentProperties
+  eventRecurrenceID <- optionalProperty componentProperties
 
-  eventRecurrenceRules <- S.fromList <$> (parseList eventProperties >>= traverse (fixUntil eventDateTimeStart))
-  when (S.size eventRecurrenceRules > 1) $ lift $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
+  eventRecurrenceRules <- S.fromList <$> (listOfProperties componentProperties >>= traverse (fixUntil eventDateTimeStart))
+  when (S.size eventRecurrenceRules > 1) $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
 
-  mEnd <- parseFirstMaybe eventProperties
-  mDuration <- parseFirstMaybe eventProperties
+  mEnd <- optionalProperty componentProperties
+  mDuration <- optionalProperty componentProperties
   let eventDateTimeEndDuration = case (mEnd, mDuration) of
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
-  eventAttendees <- parseSet eventProperties
-  eventExceptionDateTimes <- parseSet eventProperties
-  eventRecurrenceDateTimes <- parseSet eventProperties
+  eventAttendees <- setOfProperties componentProperties
+  eventExceptionDateTimes <- setOfProperties componentProperties
+  eventRecurrenceDateTimes <- setOfProperties componentProperties
   pure Event {..}
 
-vEventB :: Event -> DList ContentLine
+vEventB :: Event -> Component
 vEventB Event {..} =
-  mconcat
-    [ propertyListB eventDateTimeStamp,
-      propertyListB eventUID,
-      propertyMListB eventDateTimeStart,
-      -- @
-      -- ;Default is PUBLIC
-      -- @
-      propertyDListB ClassificationPublic eventClassification,
-      propertyMListB eventCreated,
-      propertyMListB eventDescription,
-      propertyMListB eventGeographicPosition,
-      propertyMListB eventLastModified,
-      propertyMListB eventLocation,
-      propertyMListB eventOrganizer,
-      propertyMListB eventStatus,
-      propertyMListB eventSummary,
-      -- @
-      -- ;Default value is OPAQUE
-      -- @
-      propertyDListB TransparencyOpaque eventTransparency,
-      propertyMListB eventURL,
-      propertyMListB eventRecurrenceID,
-      propertySetB eventRecurrenceRules,
-      case eventDateTimeEndDuration of
-        Nothing -> mempty
-        Just endOrDuration -> case endOrDuration of
-          Left e -> propertyListB e
-          Right d -> propertyListB d,
-      propertySetB eventAttendees,
-      propertySetB eventExceptionDateTimes,
-      propertySetB eventRecurrenceDateTimes
-    ]
+  Component
+    { componentName' = "VEVENT",
+      componentProperties =
+        M.unionsWith
+          (<>)
+          [ requiredPropertyB eventDateTimeStamp,
+            requiredPropertyB eventUID,
+            optionalPropertyB eventDateTimeStart,
+            -- @
+            -- ;Default is PUBLIC
+            -- @
+            optionalPropertyWithDefaultB ClassificationPublic eventClassification,
+            optionalPropertyB eventCreated,
+            optionalPropertyB eventDescription,
+            optionalPropertyB eventGeographicPosition,
+            optionalPropertyB eventLastModified,
+            optionalPropertyB eventLocation,
+            optionalPropertyB eventOrganizer,
+            optionalPropertyB eventStatus,
+            optionalPropertyB eventSummary,
+            -- @
+            -- ;Default value is OPAQUE
+            -- @
+            optionalPropertyWithDefaultB TransparencyOpaque eventTransparency,
+            optionalPropertyB eventURL,
+            optionalPropertyB eventRecurrenceID,
+            setOfPropertiesB eventRecurrenceRules,
+            case eventDateTimeEndDuration of
+              Nothing -> mempty
+              Just endOrDuration -> case endOrDuration of
+                Left e -> requiredPropertyB e
+                Right d -> requiredPropertyB d,
+            setOfPropertiesB eventAttendees,
+            setOfPropertiesB eventExceptionDateTimes,
+            setOfPropertiesB eventRecurrenceDateTimes
+          ],
+      componentSubcomponents = []
+    }
 
 makeEvent :: UID -> DateTimeStamp -> Event
 makeEvent uid dateTimeStamp =

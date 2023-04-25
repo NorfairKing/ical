@@ -16,6 +16,7 @@ module ICal.Component
 where
 
 import Control.DeepSeq
+import Control.Monad
 import Data.DList (DList (..))
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -37,26 +38,25 @@ import Text.Megaparsec
 parseICalendarFromContentLines ::
   [ContentLine] ->
   Conform
-    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseError
     CalendarParseFixableError
     CalendarParseWarning
     [Calendar]
-parseICalendarFromContentLines = runCP iCalendarP
+parseICalendarFromContentLines =
+  parseGeneralComponents >=> mapM componentP
 
 parseVCalendarFromContentLines ::
   [ContentLine] ->
   Conform
-    (ParseErrorBundle [ContentLine] CalendarParseError)
+    CalendarParseError
     CalendarParseFixableError
     CalendarParseWarning
     Calendar
-parseVCalendarFromContentLines = parseComponentFromContentLines
-
-iCalendarP :: CP [Calendar]
-iCalendarP = many componentSectionP
+parseVCalendarFromContentLines =
+  parseGeneralComponent >=> componentP
 
 iCalendarB :: [Calendar] -> DList ContentLine
-iCalendarB = foldMap componentSectionB
+iCalendarB = renderGeneralComponents . map componentB
 
 -- |
 --
@@ -172,7 +172,7 @@ instance NFData Calendar
 
 instance IsComponent Calendar where
   componentName Proxy = "VCALENDAR"
-  componentP = do
+  componentP c = do
     -- TODO implement a warning for this SHOULD:
     -- @
     -- The Calendar Properties are attributes that apply to the iCalendar
@@ -180,31 +180,38 @@ instance IsComponent Calendar where
     -- component.  They SHOULD be specified after the "BEGIN:VCALENDAR"
     -- delimiter string and prior to any calendar component.
     -- @
-    calPropLines <- takeWhileP (Just "calprops") $ \ContentLine {..} ->
-      not $ contentLineName == "END" && contentLineValueRaw contentLineValue == "VCALENDAR"
+    let calPropLines = componentProperties c
 
-    calendarProdId <- parseFirst calPropLines
-    calendarVersion <- parseFirst calPropLines
+    calendarProdId <- requiredProperty calPropLines
+    calendarVersion <- requiredProperty calPropLines
 
-    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> parseFirstMaybe calPropLines
-    calendarMethod <- parseFirstMaybe calPropLines
+    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> optionalProperty calPropLines
+    calendarMethod <- optionalProperty calPropLines
 
-    calendarTimeZones <- parseManySubcomponents calPropLines
-    calendarEvents <- parseManySubcomponents calPropLines
+    let timeZoneName = componentName (Proxy :: Proxy TimeZone)
+    calendarTimeZones <- mapM componentP $ filter ((== timeZoneName) . componentName') (componentSubcomponents c)
+    let eventName = componentName (Proxy :: Proxy Event)
+    calendarEvents <- mapM componentP $ filter ((== eventName) . componentName') (componentSubcomponents c)
 
     pure $ Calendar {..}
 
   componentB Calendar {..} =
-    mconcat $
-      concat
-        [ [ propertyListB calendarProdId,
-            propertyListB calendarVersion,
-            propertyDListB defaultCalendarScale calendarCalendarScale,
-            propertyMListB calendarMethod
-          ],
-          map componentSectionB calendarEvents,
-          map componentSectionB calendarTimeZones
-        ]
+    Component
+      { componentName' = "VCALENDAR",
+        componentProperties =
+          M.unionsWith
+            (<>)
+            [ requiredPropertyB calendarProdId,
+              requiredPropertyB calendarVersion,
+              optionalPropertyWithDefaultB defaultCalendarScale calendarCalendarScale,
+              optionalPropertyB calendarMethod
+            ],
+        componentSubcomponents =
+          concat
+            [ map componentB calendarEvents,
+              map componentB calendarTimeZones
+            ]
+      }
 
 makeCalendar :: ProdId -> Calendar
 makeCalendar prodId =

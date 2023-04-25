@@ -48,7 +48,7 @@ data ICalParseError
   = TextDecodingError !TE.UnicodeException
   | UnfoldingError !UnfoldingError
   | ContentLineParseError !String
-  | CalendarParseError !(ParseErrorBundle [ContentLine] CalendarParseError)
+  | CalendarParseError CalendarParseError
   deriving (Show, Eq)
 
 instance Exception ICalParseError where
@@ -178,7 +178,8 @@ renderComponentText =
   renderUnfoldedLines
     . map renderContentLineToUnfoldedLine
     . DList.toList
-    . componentSectionB
+    . renderGeneralComponent
+    . componentB
 
 -- | Parse an individual property from Text directly
 --

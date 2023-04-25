@@ -3,12 +3,10 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -47,14 +45,14 @@ import Text.Megaparsec
 
 data Component = Component
   { -- TODO rename
-    componentName' :: Text,
+    componentName' :: !Text,
     -- TODO consider if
     -- 1. order of the values matters
     -- 2. duplicates matter
     --
     -- If both don't matter then use a set.
-    componentProperties :: Map ContentLineName (NonEmpty ContentLineValue),
-    componentSubcomponents :: [Component]
+    componentProperties :: !(Map ContentLineName (NonEmpty ContentLineValue)),
+    componentSubcomponents :: ![Component]
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -69,10 +67,15 @@ renderGeneralComponents = foldMap renderGeneralComponent
 renderGeneralComponent :: Component -> DList ContentLine
 renderGeneralComponent Component {..} =
   mconcat
-    [ propertyListB (Begin componentName'),
-      DList.fromList $ concatMap (\(name, values) -> map (ContentLine name) (NE.toList values)) (M.toList componentProperties),
+    [ DList.singleton $ propertyContentLineB (Begin componentName'),
+      DList.fromList $
+        concatMap
+          ( \(name, values) ->
+              map (ContentLine name) (NE.toList values)
+          )
+          (M.toList componentProperties),
       foldMap renderGeneralComponent componentSubcomponents,
-      propertyListB (End componentName')
+      DList.singleton $ propertyContentLineB (End componentName')
     ]
 
 -- TODO rename
@@ -86,18 +89,31 @@ parseGeneralComponents = goComponents
       Conform CalendarParseError CalendarParseFixableError CalendarParseWarning [Component]
     goComponents = \case
       [] -> pure []
-      (firstCL : restCLs) -> do
-        Begin name <-
-          conformMapAll
-            PropertyParseError
-            absurd
-            absurd
-            $ propertyContentLineP firstCL
-
-        (component, leftovers) <- goComponent name M.empty [] restCLs
+      cls -> do
+        (component, leftovers) <- parseGeneralComponentHelper cls
         restComponents <- goComponents leftovers
         pure (component : restComponents)
 
+parseGeneralComponent ::
+  [ContentLine] ->
+  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning Component
+parseGeneralComponent = fmap fst . parseGeneralComponentHelper
+
+-- TODO rename
+parseGeneralComponentHelper ::
+  [ContentLine] ->
+  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning (Component, [ContentLine])
+parseGeneralComponentHelper = \case
+  [] -> error "fail: no begin for a component"
+  (firstCL : restCLs) -> do
+    Begin name <-
+      conformMapAll
+        PropertyParseError
+        absurd
+        absurd
+        $ propertyContentLineP firstCL
+    goComponent name M.empty [] restCLs
+  where
     goComponent ::
       Text ->
       Map ContentLineName (NonEmpty ContentLineValue) ->
@@ -165,13 +181,13 @@ parseGeneralComponents = goComponents
               rest
 
 data CalendarParseError
-  = SubcomponentError !(ParseErrorBundle [ContentLine] CalendarParseError)
+  = SubcomponentError !CalendarParseError
   | PropertyParseError !PropertyParseError
   deriving (Show, Eq, Ord)
 
 instance Exception CalendarParseError where
   displayException = \case
-    SubcomponentError pe -> errorBundlePretty pe
+    SubcomponentError cpe -> displayException cpe
     PropertyParseError ppe -> displayException ppe
 
 instance ShowErrorComponent CalendarParseError where
@@ -196,85 +212,16 @@ instance Exception CalendarParseWarning where
 parseComponentFromContentLines ::
   (Validity component, IsComponent component) =>
   [ContentLine] ->
-  Conform
-    (ParseErrorBundle [ContentLine] CalendarParseError)
-    CalendarParseFixableError
-    CalendarParseWarning
-    component
-parseComponentFromContentLines = runCP componentSectionP
-
-runCP ::
-  CP a ->
-  [ContentLine] ->
-  Conform
-    (ParseErrorBundle [ContentLine] CalendarParseError)
-    CalendarParseFixableError
-    CalendarParseWarning
-    a
-runCP func cls = do
-  errOrComponent <- runParserT func "" cls
-  case errOrComponent of
-    Left err -> unfixableError err
-    Right component -> pure component
-
-liftCP :: CP a -> [ContentLine] -> CP a
-liftCP parserFunc cls = lift $ runCP parserFunc cls
-
-liftConformToCP ::
-  Conform
-    CalendarParseError
-    CalendarParseFixableError
-    CalendarParseWarning
-    a ->
-  CP a
-liftConformToCP func = do
-  decider <- lift ask
-  case runConformFlexible decider func of
-    Left hr -> case hr of
-      HaltedBecauseOfUnfixableError ue -> customFailure ue
-      HaltedBecauseOfStrictness fe -> throwError (HaltedBecauseOfStrictness fe)
-    Right (a, notes) -> lift $ do
-      tell notes
-      pure a
+  CP component
+parseComponentFromContentLines cls = do
+  parseGeneralComponent cls >>= componentP
 
 type CP a =
-  ParsecT
+  Conform
     CalendarParseError
-    [ContentLine]
-    ( Conform
-        (ParseErrorBundle [ContentLine] CalendarParseError)
-        CalendarParseFixableError
-        CalendarParseWarning
-    )
+    CalendarParseFixableError
+    CalendarParseWarning
     a
-
-instance VisualStream [ContentLine] where
-  showTokens :: Proxy [ContentLine] -> NonEmpty ContentLine -> String
-  showTokens Proxy =
-    T.unpack
-      . renderUnfoldedLines
-      . map renderContentLineToUnfoldedLine
-      . NE.toList
-
-instance TraversableStream [ContentLine] where
-  reachOffset ::
-    Int ->
-    PosState [ContentLine] ->
-    (Maybe String, PosState [ContentLine])
-  reachOffset offset posState =
-    let newInput = drop offset $ pstateInput posState
-        newState =
-          posState
-            { pstateInput = newInput,
-              pstateOffset = offset,
-              pstateSourcePos =
-                (pstateSourcePos posState)
-                  { sourceLine = mkPos (offset + 1)
-                  }
-            }
-     in case newInput of
-          [] -> (Nothing, newState)
-          (cl : _) -> (Just $ T.unpack $ renderUnfoldedLines [renderContentLineToUnfoldedLine cl], newState)
 
 -- |
 --
@@ -296,40 +243,10 @@ class IsComponent component where
   componentName :: Proxy component -> Text
 
   -- | Parser for this component
-  componentP :: CP component
+  componentP :: Component -> CP component
 
   -- | Builder for this component
-  componentB :: component -> DList ContentLine
-
-componentSectionP :: forall component. (Validity component, IsComponent component) => CP component
-componentSectionP = do
-  c <- sectionP (componentName (Proxy :: Proxy component)) componentP
-  case prettyValidate c of
-    Left err -> fail err
-    Right c' -> pure c'
-
-sectionP :: Text -> CP a -> CP a
-sectionP name parser = do
-  parseGivenProperty $ Begin name
-  result <- parser
-  parseGivenProperty $ End name
-  pure result
-
-parseGivenProperty :: IsProperty property => property -> CP ()
-parseGivenProperty givenProperty = void $ single $ propertyContentLineB givenProperty
-
-parseProperty :: IsProperty property => CP property
-parseProperty = do
-  contentLine <- anySingle
-  liftConformToCP
-    $ conformMapAll
-      PropertyParseError
-      absurd
-      absurd
-    $ propertyContentLineP contentLine
-
-componentSectionB :: forall component. IsComponent component => component -> DList ContentLine
-componentSectionB = sectionB (componentName (Proxy :: Proxy component)) componentB
+  componentB :: component -> Component
 
 sectionB :: Text -> (a -> DList ContentLine) -> (a -> DList ContentLine)
 sectionB name func =
@@ -337,32 +254,21 @@ sectionB name func =
     . (<> DList.singleton (propertyContentLineB (End name)))
     . func
 
-propertyListB :: IsProperty property => property -> DList ContentLine
-propertyListB = DList.singleton . propertyContentLineB
-
-propertyMListB :: IsProperty property => Maybe property -> DList ContentLine
-propertyMListB = maybe DList.empty (DList.singleton . propertyContentLineB)
-
-propertyDListB :: (Eq property, IsProperty property) => property -> property -> DList ContentLine
-propertyDListB defaultValue value =
-  if value == defaultValue
-    then mempty
-    else propertyListB value
-
-propertySetB :: IsProperty property => Set property -> DList ContentLine
-propertySetB = DList.fromList . map propertyContentLineB . S.toList
-
 requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredProperty m = case M.lookup name m of
-  Nothing -> fail $ "Did not find required property " <> show name
+  Nothing -> error $ "fail: Did not find required property " <> show name
   Just values -> case values of
     (value :| _) ->
-      liftConformToCP $
-        conformMapAll PropertyParseError absurd absurd $
-          propertyContentLineP (ContentLine name value)
-          -- TODO warning when there are multiple.
+      conformMapAll PropertyParseError absurd absurd $
+        propertyContentLineP (ContentLine name value)
+        -- TODO warning when there are multiple.
   where
     name = propertyName (Proxy :: Proxy a)
+
+requiredPropertyB :: IsProperty property => property -> Map ContentLineName (NonEmpty ContentLineValue)
+requiredPropertyB property =
+  let cl = propertyContentLineB property
+   in M.singleton (contentLineName cl) (contentLineValue cl :| [])
 
 parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
 parseFirst = go
@@ -370,22 +276,38 @@ parseFirst = go
     name = propertyName (Proxy :: Proxy a)
     go :: [ContentLine] -> CP a
     go = \case
-      [] -> fail $ "Did not find required " <> show name
+      [] -> error $ "fail: Did not find required " <> show name
       (contentLine : cls) ->
         if contentLineName contentLine == name
-          then liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
+          then conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
 
-optionalProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP (Maybe a)
+optionalPropertyB :: IsProperty property => Maybe property -> Map ContentLineName (NonEmpty ContentLineValue)
+optionalPropertyB = maybe M.empty requiredPropertyB
+
+optionalPropertyWithDefaultB ::
+  (Eq property, IsProperty property) =>
+  property ->
+  property ->
+  Map ContentLineName (NonEmpty ContentLineValue)
+optionalPropertyWithDefaultB defaultValue value =
+  if value == defaultValue
+    then mempty
+    else requiredPropertyB value
+
+optionalProperty ::
+  forall a.
+  IsProperty a =>
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP (Maybe a)
 optionalProperty m = case M.lookup name m of
   Nothing -> pure Nothing
   Just values -> case values of
     (value :| _) ->
       fmap Just $
-        liftConformToCP $
-          conformMapAll PropertyParseError absurd absurd $
-            propertyContentLineP (ContentLine name value)
-            -- TODO warning when there are multiple.
+        conformMapAll PropertyParseError absurd absurd $
+          propertyContentLineP (ContentLine name value)
+          -- TODO warning when there are multiple.
   where
     name = propertyName (Proxy :: Proxy a)
 
@@ -399,8 +321,14 @@ parseFirstMaybe = go
       -- TODO do better than a linear search?
       (contentLine : cls) ->
         if contentLineName contentLine == name
-          then fmap Just $ liftConformToCP $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
+          then fmap Just $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
           else go cls
+
+listOfPropertiesB ::
+  IsProperty property =>
+  [property] ->
+  Map ContentLineName (NonEmpty ContentLineValue)
+listOfPropertiesB = M.unionsWith (<>) . map requiredPropertyB
 
 listOfProperties ::
   forall a.
@@ -409,7 +337,7 @@ listOfProperties ::
   CP [a]
 listOfProperties m = do
   let values = maybe [] NE.toList $ M.lookup name m
-  mapM (liftConformToCP . conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
+  mapM (conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
   where
     name = propertyName (Proxy :: Proxy a)
 
@@ -419,10 +347,19 @@ parseList ::
   [ContentLine] ->
   CP [a]
 parseList cls =
-  mapM (liftConformToCP . conformMapAll PropertyParseError absurd absurd . propertyContentLineP) $
+  mapM (conformMapAll PropertyParseError absurd absurd . propertyContentLineP) $
     filter ((== name) . contentLineName) cls
   where
     name = propertyName (Proxy :: Proxy a)
+
+propertySetB :: IsProperty property => Set property -> DList ContentLine
+propertySetB = DList.fromList . map propertyContentLineB . S.toList
+
+setOfPropertiesB ::
+  IsProperty property =>
+  Set property ->
+  Map ContentLineName (NonEmpty ContentLineValue)
+setOfPropertiesB = listOfPropertiesB . S.toList
 
 setOfProperties ::
   forall a.
@@ -437,79 +374,6 @@ parseSet ::
   [ContentLine] ->
   CP (Set a)
 parseSet = fmap S.fromList . parseList
-
-parseSubcomponent :: forall a. (IsComponent a) => [ContentLine] -> CP a
-parseSubcomponent = go1
-  where
-    go1 :: [ContentLine] -> CP a
-    go1 = \case
-      [] -> fail "No subcomponent found."
-      (cl : rest) ->
-        let isBegin ContentLine {..} = contentLineName == "BEGIN" && (contentLineValueRaw contentLineValue == name)
-            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == name)
-         in if isBegin cl
-              then go2 $ takeWhile (not . isEnd) rest
-              else go1 rest
-    go2 :: [ContentLine] -> CP a
-    go2 = liftCP componentP
-
-    name = componentName (Proxy :: Proxy a)
-
-parseManySubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP [a]
-parseManySubcomponents = go1
-  where
-    go1 :: [ContentLine] -> CP [a]
-    go1 = \case
-      [] -> pure []
-      (cl : rest) ->
-        let isBegin ContentLine {..} = contentLineName == "BEGIN" && (contentLineValueRaw contentLineValue == name)
-            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == name)
-         in if isBegin cl
-              then
-                let (subComponentLines, restAfterSubcomponent) = break isEnd rest
-                 in (:) <$> go2 subComponentLines <*> go1 restAfterSubcomponent
-              else go1 rest
-    go2 :: [ContentLine] -> CP a
-    go2 = liftCP componentP
-
-    name = componentName (Proxy :: Proxy a)
-
-parseManySubcomponents2 :: forall a b. (IsComponent a, IsComponent b) => [ContentLine] -> CP [Either a b]
-parseManySubcomponents2 = go1
-  where
-    go1 :: [ContentLine] -> CP [Either a b]
-    go1 = \case
-      [] -> pure []
-      (cl : rest) ->
-        let isBegin ContentLine {..} =
-              contentLineName == "BEGIN"
-                && ( contentLineValueRaw contentLineValue == nameA
-                       || contentLineValueRaw contentLineValue == nameB
-                   )
-            isEnd :: forall c. IsComponent c => ContentLine -> Bool
-            isEnd ContentLine {..} = contentLineName == "END" && (contentLineValueRaw contentLineValue == componentName (Proxy :: Proxy c))
-         in if isBegin cl
-              then
-                if contentLineValueRaw (contentLineValue cl) == nameA
-                  then
-                    let (subComponentLines, restAfterSubcomponent) = break (isEnd @a) rest
-                     in (:) <$> (Left <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
-                  else
-                    let (subComponentLines, restAfterSubcomponent) = break (isEnd @b) rest
-                     in (:) <$> (Right <$> go2 subComponentLines) <*> go1 restAfterSubcomponent
-              else go1 rest
-    go2 :: forall c. IsComponent c => [ContentLine] -> CP c
-    go2 = liftCP componentP
-
-    nameA = componentName (Proxy :: Proxy a)
-    nameB = componentName (Proxy :: Proxy b)
-
-parseSomeSubcomponents :: forall a. (IsComponent a) => [ContentLine] -> CP (NonEmpty a)
-parseSomeSubcomponents cls = do
-  cs <- parseManySubcomponents cls
-  case NE.nonEmpty cs of
-    Nothing -> fail "expected at least one subcompent"
-    Just ne -> pure ne
 
 validateMDateTimeStartRRule :: Maybe DateTimeStart -> Set RecurrenceRule -> Validation
 validateMDateTimeStartRRule mDateTimeStart recurrenceRules =
@@ -619,7 +483,7 @@ fixUntil mDateTimeStart rrule =
                   -- This guess is bad
                   DateTimeZoned _ (Time.LocalTime _ tod) ->
                     UntilDateTimeUTC (Time.UTCTime ud (Time.timeOfDayToTime tod))
-            lift $ emitFixableError $ UntilTypeGuess dateTimeStart u newUntil
+            emitFixableError $ UntilTypeGuess dateTimeStart u newUntil
             pure $ rrule {recurrenceRuleUntilCount = Just $ Left newUntil}
           _ -> pure rrule
         _ -> pure rrule
