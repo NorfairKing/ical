@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -14,6 +15,7 @@
 
 module ICal.Component.Class where
 
+import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -35,6 +37,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
+import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
@@ -53,7 +56,11 @@ data Component = Component
     componentProperties :: Map ContentLineName (NonEmpty ContentLineValue),
     componentSubcomponents :: [Component]
   }
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Component
+
+instance NFData Component
 
 -- TODO rename
 renderGeneralComponents :: [Component] -> DList ContentLine
@@ -153,7 +160,7 @@ parseGeneralComponents = goComponents
           _ ->
             goComponent
               name
-              (M.insertWith (<>) (contentLineName cl) (contentLineValue cl :| []) properties)
+              (M.insertWith (flip (<>)) (contentLineName cl) (contentLineValue cl :| []) properties)
               subComponents
               rest
 

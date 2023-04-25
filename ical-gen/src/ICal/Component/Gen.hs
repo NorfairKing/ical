@@ -31,6 +31,15 @@ import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
+instance GenValid Component where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = sized $ \s -> do
+    (a, b, c) <- genSplit3 s
+    componentName' <- genValid
+    componentProperties <- resize (a + b) genValid
+    componentSubcomponents <- resize c genValid
+    pure Component {..}
+
 instance GenValid Calendar where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

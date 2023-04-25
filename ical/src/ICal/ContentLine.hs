@@ -65,6 +65,8 @@ data ContentLine = ContentLine
 
 instance Validity ContentLine
 
+instance NFData ContentLine
+
 instance IsString ContentLine where
   fromString s =
     let t = fromString s
@@ -135,6 +137,8 @@ instance Validity ContentLineName where
                 decorateText (CI.original t) validateNameChar
               ]
       ]
+
+instance NFData ContentLineName
 
 instance IsString ContentLineName where
   fromString s =
