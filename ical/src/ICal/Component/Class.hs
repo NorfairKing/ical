@@ -31,6 +31,7 @@ module ICal.Component.Class
     -- * Helper functions for writing the parser
     requiredProperty,
     optionalProperty,
+    optionalPropertyWithDefaultP,
     listOfProperties,
     setOfProperties,
     subComponentsP,
@@ -60,6 +61,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -359,6 +361,14 @@ optionalProperty m = case M.lookup name m of
           -- TODO warning when there are multiple.
   where
     name = propertyName (Proxy :: Proxy a)
+
+optionalPropertyWithDefaultP ::
+  forall a.
+  IsProperty a =>
+  a ->
+  Map ContentLineName (NonEmpty ContentLineValue) ->
+  CP a
+optionalPropertyWithDefaultP defaultValue m = fromMaybe defaultValue <$> optionalProperty m
 
 listOfPropertiesB ::
   IsProperty property =>

@@ -12,7 +12,6 @@ module ICal.Component.Event where
 import Control.DeepSeq
 import Control.Monad
 import qualified Data.Map as M
-import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -282,7 +281,7 @@ vEventP Component {..} = do
   -- @
   -- ;Default is PUBLIC
   -- @
-  eventClassification <- fromMaybe ClassificationPublic <$> optionalProperty componentProperties
+  eventClassification <- optionalPropertyWithDefaultP ClassificationPublic componentProperties
   eventCreated <- optionalProperty componentProperties
   eventDescription <- optionalProperty componentProperties
   eventGeographicPosition <- optionalProperty componentProperties
@@ -294,7 +293,7 @@ vEventP Component {..} = do
   -- @
   -- ;Default value is OPAQUE
   -- @
-  eventTransparency <- fromMaybe TransparencyOpaque <$> optionalProperty componentProperties
+  eventTransparency <- optionalPropertyWithDefaultP TransparencyOpaque componentProperties
   eventURL <- optionalProperty componentProperties
   eventRecurrenceID <- optionalProperty componentProperties
 
