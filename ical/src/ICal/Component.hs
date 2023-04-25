@@ -18,7 +18,6 @@ where
 import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
-import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -34,7 +33,6 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.Property
-import Text.Megaparsec
 
 parseICalendarFromContentLines ::
   [ContentLine] ->

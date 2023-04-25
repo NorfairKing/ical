@@ -12,15 +12,11 @@ module ICal.Component.TimeZone where
 
 import Control.DeepSeq
 import Control.Monad
-import Control.Monad.Trans
-import Data.DList (DList (..))
-import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Text (Text)
 import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
@@ -28,12 +24,10 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
 import ICal.Conformance
-import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.RecurrenceRule
-import Text.Megaparsec
 
 -- |
 --

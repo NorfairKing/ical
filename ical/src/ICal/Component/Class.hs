@@ -11,14 +11,49 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.Component.Class where
+module ICal.Component.Class
+  ( ComponentName,
+    Component (..),
+    IsComponent (..),
+    CP,
+    CalendarParseError (..),
+    CalendarParseFixableError (..),
+    CalendarParseWarning (..),
+    parseGeneralComponent,
+    parseGeneralComponents,
+    renderGeneralComponent,
+    renderGeneralComponents,
+    parseComponentFromContentLines,
+    namedComponentP,
+    namedComponentB,
+    namedComponentMapB,
+
+    -- * Helper functions for writing the parser
+    requiredProperty,
+    optionalProperty,
+    listOfProperties,
+    setOfProperties,
+    subComponentsP,
+
+    -- * Helper functions for writing the builder
+    requiredPropertyB,
+    optionalPropertyB,
+    optionalPropertyWithDefaultB,
+    listOfPropertiesB,
+    setOfPropertiesB,
+    subComponentsB,
+
+    -- * General fixers
+    fixUntil,
+
+    -- * Helper functions for validation
+    validateMDateTimeStartRRule,
+    validateDateTimeStartRRule,
+  )
+where
 
 import Control.DeepSeq
 import Control.Exception
-import Control.Monad
-import Control.Monad.Except
-import Control.Monad.Reader
-import Control.Monad.Writer
 import Data.DList (DList (..))
 import qualified Data.DList as DList
 import Data.List.NonEmpty (NonEmpty (..))
@@ -29,19 +64,16 @@ import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
-import Debug.Trace
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
-import ICal.UnfoldedLine
 import Text.Megaparsec
 
 type ComponentName = Text
@@ -71,8 +103,8 @@ renderGeneralComponent name Component {..} =
     [ DList.singleton $ propertyContentLineB (Begin name),
       DList.fromList $
         concatMap
-          ( \(name, values) ->
-              map (ContentLine name) (NE.toList values)
+          ( \(n, values) ->
+              map (ContentLine n) (NE.toList values)
           )
           (M.toList componentProperties),
       renderGeneralComponents componentSubcomponents,
@@ -214,10 +246,11 @@ instance Exception CalendarParseWarning where
     WarnMultipleRecurrenceRules rrs -> unwords ["Component has multiple recurrence rules:", show rrs]
 
 parseComponentFromContentLines ::
-  (Validity component, IsComponent component) =>
+  (IsComponent component) =>
   [ContentLine] ->
   CP component
 parseComponentFromContentLines cls = do
+  -- TODO check validity of component
   parseGeneralComponent cls >>= uncurry namedComponentP
 
 type CP a =
@@ -298,18 +331,6 @@ requiredPropertyB property =
   let cl = propertyContentLineB property
    in M.singleton (contentLineName cl) (contentLineValue cl :| [])
 
-parseFirst :: forall a. IsProperty a => [ContentLine] -> CP a
-parseFirst = go
-  where
-    name = propertyName (Proxy :: Proxy a)
-    go :: [ContentLine] -> CP a
-    go = \case
-      [] -> error $ "fail: Did not find required " <> show name
-      (contentLine : cls) ->
-        if contentLineName contentLine == name
-          then conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
-          else go cls
-
 optionalPropertyB :: IsProperty property => Maybe property -> Map ContentLineName (NonEmpty ContentLineValue)
 optionalPropertyB = maybe M.empty requiredPropertyB
 
@@ -339,19 +360,6 @@ optionalProperty m = case M.lookup name m of
   where
     name = propertyName (Proxy :: Proxy a)
 
-parseFirstMaybe :: forall a. IsProperty a => [ContentLine] -> CP (Maybe a)
-parseFirstMaybe = go
-  where
-    name = propertyName (Proxy :: Proxy a)
-    go :: [ContentLine] -> CP (Maybe a)
-    go = \case
-      [] -> pure Nothing
-      -- TODO do better than a linear search?
-      (contentLine : cls) ->
-        if contentLineName contentLine == name
-          then fmap Just $ conformMapAll PropertyParseError absurd absurd $ propertyContentLineP contentLine
-          else go cls
-
 listOfPropertiesB ::
   IsProperty property =>
   [property] ->
@@ -369,20 +377,6 @@ listOfProperties m = do
   where
     name = propertyName (Proxy :: Proxy a)
 
-parseList ::
-  forall a.
-  IsProperty a =>
-  [ContentLine] ->
-  CP [a]
-parseList cls =
-  mapM (conformMapAll PropertyParseError absurd absurd . propertyContentLineP) $
-    filter ((== name) . contentLineName) cls
-  where
-    name = propertyName (Proxy :: Proxy a)
-
-propertySetB :: IsProperty property => Set property -> DList ContentLine
-propertySetB = DList.fromList . map propertyContentLineB . S.toList
-
 setOfPropertiesB ::
   IsProperty property =>
   Set property ->
@@ -395,13 +389,6 @@ setOfProperties ::
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP (Set a)
 setOfProperties = fmap S.fromList . listOfProperties
-
-parseSet ::
-  forall a.
-  (Ord a, IsProperty a) =>
-  [ContentLine] ->
-  CP (Set a)
-parseSet = fmap S.fromList . parseList
 
 subComponentsP ::
   forall component.

@@ -19,7 +19,6 @@ import qualified Data.DList as DList
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Encoding.Error as TE
-import Data.Validity (Validity)
 import Data.Void
 import ICal.Component
 import ICal.Conformance
@@ -28,7 +27,6 @@ import ICal.Parameter
 import ICal.Property
 import ICal.PropertyType
 import ICal.UnfoldedLine
-import Text.Megaparsec (ParseErrorBundle)
 
 -- | MIME Content type
 --
@@ -157,7 +155,7 @@ renderVCalendar = renderICalendar . (: [])
 -- You probably don't want to use this.
 -- Individual components are not described by the spec as text.
 parseComponentFromText ::
-  (Validity component, IsComponent component) =>
+  (IsComponent component) =>
   Text ->
   Conform
     ICalParseError

@@ -11,8 +11,6 @@ module ICal.Component.Event where
 
 import Control.DeepSeq
 import Control.Monad
-import Control.Monad.Trans
-import Data.DList (DList (..))
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Proxy
@@ -24,10 +22,8 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
 import ICal.Conformance
-import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
-import Text.Megaparsec
 
 -- |
 --

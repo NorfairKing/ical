@@ -47,7 +47,6 @@ where
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
-import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -543,7 +542,7 @@ requireTimeZoneCtx tzid = do
 -- and the "to" offset.
 timeZoneRuleOccurrences :: Time.Day -> TimeZone -> Resolv ResolutionCtx
 timeZoneRuleOccurrences limit zone = do
-  let observances = NE.toList (timeZoneObservances zone)
+  let observances = S.toList (timeZoneObservances zone)
   maps <- forM observances $ \tzo -> do
     let o@Observance {..} = case tzo of
           StandardObservance (Standard s) -> s
