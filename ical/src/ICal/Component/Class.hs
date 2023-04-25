@@ -29,11 +29,11 @@ module ICal.Component.Class
     namedComponentMapB,
 
     -- * Helper functions for writing the parser
-    requiredProperty,
-    optionalProperty,
+    requiredPropertyP,
+    optionalPropertyP,
     optionalPropertyWithDefaultP,
-    listOfProperties,
-    setOfProperties,
+    listOfPropertiesP,
+    setOfPropertiesP,
     subComponentsP,
 
     -- * Helper functions for writing the builder
@@ -317,8 +317,8 @@ namedComponentMapB component =
   let (name, generalComponent) = namedComponentB component
    in M.singleton name (generalComponent :| [])
 
-requiredProperty :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
-requiredProperty m = case M.lookup name m of
+requiredPropertyP :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
+requiredPropertyP m = case M.lookup name m of
   Nothing -> error $ "fail: Did not find required property " <> show name
   Just values -> case values of
     (value :| _) ->
@@ -346,12 +346,12 @@ optionalPropertyWithDefaultB defaultValue value =
     then mempty
     else requiredPropertyB value
 
-optionalProperty ::
+optionalPropertyP ::
   forall a.
   IsProperty a =>
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP (Maybe a)
-optionalProperty m = case M.lookup name m of
+optionalPropertyP m = case M.lookup name m of
   Nothing -> pure Nothing
   Just values -> case values of
     (value :| _) ->
@@ -368,7 +368,7 @@ optionalPropertyWithDefaultP ::
   a ->
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP a
-optionalPropertyWithDefaultP defaultValue m = fromMaybe defaultValue <$> optionalProperty m
+optionalPropertyWithDefaultP defaultValue m = fromMaybe defaultValue <$> optionalPropertyP m
 
 listOfPropertiesB ::
   IsProperty property =>
@@ -376,12 +376,12 @@ listOfPropertiesB ::
   Map ContentLineName (NonEmpty ContentLineValue)
 listOfPropertiesB = M.unionsWith (<>) . map requiredPropertyB
 
-listOfProperties ::
+listOfPropertiesP ::
   forall a.
   IsProperty a =>
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP [a]
-listOfProperties m = do
+listOfPropertiesP m = do
   let values = maybe [] NE.toList $ M.lookup name m
   mapM (conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
   where
@@ -393,12 +393,12 @@ setOfPropertiesB ::
   Map ContentLineName (NonEmpty ContentLineValue)
 setOfPropertiesB = listOfPropertiesB . S.toList
 
-setOfProperties ::
+setOfPropertiesP ::
   forall a.
   (Ord a, IsProperty a) =>
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP (Set a)
-setOfProperties = fmap S.fromList . listOfProperties
+setOfPropertiesP = fmap S.fromList . listOfPropertiesP
 
 subComponentsP ::
   forall component.

@@ -20,7 +20,6 @@ import Control.Monad
 import Data.DList (DList (..))
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe
 import Data.Proxy
 import Data.Validity
 import Data.Validity.Text ()
@@ -180,11 +179,11 @@ instance IsComponent Calendar where
     -- delimiter string and prior to any calendar component.
     -- @
 
-    calendarProdId <- requiredProperty componentProperties
-    calendarVersion <- requiredProperty componentProperties
+    calendarProdId <- requiredPropertyP componentProperties
+    calendarVersion <- requiredPropertyP componentProperties
 
-    calendarCalendarScale <- fromMaybe defaultCalendarScale <$> optionalProperty componentProperties
-    calendarMethod <- optionalProperty componentProperties
+    calendarCalendarScale <- optionalPropertyWithDefaultP defaultCalendarScale componentProperties
+    calendarMethod <- optionalPropertyP componentProperties
 
     calendarTimeZones <- subComponentsP componentSubcomponents
     calendarEvents <- subComponentsP componentSubcomponents

@@ -275,40 +275,42 @@ instance IsComponent Event where
 
 vEventP :: Component -> CP Event
 vEventP Component {..} = do
-  eventDateTimeStamp <- requiredProperty componentProperties
-  eventUID <- requiredProperty componentProperties
-  eventDateTimeStart <- optionalProperty componentProperties
+  eventDateTimeStamp <- requiredPropertyP componentProperties
+  eventUID <- requiredPropertyP componentProperties
+  eventDateTimeStart <- optionalPropertyP componentProperties
   -- @
   -- ;Default is PUBLIC
   -- @
   eventClassification <- optionalPropertyWithDefaultP ClassificationPublic componentProperties
-  eventCreated <- optionalProperty componentProperties
-  eventDescription <- optionalProperty componentProperties
-  eventGeographicPosition <- optionalProperty componentProperties
-  eventLastModified <- optionalProperty componentProperties
-  eventLocation <- optionalProperty componentProperties
-  eventOrganizer <- optionalProperty componentProperties
-  eventStatus <- optionalProperty componentProperties
-  eventSummary <- optionalProperty componentProperties
+  eventCreated <- optionalPropertyP componentProperties
+  eventDescription <- optionalPropertyP componentProperties
+  eventGeographicPosition <- optionalPropertyP componentProperties
+  eventLastModified <- optionalPropertyP componentProperties
+  eventLocation <- optionalPropertyP componentProperties
+  eventOrganizer <- optionalPropertyP componentProperties
+  eventStatus <- optionalPropertyP componentProperties
+  eventSummary <- optionalPropertyP componentProperties
   -- @
   -- ;Default value is OPAQUE
   -- @
   eventTransparency <- optionalPropertyWithDefaultP TransparencyOpaque componentProperties
-  eventURL <- optionalProperty componentProperties
-  eventRecurrenceID <- optionalProperty componentProperties
+  eventURL <- optionalPropertyP componentProperties
+  eventRecurrenceID <- optionalPropertyP componentProperties
 
-  eventRecurrenceRules <- S.fromList <$> (listOfProperties componentProperties >>= traverse (fixUntil eventDateTimeStart))
+  eventRecurrenceRules <-
+    S.fromList
+      <$> (listOfPropertiesP componentProperties >>= traverse (fixUntil eventDateTimeStart))
   when (S.size eventRecurrenceRules > 1) $ emitWarning $ WarnMultipleRecurrenceRules eventRecurrenceRules
 
-  mEnd <- optionalProperty componentProperties
-  mDuration <- optionalProperty componentProperties
+  mEnd <- optionalPropertyP componentProperties
+  mDuration <- optionalPropertyP componentProperties
   let eventDateTimeEndDuration = case (mEnd, mDuration) of
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
-        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present.
-  eventAttendees <- setOfProperties componentProperties
-  eventExceptionDateTimes <- setOfProperties componentProperties
-  eventRecurrenceDateTimes <- setOfProperties componentProperties
+        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present. TODO emit a warning or fixable error
+  eventAttendees <- setOfPropertiesP componentProperties
+  eventExceptionDateTimes <- setOfPropertiesP componentProperties
+  eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
   pure Event {..}
 
 vEventB :: Event -> Component

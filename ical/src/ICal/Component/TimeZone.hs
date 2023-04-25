@@ -498,7 +498,7 @@ makeTimeZone tzid observances =
 
 vTimeZoneP :: Component -> CP TimeZone
 vTimeZoneP Component {..} = do
-  timeZoneId <- requiredProperty componentProperties
+  timeZoneId <- requiredPropertyP componentProperties
 
   standards <- subComponentsP componentSubcomponents
   daylights <- subComponentsP componentSubcomponents
@@ -622,25 +622,25 @@ observanceP Component {..} = do
   -- "DTSTART" in this usage MUST be specified as a date with a local
   -- time value.
   -- @
-  dtstart <- requiredProperty componentProperties
+  dtstart <- requiredPropertyP componentProperties
   observanceDateTimeStart <- case dtstart of
     DateTimeStartDate _ -> error "fail: DTSTART must be specified as a datetime, not a date."
     DateTimeStartDateTime dt -> case dt of
       DateTimeFloating lt -> pure lt
       _ -> error "fail: DTSTART must be specified as a date with a local time value."
 
-  observanceTimeZoneOffsetTo <- requiredProperty componentProperties
-  observanceTimeZoneOffsetFrom <- requiredProperty componentProperties
+  observanceTimeZoneOffsetTo <- requiredPropertyP componentProperties
+  observanceTimeZoneOffsetFrom <- requiredPropertyP componentProperties
   observanceRecurrenceRules <-
     S.fromList
-      <$> (listOfProperties componentProperties >>= traverse (fixUntil (Just dtstart)))
+      <$> (listOfPropertiesP componentProperties >>= traverse (fixUntil (Just dtstart)))
   when (S.size observanceRecurrenceRules > 1) $
     emitWarning $
       WarnMultipleRecurrenceRules observanceRecurrenceRules
 
-  observanceComment <- setOfProperties componentProperties
-  observanceRecurrenceDateTimes <- setOfProperties componentProperties
-  observanceTimeZoneName <- setOfProperties componentProperties
+  observanceComment <- setOfPropertiesP componentProperties
+  observanceRecurrenceDateTimes <- setOfPropertiesP componentProperties
+  observanceTimeZoneName <- setOfPropertiesP componentProperties
   pure Observance {..}
 
 observanceB :: Observance -> Component
