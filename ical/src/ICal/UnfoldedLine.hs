@@ -4,7 +4,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ICal.UnfoldedLine where
+module ICal.UnfoldedLine
+  ( UnfoldedLine (..),
+    UnfoldingError (..),
+    parseUnfoldedLines,
+    renderUnfoldedLines,
+  )
+where
 
 import Control.Exception
 import Data.String

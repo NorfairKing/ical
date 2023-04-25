@@ -5,7 +5,45 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.ContentLine where
+module ICal.ContentLine
+  ( ContentLine (..),
+    mkSimpleContentLine,
+    ContentLineName (..),
+    ContentLineValue (..),
+    emptyContentLineValue,
+    mkSimpleContentLineValue,
+    parseContentLineFromUnfoldedLine,
+    renderContentLineToUnfoldedLine,
+    ParamName (..),
+    ParamValue (..),
+    VendorId (..),
+    paramValueCI,
+    haveToQuoteText,
+
+    -- * Raw parser
+    P,
+    contentLineP,
+    contentLineNameP,
+    contentLineValueP,
+    paramNameP,
+    paramValueP,
+    vendorIdP,
+
+    -- * Raw builders
+    contentLineB,
+    contentLineNameB,
+    contentLineValueB,
+    paramNameB,
+    paramValueB,
+    vendorIdB,
+
+    -- * Validation helpers
+    validateSafeChar,
+    validateQSafeChar,
+    validateNameChar,
+    validateVendorIdChar,
+  )
+where
 
 import Control.Arrow (left)
 import Control.DeepSeq
@@ -334,10 +372,6 @@ paramValueP = try (QuotedParam <$> quotedStringP) <|> (UnquotedParam <$> paramTe
 paramTextP :: P (CI Text)
 paramTextP = CI.mk . T.pack <$> many safeCharP
 
--- value         = *VALUE-CHAR
-valueP :: P Text
-valueP = T.pack <$> many valueCharP
-
 -- quoted-string = DQUOTE *QSAFE-CHAR DQUOTE
 quotedStringP :: P Text
 quotedStringP = do
@@ -371,11 +405,6 @@ validateSafeChar =
     ':' -> False
     ',' -> False
     c -> not (Char.isControl c)
-
--- VALUE-CHAR    = WSP / %x21-7E / NON-US-ASCII
--- ; Any textual character
-valueCharP :: P Char
-valueCharP = anySingle
 
 contentLineB :: ContentLine -> Text.Builder
 contentLineB ContentLine {..} =
