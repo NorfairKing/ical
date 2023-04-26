@@ -202,7 +202,7 @@ componentSpec = do
         Left _ -> pure ()
         Right (a, _) -> shouldBeValid (a :: a)
 
-  it "roundtrips through ContentLines" $
+  it "roundtrips through a General Component" $
     forAllValid $ \a ->
       let (name, component) = namedComponentB (a :: a)
           renderedText :: Text

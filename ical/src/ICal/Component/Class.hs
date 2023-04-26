@@ -91,7 +91,6 @@ instance Validity Component
 
 instance NFData Component
 
--- TODO rename
 renderGeneralComponents :: Map ComponentName (NonEmpty Component) -> DList ContentLine
 renderGeneralComponents =
   foldMap
@@ -114,7 +113,6 @@ renderGeneralComponent name Component {..} =
       DList.singleton $ propertyContentLineB (End name)
     ]
 
--- TODO rename
 parseGeneralComponents ::
   [ContentLine] ->
   Conform
@@ -149,7 +147,6 @@ parseGeneralComponent =
   -- TODO check that there were no other lines after this.
   fmap fst . parseGeneralComponentHelper
 
--- TODO rename
 parseGeneralComponentHelper ::
   [ContentLine] ->
   Conform
@@ -172,7 +169,6 @@ parseGeneralComponentHelper = \case
       Text ->
       Map ContentLineName (NonEmpty ContentLineValue) ->
       Map ComponentName (NonEmpty Component) ->
-      -- TODO use a DList
       [ContentLine] ->
       Conform
         CalendarParseError
@@ -295,11 +291,10 @@ instance Exception CalendarParseWarning where
     WarnMultipleRecurrenceRules rrs -> unwords ["Component has multiple recurrence rules:", show rrs]
 
 parseComponentFromContentLines ::
-  (IsComponent component) =>
+  IsComponent component =>
   [ContentLine] ->
   CP component
 parseComponentFromContentLines cls = do
-  -- TODO check validity of component
   parseGeneralComponent cls >>= uncurry namedComponentP
 
 type CP a =
@@ -372,7 +367,7 @@ requiredPropertyP m = case M.lookup name m of
     (value :| _) ->
       conformMapAll PropertyParseError absurd absurd $
         propertyContentLineP (ContentLine name value)
-        -- TODO warning when there are multiple.
+        -- TODO fixable error when there are multiple.
   where
     name = propertyName (Proxy :: Proxy a)
 
