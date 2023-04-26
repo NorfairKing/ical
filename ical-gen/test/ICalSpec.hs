@@ -2,12 +2,15 @@
 
 module ICalSpec where
 
+import Control.Exception
+import Control.Monad
 import qualified Data.ByteString as SB
 import qualified Data.Text as T
 import Data.Time
 import ICal
 import ICal.Component.Gen ()
 import ICal.Conformance.TestUtils
+import Path
 import Test.Syd
 import Test.Syd.Validity
 
@@ -130,6 +133,17 @@ spec = do
       let rendered = renderICalendarByteString ical
       ical' <- shouldConformStrict $ parseICalendarByteString rendered
       ical' `shouldBe` ical
+
+  scenarioDirRecur "test_resources/calendars/error" $ \calFile -> do
+    relCalFile <- runIO $ parseRelFile calFile
+    when (fileExtension relCalFile == Just ".ics") $ do
+      it "fails to parse this calendar" $ do
+        contents <- SB.readFile $ fromRelFile relCalFile
+        err <- case runConform $ parseICalendarByteString contents of
+          Left err -> pure $ displayException err
+          Right ical -> expectationFailure $ unlines ["Should have failed but succeeded in parsing this ical:", ppShow ical]
+        errorFile <- replaceExtension ".error" relCalFile
+        pure $ pureGoldenStringFile (fromRelFile errorFile) err
 
   describe "renderVCalendar" $
     it "roundtrips with parseVCalendar" $

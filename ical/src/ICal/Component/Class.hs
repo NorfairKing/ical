@@ -76,7 +76,6 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
-import Text.Megaparsec
 
 type ComponentName = Text
 
@@ -151,9 +150,13 @@ parseGeneralComponent =
 -- TODO rename
 parseGeneralComponentHelper ::
   [ContentLine] ->
-  Conform CalendarParseError CalendarParseFixableError CalendarParseWarning ((ComponentName, Component), [ContentLine])
+  Conform
+    CalendarParseError
+    CalendarParseFixableError
+    CalendarParseWarning
+    ((ComponentName, Component), [ContentLine])
 parseGeneralComponentHelper = \case
-  [] -> error "fail: no begin for a component"
+  [] -> unfixableError $ GeneralComponentError ComponentParseErrorMissingBegin
   (firstCL : restCLs) -> do
     Begin name <-
       conformMapAll
@@ -175,7 +178,7 @@ parseGeneralComponentHelper = \case
         CalendarParseWarning
         ((ComponentName, Component), [ContentLine])
     go name properties subComponents = \case
-      [] -> error "fail: only a begin, but nothing else."
+      [] -> unfixableError $ GeneralComponentError $ ComponentParseErrorMissingEnd name
       (cl : rest) ->
         case contentLineName cl of
           "END" -> do
@@ -197,13 +200,7 @@ parseGeneralComponentHelper = \case
                     ),
                     rest
                   )
-              else
-                error $
-                  unlines
-                    [ "fail: end had the wrong name",
-                      unwords ["found", show name'],
-                      unwords ["instead of", show name]
-                    ]
+              else unfixableError $ GeneralComponentError $ ComponentParseErrorIncorrectEnd name name'
           "BEGIN" -> do
             ((name', subComponent), leftovers) <- parseGeneralComponentHelper (cl : rest)
             go
@@ -219,17 +216,49 @@ parseGeneralComponentHelper = \case
               rest
 
 data CalendarParseError
-  = SubcomponentError !CalendarParseError
+  = CalendarParseErrorComponentIncorrectName !Text !Text
+  | CalendarParseErrorMissingRequiredProperty !ContentLineName
+  | GeneralComponentError !ComponentParseError
   | PropertyParseError !PropertyParseError
   deriving (Show, Eq, Ord)
 
 instance Exception CalendarParseError where
   displayException = \case
-    SubcomponentError cpe -> displayException cpe
+    CalendarParseErrorComponentIncorrectName actual expected ->
+      unwords
+        [ "Tried to parse a component with name",
+          show expected,
+          "but found a component with name",
+          show actual,
+          "instead"
+        ]
+    CalendarParseErrorMissingRequiredProperty name ->
+      unwords
+        [ "Missing required property:",
+          show (renderContentLineName name)
+        ]
+    GeneralComponentError cpe -> displayException cpe
     PropertyParseError ppe -> displayException ppe
 
-instance ShowErrorComponent CalendarParseError where
-  showErrorComponent = displayException
+data ComponentParseError
+  = ComponentParseErrorMissingBegin
+  | ComponentParseErrorMissingEnd !Text
+  | ComponentParseErrorIncorrectEnd !Text !Text
+  deriving (Show, Eq, Ord)
+
+instance Exception ComponentParseError where
+  displayException = \case
+    ComponentParseErrorMissingBegin -> "Tried to parse a component, but didn't find a BEGIN property."
+    ComponentParseErrorMissingEnd n ->
+      unwords
+        [ "Missing END property for component with name",
+          show n
+        ]
+    ComponentParseErrorIncorrectEnd expected actual ->
+      unwords
+        [ unwords ["Missing END property for component with name", show expected],
+          unwords ["found an END property for component with name", show actual, "instead."]
+        ]
 
 data CalendarParseFixableError
   = UntilTypeGuess !DateTimeStart !Until !Until -- Old until new until
@@ -294,9 +323,10 @@ namedComponentP ::
   Component ->
   CP component
 namedComponentP actualName component =
-  if actualName == componentName (Proxy :: Proxy component)
-    then componentP component
-    else error "fail: wrong name for component"
+  let expectedName = componentName (Proxy :: Proxy component)
+   in if actualName == expectedName
+        then componentP component
+        else unfixableError $ CalendarParseErrorComponentIncorrectName actualName expectedName
 
 namedComponentB ::
   forall component.
@@ -319,7 +349,7 @@ namedComponentMapB component =
 
 requiredPropertyP :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredPropertyP m = case M.lookup name m of
-  Nothing -> error $ "fail: Did not find required property " <> show name
+  Nothing -> unfixableError $ CalendarParseErrorMissingRequiredProperty name
   Just values -> case values of
     (value :| _) ->
       conformMapAll PropertyParseError absurd absurd $

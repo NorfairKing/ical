@@ -85,6 +85,8 @@ tests:
     - ical-gen
     - megaparsec
     - network-uri
+    - path
+    - path-io
     - pretty-show
     - sydtest
     - text

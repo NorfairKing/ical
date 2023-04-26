@@ -32,6 +32,7 @@ module ICal.ContentLine
     -- * Raw builders
     contentLineB,
     contentLineNameB,
+    renderContentLineName,
     contentLineValueB,
     paramNameB,
     paramValueB,
@@ -128,16 +129,6 @@ data ContentLineValue = ContentLineValue
 instance Validity ContentLineValue
 
 instance NFData ContentLineValue
-
--- It turns out that this 'IsString' instance is a bother to write because of how ';' and ':' interact with parsing.
--- Instead we better use 'mkSimpleContentLineValue' below and the record constructor.
---
--- instance IsString ContentLineValue where
---   fromString s =
---     let t = fromString s
---      in case parse contentLineValueP "" t of
---           Left err -> error $ errorBundlePretty err
---           Right cln -> cln
 
 mkSimpleContentLineValue :: Text -> ContentLineValue
 mkSimpleContentLineValue value =
@@ -420,6 +411,9 @@ contentLineValueB ContentLineValue {..} =
       LTB.singleton ':',
       LTB.fromText contentLineValueRaw
     ]
+
+renderContentLineName :: ContentLineName -> Text
+renderContentLineName = LT.toStrict . LTB.toLazyText . contentLineNameB
 
 contentLineNameB :: ContentLineName -> Text.Builder
 contentLineNameB = \case

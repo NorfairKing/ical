@@ -8,6 +8,12 @@ name:           ical-gen
 version:        0.0.0.0
 build-type:     Simple
 extra-source-files:
+    test_resources/calendars/error/missing-end-event.error
+    test_resources/calendars/error/missing-end-event.ics
+    test_resources/calendars/error/missing-end.error
+    test_resources/calendars/error/missing-end.ics
+    test_resources/calendars/error/missing-prodid.error
+    test_resources/calendars/error/missing-prodid.ics
     test_resources/calendars/fixable/invalid-until.ics
     test_resources/calendars/valid/daily-bysetpos.ics
     test_resources/calendars/valid/dash.ics
@@ -150,6 +156,8 @@ test-suite ical-test
     , ical-gen
     , megaparsec
     , network-uri
+    , path
+    , path-io
     , pretty-show
     , sydtest
     , text
