@@ -1,8 +1,43 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-duplicate-exports #-}
 
 module ICal
-  ( module ICal,
+  ( -- * Calendar
+    ICalendar,
+    Calendar (..),
+
+    -- ** Rendering
+    renderICalendarByteString,
+    renderICalendar,
+
+    -- ** Parsing
+    parseICalendarByteString,
+    parseICalendar,
+
+    -- *** Errors
+    ICalParseError (..),
+    ICalParseFixableError (..),
+    ICalParseWarning (..),
+
+    -- *** Running a 'Conform'
+    runConformStrict,
+    runConform,
+    runConformLenient,
+    runConformFlexible,
+
+    -- * Helpers
+
+    -- ** Components
+    parseComponentFromText,
+    renderComponentText,
+
+    -- ** Properties
+    parsePropertyFromText,
+    renderPropertyText,
+
+    -- * Reexports
+    module ICal,
     module ICal.PropertyType,
     module ICal.Property,
     module ICal.Component,
@@ -42,6 +77,9 @@ icalContentType = "text/calendar"
 
 type ICalendar = [Calendar]
 
+-- | Unfixable parse error
+--
+-- Use 'displayException'@ :: ICalParseError -> String@ to display this error nicely.
 data ICalParseError
   = TextDecodingError !TE.UnicodeException
   | UnfoldingError !UnfoldingError
@@ -56,6 +94,9 @@ instance Exception ICalParseError where
     ContentLineParseError s -> s
     CalendarParseError peb -> displayException peb
 
+-- | Fixable parse error
+--
+-- Use 'displayException'@ :: ICalParseFixableError -> String@ to display this error nicely.
 data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)
 
@@ -63,6 +104,9 @@ instance Exception ICalParseFixableError where
   displayException = \case
     CalendarParseFixableError fe -> displayException fe
 
+-- | Parse warning
+--
+-- Use 'displayException'@ :: ICalParseWarning -> String@ to display this error nicely.
 data ICalParseWarning = CalendarParseWarning !CalendarParseWarning
   deriving (Show, Eq)
 
@@ -95,7 +139,7 @@ parseICalendarByteString contents = do
   textContents <- conformFromEither $ left TextDecodingError $ TE.decodeUtf8' contents
   parseICalendar textContents
 
--- | Parse a VCALENDAR stream
+-- | Parse a @VCALENDAR@ stream
 parseICalendar ::
   Text ->
   Conform
@@ -108,7 +152,7 @@ parseICalendar contents = do
   contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseICalendarFromContentLines contentLines
 
--- | Parse a single VCALENDAR
+-- | Parse a single @VCALENDAR@
 parseVCalendar ::
   Text ->
   Conform
@@ -138,7 +182,7 @@ parseVCalendar contents = do
 renderICalendarByteString :: ICalendar -> ByteString
 renderICalendarByteString = TE.encodeUtf8 . renderICalendar
 
--- | Render a VCALENDAR stream
+-- | Render a @VCALENDAR@ stream
 renderICalendar :: ICalendar -> Text
 renderICalendar =
   renderUnfoldedLines
@@ -146,7 +190,7 @@ renderICalendar =
     . DList.toList
     . iCalendarB
 
--- | Render a single VCALENDAR
+-- | Render a single @VCALENDAR@
 renderVCalendar :: Calendar -> Text
 renderVCalendar = renderICalendar . (: [])
 

@@ -101,7 +101,7 @@ runConformTFlexible predicate (ConformT func) = runExceptT (runWriterT (runReade
 
 -- | Don't fix any fixable errors.
 --
--- This is standard-complient
+-- This is standard-compliant.
 runConformT ::
   Monad m =>
   ConformT ue fe w m a ->
@@ -114,7 +114,7 @@ runConformT func = do
 
 -- | Don't fix any fixable errors, and don't allow any warnings either
 --
--- This is standard-complient, but potentially more strict than necessary.
+-- This is standard-compliant, but potentially more strict than necessary.
 runConformTStrict ::
   Monad m =>
   ConformT ue fe w m a ->
@@ -130,7 +130,7 @@ runConformTStrict func = do
 
 -- | Fix as much as possible
 --
--- That this is __not__ standard-complient.
+-- That this is __not__ standard-compliant.
 runConformTLenient ::
   Monad m =>
   ConformT ue fe w m a ->
@@ -154,7 +154,7 @@ runConformFlexible predicate = runIdentity . runConformTFlexible predicate
 
 -- | Don't fix any fixable errors.
 --
--- This is standard-complient
+-- This is standard-compliant
 runConform ::
   Conform ue fe w a ->
   Either (HaltReason ue fe) (a, [w])
@@ -162,7 +162,7 @@ runConform = runIdentity . runConformT
 
 -- | Don't fix any fixable errors, and don't allow any warnings either
 --
--- This is standard-complient, but potentially more strict than necessary.
+-- This is standard-compliant, but potentially more strict than necessary.
 runConformStrict ::
   Conform ue fe w a ->
   Either (Either ue (Notes fe w)) a
@@ -170,7 +170,7 @@ runConformStrict = runIdentity . runConformTStrict
 
 -- | Fix as much as possible
 --
--- That this is __not__ standard-complient.
+-- That this is __not__ standard-compliant.
 runConformLenient ::
   Conform ue fe w a ->
   Either ue (a, Notes fe w)

@@ -7,7 +7,6 @@ import qualified Data.Text as T
 import Data.Time
 import ICal
 import ICal.Component.Gen ()
-import ICal.Conformance
 import ICal.Conformance.TestUtils
 import Test.Syd
 import Test.Syd.Validity
