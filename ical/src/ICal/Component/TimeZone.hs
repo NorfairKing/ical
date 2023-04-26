@@ -513,7 +513,7 @@ vTimeZoneP Component {..} = do
   daylights <- subComponentsP componentSubcomponents
   let os = map StandardObservance standards <> map DaylightObservance daylights
   timeZoneObservances <- case NE.nonEmpty os of
-    Nothing -> error "fail: Must have at least one standardc or daylightc"
+    Nothing -> unfixableError $ TimeZoneParseError TimeZoneParseErrorNoObservances
     Just ne -> pure $ S.fromList $ NE.toList ne
 
   pure TimeZone {..}
@@ -633,10 +633,10 @@ observanceP Component {..} = do
   -- @
   dtstart <- requiredPropertyP componentProperties
   observanceDateTimeStart <- case dtstart of
-    DateTimeStartDate _ -> error "fail: DTSTART must be specified as a datetime, not a date."
     DateTimeStartDateTime dt -> case dt of
       DateTimeFloating lt -> pure lt
-      _ -> error "fail: DTSTART must be specified as a date with a local time value."
+      _ -> unfixableError $ TimeZoneParseError $ TimeZoneParseErrorDTStartNotDateTime dtstart
+    DateTimeStartDate _ -> unfixableError $ TimeZoneParseError $ TimeZoneParseErrorDTStartNotDateTime dtstart
 
   observanceTimeZoneOffsetTo <- requiredPropertyP componentProperties
   observanceTimeZoneOffsetFrom <- requiredPropertyP componentProperties

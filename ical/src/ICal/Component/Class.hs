@@ -17,6 +17,8 @@ module ICal.Component.Class
     IsComponent (..),
     CP,
     CalendarParseError (..),
+    ComponentParseError (..),
+    TimeZoneParseError (..),
     CalendarParseFixableError (..),
     CalendarParseWarning (..),
     parseGeneralComponent,
@@ -219,6 +221,7 @@ data CalendarParseError
   = CalendarParseErrorComponentIncorrectName !Text !Text
   | CalendarParseErrorMissingRequiredProperty !ContentLineName
   | GeneralComponentError !ComponentParseError
+  | TimeZoneParseError !TimeZoneParseError
   | PropertyParseError !PropertyParseError
   deriving (Show, Eq, Ord)
 
@@ -238,6 +241,7 @@ instance Exception CalendarParseError where
           show (renderContentLineName name)
         ]
     GeneralComponentError cpe -> displayException cpe
+    TimeZoneParseError tzpe -> displayException tzpe
     PropertyParseError ppe -> displayException ppe
 
 data ComponentParseError
@@ -258,6 +262,20 @@ instance Exception ComponentParseError where
       unwords
         [ unwords ["Missing END property for component with name", show expected],
           unwords ["found an END property for component with name", show actual, "instead."]
+        ]
+
+data TimeZoneParseError
+  = TimeZoneParseErrorNoObservances
+  | TimeZoneParseErrorDTStartNotDateTime !DateTimeStart
+  deriving (Show, Eq, Ord, Generic)
+
+instance Exception TimeZoneParseError where
+  displayException = \case
+    TimeZoneParseErrorNoObservances -> "Time zone had no observances but must have at least one standard or daylight observance."
+    TimeZoneParseErrorDTStartNotDateTime dtstart ->
+      unwords
+        [ "Time zone DTSTART must be specified as a datetime, but found:",
+          show dtstart
         ]
 
 data CalendarParseFixableError
