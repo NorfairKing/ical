@@ -13,27 +13,6 @@ with final.haskell.lib;
     python-echo = final.callPackage ../ical-interop-test/interop-packages/python { };
   };
 
-  rfc5545 = final.linkFarmFromDrvs "rfc5545" [
-    (final.fetchurl {
-      url = "https://www.rfc-editor.org/rfc/rfc5545.txt";
-      hash = "sha256-wlb4CUedmKoj1xu9FlizgA6p8T9BylblnI0t4bMcv8s=";
-    })
-    (final.fetchurl {
-      url = "https://www.rfc-editor.org/rfc/pdfrfc/rfc5545.txt.pdf";
-      hash = "sha256-CKaGyuqXUwmCKqqWS/cIFJ5u5Pu10e/coh7KMqkmDQU=";
-    })
-    (final.fetchurl {
-      url = "https://www.rfc-editor.org/rfc/rfc5545.html";
-      hash = "sha256-6bhmOfGmDONCkWyapkcaQVCbiFCxWQNC/jIXe0InkwU=";
-    })
-    # TODO get individual erata in case more are found.
-    # TODO get the other relevant rfcs
-    # (final.fetchurl {
-    #   url = "https://www.rfc-editor.org/errata/rfc5545";
-    #   hash = "sha256-hSHdXXCd1DmU3v8wK9DkGuP1DTQffLPhJVguod5lMEc=";
-    # })
-  ];
-
   haskellPackages = prev.haskellPackages.override (
     old: {
       overrides = final.lib.composeExtensions (old.overrides or (_: _: { })) (

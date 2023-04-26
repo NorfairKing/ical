@@ -51,7 +51,6 @@
       overlays.${system} = import ./nix/overlay.nix;
       packages.${system} = {
         default = pkgs.icalRelease;
-        rfc5545 = pkgs.rfc5545;
       };
       checks.${system} =
         let
