@@ -18,6 +18,7 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.UnfoldedLine
+import Path
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
@@ -163,12 +164,14 @@ spec = do
           Right actual -> actual `shouldBe` contentLine
 
     -- Tests based on example calendars
-    scenarioDirRecur "test_resources/calendars" $ \calFile ->
-      it "can parse and unfold every line" $ do
-        contents <- SB.readFile calFile
-        case mapM parseContentLineFromUnfoldedLine =<< left show . (runConformStrict . parseUnfoldedLines) =<< left show (TE.decodeUtf8' contents) of
-          Left err -> expectationFailure err
-          Right contentLines -> shouldBeValid contentLines
+    scenarioDirRecur "test_resources/calendars" $ \calFile -> do
+      relCalFile <- runIO $ parseRelFile calFile
+      when (fileExtension relCalFile == Just ".ics") $
+        it "can parse and unfold every line" $ do
+          contents <- SB.readFile calFile
+          case mapM parseContentLineFromUnfoldedLine =<< left show . (runConformStrict . parseUnfoldedLines) =<< left show (TE.decodeUtf8' contents) of
+            Left err -> expectationFailure err
+            Right contentLines -> shouldBeValid contentLines
 
 parseSucceedsSpec :: (Show a, Eq a) => P a -> Text -> a -> Spec
 parseSucceedsSpec parser string expected =
