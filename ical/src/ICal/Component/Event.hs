@@ -282,10 +282,7 @@ vEventP Component {..} = do
   eventDateTimeStamp <- requiredPropertyP componentProperties
   eventUID <- requiredPropertyP componentProperties
   eventDateTimeStart <- optionalPropertyP componentProperties
-  -- @
-  -- ;Default is PUBLIC
-  -- @
-  eventClassification <- optionalPropertyWithDefaultP ClassificationPublic componentProperties
+  eventClassification <- optionalPropertyWithDefaultP defaultClassification componentProperties
   eventCreated <- optionalPropertyP componentProperties
   eventDescription <- optionalPropertyP componentProperties
   eventGeographicPosition <- optionalPropertyP componentProperties
@@ -294,10 +291,7 @@ vEventP Component {..} = do
   eventOrganizer <- optionalPropertyP componentProperties
   eventStatus <- optionalPropertyP componentProperties
   eventSummary <- optionalPropertyP componentProperties
-  -- @
-  -- ;Default value is OPAQUE
-  -- @
-  eventTransparency <- optionalPropertyWithDefaultP TransparencyOpaque componentProperties
+  eventTransparency <- optionalPropertyWithDefaultP defaultTransparency componentProperties
   eventURL <- optionalPropertyP componentProperties
   eventRecurrenceID <- optionalPropertyP componentProperties
 
@@ -326,10 +320,7 @@ vEventB Event {..} =
           [ requiredPropertyB eventDateTimeStamp,
             requiredPropertyB eventUID,
             optionalPropertyB eventDateTimeStart,
-            -- @
-            -- ;Default is PUBLIC
-            -- @
-            optionalPropertyWithDefaultB ClassificationPublic eventClassification,
+            optionalPropertyWithDefaultB defaultClassification eventClassification,
             optionalPropertyB eventCreated,
             optionalPropertyB eventDescription,
             optionalPropertyB eventGeographicPosition,
@@ -338,10 +329,7 @@ vEventB Event {..} =
             optionalPropertyB eventOrganizer,
             optionalPropertyB eventStatus,
             optionalPropertyB eventSummary,
-            -- @
-            -- ;Default value is OPAQUE
-            -- @
-            optionalPropertyWithDefaultB TransparencyOpaque eventTransparency,
+            optionalPropertyWithDefaultB defaultTransparency eventTransparency,
             optionalPropertyB eventURL,
             optionalPropertyB eventRecurrenceID,
             setOfPropertiesB eventRecurrenceRules,
@@ -363,10 +351,7 @@ makeEvent uid dateTimeStamp =
     { eventUID = uid,
       eventDateTimeStamp = dateTimeStamp,
       eventDateTimeStart = Nothing,
-      -- @
-      -- ;Default is PUBLIC
-      -- @
-      eventClassification = ClassificationPublic,
+      eventClassification = defaultClassification,
       eventCreated = Nothing,
       eventDescription = Nothing,
       eventGeographicPosition = Nothing,
@@ -375,10 +360,7 @@ makeEvent uid dateTimeStamp =
       eventOrganizer = Nothing,
       eventStatus = Nothing,
       eventSummary = Nothing,
-      -- @
-      -- ;Default value is OPAQUE
-      -- @
-      eventTransparency = TransparencyOpaque,
+      eventTransparency = defaultTransparency,
       eventURL = Nothing,
       eventRecurrenceID = Nothing,
       eventRecurrenceRules = S.empty,

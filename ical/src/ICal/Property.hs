@@ -922,6 +922,14 @@ renderClassification = \case
   ClassificationConfidential -> "CONFIDENTIAL"
   ClassificationOther t -> t
 
+-- | Default 'Classification'
+--
+-- @
+-- ;Default value is PUBLIC
+-- @
+defaultClassification :: Classification
+defaultClassification = ClassificationPublic
+
 -- | Organizer
 --
 -- === [section 3.8.4.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.3)
@@ -1780,6 +1788,14 @@ renderTransparency :: Transparency -> Text
 renderTransparency = \case
   TransparencyTransparent -> "TRANSPARENT"
   TransparencyOpaque -> "OPAQUE"
+
+-- | Default 'Transparency'
+--
+-- @
+-- ;Default value is OPAQUE
+-- @
+defaultTransparency :: Transparency
+defaultTransparency = TransparencyOpaque
 
 -- | Uniform Resource Locator
 --
