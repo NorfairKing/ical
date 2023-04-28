@@ -1,1 +1,1 @@
-Missing required property: "PRODID"
+Missing PRODID, added ProdId {unProdId = "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"}

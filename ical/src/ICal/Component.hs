@@ -179,7 +179,23 @@ instance IsComponent Calendar where
     -- delimiter string and prior to any calendar component.
     -- @
 
-    calendarProdId <- requiredPropertyP componentProperties
+    mProdId <- optionalPropertyP componentProperties
+    calendarProdId <- case mProdId of
+      Just pid -> pure pid
+      -- The spec specifically says that prodid is required:
+      -- @
+      --     ; The following are REQUIRED,
+      --     ; but MUST NOT occur more than once.
+      --     ;
+      --     prodid
+      -- @
+      -- However, ICloud still produced a calendar without a prodid on 2023-04-28, for example.
+      --
+      Nothing -> do
+        let added = ProdId "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"
+        emitFixableError $ MissingProdId added
+        pure added
+
     calendarVersion <- requiredPropertyP componentProperties
 
     calendarCalendarScale <- optionalPropertyWithDefaultP defaultCalendarScale componentProperties

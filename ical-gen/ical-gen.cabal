@@ -17,6 +17,7 @@ extra-source-files:
     test_resources/calendars/error/timezone-without-observances.error
     test_resources/calendars/error/timezone-without-observances.ics
     test_resources/calendars/fixable/invalid-until.ics
+    test_resources/calendars/fixable/missing-prodid.ics
     test_resources/calendars/valid/daily-bysetpos.ics
     test_resources/calendars/valid/dash.ics
     test_resources/calendars/valid/date.ics
