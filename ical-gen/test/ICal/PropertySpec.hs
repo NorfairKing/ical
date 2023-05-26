@@ -28,10 +28,10 @@ spec = do
     -- @
     propertyExampleSpec "METHOD:REQUEST" (Method "REQUEST")
 
-  describe "ProdId" $ do
-    genValidSpec @ProdId
-    propertySpec @ProdId
-    propertyExampleSpec "PRODID:Example" (ProdId "Example")
+  describe "ProductIdentifier" $ do
+    genValidSpec @ProductIdentifier
+    propertySpec @ProductIdentifier
+    propertyExampleSpec "PRODID:Example" (ProductIdentifier "Example")
 
   describe "Version" $ do
     genValidSpec @Version

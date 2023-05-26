@@ -275,7 +275,7 @@ instance Exception TimeZoneParseError where
         ]
 
 data CalendarParseFixableError
-  = MissingProdId !ProdId
+  = MissingProductIdentifier !ProductIdentifier
   | UntilTypeGuess
       !DateTimeStart
       !Until
@@ -286,7 +286,7 @@ data CalendarParseFixableError
 
 instance Exception CalendarParseFixableError where
   displayException = \case
-    MissingProdId prodid -> unwords ["Missing PRODID, added", show prodid]
+    MissingProductIdentifier prodid -> unwords ["Missing PRODID, added", show prodid]
     UntilTypeGuess dateTimeStart until1 until2 -> unwords ["UntilTypeGuess", show dateTimeStart, show until1, show until2]
 
 data CalendarParseWarning

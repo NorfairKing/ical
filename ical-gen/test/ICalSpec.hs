@@ -50,7 +50,7 @@ spec = do
               "END:VCALENDAR"
             ]
   let expectedICal =
-        [ (makeCalendar (ProdId "-//hacksw/handcal//NONSGML v1.0//EN"))
+        [ (makeCalendar (ProductIdentifier "-//hacksw/handcal//NONSGML v1.0//EN"))
             { calendarEvents =
                 [ ( makeEvent
                       (UID "19970610T172345Z-AF23B2@example.com")

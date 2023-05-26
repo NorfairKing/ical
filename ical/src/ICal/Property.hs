@@ -269,17 +269,17 @@ instance IsProperty Method where
 --    this is a globally unique identifier; using some technique such as
 --    an FPI value, as defined in [ISO.9070.1991].
 -- @
-newtype ProdId = ProdId {unProdId :: Text}
+newtype ProductIdentifier = ProductIdentifier {unProductIdentifier :: Text}
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity ProdId
+instance Validity ProductIdentifier
 
-instance NFData ProdId
+instance NFData ProductIdentifier
 
-instance IsProperty ProdId where
+instance IsProperty ProductIdentifier where
   propertyName Proxy = "PRODID"
-  propertyP = wrapPropertyTypeP ProdId
-  propertyB = propertyTypeB . unProdId
+  propertyP = wrapPropertyTypeP ProductIdentifier
+  propertyB = propertyTypeB . unProductIdentifier
 
 -- |
 --

@@ -134,7 +134,7 @@ data Calendar = Calendar
     --                ;
     --                prodid / version /
     -- @
-    calendarProdId :: !ProdId,
+    calendarProductIdentifier :: !ProductIdentifier,
     calendarVersion :: !Version,
     -- @
     --                ;
@@ -179,8 +179,8 @@ instance IsComponent Calendar where
     -- delimiter string and prior to any calendar component.
     -- @
 
-    mProdId <- optionalPropertyP componentProperties
-    calendarProdId <- case mProdId of
+    mProductIdentifier <- optionalPropertyP componentProperties
+    calendarProductIdentifier <- case mProductIdentifier of
       Just pid -> pure pid
       -- The spec specifically says that prodid is required:
       -- @
@@ -192,8 +192,8 @@ instance IsComponent Calendar where
       -- However, ICloud still produced a calendar without a prodid on 2023-04-28, for example.
       --
       Nothing -> do
-        let added = ProdId "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"
-        emitFixableError $ MissingProdId added
+        let added = ProductIdentifier "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"
+        emitFixableError $ MissingProductIdentifier added
         pure added
 
     calendarVersion <- requiredPropertyP componentProperties
@@ -211,7 +211,7 @@ instance IsComponent Calendar where
       { componentProperties =
           M.unionsWith
             (<>)
-            [ requiredPropertyB calendarProdId,
+            [ requiredPropertyB calendarProductIdentifier,
               requiredPropertyB calendarVersion,
               optionalPropertyWithDefaultB defaultCalendarScale calendarCalendarScale,
               optionalPropertyB calendarMethod
@@ -224,10 +224,10 @@ instance IsComponent Calendar where
             ]
       }
 
-makeCalendar :: ProdId -> Calendar
+makeCalendar :: ProductIdentifier -> Calendar
 makeCalendar prodId =
   Calendar
-    { calendarProdId = prodId,
+    { calendarProductIdentifier = prodId,
       calendarVersion = version20,
       calendarCalendarScale = defaultCalendarScale,
       calendarMethod = Nothing,
