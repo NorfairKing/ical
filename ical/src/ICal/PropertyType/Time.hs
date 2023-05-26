@@ -102,7 +102,7 @@ import Text.Printf
 --    fixed time in a property value, either UTC time or local time with
 --    time zone reference MUST be specified.
 --
---    The use of local time in a TIME value without the "TZID" property
+--    The use of local time in a TIME value without the "TimeZoneIdentifier" property
 --    parameter is to be interpreted as floating time, regardless of the
 --    existence of "VTIMEZONE" calendar components in the iCalendar
 --    object.
@@ -115,14 +115,14 @@ import Text.Printf
 --
 --     070000Z
 --
---    The "TZID" property parameter MUST NOT be applied to TIME
+--    The "TimeZoneIdentifier" property parameter MUST NOT be applied to TIME
 --    properties whose time values are specified in UTC.
 --
 --    FORM #3: LOCAL TIME AND TIME ZONE REFERENCE
 --
 --    The local time with reference to time zone information form is
---    identified by the use the "TZID" property parameter to reference
---    the appropriate time zone definition.  "TZID" is discussed in
+--    identified by the use the "TimeZoneIdentifier" property parameter to reference
+--    the appropriate time zone definition.  "TimeZoneIdentifier" is discussed in
 --    detail in Section 3.2.19.
 --
 -- Example:  The following represents 8:30 AM in New York in winter,
@@ -156,7 +156,7 @@ data Time
     -- @
     -- FORM #3: LOCAL TIME AND TIME ZONE REFERENCE
     -- @
-    TimeZoned !TZIDParam !Time.TimeOfDay
+    TimeZoned !TimeZoneIdentifierParam !Time.TimeOfDay
   deriving (Eq, Generic)
 
 instance Validity Time where

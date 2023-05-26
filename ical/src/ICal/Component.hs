@@ -235,8 +235,8 @@ makeCalendar prodId =
       calendarTimeZones = []
     }
 
-calendarTimeZoneMap :: Calendar -> Map TZIDParam TimeZone
+calendarTimeZoneMap :: Calendar -> Map TimeZoneIdentifierParam TimeZone
 calendarTimeZoneMap = makeTimeZoneMap . calendarTimeZones
 
-makeTimeZoneMap :: [TimeZone] -> Map TZIDParam TimeZone
+makeTimeZoneMap :: [TimeZone] -> Map TimeZoneIdentifierParam TimeZone
 makeTimeZoneMap = M.fromList . map (\tz -> (tzidParam $ timeZoneId tz, tz))

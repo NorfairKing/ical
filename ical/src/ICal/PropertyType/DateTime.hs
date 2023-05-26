@@ -114,7 +114,7 @@ import ICal.PropertyType.Time
 --    fixed time in a property value, either UTC time or local time with
 --    time zone reference MUST be specified.
 --
---    The use of local time in a DATE-TIME value without the "TZID"
+--    The use of local time in a DATE-TIME value without the "TimeZoneIdentifier"
 --    property parameter is to be interpreted as floating time,
 --    regardless of the existence of "VTIMEZONE" calendar components in
 --    the iCalendar object.
@@ -128,14 +128,14 @@ import ICal.PropertyType.Time
 --
 --     19980119T070000Z
 --
---    The "TZID" property parameter MUST NOT be applied to DATE-TIME
+--    The "TimeZoneIdentifier" property parameter MUST NOT be applied to DATE-TIME
 --    properties whose time values are specified in UTC.
 --
 --    FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
 --
 --    The date and local time with reference to time zone information is
---    identified by the use the "TZID" property parameter to reference
---    the appropriate time zone definition.  "TZID" is discussed in
+--    identified by the use the "TimeZoneIdentifier" property parameter to reference
+--    the appropriate time zone definition.  "TimeZoneIdentifier" is discussed in
 --    detail in Section 3.2.19.  For example, the following represents
 --    2:00 A.M. in New York on January 19, 1998:
 --
@@ -197,7 +197,7 @@ data DateTime
     -- @
     -- FORM #3: DATE WITH LOCAL TIME AND TIME ZONE REFERENCE
     -- @
-    DateTimeZoned !TZIDParam !Time.LocalTime -- TODO make this a timezoneID?
+    DateTimeZoned !TimeZoneIdentifierParam !Time.LocalTime -- TODO make this a timezoneID?
   deriving (Eq, Ord, Generic)
 
 instance Validity DateTime where
@@ -290,7 +290,7 @@ dateTimeFloatingB = mkSimpleContentLineValue . renderDateTimeFloating
 dateTimeUTCB :: Time.UTCTime -> ContentLineValue
 dateTimeUTCB = mkSimpleContentLineValue . renderDateTimeUTC
 
-dateTimeZonedB :: TZIDParam -> Time.LocalTime -> ContentLineValue
+dateTimeZonedB :: TimeZoneIdentifierParam -> Time.LocalTime -> ContentLineValue
 dateTimeZonedB tzidParam lt =
   ContentLineValue
     { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),

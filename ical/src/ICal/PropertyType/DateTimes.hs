@@ -39,7 +39,7 @@ data DateTimes
   = DateTimesEmpty
   | DateTimesFloating !(Set Time.LocalTime)
   | DateTimesUTC !(Set Time.UTCTime)
-  | DateTimesZoned !TZIDParam !(Set Time.LocalTime)
+  | DateTimesZoned !TimeZoneIdentifierParam !(Set Time.LocalTime)
   deriving (Eq, Ord, Generic)
 
 instance Validity DateTimes where

@@ -28,16 +28,16 @@ instance GenValid RSVPExpectation
 
 instance GenValid ParticipationRole
 
-instance GenValid TZIDParam where
+instance GenValid TimeZoneIdentifierParam where
   genValid = genValidStructurally
 
   -- Shrink to 'UTC' and to a few given timezones before that.
   shrinkValid = \case
-    TZIDParam "UTC" -> []
-    TZIDParam "A" -> [TZIDParam "UTC"]
-    TZIDParam "B" -> [TZIDParam "UTC", TZIDParam "A"]
-    TZIDParam "C" -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B"]
-    TZIDParam _ -> [TZIDParam "UTC", TZIDParam "A", TZIDParam "B", TZIDParam "C"]
+    TimeZoneIdentifierParam "UTC" -> []
+    TimeZoneIdentifierParam "A" -> [TimeZoneIdentifierParam "UTC"]
+    TimeZoneIdentifierParam "B" -> [TimeZoneIdentifierParam "UTC", TimeZoneIdentifierParam "A"]
+    TimeZoneIdentifierParam "C" -> [TimeZoneIdentifierParam "UTC", TimeZoneIdentifierParam "A", TimeZoneIdentifierParam "B"]
+    TimeZoneIdentifierParam _ -> [TimeZoneIdentifierParam "UTC", TimeZoneIdentifierParam "A", TimeZoneIdentifierParam "B", TimeZoneIdentifierParam "C"]
 
 instance GenValid ValueDataType
 

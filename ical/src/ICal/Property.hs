@@ -576,20 +576,20 @@ instance IsProperty DateTimeStamp where
 --
 --     TZID:/example.org/America/New_York
 -- @
-newtype TZID = TZID {unTZID :: Text}
+newtype TimeZoneIdentifier = TimeZoneIdentifier {unTimeZoneIdentifier :: Text}
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity TZID
+instance Validity TimeZoneIdentifier
 
-instance NFData TZID
+instance NFData TimeZoneIdentifier
 
-instance IsProperty TZID where
+instance IsProperty TimeZoneIdentifier where
   propertyName Proxy = "TZID"
-  propertyP = wrapPropertyTypeP TZID
-  propertyB = propertyTypeB . unTZID
+  propertyP = wrapPropertyTypeP TimeZoneIdentifier
+  propertyB = propertyTypeB . unTimeZoneIdentifier
 
-tzidParam :: TZID -> TZIDParam
-tzidParam = TZIDParam . CI.mk . unTZID
+tzidParam :: TimeZoneIdentifier -> TimeZoneIdentifierParam
+tzidParam = TimeZoneIdentifierParam . CI.mk . unTimeZoneIdentifier
 
 -- |
 --
@@ -628,7 +628,7 @@ tzidParam = TZIDParam . CI.mk . unTZID
 --    specification.  This property is REQUIRED within each "STANDARD"
 --    and "DAYLIGHT" sub-components included in "VTIMEZONE" calendar
 --    components and MUST be specified as a date with local time without
---    the "TZID" property parameter.
+--    the "TimeZoneIdentifier" property parameter.
 --
 -- Format Definition:  This property is defined by the following
 --    notation:

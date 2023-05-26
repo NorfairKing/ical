@@ -70,12 +70,12 @@ spec = do
       "UID:19960401T080045Z-4000F192713-0052@example.com"
       (UID "19960401T080045Z-4000F192713-0052@example.com")
 
-  describe "TZID" $ do
-    genValidSpec @TZID
-    propertySpec @TZID
-    propertyExampleSpec "TZID:America/New_York" (TZID "America/New_York")
-    propertyExampleSpec "TZID:America/Los_Angeles" (TZID "America/Los_Angeles")
-    propertyExampleSpec "TZID:/example.org/America/New_York" (TZID "/example.org/America/New_York")
+  describe "TimeZoneIdentifier" $ do
+    genValidSpec @TimeZoneIdentifier
+    propertySpec @TimeZoneIdentifier
+    propertyExampleSpec "TZID:America/New_York" (TimeZoneIdentifier "America/New_York")
+    propertyExampleSpec "TZID:America/Los_Angeles" (TimeZoneIdentifier "America/Los_Angeles")
+    propertyExampleSpec "TZID:/example.org/America/New_York" (TimeZoneIdentifier "/example.org/America/New_York")
 
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp

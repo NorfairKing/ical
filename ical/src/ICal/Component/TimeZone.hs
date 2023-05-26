@@ -171,14 +171,14 @@ import ICal.PropertyType.RecurrenceRule
 --    for some classes of events, such as airline flights, that start in
 --    one time zone and end in another.
 --
---    The "VTIMEZONE" calendar component MUST include the "TZID"
+--    The "VTIMEZONE" calendar component MUST include the "TimeZoneIdentifier"
 --    property and at least one definition of a "STANDARD" or "DAYLIGHT"
 --    sub-component.  The "STANDARD" or "DAYLIGHT" sub-component MUST
 --    include the "DTSTART", "TZOFFSETFROM", and "TZOFFSETTO"
 --    properties.
 --
 --    An individual "VTIMEZONE" calendar component MUST be specified for
---    each unique "TZID" parameter value specified in the iCalendar
+--    each unique "TimeZoneIdentifier" parameter value specified in the iCalendar
 --    object.  In addition, a "VTIMEZONE" calendar component, referred
 --    to by a recurring calendar component, MUST provide valid time zone
 --    information for all recurrence instances.
@@ -215,7 +215,7 @@ import ICal.PropertyType.RecurrenceRule
 --
 --    The top-level properties in a "VTIMEZONE" calendar component are:
 --
---    The mandatory "TZID" property is a text value that uniquely
+--    The mandatory "TimeZoneIdentifier" property is a text value that uniquely
 --    identifies the "VTIMEZONE" calendar component within the scope of
 --    an iCalendar object.
 --
@@ -290,7 +290,7 @@ import ICal.PropertyType.RecurrenceRule
 --    City since April 30, 1967 at 03:00:00 EDT.
 --
 --     BEGIN:VTIMEZONE
---     TZID:America/New_York
+--     TimeZoneIdentifier:America/New_York
 --     LAST-MODIFIED:20050809T050000Z
 --     BEGIN:DAYLIGHT
 --     DTSTART:19670430T020000
@@ -355,7 +355,7 @@ import ICal.PropertyType.RecurrenceRule
 --    December 31, 2007,
 --
 --     BEGIN:VTIMEZONE
---     TZID:America/New_York
+--     TimeZoneIdentifier:America/New_York
 --     LAST-MODIFIED:20050809T050000Z
 --     BEGIN:STANDARD
 --     DTSTART:20071104T020000
@@ -378,7 +378,7 @@ import ICal.PropertyType.RecurrenceRule
 --    recurring event starting today and continuing indefinitely.
 --
 --     BEGIN:VTIMEZONE
---     TZID:America/New_York
+--     TimeZoneIdentifier:America/New_York
 --     LAST-MODIFIED:20050809T050000Z
 --     TZURL:http://zones.example.com/tz/America-New_York.ics
 --     BEGIN:STANDARD
@@ -402,7 +402,7 @@ import ICal.PropertyType.RecurrenceRule
 --    after that date, Daylight Time is no longer observed).
 --
 --     BEGIN:VTIMEZONE
---     TZID:Fictitious
+--     TimeZoneIdentifier:Fictitious
 --     LAST-MODIFIED:19870101T000000Z
 --     BEGIN:STANDARD
 --     DTSTART:19671029T020000
@@ -426,7 +426,7 @@ import ICal.PropertyType.RecurrenceRule
 --    left off.
 --
 --     BEGIN:VTIMEZONE
---     TZID:Fictitious
+--     TimeZoneIdentifier:Fictitious
 --     LAST-MODIFIED:19870101T000000Z
 --     BEGIN:STANDARD
 --     DTSTART:19671029T020000
@@ -458,7 +458,7 @@ data TimeZone = TimeZone
     -- ;
     -- tzid /
     -- @
-    timeZoneId :: !TZID,
+    timeZoneId :: !TimeZoneIdentifier,
     -- @
     -- ; 'last-mod' and 'tzurl' are OPTIONAL,
     -- ; but MUST NOT occur more than once.
@@ -498,7 +498,7 @@ instance IsComponent TimeZone where
   componentP = vTimeZoneP
   componentB = vTimeZoneB
 
-makeTimeZone :: TZID -> Set TimeZoneObservance -> TimeZone
+makeTimeZone :: TimeZoneIdentifier -> Set TimeZoneObservance -> TimeZone
 makeTimeZone tzid observances =
   TimeZone
     { timeZoneId = tzid,

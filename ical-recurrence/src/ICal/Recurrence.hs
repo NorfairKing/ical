@@ -411,7 +411,7 @@ resolveDateTime = \case
 resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
 resolveUTCTime = Time.utcToLocalTime
 
-resolveLocalTimeR :: TZIDParam -> Time.LocalTime -> R Time.UTCTime
+resolveLocalTimeR :: TimeZoneIdentifierParam -> Time.LocalTime -> R Time.UTCTime
 resolveLocalTimeR tzid localTime = do
   rctx <- requireResolutionCtx tzid
   R $ lift $ resolveLocalTime' rctx localTime
@@ -461,7 +461,7 @@ chooseResolutionOffset' offsetMap localTime =
             then from
             else to
 
-unresolveUTCTimeR :: TZIDParam -> Time.UTCTime -> R Time.LocalTime
+unresolveUTCTimeR :: TimeZoneIdentifierParam -> Time.UTCTime -> R Time.LocalTime
 unresolveUTCTimeR tzid utcTime = do
   uctx <- requireUnresolutionCtx tzid
   R $ lift $ unresolveUTCTime' uctx utcTime
@@ -514,21 +514,21 @@ chooseUnresolutionOffset' offsetMap utcTime =
 runRWithoutZones :: R a -> Resolv a
 runRWithoutZones = runR (Time.fromGregorian 2022 12 30) M.empty
 
-runR :: Time.Day -> Map TZIDParam TimeZone -> R a -> Resolv a
+runR :: Time.Day -> Map TimeZoneIdentifierParam TimeZone -> R a -> Resolv a
 runR limit m (R func) = do
   m' <- forM m $ \zone -> do
     resolutionCtx <- timeZoneRuleOccurrences limit zone
     pure (resolutionCtx, buildUnresolutionCtx resolutionCtx)
   runReaderT func m'
 
-requireResolutionCtx :: TZIDParam -> R ResolutionCtx
+requireResolutionCtx :: TimeZoneIdentifierParam -> R ResolutionCtx
 requireResolutionCtx = fmap fst . requireTimeZoneCtx
 
-requireUnresolutionCtx :: TZIDParam -> R UnresolutionCtx
+requireUnresolutionCtx :: TimeZoneIdentifierParam -> R UnresolutionCtx
 requireUnresolutionCtx = fmap snd . requireTimeZoneCtx
 
 requireTimeZoneCtx ::
-  TZIDParam ->
+  TimeZoneIdentifierParam ->
   R (ResolutionCtx, UnresolutionCtx)
 requireTimeZoneCtx tzid = do
   ctxMap <- ask

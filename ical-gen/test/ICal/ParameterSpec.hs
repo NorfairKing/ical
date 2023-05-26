@@ -61,9 +61,9 @@ spec = do
     parameterExampleSpec ["REQ-PARTICIPANT"] ParticipationRoleRequiredParticipant
     parameterExampleSpec ["OPT-PARTICIPANT"] ParticipationRoleOptionalParticipant
 
-  describe "TZIDParam" $ do
-    genValidSpec @TZIDParam
-    parameterSpec @TZIDParam
+  describe "TimeZoneIdentifierParam" $ do
+    genValidSpec @TimeZoneIdentifierParam
+    parameterSpec @TimeZoneIdentifierParam
     -- From the spec:
     -- @
     --    The following are examples of this property parameter:
@@ -72,8 +72,8 @@ spec = do
     --
     --     DTEND;TZID=America/New_York:19980119T030000
     -- @
-    parameterExampleSpec ["America/New_York"] (TZIDParam "America/New_York")
-    parameterExampleSpec ["/example.org/America/New_York"] (TZIDParam "/example.org/America/New_York")
+    parameterExampleSpec ["America/New_York"] (TimeZoneIdentifierParam "America/New_York")
+    parameterExampleSpec ["/example.org/America/New_York"] (TimeZoneIdentifierParam "/example.org/America/New_York")
 
   describe "ValueDataType" $ do
     genValidSpec @ValueDataType

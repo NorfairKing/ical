@@ -79,7 +79,7 @@ data RecurrenceError
   = StartStartMismatch !DateTimeStart !DateTimeStart -- Internal error, should not happen.
   | StartEndMismatch !DateTimeStart !DateTimeEnd
   | ExactDurationMismatch !DateTime !DateTime
-  | TimeZoneNotFound !TZIDParam
+  | TimeZoneNotFound !TimeZoneIdentifierParam
   | FailedToResolveLocalTime !TimeZone !Time.LocalTime
   | FailedToResolveLocalTimeCached !ResolutionCtx !Time.LocalTime
   | FailedToUnresolveUTCTime !TimeZone !Time.UTCTime
@@ -98,7 +98,7 @@ instance Exception RecurrenceFixableError
 newtype R a = R {unR :: ReaderT TimeZoneCtx (Conform RecurrenceError RecurrenceFixableError Void) a}
   deriving (Functor, Applicative, Monad, MonadReader TimeZoneCtx)
 
-type TimeZoneCtx = Map TZIDParam (ResolutionCtx, UnresolutionCtx)
+type TimeZoneCtx = Map TimeZoneIdentifierParam (ResolutionCtx, UnresolutionCtx)
 
 type ResolutionCtx = Map Time.LocalTime (UTCOffset, UTCOffset)
 

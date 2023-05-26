@@ -528,9 +528,9 @@ defaultParticipationRole = ParticipationRoleRequiredParticipant
 --    For more information, see the sections on the value types DATE-
 --    TIME and TIME.
 -- @
-newtype TZIDParam = TZIDParam
-  { unTZIDParam ::
-      -- We assume that TZID parameters are case-insensitive because the examples in the spec are not quoted and the spec says:
+newtype TimeZoneIdentifierParam = TimeZoneIdentifierParam
+  { unTimeZoneIdentifierParam ::
+      -- We assume that TimeZoneIdentifier parameters are case-insensitive because the examples in the spec are not quoted and the spec says:
       -- @
       -- Property parameter values that are not in quoted-strings are case-
       -- insensitive.
@@ -540,19 +540,19 @@ newtype TZIDParam = TZIDParam
   deriving stock (Eq, Ord, Generic)
   deriving newtype (Show, IsString, Read)
 
-instance Validity TZIDParam where
-  validate p@(TZIDParam ci) =
+instance Validity TimeZoneIdentifierParam where
+  validate p@(TimeZoneIdentifierParam ci) =
     mconcat
       [ genericValidate p,
         decorateText (CI.original ci) validateSafeChar
       ]
 
-instance NFData TZIDParam
+instance NFData TimeZoneIdentifierParam
 
-instance IsParameter TZIDParam where
+instance IsParameter TimeZoneIdentifierParam where
   parameterName Proxy = "TZID"
-  parameterP = anySingleParamP $ pure . TZIDParam
-  parameterB = anySingleParamB unTZIDParam
+  parameterP = anySingleParamP $ pure . TimeZoneIdentifierParam
+  parameterB = anySingleParamB unTimeZoneIdentifierParam
 
 -- | Value Data Type
 --
