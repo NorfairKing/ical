@@ -1,1 +1,1 @@
-Missing PRODID, added ProdId {unProdId = "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"}
+Missing PRODID, added ProductIdentifier {unProductIdentifier = "-//CompanyThatOutputsInvalidIcal/AppThatOutputsInvalidIcal//EN"}

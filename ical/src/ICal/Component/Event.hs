@@ -228,7 +228,7 @@ data Event = Event
     eventSummary :: !(Maybe Summary),
     eventTransparency :: !Transparency,
     eventURL :: !(Maybe URL),
-    eventRecurrenceID :: !(Maybe RecurrenceID),
+    eventRecurrenceIdentifier :: !(Maybe RecurrenceIdentifier),
     -- @
     -- ;
     -- ; The following is OPTIONAL,
@@ -267,7 +267,7 @@ instance Validity Event where
     mconcat
       [ genericValidate e,
         validateMDateTimeStartRRule eventDateTimeStart eventRecurrenceRules,
-        validateMRecurrenceIDMDateTimeStart eventDateTimeStart eventRecurrenceID
+        validateMRecurrenceIdentifierMDateTimeStart eventDateTimeStart eventRecurrenceIdentifier
       ]
 
 instance NFData Event
@@ -293,7 +293,7 @@ vEventP Component {..} = do
   eventSummary <- optionalPropertyP componentProperties
   eventTransparency <- optionalPropertyWithDefaultP defaultTransparency componentProperties
   eventURL <- optionalPropertyP componentProperties
-  eventRecurrenceID <- optionalPropertyP componentProperties
+  eventRecurrenceIdentifier <- optionalPropertyP componentProperties
 
   eventRecurrenceRules <-
     S.fromList
@@ -331,7 +331,7 @@ vEventB Event {..} =
             optionalPropertyB eventSummary,
             optionalPropertyWithDefaultB defaultTransparency eventTransparency,
             optionalPropertyB eventURL,
-            optionalPropertyB eventRecurrenceID,
+            optionalPropertyB eventRecurrenceIdentifier,
             setOfPropertiesB eventRecurrenceRules,
             case eventDateTimeEndDuration of
               Nothing -> mempty
@@ -362,7 +362,7 @@ makeEvent uid dateTimeStamp =
       eventSummary = Nothing,
       eventTransparency = defaultTransparency,
       eventURL = Nothing,
-      eventRecurrenceID = Nothing,
+      eventRecurrenceIdentifier = Nothing,
       eventRecurrenceRules = S.empty,
       eventDateTimeEndDuration = Nothing,
       eventAttendees = S.empty,

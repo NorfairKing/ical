@@ -37,7 +37,7 @@ instance GenValid CalendarScale where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid RecurrenceID where
+instance GenValid RecurrenceIdentifier where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

@@ -91,14 +91,14 @@ instance GenValid Event where
     eventSummary <- genValid
     eventTransparency <- genValid
     eventURL <- genValid
-    eventRecurrenceID <- case eventDateTimeStart of
+    eventRecurrenceIdentifier <- case eventDateTimeStart of
       Nothing -> genValid
       Just dtstart ->
         oneof
           [ pure Nothing,
             Just <$> case dtstart of
-              DateTimeStartDate _ -> RecurrenceIDDate <$> genValid
-              DateTimeStartDateTime _ -> RecurrenceIDDateTime <$> genValid
+              DateTimeStartDate _ -> RecurrenceIdentifierDate <$> genValid
+              DateTimeStartDateTime _ -> RecurrenceIdentifierDateTime <$> genValid
           ]
     eventRecurrenceRules <- case eventDateTimeStart of
       Nothing -> pure S.empty

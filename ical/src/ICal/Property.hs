@@ -988,38 +988,38 @@ mkOrganizer calAddress =
 --
 --     RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z
 -- @
-data RecurrenceID
-  = RecurrenceIDDate !Date
-  | RecurrenceIDDateTime !DateTime
+data RecurrenceIdentifier
+  = RecurrenceIdentifierDate !Date
+  | RecurrenceIdentifierDateTime !DateTime
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity RecurrenceID
+instance Validity RecurrenceIdentifier
 
-instance NFData RecurrenceID
+instance NFData RecurrenceIdentifier
 
-instance IsProperty RecurrenceID where
+instance IsProperty RecurrenceIdentifier where
   propertyName Proxy = "RECURRENCE-ID"
   propertyP clv = do
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     case mValue of
-      Just TypeDateTime -> wrapPropertyTypeP RecurrenceIDDateTime clv
-      Just TypeDate -> wrapPropertyTypeP RecurrenceIDDate clv
+      Just TypeDateTime -> wrapPropertyTypeP RecurrenceIdentifierDateTime clv
+      Just TypeDate -> wrapPropertyTypeP RecurrenceIdentifierDate clv
       Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue TypeDateTime [TypeDate]
       -- @
       -- Value Type:  The default value type is DATE-TIME.
       -- @
-      Nothing -> wrapPropertyTypeP RecurrenceIDDateTime clv
+      Nothing -> wrapPropertyTypeP RecurrenceIdentifierDateTime clv
   propertyB = \case
-    RecurrenceIDDateTime dt -> propertyTypeB dt
+    RecurrenceIdentifierDateTime dt -> propertyTypeB dt
     -- @
     -- Value Type:  The default value type is DATE-TIME.
     -- @
-    RecurrenceIDDate d -> typedPropertyTypeB d
+    RecurrenceIdentifierDate d -> typedPropertyTypeB d
 
-validateMRecurrenceIDMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceID -> Validation
-validateMRecurrenceIDMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
+validateMRecurrenceIdentifierMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceIdentifier -> Validation
+validateMRecurrenceIdentifierMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
   Nothing -> valid
-  Just (dts, rid) -> validateRecurrenceIDDateTimeStart dts rid
+  Just (dts, rid) -> validateRecurrenceIdentifierDateTimeStart dts rid
 
 -- @
 -- This property MUST have the same
@@ -1030,11 +1030,11 @@ validateMRecurrenceIDMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
 -- contained within the recurring component is specified as a date
 -- with local time.
 -- @
-validateRecurrenceIDDateTimeStart :: DateTimeStart -> RecurrenceID -> Validation
-validateRecurrenceIDDateTimeStart dts rid = case (dts, rid) of
-  (DateTimeStartDate _, RecurrenceIDDate _) -> valid
-  (DateTimeStartDateTime _, RecurrenceIDDateTime _) -> valid
-  _ -> invalid "Value type of RecurrenceID and DTSTART differ."
+validateRecurrenceIdentifierDateTimeStart :: DateTimeStart -> RecurrenceIdentifier -> Validation
+validateRecurrenceIdentifierDateTimeStart dts rid = case (dts, rid) of
+  (DateTimeStartDate _, RecurrenceIdentifierDate _) -> valid
+  (DateTimeStartDateTime _, RecurrenceIdentifierDateTime _) -> valid
+  _ -> invalid "Value type of RecurrenceIdentifier and DTSTART differ."
 
 -- | Created
 --
