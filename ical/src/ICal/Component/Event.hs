@@ -213,20 +213,26 @@ data Event = Event
     -- ; but MUST NOT occur more than once.
     -- ;
     -- class / created / description / geo /
-    -- last-mod / location / organizer / priority /
-    -- seq / status / summary / transp /
-    -- url / recurid /
     -- @
     eventClassification :: !Classification,
     eventCreated :: !(Maybe Created),
     eventDescription :: !(Maybe Description),
     eventGeographicPosition :: !(Maybe GeographicPosition),
+    -- @
+    -- last-mod / location / organizer / priority /
+    -- @
     eventLastModified :: !(Maybe LastModified),
     eventLocation :: !(Maybe Location),
     eventOrganizer :: !(Maybe Organizer),
+    -- @
+    -- seq / status / summary / transp /
+    -- @
     eventStatus :: !(Maybe Status),
     eventSummary :: !(Maybe Summary),
     eventTransparency :: !Transparency,
+    -- @
+    -- url / recurid /
+    -- @
     eventURL :: !(Maybe URL),
     eventRecurrenceIdentifier :: !(Maybe RecurrenceIdentifier),
     -- @
