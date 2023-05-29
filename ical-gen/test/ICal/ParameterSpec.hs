@@ -80,3 +80,9 @@ spec = do
     parameterSpec @ValueDataType
     parameterExampleSpec ["DATE"] TypeDate
     parameterExampleSpec ["DATE-TIME"] TypeDateTime
+
+  describe "AlarmTriggerRelationship" $ do
+    genValidSpec @AlarmTriggerRelationship
+    parameterSpec @AlarmTriggerRelationship
+    parameterExampleSpec ["START"] AlarmTriggerRelationshipStart
+    parameterExampleSpec ["END"] AlarmTriggerRelationshipEnd

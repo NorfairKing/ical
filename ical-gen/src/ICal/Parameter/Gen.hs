@@ -41,6 +41,10 @@ instance GenValid TimeZoneIdentifierParam where
 
 instance GenValid ValueDataType
 
+instance GenValid AlarmTriggerRelationship where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 parameterExampleSpec ::
   (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
   NonEmpty ParamValue ->

@@ -45,7 +45,8 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
   | MultipleParametersfound !(NonEmpty ParamValue)
-  | UnknownRSVPExpectation ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
+  | UnknownRSVPExpectation !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
+  | UnknownAlarmTriggerRelationship !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   deriving (Show, Eq, Ord)
 
 instance Exception ParameterParseError where
@@ -65,6 +66,11 @@ instance Exception ParameterParseError where
     UnknownRSVPExpectation pv ->
       unlines
         [ "Unknown RSVP Value:",
+          show pv
+        ]
+    UnknownAlarmTriggerRelationship pv ->
+      unlines
+        [ "Unknown RELATED Value:",
           show pv
         ]
 
@@ -669,3 +675,54 @@ instance IsParameter ValueDataType where
     TypeURI -> "URI"
     TypeUTCOffset -> "UTC-OFFSET"
     TypeOther pv -> pv
+
+-- | Alarm Trigger Relationship
+--
+-- [section 3.8.4.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.5)
+--
+-- @
+-- Parameter Name:  RELATED
+--
+-- Purpose:  To specify the relationship of the alarm trigger with
+--    respect to the start or end of the calendar component.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     trigrelparam       = "RELATED" "="
+--                         ("START"       ; Trigger off of start
+--                        / "END")        ; Trigger off of end
+--
+-- Description:  This parameter can be specified on properties that
+--    specify an alarm trigger with a "DURATION" value type.  The
+--    parameter specifies whether the alarm will trigger relative to the
+--    start or end of the calendar component.  The parameter value START
+--    will set the alarm to trigger off the start of the calendar
+--    component; the parameter value END will set the alarm to trigger
+--    off the end of the calendar component.  If the parameter is not
+--    specified on an allowable property, then the default is START.
+--
+-- Example:
+--
+--     TRIGGER;RELATED=END:PT5M
+--
+-- @
+data AlarmTriggerRelationship
+  = AlarmTriggerRelationshipStart
+  | AlarmTriggerRelationshipEnd
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity AlarmTriggerRelationship
+
+instance NFData AlarmTriggerRelationship
+
+instance IsParameter AlarmTriggerRelationship where
+  parameterName Proxy = "RELATED"
+  parameterP =
+    singleParamP $ \pv -> case paramValueCI pv of
+      "START" -> pure AlarmTriggerRelationshipStart
+      "END" -> pure AlarmTriggerRelationshipEnd
+      _ -> unfixableError $ UnknownAlarmTriggerRelationship pv
+  parameterB = singleParamB $ \case
+    AlarmTriggerRelationshipStart -> "START"
+    AlarmTriggerRelationshipEnd -> "END"
