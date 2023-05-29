@@ -856,7 +856,10 @@ defaultClassification = ClassificationPublic
 --     ORGANIZER;SENT-BY="mailto:jane_doe@example.com":
 --      mailto:jsmith@example.com
 -- @
-data Organizer = Organizer {organizerCalAddress :: !CalAddress, organizerCommonName :: !(Maybe CommonName)}
+data Organizer = Organizer
+  { organizerCalAddress :: !CalAddress,
+    organizerCommonName :: !(Maybe CommonName)
+  }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Organizer

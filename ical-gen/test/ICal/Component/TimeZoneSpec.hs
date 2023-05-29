@@ -28,4 +28,4 @@ spec = do
     genValidSpec @TimeZone
     componentSpec @TimeZone
 
-  componentScenarioDir @TimeZone "test_resources/timezones"
+  componentScenarioDir @TimeZone "test_resources/timezone"

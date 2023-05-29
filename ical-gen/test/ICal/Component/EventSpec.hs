@@ -13,4 +13,4 @@ spec = do
     genValidSpec @Event
     componentSpec @Event
 
-  componentScenarioDir @Event "test_resources/events"
+  componentScenarioDir @Event "test_resources/event"

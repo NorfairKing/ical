@@ -12,6 +12,7 @@ library
   exposed-modules:
       ICal
       ICal.Component
+      ICal.Component.Alarm
       ICal.Component.Class
       ICal.Component.Event
       ICal.Component.TimeZone

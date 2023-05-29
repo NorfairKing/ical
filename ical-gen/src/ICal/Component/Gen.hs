@@ -108,7 +108,10 @@ instance GenValid Event where
     eventAttendees <- genValid
     eventExceptionDateTimes <- genValid
     eventRecurrenceDateTimes <- genValid
+    eventAlarms <- genValid
     pure Event {..}
+
+instance GenValid Alarm
 
 instance GenValid Observance where
   genValid = do

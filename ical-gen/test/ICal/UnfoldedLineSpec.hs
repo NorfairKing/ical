@@ -71,7 +71,7 @@ spec = do
   pending "that multi-octet UTF-8 sequences are preserved correctly"
 
   -- Tests based on example calendars
-  scenarioDirRecur "test_resources/calendars" $ \calFile -> do
+  scenarioDirRecur "test_resources/calendar" $ \calFile -> do
     relCalFile <- runIO $ parseRelFile calFile
     when (fileExtension relCalFile == Just ".ics") $
       it "can parse and unfold every line" $ do

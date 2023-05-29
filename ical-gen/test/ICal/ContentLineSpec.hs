@@ -164,7 +164,7 @@ spec = do
           Right actual -> actual `shouldBe` contentLine
 
     -- Tests based on example calendars
-    scenarioDirRecur "test_resources/calendars" $ \calFile -> do
+    scenarioDirRecur "test_resources/calendar" $ \calFile -> do
       relCalFile <- runIO $ parseRelFile calFile
       when (fileExtension relCalFile == Just ".ics") $
         it "can parse and unfold every line" $ do

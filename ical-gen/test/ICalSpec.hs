@@ -109,7 +109,7 @@ spec = do
     iCalendar `shouldBe` expectedICal
 
   -- Tests based on example calendars
-  scenarioDirRecur "test_resources/calendars/valid" $ \calFile ->
+  scenarioDirRecur "test_resources/calendar/valid" $ \calFile ->
     it "can parse this calendar" $ do
       contents <- SB.readFile calFile
       ical <- shouldConformStrict $ parseICalendarByteString contents
@@ -119,7 +119,7 @@ spec = do
         ical' <- shouldConformStrict $ parseICalendarByteString rendered
         ical' `shouldBe` ical
 
-  scenarioDirRecur "test_resources/calendars/fixable" $ \calFile -> do
+  scenarioDirRecur "test_resources/calendar/fixable" $ \calFile -> do
     it "cannot parse this calendar strictly" $ do
       contents <- SB.readFile calFile
       case runConformStrict $ parseICalendarByteString contents of
@@ -134,7 +134,7 @@ spec = do
       ical' <- shouldConformStrict $ parseICalendarByteString rendered
       ical' `shouldBe` ical
 
-  scenarioDirRecur "test_resources/calendars/error" $ \calFile -> do
+  scenarioDirRecur "test_resources/calendar/error" $ \calFile -> do
     relCalFile <- runIO $ parseRelFile calFile
     when (fileExtension relCalFile == Just ".ics") $ do
       it "fails to parse this calendar" $ do

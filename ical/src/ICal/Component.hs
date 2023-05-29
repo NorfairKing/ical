@@ -11,6 +11,7 @@ module ICal.Component
   ( module ICal.Component,
     module ICal.Component.Class,
     module ICal.Component.Event,
+    module ICal.Component.Alarm,
     module ICal.Component.TimeZone,
   )
 where
@@ -25,6 +26,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import ICal.Component.Alarm
 import ICal.Component.Class
 import ICal.Component.Event
 import ICal.Component.TimeZone

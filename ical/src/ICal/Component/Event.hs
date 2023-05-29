@@ -23,6 +23,7 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import ICal.Component.Alarm
 import ICal.Component.Class
 import ICal.Conformance
 import ICal.Property
@@ -264,7 +265,13 @@ data Event = Event
     -- @
     eventAttendees :: !(Set Attendee),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
-    eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes)
+    eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
+    -- @
+    --     eventc     = "BEGIN" ":" "VEVENT" CRLF
+    --                  eventprop *alarmc
+    --                  "END" ":" "VEVENT" CRLF
+    -- @
+    eventAlarms :: ![Alarm]
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -315,6 +322,7 @@ vEventP Component {..} = do
   eventAttendees <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
+  eventAlarms <- subComponentsP componentSubcomponents
   pure Event {..}
 
 vEventB :: Event -> Component
@@ -373,5 +381,6 @@ makeEvent uid dateTimeStamp =
       eventDateTimeEndDuration = Nothing,
       eventAttendees = S.empty,
       eventExceptionDateTimes = S.empty,
-      eventRecurrenceDateTimes = S.empty
+      eventRecurrenceDateTimes = S.empty,
+      eventAlarms = []
     }

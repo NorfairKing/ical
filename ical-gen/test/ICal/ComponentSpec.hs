@@ -25,6 +25,7 @@ spec = do
           context (T.unpack (renderContentLines rendered)) $ do
             parsed <- shouldConform $ parseGeneralComponent rendered
             parsed `shouldBe` (name, component)
+
   describe "Calendar" $ do
     genValidSpec @Calendar
     componentSpec @Calendar
