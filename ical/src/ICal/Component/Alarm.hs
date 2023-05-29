@@ -267,7 +267,10 @@ import ICal.PropertyType
 --      templates/agenda.doc
 --     END:VALARM
 -- @
-data Alarm = Alarm {alarmAction :: !Action}
+data Alarm = Alarm
+  { alarmAction :: !Action,
+    alarmTrigger :: !Trigger
+  }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Alarm
@@ -282,6 +285,7 @@ instance IsComponent Alarm where
 vAlarmP :: Component -> CP Alarm
 vAlarmP Component {..} = do
   alarmAction <- requiredPropertyP componentProperties
+  alarmTrigger <- requiredPropertyP componentProperties
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -290,10 +294,12 @@ vAlarmB Alarm {..} =
     { componentProperties =
         M.unionsWith
           (<>)
-          [requiredPropertyB alarmAction],
+          [ requiredPropertyB alarmAction,
+            requiredPropertyB alarmTrigger
+          ],
       componentSubcomponents = M.empty
     }
 
-makeAlarm :: Action -> Alarm
-makeAlarm alarmAction =
+makeAlarm :: Action -> Trigger -> Alarm
+makeAlarm alarmAction alarmTrigger =
   Alarm {..}

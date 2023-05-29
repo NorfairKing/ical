@@ -646,3 +646,31 @@ spec = do
     propertyExampleSpec
       "ACTION:EMAIL"
       ActionEmail
+
+  describe "Trigger" $ do
+    genValidSpec @Trigger
+    propertySpec @Trigger
+    -- @
+    -- Example:  A trigger set 15 minutes prior to the start of the event or
+    --    to-do.
+    --
+    --     TRIGGER:-PT15M
+    --
+    --    A trigger set five minutes after the end of an event or the due
+    --    date of a to-do.
+    --
+    --     TRIGGER;RELATED=END:PT5M
+    --
+    --    A trigger set to an absolute DATE-TIME.
+    --
+    --     TRIGGER;VALUE=DATE-TIME:19980101T050000Z
+    -- @
+    propertyExampleSpec
+      "TRIGGER:-PT15M"
+      (TriggerDuration (DurationTime (DurTime {durTimeSign = Negative, durTimeHour = 0, durTimeMinute = 15, durTimeSecond = 0})))
+    propertyExampleSpec
+      "TRIGGER;RELATED=END:PT5M"
+      (TriggerDuration (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 0, durTimeMinute = 5, durTimeSecond = 0})))
+    propertyExampleSpec
+      "TRIGGER;VALUE=DATE-TIME:19980101T050000Z"
+      (TriggerDateTime (UTCTime (fromGregorian 1998 01 01) (timeOfDayToTime (TimeOfDay 05 00 00))))

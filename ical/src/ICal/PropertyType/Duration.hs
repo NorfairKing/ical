@@ -255,12 +255,18 @@ renderDuration :: Duration -> Text
 renderDuration =
   T.pack . concat . \case
     DurationDate DurDate {..} ->
-      [ renderSign durDateSign,
-        ['P'],
-        digitB 'D' durDateDay,
-        ['T'],
-        hms durDateHour durDateMinute durDateSecond
-      ]
+      concat
+        [ [ renderSign durDateSign,
+            ['P'],
+            digitB 'D' durDateDay
+          ],
+          if durDateHour == 0 && durDateMinute == 0 && durDateSecond == 0
+            then []
+            else
+              [ ['T'],
+                hms durDateHour durDateMinute durDateSecond
+              ]
+        ]
     DurationTime DurTime {..} ->
       [ renderSign durTimeSign,
         ['P', 'T'],
@@ -327,15 +333,24 @@ parseDuration = either (unfixableError . UnparseableDuration) pure . parse go ""
       let durDayP = digitP 'D'
       let durDateP = do
             d <- durDayP
-            DurTime {..} <- durTimeP
-            pure
-              DurDate
-                { durDateSign = durTimeSign,
-                  durDateDay = d,
-                  durDateHour = durTimeHour,
-                  durDateMinute = durTimeMinute,
-                  durDateSecond = durTimeSecond
-                }
+            mDurTime <- optional durTimeP
+            pure $ case mDurTime of
+              Nothing ->
+                DurDate
+                  { durDateSign = sign,
+                    durDateDay = d,
+                    durDateHour = 0,
+                    durDateMinute = 0,
+                    durDateSecond = 0
+                  }
+              Just DurTime {..} ->
+                DurDate
+                  { durDateSign = durTimeSign,
+                    durDateDay = d,
+                    durDateHour = durTimeHour,
+                    durDateMinute = durTimeMinute,
+                    durDateSecond = durTimeSecond
+                  }
       let durWeekP = do
             w <- digitP 'W'
             pure

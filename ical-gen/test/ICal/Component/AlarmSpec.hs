@@ -16,6 +16,6 @@ spec = do
 
   describe "makeAlarm" $ do
     it "should produce valid alarms" $
-      producesValid makeAlarm
+      producesValid2 makeAlarm
 
   componentScenarioDir @Alarm "test_resources/alarm"

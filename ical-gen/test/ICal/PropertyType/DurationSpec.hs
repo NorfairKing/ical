@@ -50,6 +50,37 @@ spec = do
               durWeekWeek = 7
             }
       )
+    -- @
+    -- Example:  A trigger set 15 minutes prior to the start of the event or
+    --    to-do.
+    --
+    --     TRIGGER:-PT15M
+    --
+    --    A trigger set five minutes after the end of an event or the due
+    --    date of a to-do.
+    --
+    --     TRIGGER;RELATED=END:PT5M
+    -- @
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "-PT15M")
+      (DurationTime (DurTime {durTimeSign = Negative, durTimeHour = 0, durTimeMinute = 15, durTimeSecond = 0}))
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "PT5M")
+      (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 0, durTimeMinute = 5, durTimeSecond = 0}))
+    -- @
+    -- TRIGGER;RELATED=END:-P2D
+    -- @
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "-P2D")
+      ( DurationDate
+          DurDate
+            { durDateSign = Negative,
+              durDateDay = 2,
+              durDateHour = 0,
+              durDateMinute = 0,
+              durDateSecond = 0
+            }
+      )
   describe "durationOneDay" $
     it "is valid" $
       shouldBeValid durationOneDay
