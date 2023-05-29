@@ -9,13 +9,16 @@
 
 module ICal.Component.Alarm
   ( Alarm (..),
-    makeAlarm,
+    makeAudioAlarm,
+    makeDisplayAlarm,
+    makeEmailAlarm,
   )
 where
 
 import Control.DeepSeq
 import Control.Monad
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -269,11 +272,97 @@ import ICal.PropertyType
 -- @
 data Alarm = Alarm
   { alarmAction :: !Action,
-    alarmTrigger :: !Trigger
+    alarmTrigger :: !Trigger,
+    alarmDescription :: !(Maybe Description)
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity Alarm
+instance Validity Alarm where
+  validate alarm@Alarm {..} =
+    mconcat
+      [ genericValidate alarm,
+        case alarmAction of
+          -- @
+          --     audioprop  = *(
+          --                ;
+          --                ; 'action' and 'trigger' are both REQUIRED,
+          --                ; but MUST NOT occur more than once.
+          --                ;
+          --                action / trigger /
+          --                ;
+          --                ; 'duration' and 'repeat' are both OPTIONAL,
+          --                ; and MUST NOT occur more than once each;
+          --                ; but if one occurs, so MUST the other.
+          --                ;
+          --                duration / repeat /
+          --                ;
+          --                ; The following is OPTIONAL,
+          --                ; but MUST NOT occur more than once.
+          --                ;
+          --                attach /
+          --                ;
+          --                ; The following is OPTIONAL,
+          --                ; and MAY occur more than once.
+          --                ;
+          --                x-prop / iana-prop
+          --                ;
+          --                )
+          -- @
+          ActionAudio -> mempty
+          -- @
+          --     dispprop   = *(
+          --                ;
+          --                ; The following are REQUIRED,
+          --                ; but MUST NOT occur more than once.
+          --                ;
+          --                action / description / trigger /
+          --                ;
+          --                ; 'duration' and 'repeat' are both OPTIONAL,
+          --                ; and MUST NOT occur more than once each;
+          --                ; but if one occurs, so MUST the other.
+          --                ;
+          --                duration / repeat /
+          --                ;
+          --                ; The following is OPTIONAL,
+          --                ; and MAY occur more than once.
+          --                ;
+          --                x-prop / iana-prop
+          --                ;
+          --                )
+          -- @
+          ActionDisplay ->
+            mconcat
+              [ declare "Has a description" $ isJust alarmDescription
+              ]
+          -- @
+          --     emailprop  = *(
+          --                ;
+          --                ; The following are all REQUIRED,
+          --                ; but MUST NOT occur more than once.
+          --                ;
+          --                action / description / trigger / summary /
+          --
+          --                ;
+          --                ; The following is REQUIRED,
+          --                ; and MAY occur more than once.
+          --                ;
+          --                attendee /
+          --                ;
+          --                ; 'duration' and 'repeat' are both OPTIONAL,
+          --                ; and MUST NOT occur more than once each;
+          --                ; but if one occurs, so MUST the other.
+          --                ;
+          --                duration / repeat /
+          --                ;
+          --                ; The following are OPTIONAL,
+          --                ; and MAY occur more than once.
+          --                ;
+          --                attach / x-prop / iana-prop
+          --                ;
+          --                )
+          -- @
+          ActionEmail -> mempty
+      ]
 
 instance NFData Alarm
 
@@ -286,6 +375,7 @@ vAlarmP :: Component -> CP Alarm
 vAlarmP Component {..} = do
   alarmAction <- requiredPropertyP componentProperties
   alarmTrigger <- requiredPropertyP componentProperties
+  alarmDescription <- optionalPropertyP componentProperties
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -295,11 +385,100 @@ vAlarmB Alarm {..} =
         M.unionsWith
           (<>)
           [ requiredPropertyB alarmAction,
-            requiredPropertyB alarmTrigger
+            requiredPropertyB alarmTrigger,
+            optionalPropertyB alarmDescription
           ],
       componentSubcomponents = M.empty
     }
 
-makeAlarm :: Action -> Trigger -> Alarm
-makeAlarm alarmAction alarmTrigger =
-  Alarm {..}
+-- @
+--     audioprop  = *(
+--                ;
+--                ; 'action' and 'trigger' are both REQUIRED,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                action / trigger /
+--                ;
+--                ; 'duration' and 'repeat' are both OPTIONAL,
+--                ; and MUST NOT occur more than once each;
+--                ; but if one occurs, so MUST the other.
+--                ;
+--                duration / repeat /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                attach /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                x-prop / iana-prop
+--                ;
+--                )
+-- @
+makeAudioAlarm :: Trigger -> Alarm
+makeAudioAlarm alarmTrigger =
+  let alarmAction = ActionAudio
+      alarmDescription = Nothing
+   in Alarm {..}
+
+-- @
+--     dispprop   = *(
+--                ;
+--                ; The following are REQUIRED,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                action / description / trigger /
+--                ;
+--                ; 'duration' and 'repeat' are both OPTIONAL,
+--                ; and MUST NOT occur more than once each;
+--                ; but if one occurs, so MUST the other.
+--                ;
+--                duration / repeat /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                x-prop / iana-prop
+--                ;
+--                )
+-- @
+makeDisplayAlarm :: Description -> Trigger -> Alarm
+makeDisplayAlarm description alarmTrigger =
+  let alarmAction = ActionDisplay
+      alarmDescription = Just description
+   in Alarm {..}
+
+-- @
+--     emailprop  = *(
+--                ;
+--                ; The following are all REQUIRED,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                action / description / trigger / summary /
+--
+--                ;
+--                ; The following is REQUIRED,
+--                ; and MAY occur more than once.
+--                ;
+--                attendee /
+--                ;
+--                ; 'duration' and 'repeat' are both OPTIONAL,
+--                ; and MUST NOT occur more than once each;
+--                ; but if one occurs, so MUST the other.
+--                ;
+--                duration / repeat /
+--                ;
+--                ; The following are OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                attach / x-prop / iana-prop
+--                ;
+--                )
+-- @
+makeEmailAlarm :: Description -> Trigger -> Alarm
+makeEmailAlarm description alarmTrigger =
+  let alarmAction = ActionEmail
+      alarmDescription = Just description
+   in Alarm {..}

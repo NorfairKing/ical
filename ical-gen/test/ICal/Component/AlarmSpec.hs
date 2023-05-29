@@ -14,8 +14,16 @@ spec = do
     genValidSpec @Alarm
     componentSpec @Alarm
 
-  describe "makeAlarm" $ do
-    it "should produce valid alarms" $
-      producesValid2 makeAlarm
+  describe "makeAudioAlarm" $ do
+    it "produces valid alarms" $
+      producesValid makeAudioAlarm
+
+  describe "makeDisplayAlarm" $ do
+    it "produces valid alarms" $
+      producesValid2 makeDisplayAlarm
+
+  describe "makeEmailAlarm" $ do
+    it "produces valid alarms" $
+      producesValid2 makeEmailAlarm
 
   componentScenarioDir @Alarm "test_resources/alarm"
