@@ -2427,3 +2427,74 @@ instance IsProperty RecurrenceDateTimes where
     -- @
     RecurrenceDates ds -> typedPropertyTypeB ds
     RecurrencePeriods ps -> typedPropertyTypeB ps
+
+-- | Action
+--
+-- === [section 3.8.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.6.1)
+--
+-- @
+-- Property Name:  ACTION
+--
+-- Purpose:  This property defines the action to be invoked when an
+--    alarm is triggered.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property MUST be specified once in a "VALARM"
+--    calendar component.
+--
+-- Description:  Each "VALARM" calendar component has a particular type
+--    of action with which it is associated.  This property specifies
+--    the type of action.  Applications MUST ignore alarms with x-name
+--    and iana-token values they don't recognize.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     action      = "ACTION" actionparam ":" actionvalue CRLF
+--
+--     actionparam = *(";" other-param)
+--
+--
+--     actionvalue = "AUDIO" / "DISPLAY" / "EMAIL"
+--                 / iana-token / x-name
+--
+-- Example:  The following are examples of this property in a "VALARM"
+--    calendar component:
+--
+--     ACTION:AUDIO
+--
+--     ACTION:DISPLAY
+-- @
+data Action
+  = ActionAudio
+  | ActionDisplay
+  | ActionEmail
+  | ActionOther !Text
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Action
+
+instance NFData Action
+
+instance IsProperty Action where
+  propertyName Proxy = "ACTION"
+  propertyP = wrapPropertyTypeP parseAction
+  propertyB = propertyTypeB . renderAction
+
+parseAction :: Text -> Action
+parseAction = \case
+  "AUDIO" -> ActionAudio
+  "DISPLAY" -> ActionDisplay
+  "EMAIL" -> ActionEmail
+  t -> ActionOther t
+
+renderAction :: Action -> Text
+renderAction = \case
+  ActionAudio -> "AUDIO"
+  ActionDisplay -> "DISPLAY"
+  ActionEmail -> "EMAIL"
+  ActionOther t -> t

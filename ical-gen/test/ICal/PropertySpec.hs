@@ -625,3 +625,24 @@ spec = do
     propertyExampleSpec
       "RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,19970526,19970704,19970901,19971014,19971128,19971129,19971225"
       ex4
+
+  describe "Action" $ do
+    genValidSpec @Action
+    propertySpec @Action
+    -- @
+    -- Example:  The following are examples of this property in a "VALARM"
+    --    calendar component:
+    --
+    --     ACTION:AUDIO
+    --
+    --     ACTION:DISPLAY
+    -- @
+    propertyExampleSpec
+      "ACTION:AUDIO"
+      ActionAudio
+    propertyExampleSpec
+      "ACTION:DISPLAY"
+      ActionDisplay
+    propertyExampleSpec
+      "ACTION:EMAIL"
+      ActionEmail

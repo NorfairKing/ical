@@ -8,6 +8,9 @@ name:           ical-gen
 version:        0.0.0.0
 build-type:     Simple
 extra-source-files:
+    test_resources/alarm/spec-3.6.6-1
+    test_resources/alarm/spec-3.6.6-2
+    test_resources/alarm/spec-3.6.6-3
     test_resources/calendar/error/missing-end-event.error
     test_resources/calendar/error/missing-end-event.ics
     test_resources/calendar/error/missing-end.error
