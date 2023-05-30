@@ -274,7 +274,11 @@ data Alarm = Alarm
   { alarmAction :: !Action,
     alarmTrigger :: !Trigger,
     alarmDescription :: !(Maybe Description),
-    alarmSummary :: !(Maybe Summary)
+    alarmSummary :: !(Maybe Summary),
+    --                ; 'duration' and 'repeat' are both OPTIONAL,
+    --                ; and MUST NOT occur more than once each;
+    --                ; but if one occurs, so MUST the other.
+    alarmRepeatDuration :: !(Maybe (Repeat, Duration))
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -383,6 +387,12 @@ vAlarmP Component {..} = do
   alarmTrigger <- requiredPropertyP componentProperties
   alarmDescription <- optionalPropertyP componentProperties
   alarmSummary <- optionalPropertyP componentProperties
+  mRepeat <- optionalPropertyP componentProperties
+  mDuration <- optionalPropertyP componentProperties
+  alarmRepeatDuration <- case (mRepeat, mDuration) of
+    (Just repeat, Just duration) -> pure $ Just (repeat, duration)
+    (Nothing, Nothing) -> pure Nothing
+    _ -> pure Nothing -- TODO emit a warning or fixable error
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -394,7 +404,15 @@ vAlarmB Alarm {..} =
           [ requiredPropertyB alarmAction,
             requiredPropertyB alarmTrigger,
             optionalPropertyB alarmDescription,
-            optionalPropertyB alarmSummary
+            optionalPropertyB alarmSummary,
+            case alarmRepeatDuration of
+              Nothing -> M.empty
+              Just (repeat, duration) ->
+                M.unionsWith
+                  (<>)
+                  [ requiredPropertyB repeat,
+                    requiredPropertyB duration
+                  ]
           ],
       componentSubcomponents = M.empty
     }
@@ -430,6 +448,7 @@ makeAudioAlarm alarmTrigger =
   let alarmAction = ActionAudio
       alarmDescription = Nothing
       alarmSummary = Nothing
+      alarmRepeatDuration = Nothing
    in Alarm {..}
 
 -- @
@@ -458,6 +477,7 @@ makeDisplayAlarm description alarmTrigger =
   let alarmAction = ActionDisplay
       alarmDescription = Just description
       alarmSummary = Nothing
+      alarmRepeatDuration = Nothing
    in Alarm {..}
 
 -- @
@@ -492,4 +512,5 @@ makeEmailAlarm description alarmTrigger summary =
   let alarmAction = ActionEmail
       alarmDescription = Just description
       alarmSummary = Just summary
+      alarmRepeatDuration = Nothing
    in Alarm {..}
