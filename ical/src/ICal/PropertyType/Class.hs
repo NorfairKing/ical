@@ -73,6 +73,7 @@ data PropertyTypeParseError
       -- ^ Input
       !Text
       -- ^ Error
+  | UnparseableBoolean !Text
   | UnparseableInteger !Text
   | UnparseableURI !Text
   | UnparseableUTCOffset !Text
@@ -114,6 +115,7 @@ instance Exception PropertyTypeParseError where
         [ unwords ["Unparseable BINARY:", show err],
           show t
         ]
+    UnparseableBoolean t -> unwords ["Unparseable BOOLEAN", show t]
     UnparseableInteger t -> unwords ["Unparseable INTEGER", show t]
     UnparseableURI t -> unwords ["Unparseable URI", show t]
     UnparseableUTCOffset t -> unwords ["Unparseable UTC Offset", show t]
@@ -210,6 +212,43 @@ instance IsPropertyType Int32 where
           '+' : rest -> go rest
           _ -> go s
   propertyTypeB = mkSimpleContentLineValue . T.pack . show
+
+-- | Boolean
+--
+-- === [section 3.3.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.2)
+--
+-- @
+-- Value Name:  BOOLEAN
+--
+-- Purpose:  This value type is used to identify properties that contain
+--    either a "TRUE" or "FALSE" Boolean value.
+--
+-- Format Definition:  This value type is defined by the following
+--    notation:
+--
+--     boolean    = "TRUE" / "FALSE"
+--
+-- Description:  These values are case-insensitive text.  No additional
+--    content value encoding (i.e., BACKSLASH character encoding, see
+--    Section 3.3.11) is defined for this value type.
+--
+-- Example:  The following is an example of a hypothetical property that
+--    has a BOOLEAN value type:
+--
+--     TRUE
+-- @
+instance IsPropertyType Bool where
+  propertyTypeValueType Proxy = TypeBoolean
+  propertyTypeP clv =
+    let t = contentLineValueRaw clv
+     in case t of
+          "TRUE" -> pure True
+          "FALSE" -> pure False
+          _ -> unfixableError $ UnparseableBoolean t
+  propertyTypeB =
+    mkSimpleContentLineValue . \case
+      True -> "TRUE"
+      False -> "FALSE"
 
 -- | Text
 --

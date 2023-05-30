@@ -6,7 +6,6 @@ dependencies:
 - ical
 
 library:
-  source-dirs: src
   dependencies:
   - QuickCheck
   - bytestring

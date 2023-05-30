@@ -11,8 +11,6 @@ build-type:     Simple
 library
   other-modules:
       Paths_ical_interop_test
-  hs-source-dirs:
-      src
   build-depends:
       QuickCheck
     , base >=4.7 && <5

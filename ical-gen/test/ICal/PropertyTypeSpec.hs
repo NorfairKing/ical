@@ -30,6 +30,15 @@ spec = do
       (mkSimpleContentLineValue "-6")
       (-6 :: Int32)
 
+  describe "Boolean" $ do
+    propertyTypeSpec @Bool
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "TRUE")
+      True
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "FALSE")
+      False
+
   describe "Text" $ do
     propertyTypeSpec @Text
     propertyTypeExampleSpec
