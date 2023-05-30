@@ -726,3 +726,10 @@ instance IsParameter AlarmTriggerRelationship where
   parameterB = singleParamB $ \case
     AlarmTriggerRelationshipStart -> "START"
     AlarmTriggerRelationshipEnd -> "END"
+
+-- @
+-- If the parameter is not
+-- specified on an allowable property, then the default is START.
+-- @
+defaultAlarmTriggerRelationship :: AlarmTriggerRelationship
+defaultAlarmTriggerRelationship = AlarmTriggerRelationshipStart

@@ -667,10 +667,10 @@ spec = do
     -- @
     propertyExampleSpec
       "TRIGGER:-PT15M"
-      (TriggerDuration (DurationTime (DurTime {durTimeSign = Negative, durTimeHour = 0, durTimeMinute = 15, durTimeSecond = 0})))
+      (TriggerDuration AlarmTriggerRelationshipStart (DurationTime (DurTime {durTimeSign = Negative, durTimeHour = 0, durTimeMinute = 15, durTimeSecond = 0})))
     propertyExampleSpec
       "TRIGGER;RELATED=END:PT5M"
-      (TriggerDuration (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 0, durTimeMinute = 5, durTimeSecond = 0})))
+      (TriggerDuration AlarmTriggerRelationshipEnd (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 0, durTimeMinute = 5, durTimeSecond = 0})))
     propertyExampleSpec
       "TRIGGER;VALUE=DATE-TIME:19980101T050000Z"
       (TriggerDateTime (UTCTime (fromGregorian 1998 01 01) (timeOfDayToTime (TimeOfDay 05 00 00))))

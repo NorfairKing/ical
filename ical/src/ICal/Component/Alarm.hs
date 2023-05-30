@@ -362,6 +362,7 @@ instance Validity Alarm where
           --                )
           -- @
           ActionEmail -> mempty
+          ActionOther _ -> mempty
       ]
 
 instance NFData Alarm

@@ -356,7 +356,9 @@ vEventB Event {..} =
             setOfPropertiesB eventExceptionDateTimes,
             setOfPropertiesB eventRecurrenceDateTimes
           ],
-      componentSubcomponents = M.empty
+      componentSubcomponents =
+        M.unionsWith (<>) $
+          map namedComponentMapB eventAlarms
     }
 
 makeEvent :: UID -> DateTimeStamp -> Event

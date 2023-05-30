@@ -2612,7 +2612,7 @@ renderAction = \case
 --     TRIGGER;VALUE=DATE-TIME:19980101T050000Z
 -- @
 data Trigger
-  = TriggerDuration !Duration
+  = TriggerDuration !AlarmTriggerRelationship !Duration
   | TriggerDateTime !Time.UTCTime
   deriving (Show, Eq, Ord, Generic)
 
@@ -2624,14 +2624,25 @@ instance IsProperty Trigger where
   propertyName Proxy = "TRIGGER"
   propertyP clv = do
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    let parseDurationTrigger = do
+          duration <- conformMapError PropertyTypeParseError $ propertyTypeP clv
+          relationship <- conformMapError (PropertyTypeParseError . ParameterParseError) $ fromMaybe defaultAlarmTriggerRelationship <$> optionalParam (contentLineValueParams clv)
+          pure $ TriggerDuration relationship duration
+
     case mValue of
-      Just TypeDateTime -> conformMapError PropertyTypeParseError $ TriggerDateTime <$> dateTimeUTCP clv
-      Just TypeDuration -> wrapPropertyTypeP TriggerDuration clv
+      Just TypeDateTime ->
+        conformMapError PropertyTypeParseError $ TriggerDateTime <$> dateTimeUTCP clv
+      Just TypeDuration -> parseDurationTrigger
       Just _ -> unfixableError $ ValueMismatch "TRIGGER" mValue TypeDuration [TypeDateTime]
       -- @
       -- Value Type:  The default value type is DURATION.
       -- @
-      Nothing -> wrapPropertyTypeP TriggerDuration clv
+      Nothing -> parseDurationTrigger
   propertyB = \case
-    TriggerDuration duration -> propertyTypeB duration
+    TriggerDuration relationship duration ->
+      ( if relationship == defaultAlarmTriggerRelationship
+          then id
+          else insertParam relationship
+      )
+        (propertyTypeB duration)
     TriggerDateTime date -> typedPropertyTypeB (DateTimeUTC date)
