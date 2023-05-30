@@ -24,6 +24,15 @@ spec = do
     -- @
     parameterExampleSpec ["John Smith"] (CommonName "John Smith")
 
+  describe "Encoding" $ do
+    genValidSpec @Encoding
+    parameterSpec @Encoding
+    -- From the spec:
+    -- @
+    --   ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:TG9yZW
+    -- @
+    parameterExampleSpec ["BASE64"] EncodingBase64
+
   describe "FormatType" $ do
     genValidSpec @FormatType
     parameterSpec @FormatType

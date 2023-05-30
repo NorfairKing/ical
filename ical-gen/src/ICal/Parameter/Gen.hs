@@ -20,15 +20,29 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid CommonName
+instance GenValid CommonName where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid FormatType
+instance GenValid Encoding where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ParticipationStatus
+instance GenValid FormatType where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid RSVPExpectation
+instance GenValid ParticipationStatus where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ParticipationRole
+instance GenValid RSVPExpectation where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid ParticipationRole where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid TimeZoneIdentifierParam where
   genValid = genValidStructurally
@@ -41,7 +55,9 @@ instance GenValid TimeZoneIdentifierParam where
     TimeZoneIdentifierParam "C" -> [TimeZoneIdentifierParam "UTC", TimeZoneIdentifierParam "A", TimeZoneIdentifierParam "B"]
     TimeZoneIdentifierParam _ -> [TimeZoneIdentifierParam "UTC", TimeZoneIdentifierParam "A", TimeZoneIdentifierParam "B", TimeZoneIdentifierParam "C"]
 
-instance GenValid ValueDataType
+instance GenValid ValueDataType where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid AlarmTriggerRelationship where
   genValid = genValidStructurallyWithoutExtraChecking

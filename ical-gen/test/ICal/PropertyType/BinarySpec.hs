@@ -1,17 +1,7 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module ICal.PropertyType.BinarySpec where
 
-import Data.Either
-import qualified Data.Map.Strict as M
-import Data.Time (fromGregorian)
-import Data.Void
-import ICal.Conformance
-import ICal.Conformance.TestUtils
-import ICal.ContentLine
 import ICal.PropertyType
 import ICal.PropertyType.Gen
 import Test.Syd
@@ -26,5 +16,6 @@ spec = do
   describe "parseBinary" $
     it "roundtrips with renderBinary" $
       forAllValid $ \b -> do
-        actual <- shouldConform $ parseBinary (renderBinary b)
-        actual `shouldBe` b
+        case parseBinary (renderBinary b) of
+          Left err -> expectationFailure $ show err
+          Right actual -> actual `shouldBe` b

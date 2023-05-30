@@ -45,6 +45,7 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
   | MultipleParametersfound !(NonEmpty ParamValue)
+  | UnknownEncoding !ParamValue
   | UnknownRSVPExpectation !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   | UnknownAlarmTriggerRelationship !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   deriving (Show, Eq, Ord)
@@ -62,6 +63,11 @@ instance Exception ParameterParseError where
         [ "Multiple parameter values found where one was expected.",
           "values:",
           show values
+        ]
+    UnknownEncoding pv ->
+      unlines
+        [ "Unknown ENCODING Value:",
+          show pv
         ]
     UnknownRSVPExpectation pv ->
       unlines
@@ -266,6 +272,9 @@ instance IsParameter Encoding where
   parameterB = singleParamB $ \case
     Encoding8Bit -> "8BIT"
     EncodingBase64 -> "BASE64"
+
+defaultEncoding :: Encoding
+defaultEncoding = Encoding8Bit
 
 -- | Format Type
 --

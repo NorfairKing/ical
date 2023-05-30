@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -16,11 +18,9 @@ import Control.DeepSeq
 import Data.ByteString (ByteString)
 import Data.ByteString.Base64
 import Data.Proxy
-import Data.Set (Set)
+import Data.String
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import qualified Data.Time as Time
 import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Void
@@ -77,6 +77,11 @@ newtype Binary = Binary {unBinary :: ByteString}
 instance Show Binary where
   show = show . renderBinary
 
+instance IsString Binary where
+  fromString s = case parseBinary (fromString s) of
+    Left err -> error $ show err
+    Right b -> b
+
 instance Validity Binary
 
 instance NFData Binary
@@ -87,15 +92,20 @@ instance IsPropertyType Binary where
   propertyTypeB = binaryB
 
 binaryP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Binary
-binaryP = parseBinary . contentLineValueRaw
+binaryP ContentLineValue {..} = do
+  mEncoding <- conformMapError ParameterParseError $ optionalParam contentLineValueParams
+  case mEncoding of
+    Nothing -> unfixableError $ UnparseableBinary contentLineValueRaw "No ENCODING=BASE64 found for BINARY value" -- TODO: emit fixable error instead
+    Just Encoding8Bit -> unfixableError $ UnparseableBinary contentLineValueRaw "ENCODING=8BIT found for BINARY value instead of ENCODING=BASE64" -- TODO: emit fixable error instead
+    Just EncodingBase64 -> case parseBinary contentLineValueRaw of
+      Left err -> unfixableError $ UnparseableBinary contentLineValueRaw err
+      Right b -> pure b
 
 binaryB :: Binary -> ContentLineValue
-binaryB = mkSimpleContentLineValue . renderBinary
+binaryB = insertParam EncodingBase64 . mkSimpleContentLineValue . renderBinary
 
-parseBinary :: Text -> Conform PropertyTypeParseError Void Void Binary
-parseBinary t = case decodeBase64 (TE.encodeUtf8 t) of
-  Left err -> unfixableError $ UnparseableBinary t err
-  Right sb -> pure $ Binary sb
+parseBinary :: Text -> Either Text Binary
+parseBinary t = Binary <$> decodeBase64 (TE.encodeUtf8 t)
 
 renderBinary :: Binary -> Text
 renderBinary = encodeBase64 . unBinary
