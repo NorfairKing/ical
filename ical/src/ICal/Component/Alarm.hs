@@ -273,7 +273,8 @@ import ICal.PropertyType
 data Alarm = Alarm
   { alarmAction :: !Action,
     alarmTrigger :: !Trigger,
-    alarmDescription :: !(Maybe Description)
+    alarmDescription :: !(Maybe Description),
+    alarmSummary :: !(Maybe Summary)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -361,7 +362,11 @@ instance Validity Alarm where
           --                ;
           --                )
           -- @
-          ActionEmail -> mempty
+          ActionEmail ->
+            mconcat
+              [ declare "Has a description" $ isJust alarmDescription,
+                declare "Has a summary" $ isJust alarmSummary
+              ]
           ActionOther _ -> mempty
       ]
 
@@ -377,6 +382,7 @@ vAlarmP Component {..} = do
   alarmAction <- requiredPropertyP componentProperties
   alarmTrigger <- requiredPropertyP componentProperties
   alarmDescription <- optionalPropertyP componentProperties
+  alarmSummary <- optionalPropertyP componentProperties
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -387,7 +393,8 @@ vAlarmB Alarm {..} =
           (<>)
           [ requiredPropertyB alarmAction,
             requiredPropertyB alarmTrigger,
-            optionalPropertyB alarmDescription
+            optionalPropertyB alarmDescription,
+            optionalPropertyB alarmSummary
           ],
       componentSubcomponents = M.empty
     }
@@ -422,6 +429,7 @@ makeAudioAlarm :: Trigger -> Alarm
 makeAudioAlarm alarmTrigger =
   let alarmAction = ActionAudio
       alarmDescription = Nothing
+      alarmSummary = Nothing
    in Alarm {..}
 
 -- @
@@ -449,6 +457,7 @@ makeDisplayAlarm :: Description -> Trigger -> Alarm
 makeDisplayAlarm description alarmTrigger =
   let alarmAction = ActionDisplay
       alarmDescription = Just description
+      alarmSummary = Nothing
    in Alarm {..}
 
 -- @
@@ -478,8 +487,9 @@ makeDisplayAlarm description alarmTrigger =
 --                ;
 --                )
 -- @
-makeEmailAlarm :: Description -> Trigger -> Alarm
-makeEmailAlarm description alarmTrigger =
+makeEmailAlarm :: Description -> Trigger -> Summary -> Alarm
+makeEmailAlarm description alarmTrigger summary =
   let alarmAction = ActionEmail
       alarmDescription = Just description
+      alarmSummary = Just summary
    in Alarm {..}
