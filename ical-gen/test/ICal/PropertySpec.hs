@@ -116,10 +116,10 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com"
-      (AttachmentURI "CID:jsmith.part3.960817T083000.xyzMail@example.com")
+      (AttachmentURI Nothing "CID:jsmith.part3.960817T083000.xyzMail@example.com")
     propertyExampleSpec
       "ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/reports/r-960812.ps"
-      (AttachmentURI "ftp://example.com/pub/reports/r-960812.ps")
+      (AttachmentURI (Just "application/postscript") "ftp://example.com/pub/reports/r-960812.ps")
     -- @
     -- Example:  The following is an example of a "BASE64" encoded binary
     --    value data:
@@ -136,7 +136,7 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE=BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      (AttachmentBinary (Binary ""))
+      (AttachmentBinary (Just "image/vnd.microsoft.icon") (Binary ""))
 
   describe "Classification" $ do
     genValidSpec @Classification

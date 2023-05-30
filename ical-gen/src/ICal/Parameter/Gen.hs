@@ -22,6 +22,8 @@ import Test.Syd.Validity
 
 instance GenValid CommonName
 
+instance GenValid FormatType
+
 instance GenValid ParticipationStatus
 
 instance GenValid RSVPExpectation

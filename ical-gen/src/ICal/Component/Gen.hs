@@ -114,33 +114,28 @@ instance GenValid Event where
 instance GenValid Alarm where
   genValid = do
     alarmAction <- genValid
+    alarmTrigger <- genValid
+    alarmRepeatDuration <- genValid
+    alarmAttachments <- genValid
     case alarmAction of
       ActionAudio -> do
-        alarmTrigger <- genValid
         alarmDescription <- genValid
         alarmSummary <- genValid
-        alarmRepeatDuration <- genValid
         alarmAttendees <- genValid
         pure Alarm {..}
       ActionDisplay -> do
-        alarmTrigger <- genValid
         alarmDescription <- Just <$> genValid
         alarmSummary <- genValid
-        alarmRepeatDuration <- genValid
         alarmAttendees <- genValid
         pure Alarm {..}
       ActionEmail -> do
-        alarmTrigger <- genValid
         alarmDescription <- Just <$> genValid
         alarmSummary <- Just <$> genValid
-        alarmRepeatDuration <- genValid
         alarmAttendees <- S.insert <$> genValid <*> genValid
         pure Alarm {..}
       ActionOther _ -> do
-        alarmTrigger <- genValid
         alarmDescription <- genValid
         alarmSummary <- genValid
-        alarmRepeatDuration <- genValid
         alarmAttendees <- genValid
         pure Alarm {..}
 

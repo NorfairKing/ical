@@ -279,7 +279,8 @@ data Alarm = Alarm
     --                ; and MUST NOT occur more than once each;
     --                ; but if one occurs, so MUST the other.
     alarmRepeatDuration :: !(Maybe (Repeat, Duration)),
-    alarmAttendees :: !(Set Attendee)
+    alarmAttendees :: !(Set Attendee),
+    alarmAttachments :: !(Set Attachment)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -410,6 +411,9 @@ vAlarmP Component {..} = do
   alarmAttendees <- setOfPropertiesP componentProperties
   when (alarmAction == ActionEmail && S.null alarmAttendees) $ unfixableError $ AlarmParseError AlarmParseErrorMissingAttendees
 
+  -- ATTACH
+  alarmAttachments <- setOfPropertiesP componentProperties
+
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -430,7 +434,8 @@ vAlarmB Alarm {..} =
                   [ requiredPropertyB r,
                     requiredPropertyB d
                   ],
-            setOfPropertiesB alarmAttendees
+            setOfPropertiesB alarmAttendees,
+            setOfPropertiesB alarmAttachments
           ],
       componentSubcomponents = M.empty
     }
@@ -468,6 +473,7 @@ makeAudioAlarm alarmTrigger =
       alarmSummary = Nothing
       alarmRepeatDuration = Nothing
       alarmAttendees = S.empty
+      alarmAttachments = S.empty
    in Alarm {..}
 
 -- @
@@ -498,6 +504,7 @@ makeDisplayAlarm description alarmTrigger =
       alarmSummary = Nothing
       alarmRepeatDuration = Nothing
       alarmAttendees = S.empty
+      alarmAttachments = S.empty
    in Alarm {..}
 
 -- @
@@ -534,4 +541,5 @@ makeEmailAlarm description alarmTrigger summary attendee =
       alarmSummary = Just summary
       alarmRepeatDuration = Nothing
       alarmAttendees = S.singleton attendee
+      alarmAttachments = S.empty
    in Alarm {..}

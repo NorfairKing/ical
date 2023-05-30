@@ -758,8 +758,8 @@ instance IsProperty DateTimeStart where
 --      reports/r-960812.ps
 -- @
 data Attachment
-  = AttachmentURI !URI
-  | AttachmentBinary !Binary
+  = AttachmentURI !(Maybe FormatType) !URI
+  | AttachmentBinary !(Maybe FormatType) !Binary
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Attachment
@@ -770,20 +770,21 @@ instance IsProperty Attachment where
   propertyName Proxy = "ATTACH"
   propertyP clv = do
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mFormatType <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     case mValue of
-      Just TypeURI -> wrapPropertyTypeP AttachmentURI clv
-      Just TypeBinary -> wrapPropertyTypeP AttachmentBinary clv
+      Just TypeURI -> wrapPropertyTypeP (AttachmentURI mFormatType) clv
+      Just TypeBinary -> wrapPropertyTypeP (AttachmentBinary mFormatType) clv
       Just _ -> unfixableError $ ValueMismatch "ATTACH" mValue TypeURI [TypeBinary]
       -- @
       -- Value Type:  The default value type for this property is URI.
       -- @
-      Nothing -> wrapPropertyTypeP AttachmentURI clv
+      Nothing -> wrapPropertyTypeP (AttachmentURI mFormatType) clv
   propertyB = \case
     -- @
     -- Value Type:  The default value type for this property is URI.
     -- @
-    AttachmentURI uri -> propertyTypeB uri
-    AttachmentBinary binary -> typedPropertyTypeB binary
+    AttachmentURI mFormatType uri -> maybe id insertParam mFormatType $ propertyTypeB uri
+    AttachmentBinary mFormatType binary -> maybe id insertParam mFormatType $ typedPropertyTypeB binary
 
 -- | Classification
 --

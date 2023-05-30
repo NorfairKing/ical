@@ -24,6 +24,18 @@ spec = do
     -- @
     parameterExampleSpec ["John Smith"] (CommonName "John Smith")
 
+  describe "FormatType" $ do
+    genValidSpec @FormatType
+    parameterSpec @FormatType
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     ATTACH;FMTTYPE=application/msword:ftp://example.com/pub/docs/
+    --      agenda.doc
+    -- @
+    parameterExampleSpec ["application/msword"] (FormatType "application/msword")
+
   describe "ParticipationStatus" $ do
     genValidSpec @ParticipationStatus
     parameterSpec @ParticipationStatus
