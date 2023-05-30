@@ -105,6 +105,7 @@ instance GenValid Event where
       Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
 
     eventDateTimeEndDuration <- genValid
+    eventAttachments <- genValid
     eventAttendees <- genValid
     eventExceptionDateTimes <- genValid
     eventRecurrenceDateTimes <- genValid

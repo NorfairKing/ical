@@ -263,6 +263,7 @@ data Event = Event
     -- resources / rdate / x-prop / iana-prop
     -- ;
     -- @
+    eventAttachments :: !(Set Attachment),
     eventAttendees :: !(Set Attendee),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
@@ -319,6 +320,7 @@ vEventP Component {..} = do
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present. TODO emit a warning or fixable error
+  eventAttachments <- setOfPropertiesP componentProperties
   eventAttendees <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
@@ -352,6 +354,7 @@ vEventB Event {..} =
               Just endOrDuration -> case endOrDuration of
                 Left e -> requiredPropertyB e
                 Right d -> requiredPropertyB d,
+            setOfPropertiesB eventAttachments,
             setOfPropertiesB eventAttendees,
             setOfPropertiesB eventExceptionDateTimes,
             setOfPropertiesB eventRecurrenceDateTimes
@@ -381,6 +384,7 @@ makeEvent uid dateTimeStamp =
       eventRecurrenceIdentifier = Nothing,
       eventRecurrenceRules = S.empty,
       eventDateTimeEndDuration = Nothing,
+      eventAttachments = S.empty,
       eventAttendees = S.empty,
       eventExceptionDateTimes = S.empty,
       eventRecurrenceDateTimes = S.empty,
