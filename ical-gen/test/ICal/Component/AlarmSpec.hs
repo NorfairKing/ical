@@ -3,7 +3,6 @@
 module ICal.Component.AlarmSpec (spec) where
 
 import ICal.Component
-import ICal.Component.Alarm
 import ICal.Component.Gen
 import Test.Syd
 import Test.Syd.Validity
@@ -24,6 +23,7 @@ spec = do
 
   describe "makeEmailAlarm" $ do
     it "produces valid alarms" $
-      producesValid3 makeEmailAlarm
+      forAllValid $
+        producesValid3 . makeEmailAlarm
 
   componentScenarioDir @Alarm "test_resources/alarm"

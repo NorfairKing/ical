@@ -192,9 +192,13 @@ instance IsPropertyType Int32 where
   propertyTypeValueType Proxy = TypeInteger
   propertyTypeP clv =
     let t = contentLineValueRaw clv
-     in case readMaybe (T.unpack t) of
+        s = T.unpack t
+        go s' = case readMaybe s' of
           Nothing -> unfixableError $ UnparseableInteger t
           Just i -> pure i
+     in case s of
+          '+' : rest -> go rest
+          _ -> go s
   propertyTypeB = mkSimpleContentLineValue . T.pack . show
 
 -- | Text

@@ -18,6 +18,7 @@ module ICal.Component.Class
     CP,
     CalendarParseError (..),
     ComponentParseError (..),
+    AlarmParseError (..),
     TimeZoneParseError (..),
     CalendarParseFixableError (..),
     CalendarParseWarning (..),
@@ -217,6 +218,7 @@ data CalendarParseError
   = CalendarParseErrorComponentIncorrectName !Text !Text
   | CalendarParseErrorMissingRequiredProperty !ContentLineName
   | GeneralComponentError !ComponentParseError
+  | AlarmParseError !AlarmParseError
   | TimeZoneParseError !TimeZoneParseError
   | PropertyParseError !PropertyParseError
   deriving (Show, Eq, Ord)
@@ -237,6 +239,7 @@ instance Exception CalendarParseError where
           show (renderContentLineName name)
         ]
     GeneralComponentError cpe -> displayException cpe
+    AlarmParseError ape -> displayException ape
     TimeZoneParseError tzpe -> displayException tzpe
     PropertyParseError ppe -> displayException ppe
 
@@ -259,6 +262,15 @@ instance Exception ComponentParseError where
         [ unwords ["Missing END property for component with name", show expected],
           unwords ["found an END property for component with name", show actual, "instead."]
         ]
+
+data AlarmParseError
+  = AlarmParseErrorMissingAttendees
+  deriving (Show, Eq, Ord, Generic)
+
+instance Exception AlarmParseError where
+  displayException = \case
+    AlarmParseErrorMissingAttendees ->
+      "Missing ATTENDEE for alarm with EMAIL ACTION"
 
 data TimeZoneParseError
   = TimeZoneParseErrorNoObservances

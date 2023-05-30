@@ -278,7 +278,8 @@ data Alarm = Alarm
     --                ; 'duration' and 'repeat' are both OPTIONAL,
     --                ; and MUST NOT occur more than once each;
     --                ; but if one occurs, so MUST the other.
-    alarmRepeatDuration :: !(Maybe (Repeat, Duration))
+    alarmRepeatDuration :: !(Maybe (Repeat, Duration)),
+    alarmAttendees :: !(Set Attendee)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -369,7 +370,8 @@ instance Validity Alarm where
           ActionEmail ->
             mconcat
               [ declare "Has a description" $ isJust alarmDescription,
-                declare "Has a summary" $ isJust alarmSummary
+                declare "Has a summary" $ isJust alarmSummary,
+                declare "Has attendees" $ not $ S.null alarmAttendees
               ]
           ActionOther _ -> mempty
       ]
@@ -384,15 +386,30 @@ instance IsComponent Alarm where
 vAlarmP :: Component -> CP Alarm
 vAlarmP Component {..} = do
   alarmAction <- requiredPropertyP componentProperties
+
   alarmTrigger <- requiredPropertyP componentProperties
-  alarmDescription <- optionalPropertyP componentProperties
-  alarmSummary <- optionalPropertyP componentProperties
+
+  alarmDescription <- case alarmAction of
+    ActionDisplay -> Just <$> requiredPropertyP componentProperties
+    ActionEmail -> Just <$> requiredPropertyP componentProperties
+    _ -> optionalPropertyP componentProperties
+
+  alarmSummary <- case alarmAction of
+    ActionEmail -> Just <$> requiredPropertyP componentProperties
+    _ -> optionalPropertyP componentProperties
+
+  -- REPEAT and DURATION
   mRepeat <- optionalPropertyP componentProperties
   mDuration <- optionalPropertyP componentProperties
   alarmRepeatDuration <- case (mRepeat, mDuration) of
-    (Just repeat, Just duration) -> pure $ Just (repeat, duration)
+    (Just r, Just d) -> pure $ Just (r, d)
     (Nothing, Nothing) -> pure Nothing
     _ -> pure Nothing -- TODO emit a warning or fixable error
+
+  -- ATTENDEE
+  alarmAttendees <- setOfPropertiesP componentProperties
+  when (alarmAction == ActionEmail && S.null alarmAttendees) $ unfixableError $ AlarmParseError AlarmParseErrorMissingAttendees
+
   pure Alarm {..}
 
 vAlarmB :: Alarm -> Component
@@ -407,12 +424,13 @@ vAlarmB Alarm {..} =
             optionalPropertyB alarmSummary,
             case alarmRepeatDuration of
               Nothing -> M.empty
-              Just (repeat, duration) ->
+              Just (r, d) ->
                 M.unionsWith
                   (<>)
-                  [ requiredPropertyB repeat,
-                    requiredPropertyB duration
-                  ]
+                  [ requiredPropertyB r,
+                    requiredPropertyB d
+                  ],
+            setOfPropertiesB alarmAttendees
           ],
       componentSubcomponents = M.empty
     }
@@ -449,6 +467,7 @@ makeAudioAlarm alarmTrigger =
       alarmDescription = Nothing
       alarmSummary = Nothing
       alarmRepeatDuration = Nothing
+      alarmAttendees = S.empty
    in Alarm {..}
 
 -- @
@@ -478,6 +497,7 @@ makeDisplayAlarm description alarmTrigger =
       alarmDescription = Just description
       alarmSummary = Nothing
       alarmRepeatDuration = Nothing
+      alarmAttendees = S.empty
    in Alarm {..}
 
 -- @
@@ -507,10 +527,11 @@ makeDisplayAlarm description alarmTrigger =
 --                ;
 --                )
 -- @
-makeEmailAlarm :: Description -> Trigger -> Summary -> Alarm
-makeEmailAlarm description alarmTrigger summary =
+makeEmailAlarm :: Description -> Trigger -> Summary -> Attendee -> Alarm
+makeEmailAlarm description alarmTrigger summary attendee =
   let alarmAction = ActionEmail
       alarmDescription = Just description
       alarmSummary = Just summary
       alarmRepeatDuration = Nothing
+      alarmAttendees = S.singleton attendee
    in Alarm {..}

@@ -5,6 +5,7 @@
 
 module ICal.PropertyTypeSpec where
 
+import Data.Int
 import Data.Text (Text)
 import ICal.ContentLine
 import ICal.PropertyType.Class
@@ -14,6 +15,21 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "Integer" $ do
+    propertyTypeSpec @Int32
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "4")
+      (4 :: Int32)
+    propertyTypeParseExampleSpec
+      (mkSimpleContentLineValue "+5")
+      (5 :: Int32)
+    propertyTypeRenderExampleSpec
+      (mkSimpleContentLineValue "5")
+      (5 :: Int32)
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "-6")
+      (-6 :: Int32)
+
   describe "Text" $ do
     propertyTypeSpec @Text
     propertyTypeExampleSpec
