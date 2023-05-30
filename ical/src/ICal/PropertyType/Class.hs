@@ -39,6 +39,7 @@ where
 
 import Control.Exception
 import Data.CaseInsensitive (CI)
+import Data.Int
 import Data.Proxy
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -53,6 +54,7 @@ import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import Text.Megaparsec
+import Text.Read
 
 data PropertyTypeParseError
   = ParameterParseError !ParameterParseError
@@ -66,6 +68,7 @@ data PropertyTypeParseError
       -- ^ Actual
       !ValueDataType
       -- ^ Expected
+  | UnparseableInteger !Text
   | UnparseableURI !Text
   | UnparseableUTCOffset !Text
   | UnparseablePeriod !Text
@@ -101,6 +104,7 @@ instance Exception PropertyTypeParseError where
           unwords ["actual:   ", show actual],
           unwords ["expected: ", show expected]
         ]
+    UnparseableInteger t -> unwords ["Unparseable INTEGER", show t]
     UnparseableURI t -> unwords ["Unparseable URI", show t]
     UnparseableUTCOffset t -> unwords ["Unparseable UTC Offset", show t]
     UnparseablePeriod t -> unwords ["Unparseable Period", show t]
@@ -149,6 +153,49 @@ class IsPropertyType propertyType where
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
+
+-- | Integer
+--
+-- === [section 3.3.8](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.8)
+--
+-- @
+-- Value Name:  INTEGER
+--
+-- Purpose:  This value type is used to identify properties that contain
+--    a signed integer value.
+--
+-- Format Definition:  This value type is defined by the following
+--    notation:
+--
+--     integer    = (["+"] / "-") 1*DIGIT
+--
+-- Description:  If the property permits, multiple "integer" values are
+--    specified by a COMMA-separated list of values.  The valid range
+--    for "integer" is -2147483648 to 2147483647.  If the sign is not
+--    specified, then the value is assumed to be positive.
+--
+--    No additional content value encoding (i.e., BACKSLASH character
+--    encoding, see Section 3.3.11) is defined for this value type.
+--
+-- Example:
+--
+--     1234567890
+--     -1234567890
+--     +1234567890
+--     432109876
+-- @
+instance IsPropertyType Int32 where
+  -- @
+  -- The valid range
+  -- for "integer" is -2147483648 to 2147483647.
+  -- @
+  propertyTypeValueType Proxy = TypeInteger
+  propertyTypeP clv =
+    let t = contentLineValueRaw clv
+     in case readMaybe (T.unpack t) of
+          Nothing -> unfixableError $ UnparseableInteger t
+          Just i -> pure i
+  propertyTypeB = mkSimpleContentLineValue . T.pack . show
 
 -- | Text
 --

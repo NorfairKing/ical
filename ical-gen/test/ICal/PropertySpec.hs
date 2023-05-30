@@ -647,6 +647,13 @@ spec = do
       "ACTION:EMAIL"
       ActionEmail
 
+  describe "Repeat" $ do
+    genValidSpec @Repeat
+    propertySpec @Repeat
+    propertyExampleSpec
+      "REPEAT:4"
+      (Repeat 4)
+
   describe "Trigger" $ do
     genValidSpec @Trigger
     propertySpec @Trigger
