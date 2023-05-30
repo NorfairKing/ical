@@ -103,6 +103,41 @@ spec = do
       "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
+  describe "Attachment" $ do
+    genValidSpec @Attachment
+    propertySpec @Attachment
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --     ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com
+    --
+    --     ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/
+    --      reports/r-960812.ps
+    -- @
+    propertyExampleSpec
+      "ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com"
+      (AttachmentURI "CID:jsmith.part3.960817T083000.xyzMail@example.com")
+    propertyExampleSpec
+      "ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/reports/r-960812.ps"
+      (AttachmentURI "ftp://example.com/pub/reports/r-960812.ps")
+    -- @
+    -- Example:  The following is an example of a "BASE64" encoded binary
+    --    value data:
+    --
+    --   ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE
+    --    =BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAA
+    --    ACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAERE
+    --    AAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAA
+    -- @
+    propertyExampleSpec
+      "ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE=BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      (AttachmentBinary (Binary ""))
+
   describe "Classification" $ do
     genValidSpec @Classification
     propertySpec @Classification
