@@ -27,11 +27,19 @@ spec = do
     --     METHOD:REQUEST
     -- @
     propertyExampleSpec "METHOD:REQUEST" (Method "REQUEST")
+    propertyExampleSpec "METHOD:PUBLISH" (Method "PUBLISH")
+    propertyExampleSpec "METHOD:REPLY" (Method "REPLY")
+    propertyExampleSpec "METHOD:ADD" (Method "ADD")
+    propertyExampleSpec "METHOD:CANCEL" (Method "CANCEL")
+    propertyExampleSpec "METHOD:REFRESH" (Method "REFRESH")
+    propertyExampleSpec "METHOD:COUNTER" (Method "COUNTER")
+    propertyExampleSpec "METHOD:DECLINECOUNTER" (Method "DECLINECOUNTER")
 
   describe "ProductIdentifier" $ do
     genValidSpec @ProductIdentifier
     propertySpec @ProductIdentifier
     propertyExampleSpec "PRODID:Example" (ProductIdentifier "Example")
+    propertyExampleSpec "PRODID:-//Example/ExampleCalendarClient//EN" (ProductIdentifier "-//Example/ExampleCalendarClient//EN")
 
   describe "Version" $ do
     genValidSpec @Version
@@ -62,13 +70,37 @@ spec = do
               )
           )
       )
+    -- @
+    -- RECURRENCE-ID;RANGE=THISANDFUTURE:19980401T133000Z
+    -- @
+    propertyParseExampleSpec
+      "RECURRENCE-ID;RANGE=THISANDFUTURE:19980401T133000Z"
+      ( RecurrenceIdentifierDateTime
+          ( DateTimeUTC
+              ( UTCTime
+                  (fromGregorian 1998 04 01)
+                  (timeOfDayToTime (TimeOfDay 13 30 00))
+              )
+          )
+      )
 
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     UID:19960401T080045Z-4000F192713-0052@example.com
+    -- @
     propertyExampleSpec
       "UID:19960401T080045Z-4000F192713-0052@example.com"
       (UID "19960401T080045Z-4000F192713-0052@example.com")
+    -- @
+    -- UID:19970610T172345Z-AF23B2@example.com
+    -- @
+    propertyExampleSpec
+      "UID:19970610T172345Z-AF23B2@example.com"
+      (UID "19970610T172345Z-AF23B2@example.com")
 
   describe "TimeZoneIdentifier" $ do
     genValidSpec @TimeZoneIdentifier
