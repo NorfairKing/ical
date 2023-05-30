@@ -90,6 +90,7 @@ library
     , containers
     , dlist
     , genvalidity
+    , genvalidity-bytestring
     , genvalidity-case-insensitive
     , genvalidity-containers
     , genvalidity-network-uri
@@ -131,6 +132,7 @@ test-suite ical-test
       ICal.ContentLineSpec
       ICal.ParameterSpec
       ICal.PropertySpec
+      ICal.PropertyType.BinarySpec
       ICal.PropertyType.CalAddressSpec
       ICal.PropertyType.DateSpec
       ICal.PropertyType.DateTimeSpec

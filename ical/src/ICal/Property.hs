@@ -772,7 +772,7 @@ instance IsProperty Attachment where
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     case mValue of
       Just TypeURI -> wrapPropertyTypeP AttachmentURI clv
-      Just TypeBinary -> wrapPropertyTypeP AttachmuntBinary clv
+      Just TypeBinary -> wrapPropertyTypeP AttachmentBinary clv
       Just _ -> unfixableError $ ValueMismatch "ATTACH" mValue TypeURI [TypeBinary]
       -- @
       -- Value Type:  The default value type for this property is URI.

@@ -7,6 +7,7 @@
 module ICal.PropertyType.Gen where
 
 import Data.GenValidity
+import Data.GenValidity.ByteString ()
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
@@ -23,6 +24,10 @@ import ICal.PropertyType.Duration.Gen ()
 import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
+
+instance GenValid Binary where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid FloatingPoint where
   genValid = genValidStructurally

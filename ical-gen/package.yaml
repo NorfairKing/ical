@@ -16,6 +16,7 @@ library:
   - containers
   - dlist
   - genvalidity
+  - genvalidity-bytestring
   - genvalidity-case-insensitive
   - genvalidity-containers
   - genvalidity-network-uri

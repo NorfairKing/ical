@@ -68,6 +68,11 @@ data PropertyTypeParseError
       -- ^ Actual
       !ValueDataType
       -- ^ Expected
+  | UnparseableBinary
+      !Text
+      -- ^ Input
+      !Text
+      -- ^ Error
   | UnparseableInteger !Text
   | UnparseableURI !Text
   | UnparseableUTCOffset !Text
@@ -103,6 +108,11 @@ instance Exception PropertyTypeParseError where
         [ "Uxpected value type.",
           unwords ["actual:   ", show actual],
           unwords ["expected: ", show expected]
+        ]
+    UnparseableBinary t err ->
+      unlines
+        [ unwords ["Unparseable BINARY:", show err],
+          show t
         ]
     UnparseableInteger t -> unwords ["Unparseable INTEGER", show t]
     UnparseableURI t -> unwords ["Unparseable URI", show t]

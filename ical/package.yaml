@@ -7,6 +7,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - base64
   - bytestring
   - case-insensitive
   - containers
@@ -19,6 +20,7 @@ library:
   - time
   - time-compat
   - validity
+  - validity-bytestring
   - validity-case-insensitive
   - validity-containers
   - validity-network-uri

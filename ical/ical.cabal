@@ -21,6 +21,7 @@ library
       ICal.Parameter
       ICal.Property
       ICal.PropertyType
+      ICal.PropertyType.Binary
       ICal.PropertyType.CalAddress
       ICal.PropertyType.Class
       ICal.PropertyType.Date
@@ -40,6 +41,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , base64
     , bytestring
     , case-insensitive
     , containers
@@ -52,6 +54,7 @@ library
     , time
     , time-compat
     , validity
+    , validity-bytestring
     , validity-case-insensitive
     , validity-containers
     , validity-network-uri

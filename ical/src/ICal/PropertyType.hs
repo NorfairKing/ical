@@ -1,5 +1,6 @@
 module ICal.PropertyType
-  ( module ICal.PropertyType.CalAddress,
+  ( module ICal.PropertyType.Binary,
+    module ICal.PropertyType.CalAddress,
     module ICal.PropertyType.Class,
     module ICal.PropertyType.Date,
     module ICal.PropertyType.DateTime,
@@ -14,6 +15,7 @@ module ICal.PropertyType
   )
 where
 
+import ICal.PropertyType.Binary
 import ICal.PropertyType.CalAddress
 import ICal.PropertyType.Class
 import ICal.PropertyType.Date
