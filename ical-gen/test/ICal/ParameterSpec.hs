@@ -125,6 +125,17 @@ spec = do
     parameterExampleSpec ["TENTATIVE"] ParticipationStatusTentative
     parameterExampleSpec ["DELEGATED"] ParticipationStatusDelegated
 
+  describe "RecurrenceIdentifierRange" $ do
+    genValidSpec @RecurrenceIdentifierRange
+    parameterSpec @RecurrenceIdentifierRange
+    -- From the spec:
+    -- @
+    -- Example:
+    --
+    --     RECURRENCE-ID;RANGE=THISANDFUTURE:19980401T133000Z
+    -- @
+    parameterExampleSpec ["THISANDFUTURE"] RecurrenceIdentifierRangeThisAndFuture
+
   describe "RSVPExpectation" $ do
     genValidSpec @RSVPExpectation
     parameterSpec @RSVPExpectation

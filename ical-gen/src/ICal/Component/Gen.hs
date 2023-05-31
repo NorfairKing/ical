@@ -97,8 +97,8 @@ instance GenValid Event where
         oneof
           [ pure Nothing,
             Just <$> case dtstart of
-              DateTimeStartDate _ -> RecurrenceIdentifierDate <$> genValid
-              DateTimeStartDateTime _ -> RecurrenceIdentifierDateTime <$> genValid
+              DateTimeStartDate _ -> RecurrenceIdentifierDate <$> genValid <*> genValid
+              DateTimeStartDateTime _ -> RecurrenceIdentifierDateTime <$> genValid <*> genValid
           ]
     eventRecurrenceRules <- case eventDateTimeStart of
       Nothing -> pure S.empty

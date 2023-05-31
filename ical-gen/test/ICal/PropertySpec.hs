@@ -58,11 +58,11 @@ spec = do
     -- @
     propertyExampleSpec
       "RECURRENCE-ID;VALUE=DATE:19960401"
-      (RecurrenceIdentifierDate (Date (fromGregorian 1996 04 01)))
-    -- TODO make this roundtrip
-    propertyParseExampleSpec
+      (RecurrenceIdentifierDate Nothing (Date (fromGregorian 1996 04 01)))
+    propertyExampleSpec
       "RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z"
       ( RecurrenceIdentifierDateTime
+          (Just RecurrenceIdentifierRangeThisAndFuture)
           ( DateTimeUTC
               ( UTCTime
                   (fromGregorian 1996 01 20)
@@ -73,9 +73,10 @@ spec = do
     -- @
     -- RECURRENCE-ID;RANGE=THISANDFUTURE:19980401T133000Z
     -- @
-    propertyParseExampleSpec
+    propertyExampleSpec
       "RECURRENCE-ID;RANGE=THISANDFUTURE:19980401T133000Z"
       ( RecurrenceIdentifierDateTime
+          (Just RecurrenceIdentifierRangeThisAndFuture)
           ( DateTimeUTC
               ( UTCTime
                   (fromGregorian 1998 04 01)
