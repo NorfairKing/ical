@@ -48,7 +48,7 @@ data PropertyParseError
   | UnReadableGeographicPosition !Text
   | UnknownStatus !Text
   | UnknownTransparency !Text
-  | ValueMismatch !ContentLineName !(Maybe ValueDataType) ValueDataType ![ValueDataType]
+  | ValueMismatch !ContentLineName !(Maybe ValueDataType) (Maybe ValueDataType) ![ValueDataType]
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyParseError where
@@ -66,11 +66,11 @@ instance Exception PropertyParseError where
     UnReadableGeographicPosition t -> unwords ["UnReadable Geographic position:", show t]
     UnknownStatus t -> unwords ["Unknown Status:", show t]
     UnknownTransparency t -> unwords ["Unknown Transparency:", show t]
-    ValueMismatch name actualType defaultType otherTypes ->
+    ValueMismatch name actualType mDefaultType otherTypes ->
       unlines
         [ unwords ["Mismatched value type for:", show name],
           unwords ["Actual:", show actualType],
-          unwords ["Default:", show defaultType],
+          unwords ["Default:", maybe "none" show mDefaultType],
           unwords ["Other options:", show otherTypes]
         ]
 
@@ -674,7 +674,7 @@ instance IsProperty DateTimeStart where
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP DateTimeStartDateTime clv
       Just TypeDate -> wrapPropertyTypeP DateTimeStartDate clv
-      Just _ -> unfixableError $ ValueMismatch "DTSTART" mValue TypeDateTime [TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "DTSTART" mValue (Just TypeDateTime) [TypeDate]
       -- @
       -- Value Type:  The default value type is DATE-TIME.
       -- @
@@ -774,7 +774,7 @@ instance IsProperty Attachment where
     case mValue of
       Just TypeURI -> wrapPropertyTypeP (AttachmentURI mFormatType) clv
       Just TypeBinary -> wrapPropertyTypeP (AttachmentBinary mFormatType) clv
-      Just _ -> unfixableError $ ValueMismatch "ATTACH" mValue TypeURI [TypeBinary]
+      Just _ -> unfixableError $ ValueMismatch "ATTACH" mValue (Just TypeURI) [TypeBinary]
       -- @
       -- Value Type:  The default value type for this property is URI.
       -- @
@@ -1109,7 +1109,7 @@ instance IsProperty RecurrenceIdentifier where
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
       Just TypeDate -> wrapPropertyTypeP (RecurrenceIdentifierDate mRecurrenceRangeIdentifier) clv
-      Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue TypeDateTime [TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue (Just TypeDateTime) [TypeDate]
       -- @
       -- Value Type:  The default value type is DATE-TIME.
       -- @
@@ -1753,7 +1753,7 @@ instance IsProperty DateTimeEnd where
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP DateTimeEndDateTime clv
       Just TypeDate -> wrapPropertyTypeP DateTimeEndDate clv
-      Just _ -> unfixableError $ ValueMismatch "DTEND" mValue TypeDateTime [TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "DTEND" mValue (Just TypeDateTime) [TypeDate]
       -- @
       -- Value Type:  The default value type is DATE-TIME.
       -- @
@@ -2401,7 +2401,7 @@ instance IsProperty ExceptionDateTimes where
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP ExceptionDateTimes clv
       Just TypeDate -> wrapPropertyTypeP ExceptionDates clv
-      Just _ -> unfixableError $ ValueMismatch "EXDATE" mValue TypeDateTime [TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "EXDATE" mValue (Just TypeDateTime) [TypeDate]
       Nothing -> wrapPropertyTypeP ExceptionDateTimes clv
 
   propertyB = \case
@@ -2516,7 +2516,7 @@ instance IsProperty RecurrenceDateTimes where
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv
       Just TypeDate -> wrapPropertyTypeP RecurrenceDates clv
-      Just _ -> unfixableError $ ValueMismatch "RDATE" mValue TypeDateTime [TypePeriod, TypeDate]
+      Just _ -> unfixableError $ ValueMismatch "RDATE" mValue (Just TypeDateTime) [TypePeriod, TypeDate]
       -- @
       -- Value Type:  The default value type for this property is DATE-TIME.
       -- @
@@ -2785,7 +2785,7 @@ instance IsProperty Trigger where
       Just TypeDateTime ->
         conformMapError PropertyTypeParseError $ TriggerDateTime <$> dateTimeUTCP clv
       Just TypeDuration -> parseDurationTrigger
-      Just _ -> unfixableError $ ValueMismatch "TRIGGER" mValue TypeDuration [TypeDateTime]
+      Just _ -> unfixableError $ ValueMismatch "TRIGGER" mValue (Just TypeDuration) [TypeDateTime]
       -- @
       -- Value Type:  The default value type is DURATION.
       -- @
@@ -2798,3 +2798,111 @@ instance IsProperty Trigger where
       )
         (propertyTypeB duration)
     TriggerDateTime date -> typedPropertyTypeB (DateTimeUTC date)
+
+-- | Image
+--
+-- === [section 5.10 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.10)
+--
+-- @
+-- Property Name:  IMAGE
+--
+-- Purpose:  This property specifies an image associated with the
+--    calendar or a calendar component.
+--
+-- Value Type:  URI or BINARY -- no default.  The value MUST be data
+--    with a media type of "image" or refer to such data.
+--
+-- Property Parameters:  IANA, non-standard, display, inline encoding,
+--    and value data type property parameters can be specified on this
+--    property.  The format type parameter can be specified on this
+--    property and is RECOMMENDED for inline binary-encoded content
+--    information.
+--
+-- Conformance:  This property can be specified multiple times in an
+--    iCalendar object or in "VEVENT", "VTODO", or "VJOURNAL" calendar
+--    components.
+--
+-- Description:  This property specifies an image for an iCalendar
+--    object or a calendar component via a URI or directly with inline
+--    data that can be used by calendar user agents when presenting the
+--    calendar data to a user.  Multiple properties MAY be used to
+--    specify alternative sets of images with, for example, varying
+--    media subtypes, resolutions, or sizes.  When multiple properties
+--    are present, calendar user agents SHOULD display only one of them,
+--    picking one that provides the most appropriate image quality, or
+--    display none.  The "DISPLAY" parameter is used to indicate the
+--    intended display mode for the image.  The "ALTREP" parameter,
+--
+--    defined in [RFC5545], can be used to provide a "clickable" image
+--    where the URI in the parameter value can be "launched" by a click
+--    on the image in the calendar user agent.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+-- image      = "IMAGE" imageparam
+--              (
+--                (
+--                  ";" "VALUE" "=" "URI"
+--                  ":" uri
+--                ) /
+--                (
+--                  ";" "ENCODING" "=" "BASE64"
+--                  ";" "VALUE" "=" "BINARY"
+--                  ":" binary
+--                )
+--              )
+--              CRLF
+--
+-- imageparam = *(
+--               ;
+--               ; The following is OPTIONAL for a URI value,
+--               ; RECOMMENDED for a BINARY value,
+--               ; and MUST NOT occur more than once.
+--               ;
+--               (";" fmttypeparam) /
+--               ;
+--               ; The following are OPTIONAL,
+--               ; and MUST NOT occur more than once.
+--               ;
+--               (";" altrepparam) / (";" displayparam) /
+--               ;
+--               ; The following is OPTIONAL,
+--               ; and MAY occur more than once.
+--               ;
+--               (";" other-param)
+--               ;
+--               )
+--
+-- Example:  The following is an example of this property:
+--
+-- IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:h
+--  ttp://example.com/images/party.png
+-- @
+data Image = Image
+  { imageContents :: !(Either URI Binary),
+    imageFormatType :: !(Maybe FormatType),
+    imageDisplay :: !Display
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Image
+
+instance NFData Image
+
+instance IsProperty Image where
+  propertyName Proxy = "IMAGE"
+  propertyP clv = do
+    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    imageFormatType <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+
+    case mValue of
+      Just TypeURI -> wrapPropertyTypeP (\u -> let imageContents = Left u in Image {..}) clv
+      Just TypeBinary -> wrapPropertyTypeP (\b -> let imageContents = Right b in Image {..}) clv
+      Just _ -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
+      Nothing -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
+
+  propertyB Image {..} =
+    maybe id insertParam imageFormatType $ case imageContents of
+      Left uri -> typedPropertyTypeB uri
+      Right binary -> typedPropertyTypeB binary

@@ -267,6 +267,15 @@ data Event = Event
     eventAttendees :: !(Set Attendee),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
+    -- RFC 7986:
+    -- @
+    -- ;
+    -- ; The following are OPTIONAL,
+    -- ; and MAY occur more than once.
+    -- ;
+    -- conference / image
+    -- @
+    eventImages :: ![Image],
     -- @
     --     eventc     = "BEGIN" ":" "VEVENT" CRLF
     --                  eventprop *alarmc
@@ -324,6 +333,7 @@ vEventP Component {..} = do
   eventAttendees <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
+  eventImages <- listOfPropertiesP componentProperties
   eventAlarms <- subComponentsP componentSubcomponents
   pure Event {..}
 
@@ -357,7 +367,8 @@ vEventB Event {..} =
             setOfPropertiesB eventAttachments,
             setOfPropertiesB eventAttendees,
             setOfPropertiesB eventExceptionDateTimes,
-            setOfPropertiesB eventRecurrenceDateTimes
+            setOfPropertiesB eventRecurrenceDateTimes,
+            listOfPropertiesB eventImages
           ],
       componentSubcomponents =
         M.unionsWith (<>) $
@@ -388,5 +399,6 @@ makeEvent uid dateTimeStamp =
       eventAttendees = S.empty,
       eventExceptionDateTimes = S.empty,
       eventRecurrenceDateTimes = S.empty,
+      eventImages = [],
       eventAlarms = []
     }

@@ -186,3 +186,16 @@ spec = do
     parameterSpec @AlarmTriggerRelationship
     parameterExampleSpec ["START"] AlarmTriggerRelationshipStart
     parameterExampleSpec ["END"] AlarmTriggerRelationshipEnd
+
+  describe "Display" $ do
+    genValidSpec @Display
+    parameterSpec @Display
+
+    -- RFC 7986:
+    -- @
+    -- Example:
+    --
+    -- IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://exa
+    --  mple.com/images/weather-cloudy.png
+    -- @
+    parameterExampleSpec ["BADGE"] DisplayBadge

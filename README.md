@@ -1,6 +1,6 @@
 # ICal
 
-An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545).
+An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545) and [RFC7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.10).
 
 ## Status
 
@@ -13,6 +13,8 @@ It's already being used in production at https://smos.online and https://social-
 * Being able to deal with some of other implementors' failures to comply with the spec
 
 ## Implementation checklist
+
+### RFC 5545
 
    - [x] 1.  Introduction
    - [x] 2.  Basic Grammar and Conventions
@@ -161,3 +163,36 @@ It's already being used in production at https://smos.online and https://social-
      - [X] A.1.  New Restrictions
      - [X] A.2.  Restrictions Removed
      - [X] A.3.  Deprecated Features
+
+### RFC 7986
+
+   - [ ] 1. Introduction
+   - [ ] 2. Conventions Used in This Document
+   - [ ] 3. Backwards-Compatible Extension Properties
+   - [ ] 4. Modifications to Calendar Components
+   - [ ] 5. Properties
+      - [ ] 5.1. NAME Property
+      - [ ] 5.2. DESCRIPTION Property
+      - [ ] 5.3. UID Property
+      - [ ] 5.4. LAST-MODIFIED Property
+      - [ ] 5.5. URL Property
+      - [ ] 5.6. CATEGORIES Property
+      - [ ] 5.7. REFRESH-INTERVAL Property
+      - [ ] 5.8. SOURCE Property
+      - [X] 5.9. COLOR Property
+      - [ ] 5.10. IMAGE Property
+      - [ ] 5.11. CONFERENCE Property
+   - [ ] 6. Property Parameters
+      - [ ] 6.1. DISPLAY Property Parameter
+      - [ ] 6.2. EMAIL Property Parameter
+      - [ ] 6.3. FEATURE Property Parameter
+      - [ ] 6.4. LABEL Property Parameter
+   - [ ] 7. Security Considerations
+   - [ ] 8. Privacy Considerations
+   - [ ] 9. IANA Considerations
+      - [ ] 9.1. Property Registrations
+      - [ ] 9.2. Parameter Registrations
+      - [ ] 9.3. Property Parameter Value Registries
+   - [ ] 10. References
+      - [ ] 10.1. Normative References
+      - [ ] 10.2. Informative References

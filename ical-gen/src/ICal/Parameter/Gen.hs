@@ -67,6 +67,10 @@ instance GenValid AlarmTriggerRelationship where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid Display where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 parameterExampleSpec ::
   (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
   NonEmpty ParamValue ->

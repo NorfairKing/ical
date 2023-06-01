@@ -752,3 +752,16 @@ spec = do
     propertyExampleSpec
       "TRIGGER;VALUE=DATE-TIME:19980101T050000Z"
       (TriggerDateTime (UTCTime (fromGregorian 1998 01 01) (timeOfDayToTime (TimeOfDay 05 00 00))))
+
+  describe "Image" $ do
+    genValidSpec @Image
+    propertySpec @Image
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    -- IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:h
+    --  ttp://example.com/images/party.png
+    -- @
+    propertyExampleSpec
+      "IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:http://example.com/images/party.png"
+      (ImageURI (Just "image/png") "http://example.com/images/party.png")

@@ -155,6 +155,10 @@ instance GenValid Trigger where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance GenValid Image where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 propertyRenderExampleSpec ::
   ( Show property,
     IsProperty property,

@@ -903,3 +903,79 @@ instance IsParameter AlarmTriggerRelationship where
 -- @
 defaultAlarmTriggerRelationship :: AlarmTriggerRelationship
 defaultAlarmTriggerRelationship = AlarmTriggerRelationshipStart
+
+-- | Display
+--
+-- [section 6.1 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-6.1)
+--
+-- @
+-- Parameter Name:  DISPLAY
+--
+-- Purpose:  To specify different ways in which an image for a calendar
+--    or component can be displayed.
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+-- displayparam = "DISPLAY" "=" displayval *("," displayval)
+--
+-- displayval =  ("BADGE" /     ; image inline with the title of the
+--                              ; even
+--                "GRAPHIC" /   ; a full image replacement for the event
+--                              ; itself
+--                "FULLSIZE" /  ; an image that is used to enhance the
+--                              ; event
+--                "THUMBNAIL" / ; a smaller variant of "FULLSIZE" to be
+--                              ; used when space for the image is
+--                              ; constrained
+--                x-name /      ; Experimental type
+--                iana-token)   ; Other IANA-registered type
+--                              ;
+--                              ; Default is BADGE
+--
+-- Description:  This property parameter MAY be specified on "IMAGE"
+--    properties.  In the absence of this parameter, the default value
+--    "BADGE" MUST be used.  The value determines how a client ought to
+--    present an image supplied in iCalendar data to the user.
+--
+--    Values for this parameter are registered with IANA as per
+--    Section 9.3.1.  New values can be added to this registry following
+--    the procedure outlined in Section 8.2.1 of [RFC5545].
+--
+--    Servers and clients MUST handle x-name and iana-token values they
+--    don't recognize by not displaying any image at all.
+--
+-- Example:
+--
+-- IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://exa
+--  mple.com/images/weather-cloudy.png
+-- @
+data Display
+  = DisplayBadge
+  | DisplayGraphic
+  | DisplayFullSize
+  | DisplayThumbnail
+  | DisplayOther !ParamValue
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Display
+
+instance NFData Display
+
+instance IsParameter Display where
+  parameterName Proxy = "PARTSTAT"
+  parameterP =
+    singleParamP $
+      pure
+        . ( \pv -> case paramValueCI pv of
+              "BADGE" -> DisplayBadge
+              "GRAPHIC" -> DisplayGraphic
+              "FULLSIZE" -> DisplayFullSize
+              "THUMBNAIL" -> DisplayThumbnail
+              _ -> DisplayOther pv
+          )
+  parameterB = singleParamB $ \case
+    DisplayBadge -> "BADGE"
+    DisplayGraphic -> "GRAPHIC"
+    DisplayFullSize -> "FULLSIZE"
+    DisplayThumbnail -> "THUMBNAIL"
+    DisplayOther pv -> pv
