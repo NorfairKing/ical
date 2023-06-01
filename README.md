@@ -27,7 +27,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.1.3.  Binary Content
        - [X] 3.1.4.  Character Set
      - [ ] 3.2.  Property Parameters
-       - [ ] 3.2.1.  Alternate Text Representation
+       - [X] 3.2.1.  Alternate Text Representation
        - [X] 3.2.2.  Common Name
        - [ ] 3.2.3.  Calendar User Type
        - [ ] 3.2.4.  Delegators
@@ -179,8 +179,8 @@ It's already being used in production at https://smos.online and https://social-
       - [ ] 5.6. CATEGORIES Property
       - [ ] 5.7. REFRESH-INTERVAL Property
       - [ ] 5.8. SOURCE Property
-      - [X] 5.9. COLOR Property
-      - [ ] 5.10. IMAGE Property
+      - [ ] 5.9. COLOR Property
+      - [X] 5.10. IMAGE Property
       - [ ] 5.11. CONFERENCE Property
    - [ ] 6. Property Parameters
       - [ ] 6.1. DISPLAY Property Parameter

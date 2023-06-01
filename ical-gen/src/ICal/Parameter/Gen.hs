@@ -20,6 +20,10 @@ import ICal.Parameter
 import Test.Syd
 import Test.Syd.Validity
 
+instance GenValid AlternateTextRepresentation where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance GenValid CommonName where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

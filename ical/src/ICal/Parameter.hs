@@ -45,6 +45,7 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
   | MultipleParametersfound !(NonEmpty ParamValue)
+  | UnquotedParameterFound !(CI Text)
   | UnknownEncoding !ParamValue
   | UnknownRecurrenceIdentifierRange !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   | UnknownRSVPExpectation !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
@@ -64,6 +65,12 @@ instance Exception ParameterParseError where
         [ "Multiple parameter values found where one was expected.",
           "values:",
           show values
+        ]
+    UnquotedParameterFound value ->
+      unlines
+        [ "An unquoted parameter value found where a quoted one was expected.",
+          "value:",
+          show value
         ]
     UnknownEncoding pv ->
       unlines
@@ -161,10 +168,23 @@ singleParamP func = \case
   ne -> unfixableError $ MultipleParametersfound ne
 
 -- TODO figure out if this text should be case-insensitive
-anySingleParamP :: (CI Text -> Conform ParameterParseError Void Void a) -> NonEmpty ParamValue -> Conform ParameterParseError Void Void a
+anySingleParamP ::
+  (CI Text -> Conform ParameterParseError Void Void a) ->
+  NonEmpty ParamValue ->
+  Conform ParameterParseError Void Void a
 anySingleParamP func = singleParamP $ \case
   UnquotedParam c -> func c
   QuotedParam t -> func (CI.mk t)
+
+singleQuotedParamP ::
+  (Text -> Conform ParameterParseError Void Void a) ->
+  NonEmpty ParamValue ->
+  Conform ParameterParseError Void Void a
+singleQuotedParamP func = \case
+  value :| [] -> case value of
+    QuotedParam t -> func t
+    UnquotedParam ci -> unfixableError $ UnquotedParameterFound ci -- TODO turn this into a fixable error.
+  ne -> unfixableError $ MultipleParametersfound ne
 
 singleParamB :: (a -> ParamValue) -> a -> NonEmpty ParamValue
 singleParamB func = (:| []) . func
@@ -177,6 +197,77 @@ anySingleParamB func = singleParamB $ \a ->
    in if haveToQuoteText o
         then QuotedParam o
         else UnquotedParam ci
+
+-- | Alternate Text Representation
+--
+-- [section 3.2.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.1)
+-- @
+-- Parameter Name:  ALTREP
+--
+-- Purpose:  To specify an alternate text representation for the
+--    property value.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--   altrepparam = "ALTREP" "=" DQUOTE uri DQUOTE
+--
+-- Description:  This parameter specifies a URI that points to an
+--    alternate representation for a textual property value.  A property
+--    specifying this parameter MUST also include a value that reflects
+--
+--
+--    the default representation of the text value.  The URI parameter
+--    value MUST be specified in a quoted-string.
+--
+--       Note: While there is no restriction imposed on the URI schemes
+--       allowed for this parameter, Content Identifier (CID) [RFC2392],
+--       HTTP [RFC2616], and HTTPS [RFC2818] are the URI schemes most
+--       commonly used by current implementations.
+--
+-- Example:
+--
+--     DESCRIPTION;ALTREP="CID:part3.msg.970415T083000@example.com":
+--      Project XYZ Review Meeting will include the following agenda
+--       items: (a) Market Overview\, (b) Finances\, (c) Project Man
+--      agement
+--
+--    The "ALTREP" property parameter value might point to a "text/html"
+--    content portion.
+--
+--     Content-Type:text/html
+--     Content-Id:<part3.msg.970415T083000@example.com>
+--
+--     <html>
+--       <head>
+--        <title></title>
+--       </head>
+--       <body>
+--         <p>
+--           <b>Project XYZ Review Meeting</b> will include
+--           the following agenda items:
+--           <ol>
+--             <li>Market Overview</li>
+--             <li>Finances</li>
+--             <li>Project Management</li>
+--           </ol>
+--         </p>
+--       </body>
+--     </html>
+-- @
+newtype AlternateTextRepresentation = AlternateTextRepresentation
+  {unAlternateTextRepresentation :: Text}
+  deriving stock (Show, Eq, Ord, Generic)
+  deriving newtype (IsString)
+
+instance Validity AlternateTextRepresentation
+
+instance NFData AlternateTextRepresentation
+
+instance IsParameter AlternateTextRepresentation where
+  parameterName Proxy = "ALTREP"
+  parameterP = singleQuotedParamP $ pure . AlternateTextRepresentation
+  parameterB = singleParamB $ QuotedParam . unAlternateTextRepresentation
 
 -- | Common name
 --

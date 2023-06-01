@@ -14,6 +14,58 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "AlternateTextRepresentation" $ do
+    genValidSpec @AlternateTextRepresentation
+    parameterSpec @AlternateTextRepresentation
+    -- @
+    --     DESCRIPTION;ALTREP="CID:part3.msg.970415T083000@example.com":
+    --      Project XYZ Review Meeting will include the following agenda
+    --       items: (a) Market Overview\, (b) Finances\, (c) Project Man
+    --      agement
+    -- @
+    parameterExampleSpec
+      ["CID:part3.msg.970415T083000@example.com"]
+      (AlternateTextRepresentation "CID:part3.msg.970415T083000@example.com")
+    -- @
+    -- LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
+    --   Conference Room - F123\, Bldg. 002
+    -- @
+    parameterExampleSpec
+      ["http://xyzcorp.com/conf-rooms/f123.vcf"]
+      (AlternateTextRepresentation "http://xyzcorp.com/conf-rooms/f123.vcf")
+    -- @
+    -- CONTACT;ALTREP="ldap://example.com:6666/o=ABC%20Industries\,
+    --  c=US???(cn=Jim%20Dolittle)":Jim Dolittle\, ABC Industries\,
+    --  +1-919-555-1234
+    -- @
+    parameterExampleSpec
+      ["ldap://example.com:6666/o=ABC%20Industriesc=US???(cn=Jim%20Dolittle)"]
+      (AlternateTextRepresentation "ldap://example.com:6666/o=ABC%20Industriesc=US???(cn=Jim%20Dolittle)")
+
+    -- @
+    -- CONTACT;ALTREP="CID:part3.msg970930T083000SILVER@example.com":
+    --  Jim Dolittle\, ABC Industries\, +1-919-555-1234
+    -- @
+    parameterExampleSpec
+      ["CID:part3.msg970930T083000SILVER@example.com"]
+      (AlternateTextRepresentation "CID:part3.msg970930T083000SILVER@example.com")
+
+    -- @
+    -- CONTACT;ALTREP="http://example.com/pdi/jdoe.vcf":Jim
+    --   Dolittle\, ABC Industries\, +1-919-555-1234
+    -- @
+    parameterExampleSpec
+      ["http://example.com/pdi/jdoe.vcf"]
+      (AlternateTextRepresentation "http://example.com/pdi/jdoe.vcf")
+
+    -- @
+    -- DESCRIPTION;ALTREP="cid:part1.0001@example.org":The Fall'98 Wild
+    --   Wizards Conference - - Las Vegas\, NV\, USA
+    -- @
+    parameterExampleSpec
+      ["cid:part1.0001@example.org"]
+      (AlternateTextRepresentation "cid:part1.0001@example.org")
+
   describe "CommonName" $ do
     genValidSpec @CommonName
     parameterSpec @CommonName
