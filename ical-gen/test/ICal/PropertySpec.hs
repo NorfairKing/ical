@@ -89,6 +89,7 @@ spec = do
   describe "UID" $ do
     genValidSpec @UID
     propertySpec @UID
+
     -- @
     -- Example:  The following is an example of this property:
     --
@@ -97,12 +98,22 @@ spec = do
     propertyExampleSpec
       "UID:19960401T080045Z-4000F192713-0052@example.com"
       (UID "19960401T080045Z-4000F192713-0052@example.com")
+
     -- @
     -- UID:19970610T172345Z-AF23B2@example.com
     -- @
     propertyExampleSpec
       "UID:19970610T172345Z-AF23B2@example.com"
       (UID "19970610T172345Z-AF23B2@example.com")
+
+    -- @
+    -- The following is an example of such a property value:
+    --
+    -- UID:5FC53010-1267-4F8E-BC28-1D7AE55A7C99
+    -- @
+    propertyExampleSpec
+      "UID:5FC53010-1267-4F8E-BC28-1D7AE55A7C99"
+      (UID "5FC53010-1267-4F8E-BC28-1D7AE55A7C99")
 
   describe "TimeZoneIdentifier" $ do
     genValidSpec @TimeZoneIdentifier

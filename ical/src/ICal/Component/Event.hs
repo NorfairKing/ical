@@ -275,6 +275,8 @@ data Event = Event
     -- ;
     -- conference / image
     -- @
+
+    -- | This property is one of the new properties specified in RFC 7986.
     eventImages :: ![Image],
     -- @
     --     eventc     = "BEGIN" ":" "VEVENT" CRLF

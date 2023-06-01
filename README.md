@@ -172,10 +172,10 @@ It's already being used in production at https://smos.online and https://social-
    - [ ] 4. Modifications to Calendar Components
    - [ ] 5. Properties
       - [ ] 5.1. NAME Property
-      - [ ] 5.2. DESCRIPTION Property
-      - [ ] 5.3. UID Property
-      - [ ] 5.4. LAST-MODIFIED Property
-      - [ ] 5.5. URL Property
+      - [X] 5.2. DESCRIPTION Property
+      - [X] 5.3. UID Property
+      - [X] 5.4. LAST-MODIFIED Property
+      - [X] 5.5. URL Property
       - [ ] 5.6. CATEGORIES Property
       - [ ] 5.7. REFRESH-INTERVAL Property
       - [ ] 5.8. SOURCE Property
@@ -183,16 +183,16 @@ It's already being used in production at https://smos.online and https://social-
       - [X] 5.10. IMAGE Property
       - [ ] 5.11. CONFERENCE Property
    - [ ] 6. Property Parameters
-      - [ ] 6.1. DISPLAY Property Parameter
+      - [X] 6.1. DISPLAY Property Parameter
       - [ ] 6.2. EMAIL Property Parameter
       - [ ] 6.3. FEATURE Property Parameter
       - [ ] 6.4. LABEL Property Parameter
    - [ ] 7. Security Considerations
    - [ ] 8. Privacy Considerations
-   - [ ] 9. IANA Considerations
-      - [ ] 9.1. Property Registrations
-      - [ ] 9.2. Parameter Registrations
-      - [ ] 9.3. Property Parameter Value Registries
-   - [ ] 10. References
-      - [ ] 10.1. Normative References
-      - [ ] 10.2. Informative References
+   - [X] 9. IANA Considerations
+      - [X] 9.1. Property Registrations
+      - [X] 9.2. Parameter Registrations
+      - [X] 9.3. Property Parameter Value Registries
+   - [X] 10. References
+      - [X] 10.1. Normative References
+      - [X] 10.2. Informative References

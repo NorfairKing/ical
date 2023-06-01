@@ -171,6 +171,14 @@ data Calendar = Calendar
     -- @
 
     -- | This property is one of the new properties specified in RFC 7986.
+    calendarUID :: !(Maybe UID),
+    -- | This property is one of the new properties specified in RFC 7986.
+    calendarLastModified :: !(Maybe LastModified),
+    -- | This property is one of the new properties specified in RFC 7986.
+    calendarURL :: !(Maybe URL),
+    -- | This property is one of the new properties specified in RFC 7986.
+    calendarDescriptions :: ![Description],
+    -- | This property is one of the new properties specified in RFC 7986.
     calendarImages :: ![Image],
     -- TODO:
     -- @
@@ -228,6 +236,10 @@ instance IsComponent Calendar where
     calendarCalendarScale <- optionalPropertyWithDefaultP defaultCalendarScale componentProperties
     calendarMethod <- optionalPropertyP componentProperties
 
+    calendarUID <- optionalPropertyP componentProperties
+    calendarURL <- optionalPropertyP componentProperties
+    calendarLastModified <- optionalPropertyP componentProperties
+    calendarDescriptions <- listOfPropertiesP componentProperties
     calendarImages <- listOfPropertiesP componentProperties
 
     calendarTimeZones <- subComponentsP componentSubcomponents
@@ -244,6 +256,10 @@ instance IsComponent Calendar where
               requiredPropertyB calendarVersion,
               optionalPropertyWithDefaultB defaultCalendarScale calendarCalendarScale,
               optionalPropertyB calendarMethod,
+              optionalPropertyB calendarUID,
+              optionalPropertyB calendarLastModified,
+              optionalPropertyB calendarURL,
+              listOfPropertiesB calendarDescriptions,
               listOfPropertiesB calendarImages
             ],
         componentSubcomponents =
@@ -261,6 +277,10 @@ makeCalendar prodId =
       calendarVersion = version20,
       calendarCalendarScale = defaultCalendarScale,
       calendarMethod = Nothing,
+      calendarUID = Nothing,
+      calendarLastModified = Nothing,
+      calendarURL = Nothing,
+      calendarDescriptions = [],
       calendarImages = [],
       calendarEvents = [],
       calendarTimeZones = []

@@ -432,7 +432,7 @@ instance IsProperty CalendarScale where
 defaultCalendarScale :: CalendarScale
 defaultCalendarScale = CalendarScaleGregorian
 
--- |
+-- | Universal Identifier
 --
 -- === [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
 --
@@ -500,6 +500,48 @@ defaultCalendarScale = CalendarScaleGregorian
 -- Example:  The following is an example of this property:
 --
 --     UID:19960401T080045Z-4000F192713-0052@example.com
+-- @
+--
+-- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
+--
+-- @
+-- This specification modifies the definition of the "UID" property to
+-- allow it to be defined in an iCalendar object.  The following
+-- additions are made to the definition of this property, originally
+-- specified in Section 3.8.4.7 of [RFC5545].
+--
+-- Purpose:  This property specifies the persistent, globally unique
+--    identifier for the iCalendar object.  This can be used, for
+--    example, to identify duplicate calendar streams that a client may
+--    have been given access to.  It can be used in conjunction with the
+--    "LAST-MODIFIED" property also specified on the "VCALENDAR" object
+--    to identify the most recent version of a calendar.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
+--
+-- The description of the "UID" property in [RFC5545] contains some
+-- recommendations on how the value can be constructed.  In particular,
+-- it suggests use of host names, IP addresses, and domain names to
+-- construct the value.  However, this is no longer considered good
+-- practice, particularly from a security and privacy standpoint, since
+-- use of such values can leak key information about a calendar user or
+-- their client and network environment.  This specification updates
+-- [RFC5545] by stating that "UID" values MUST NOT include any data that
+-- might identify a user, host, domain, or any other security- or
+-- privacy-sensitive information.  It is RECOMMENDED that calendar user
+-- agents now generate "UID" values that are hex-encoded random
+-- Universally Unique Identifier (UUID) values as defined in
+-- Sections 4.4 and 4.5 of [RFC4122].
+--
+-- The following is an example of such a property value:
+--
+-- UID:5FC53010-1267-4F8E-BC28-1D7AE55A7C99
+--
+-- Additionally, if calendar user agents choose to use other forms of
+-- opaque identifiers for the "UID" value, they MUST have a length less
+-- than 255 octets and MUST conform to the "iana-token" ABNF syntax
+-- defined in Section 3.1 of [RFC5545].
 -- @
 newtype UID = UID {unUID :: Text}
   deriving (Show, Eq, Ord, Generic)
@@ -1366,6 +1408,28 @@ makeSummary summaryContents =
 --       design.\nHappy Face Conference Room. Phoenix design team
 --       MUST attend this meeting.\nRSVP to team leader.
 -- @
+--
+-- === [section 5.2 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.2)
+--
+-- @
+-- This specification modifies the definition of the "DESCRIPTION"
+-- property to allow it to be defined in an iCalendar object.  The
+-- following additions are made to the definition of this property,
+-- originally specified in Section 3.8.1.5 of [RFC5545].
+--
+-- Purpose:  This property specifies the description of the calendar.
+--
+-- Conformance:  This property can be specified multiple times in an
+--    iCalendar object.  However, each property MUST represent the
+--    description of the calendar in a different language.
+--
+-- Description:  This property is used to specify a lengthy textual
+--    description of the iCalendar object that can be used by calendar
+--    user agents when describing the nature of the calendar data to a
+--    user.  Whilst a calendar only has a single description, multiple
+--    language variants can be specified by including this property
+--    multiple times with different "LANGUAGE" parameter values on each.
+-- @
 data Description = Description
   { descriptionContents :: !Text,
     descriptionAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
@@ -1554,6 +1618,21 @@ renderGeographicPosition GeographicPosition {..} =
 -- Example:  The following is an example of this property:
 --
 --     LAST-MODIFIED:19960817T133000Z
+-- @
+--
+-- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
+--
+-- @
+-- This specification modifies the definition of the "LAST-MODIFIED"
+-- property to allow it to be defined in an iCalendar object.  The
+-- following additions are made to the definition of this property,
+-- originally specified in Section 3.8.7.3 of [RFC5545].
+--
+-- Purpose:  This property specifies the date and time that the
+--    information associated with the calendar was last revised.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
 -- @
 newtype LastModified = LastModified {unLastModified :: Time.UTCTime}
   deriving (Show, Eq, Ord, Generic)
@@ -1987,6 +2066,7 @@ defaultTransparency = TransparencyOpaque
 -- | Uniform Resource Locator
 --
 -- === [section 3.8.2.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.5)
+--
 -- @
 -- Property Name:  URL
 --
@@ -2019,6 +2099,21 @@ defaultTransparency = TransparencyOpaque
 -- Example:  The following is an example of this property:
 --
 --     URL:http://example.com/pub/calendars/jsmith/mytime.ics
+-- @
+--
+-- === [section 5.5 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.5)
+--
+-- @
+-- This specification modifies the definition of the "URL" property to
+-- allow it to be defined in an iCalendar object.  The following
+-- additions are made to the definition of this property, originally
+-- specified in Section 3.8.4.6 of [RFC5545].
+--
+-- Purpose:  This property may be used to convey a location where a more
+--    dynamic rendition of the calendar information can be found.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
 -- @
 newtype URL = URL {unURL :: URI}
   deriving (Show, Eq, Ord, Generic)
