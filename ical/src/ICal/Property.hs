@@ -24,6 +24,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -108,6 +109,11 @@ class IsProperty property where
 
   -- | Builder for the property
   propertyB :: property -> ContentLineValue
+
+instance IsProperty RecurrenceRule where
+  propertyName Proxy = "RRULE"
+  propertyP = wrapPropertyTypeP id
+  propertyB = recurrenceRuleB
 
 propertyContentLineP ::
   forall property.
@@ -1317,8 +1323,15 @@ instance IsProperty Summary where
 --       design.\nHappy Face Conference Room. Phoenix design team
 --       MUST attend this meeting.\nRSVP to team leader.
 -- @
-newtype Description = Description {unDescription :: Text}
+data Description = Description
+  { descriptionContents :: !Text,
+    descriptionAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    descriptionLanguage :: !(Maybe Language)
+  }
   deriving (Show, Eq, Ord, Generic)
+
+instance IsString Description where
+  fromString = makeDescription . fromString
 
 instance Validity Description
 
@@ -1326,13 +1339,20 @@ instance NFData Description
 
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
-  propertyP = wrapPropertyTypeP Description
-  propertyB = propertyTypeB . unDescription
+  propertyP clv = do
+    descriptionAlternateTextRepresentation <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    descriptionLanguage <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    wrapPropertyTypeP (\descriptionContents -> Description {..}) clv
+  propertyB Description {..} =
+    insertMParam descriptionAlternateTextRepresentation $
+      insertMParam descriptionLanguage $
+        propertyTypeB descriptionContents
 
-instance IsProperty RecurrenceRule where
-  propertyName Proxy = "RRULE"
-  propertyP = wrapPropertyTypeP id
-  propertyB = recurrenceRuleB
+makeDescription :: Text -> Description
+makeDescription descriptionContents =
+  let descriptionAlternateTextRepresentation = Nothing
+      descriptionLanguage = Nothing
+   in Description {..}
 
 -- | Geographic Position
 --
@@ -2014,6 +2034,9 @@ data Comment = Comment
     commentLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
+
+instance IsString Comment where
+  fromString = makeComment . fromString
 
 instance Validity Comment
 

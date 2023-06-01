@@ -231,9 +231,14 @@ spec = do
   describe "Description" $ do
     genValidSpec @Description
     propertySpec @Description
+
     propertyExampleSpec
       "DESCRIPTION:Meeting to provide technical review for \"Phoenix\" design.\\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\\nRSVP to team leader."
-      (Description "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.")
+      Description
+        { descriptionContents = "Meeting to provide technical review for \"Phoenix\" design.\nHappy Face Conference Room. Phoenix design team MUST attend this meeting.\nRSVP to team leader.",
+          descriptionAlternateTextRepresentation = Nothing,
+          descriptionLanguage = Nothing
+        }
 
   describe "GeographicPosition" $ do
     genValidSpec @GeographicPosition
