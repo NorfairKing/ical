@@ -278,11 +278,18 @@ spec = do
     -- @
     propertyExampleSpec
       "LOCATION:Conference Room - F123\\, Bldg. 002"
-      (Location "Conference Room - F123, Bldg. 002")
-    xdescribe "not implemented yet" $
-      propertyExampleSpec
-        "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
-        (Location "Conference Room - F123, Bldg. 002")
+      Location
+        { locationContents = "Conference Room - F123, Bldg. 002",
+          locationAlternateTextRepresentation = Nothing,
+          locationLanguage = Nothing
+        }
+    propertyExampleSpec
+      "LOCATION;ALTREP=\"http://xyzcorp.com/conf-rooms/f123.vcf\":Conference Room - F123\\, Bldg. 002"
+      Location
+        { locationContents = "Conference Room - F123, Bldg. 002",
+          locationAlternateTextRepresentation = Just "http://xyzcorp.com/conf-rooms/f123.vcf",
+          locationLanguage = Nothing
+        }
 
   describe "Status" $ do
     genValidSpec @Status

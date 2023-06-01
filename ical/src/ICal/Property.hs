@@ -1604,9 +1604,15 @@ instance IsProperty LastModified where
 --     LOCATION;ALTREP="http://xyzcorp.com/conf-rooms/f123.vcf":
 --      Conference Room - F123\, Bldg. 002
 -- @
--- TODO add support for alternative representation and language
-newtype Location = Location {unLocation :: Text}
+data Location = Location
+  { locationContents :: !Text,
+    locationAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    locationLanguage :: !(Maybe Language)
+  }
   deriving (Show, Eq, Ord, Generic)
+
+instance IsString Location where
+  fromString = makeLocation . fromString
 
 instance Validity Location
 
@@ -1614,8 +1620,20 @@ instance NFData Location
 
 instance IsProperty Location where
   propertyName Proxy = "LOCATION"
-  propertyP = wrapPropertyTypeP Location
-  propertyB = propertyTypeB . unLocation
+  propertyP clv = do
+    locationAlternateTextRepresentation <- propertyParamP clv
+    locationLanguage <- propertyParamP clv
+    wrapPropertyTypeP (\locationContents -> Location {..}) clv
+  propertyB Location {..} =
+    insertMParam locationAlternateTextRepresentation $
+      insertMParam locationLanguage $
+        propertyTypeB locationContents
+
+makeLocation :: Text -> Location
+makeLocation locationContents =
+  let locationAlternateTextRepresentation = Nothing
+      locationLanguage = Nothing
+   in Location {..}
 
 -- | Status
 --
