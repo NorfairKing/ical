@@ -144,6 +144,27 @@ wrapPropertyTypeP ::
   (ContentLineValue -> Conform PropertyParseError Void Void property)
 wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
+propertyParamP ::
+  IsParameter param =>
+  ContentLineValue ->
+  Conform
+    PropertyParseError
+    Void
+    Void
+    (Maybe param)
+propertyParamP clv = conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+
+propertyParamWithDefaultP ::
+  IsParameter param =>
+  param ->
+  ContentLineValue ->
+  Conform
+    PropertyParseError
+    Void
+    Void
+    param
+propertyParamWithDefaultP defaultValue clv = fromMaybe defaultValue <$> propertyParamP clv
+
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -677,7 +698,7 @@ instance NFData DateTimeStart
 instance IsProperty DateTimeStart where
   propertyName Proxy = "DTSTART"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP DateTimeStartDateTime clv
       Just TypeDate -> wrapPropertyTypeP DateTimeStartDate clv
@@ -776,8 +797,8 @@ instance NFData Attachment
 instance IsProperty Attachment where
   propertyName Proxy = "ATTACH"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    mFormatType <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
+    mFormatType <- propertyParamP clv
     case mValue of
       Just TypeURI -> wrapPropertyTypeP (AttachmentURI mFormatType) clv
       Just TypeBinary -> wrapPropertyTypeP (AttachmentBinary mFormatType) clv
@@ -1111,8 +1132,8 @@ instance NFData RecurrenceIdentifier
 instance IsProperty RecurrenceIdentifier where
   propertyName Proxy = "RECURRENCE-ID"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    mRecurrenceRangeIdentifier <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
+    mRecurrenceRangeIdentifier <- propertyParamP clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
       Just TypeDate -> wrapPropertyTypeP (RecurrenceIdentifierDate mRecurrenceRangeIdentifier) clv
@@ -1340,8 +1361,8 @@ instance NFData Description
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
   propertyP clv = do
-    descriptionAlternateTextRepresentation <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    descriptionLanguage <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    descriptionAlternateTextRepresentation <- propertyParamP clv
+    descriptionLanguage <- propertyParamP clv
     wrapPropertyTypeP (\descriptionContents -> Description {..}) clv
   propertyB Description {..} =
     insertMParam descriptionAlternateTextRepresentation $
@@ -1770,7 +1791,7 @@ instance NFData DateTimeEnd
 instance IsProperty DateTimeEnd where
   propertyName Proxy = "DTEND"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP DateTimeEndDateTime clv
       Just TypeDate -> wrapPropertyTypeP DateTimeEndDate clv
@@ -2045,8 +2066,8 @@ instance NFData Comment
 instance IsProperty Comment where
   propertyName Proxy = "COMMENT"
   propertyP clv = do
-    commentAlternateTextRepresentation <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    commentLanguage <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    commentAlternateTextRepresentation <- propertyParamP clv
+    commentLanguage <- propertyParamP clv
     wrapPropertyTypeP (\commentContents -> Comment {..}) clv
   propertyB Comment {..} =
     insertMParam commentAlternateTextRepresentation $
@@ -2309,18 +2330,10 @@ instance NFData Attendee
 instance IsProperty Attendee where
   propertyName Proxy = "ATTENDEE"
   propertyP clv = flip viaPropertyTypeP clv $ \attendeeCalAddress -> do
-    attendeeParticipationRole <-
-      fromMaybe defaultParticipationRole
-        <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
-    attendeeParticipationStatus <-
-      fromMaybe defaultParticipationStatus
-        <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
-    attendeeRSVPExpectation <-
-      fromMaybe defaultRSVPExpectation
-        <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
-    attendeeCommonName <-
-      conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
-
+    attendeeParticipationRole <- propertyParamWithDefaultP defaultParticipationRole clv
+    attendeeParticipationStatus <- propertyParamWithDefaultP defaultParticipationStatus clv
+    attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
+    attendeeCommonName <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
     insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
@@ -2434,7 +2447,7 @@ instance NFData ExceptionDateTimes
 instance IsProperty ExceptionDateTimes where
   propertyName Proxy = "EXDATE"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
     -- @
     -- Value Type:  The default value type for this property is DATE-TIME.
     -- @
@@ -2551,7 +2564,7 @@ instance NFData RecurrenceDateTimes
 instance IsProperty RecurrenceDateTimes where
   propertyName Proxy = "RDATE"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
     case mValue of
       Just TypeDateTime -> wrapPropertyTypeP RecurrenceDateTimes clv
       Just TypePeriod -> wrapPropertyTypeP RecurrencePeriods clv
@@ -2815,10 +2828,10 @@ instance NFData Trigger
 instance IsProperty Trigger where
   propertyName Proxy = "TRIGGER"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    mValue <- propertyParamP clv
     let parseDurationTrigger = do
           duration <- conformMapError PropertyTypeParseError $ propertyTypeP clv
-          relationship <- conformMapError (PropertyTypeParseError . ParameterParseError) $ fromMaybe defaultAlarmTriggerRelationship <$> optionalParam (contentLineValueParams clv)
+          relationship <- propertyParamWithDefaultP defaultAlarmTriggerRelationship clv
           pure $ TriggerDuration relationship duration
 
     case mValue of
@@ -2930,9 +2943,9 @@ instance NFData Image
 instance IsProperty Image where
   propertyName Proxy = "IMAGE"
   propertyP clv = do
-    mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    imageFormatType <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
-    imageDisplay <- fromMaybe defaultDisplay <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
+    mValue <- propertyParamP clv
+    imageFormatType <- propertyParamP clv
+    imageDisplay <- propertyParamWithDefaultP defaultDisplay clv
 
     case mValue of
       Just TypeURI -> wrapPropertyTypeP (\u -> let imageContents = Left u in Image {..}) clv
