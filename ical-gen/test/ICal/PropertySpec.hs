@@ -388,7 +388,23 @@ spec = do
   describe "TimeZoneName" $ do
     xdescribe "already in DurationSpec" $ genValidSpec @TimeZoneName
     propertySpec @TimeZoneName
-    pending "works for this example"
+    -- @
+    --     TZNAME:EST
+    --
+    --     TZNAME;LANGUAGE=fr-CA:HNE
+    -- @
+    propertyExampleSpec
+      "TZNAME:EST"
+      TimeZoneName
+        { timeZoneNameContents = "EST",
+          timeZoneNameLanguage = Nothing
+        }
+    propertyExampleSpec
+      "TZNAME;LANGUAGE=fr-CA:HNE"
+      TimeZoneName
+        { timeZoneNameContents = "HNE",
+          timeZoneNameLanguage = Just (Language "fr-CA")
+        }
 
   describe "TimeZoneOffsetFrom" $ do
     genValidSpec @TimeZoneOffsetFrom
@@ -399,7 +415,6 @@ spec = do
     --     TZOFFSETFROM:-0500
     --
     --     TZOFFSETFROM:+1345
-    -- @
     -- @
     propertyExampleSpec "TZOFFSETFROM:-0500" (TimeZoneOffsetFrom (UTCOffset (-18000)))
     propertyExampleSpec "TZOFFSETFROM:+1345" (TimeZoneOffsetFrom (UTCOffset 49500))

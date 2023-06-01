@@ -2029,18 +2029,79 @@ instance IsProperty URL where
   propertyP = wrapPropertyTypeP URL
   propertyB = propertyTypeB . unURL
 
--- TODO description
-newtype TimeZoneName = TimeZoneName {unTimeZoneName :: Text}
+-- | Timezone Name
+--
+-- === [section 3.8.3.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.2)
+--
+-- @
+-- Property Name:  TZNAME
+--
+-- Purpose:  This property specifies the customary designation for a
+--    time zone description.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA, non-standard, and language property
+--    parameters can be specified on this property.
+--
+-- Conformance:  This property can be specified in "STANDARD" and
+--    "DAYLIGHT" sub-components.
+--
+-- Description:  This property specifies a customary name that can be
+--    used when displaying dates that occur during the observance
+--    defined by the time zone sub-component.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     tzname     = "TZNAME" tznparam ":" text CRLF
+--
+--     tznparam   = *(
+--                ;
+--                ; The following is OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" languageparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+-- Example:  The following are examples of this property:
+--
+--     TZNAME:EST
+--
+--     TZNAME;LANGUAGE=fr-CA:HNE
+-- @
+data TimeZoneName = TimeZoneName
+  { timeZoneNameContents :: !Text,
+    timeZoneNameLanguage :: !(Maybe Language)
+  }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity TimeZoneName
 
 instance NFData TimeZoneName
 
+instance IsString TimeZoneName where
+  fromString = makeTimeZoneName . fromString
+
 instance IsProperty TimeZoneName where
   propertyName Proxy = "TZNAME"
-  propertyP = wrapPropertyTypeP TimeZoneName
-  propertyB = propertyTypeB . unTimeZoneName
+  propertyP clv = do
+    timeZoneNameLanguage <- propertyParamP clv
+    wrapPropertyTypeP (\timeZoneNameContents -> TimeZoneName {..}) clv
+  propertyB TimeZoneName {..} =
+    insertMParam timeZoneNameLanguage $
+      propertyTypeB timeZoneNameContents
+
+makeTimeZoneName :: Text -> TimeZoneName
+makeTimeZoneName timeZoneNameContents =
+  let timeZoneNameLanguage = Nothing
+   in TimeZoneName {..}
 
 -- @
 -- Property Name:  COMMENT

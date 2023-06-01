@@ -465,7 +465,7 @@ instance Validity Language
 instance NFData Language
 
 instance IsParameter Language where
-  parameterName Proxy = "FMTTYPE"
+  parameterName Proxy = "LANGUAGE"
   parameterP = singleParamP $ pure . Language
   parameterB = singleParamB unLanguage
 
