@@ -20,6 +20,7 @@ import Control.DeepSeq
 import Control.Exception
 import qualified Data.CaseInsensitive as CI
 import Data.Int
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -2882,7 +2883,7 @@ instance IsProperty Trigger where
 data Image = Image
   { imageContents :: !(Either URI Binary),
     imageFormatType :: !(Maybe FormatType),
-    imageDisplay :: !Display
+    imageDisplay :: !(NonEmpty Display)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -2895,6 +2896,7 @@ instance IsProperty Image where
   propertyP clv = do
     mValue <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
     imageFormatType <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    imageDisplay <- fromMaybe defaultDisplay <$> conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
 
     case mValue of
       Just TypeURI -> wrapPropertyTypeP (\u -> let imageContents = Left u in Image {..}) clv
@@ -2903,6 +2905,7 @@ instance IsProperty Image where
       Nothing -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
 
   propertyB Image {..} =
-    maybe id insertParam imageFormatType $ case imageContents of
-      Left uri -> typedPropertyTypeB uri
-      Right binary -> typedPropertyTypeB binary
+    (if imageDisplay == defaultDisplay then id else insertParam imageDisplay) $
+      maybe id insertParam imageFormatType $ case imageContents of
+        Left uri -> typedPropertyTypeB uri
+        Right binary -> typedPropertyTypeB binary

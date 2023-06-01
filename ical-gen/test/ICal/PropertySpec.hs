@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -762,6 +763,42 @@ spec = do
     -- IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:h
     --  ttp://example.com/images/party.png
     -- @
-    propertyExampleSpec
+    propertyParseExampleSpec
       "IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:http://example.com/images/party.png"
-      (ImageURI (Just "image/png") "http://example.com/images/party.png")
+      ( Image
+          { imageFormatType = Just "image/png",
+            imageContents = Left "http://example.com/images/party.png",
+            imageDisplay = [DisplayBadge]
+          }
+      )
+    propertyRenderExampleSpec
+      "IMAGE;VALUE=URI;FMTTYPE=image/png:http://example.com/images/party.png"
+      ( Image
+          { imageFormatType = Just "image/png",
+            imageContents = Left "http://example.com/images/party.png",
+            imageDisplay = [DisplayBadge]
+          }
+      )
+
+    -- @
+    -- Example:
+    --
+    -- IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://exa
+    --  mple.com/images/weather-cloudy.png
+    -- @
+    propertyParseExampleSpec
+      "IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://example.com/images/weather-cloudy.png"
+      ( Image
+          { imageFormatType = Just "image/png",
+            imageContents = Left "https://example.com/images/weather-cloudy.png",
+            imageDisplay = [DisplayBadge, DisplayThumbnail]
+          }
+      )
+    propertyRenderExampleSpec
+      "IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://example.com/images/weather-cloudy.png"
+      ( Image
+          { imageFormatType = Just "image/png",
+            imageContents = Left "https://example.com/images/weather-cloudy.png",
+            imageDisplay = [DisplayBadge, DisplayThumbnail]
+          }
+      )

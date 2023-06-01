@@ -122,13 +122,17 @@ iCalendarB = foldMap (uncurry renderGeneralComponent . namedComponentB)
 -- drop any components as that can lead to user data loss.
 -- @
 --
--- TODO fulfill this SHOULD:
+-- Note that the spec says:
+--
 -- @
 -- Applications that
 -- support importing iCalendar objects SHOULD support all of the
 -- component types defined in this document, and SHOULD NOT silently
 -- drop any components as that can lead to user data loss.
 -- @
+--
+-- This typed 'Calendar' may silently drop unknown data, so if you want to
+-- keep those around, make sure to use a 'Component' instead.
 data Calendar = Calendar
   { -- @
     --                ; The following are REQUIRED,
@@ -147,6 +151,27 @@ data Calendar = Calendar
     -- @
     calendarCalendarScale :: !CalendarScale,
     calendarMethod :: !(Maybe Method),
+    -- From [Section 4 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-4):
+    -- @
+    -- calprops =/ *(
+    --              ;
+    --              ; The following are OPTIONAL,
+    --              ; but MUST NOT occur more than once.
+    --              ;
+    --              uid / last-mod / url /
+    --              refresh / source / color
+    --              ;
+    --              ; The following are OPTIONAL,
+    --              ; and MAY occur more than once.
+    --              ;
+    --              name / description / categories /
+    --              image
+    --              ;
+    --              )
+    -- @
+
+    -- | This property is one of the new properties specified in RFC 7986.
+    calendarImages :: ![Image],
     -- TODO:
     -- @
     --                ;
@@ -203,6 +228,8 @@ instance IsComponent Calendar where
     calendarCalendarScale <- optionalPropertyWithDefaultP defaultCalendarScale componentProperties
     calendarMethod <- optionalPropertyP componentProperties
 
+    calendarImages <- listOfPropertiesP componentProperties
+
     calendarTimeZones <- subComponentsP componentSubcomponents
     calendarEvents <- subComponentsP componentSubcomponents
 
@@ -216,7 +243,8 @@ instance IsComponent Calendar where
             [ requiredPropertyB calendarProductIdentifier,
               requiredPropertyB calendarVersion,
               optionalPropertyWithDefaultB defaultCalendarScale calendarCalendarScale,
-              optionalPropertyB calendarMethod
+              optionalPropertyB calendarMethod,
+              listOfPropertiesB calendarImages
             ],
         componentSubcomponents =
           M.unionsWith
@@ -233,6 +261,7 @@ makeCalendar prodId =
       calendarVersion = version20,
       calendarCalendarScale = defaultCalendarScale,
       calendarMethod = Nothing,
+      calendarImages = [],
       calendarEvents = [],
       calendarTimeZones = []
     }

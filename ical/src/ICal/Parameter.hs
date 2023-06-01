@@ -961,21 +961,30 @@ instance Validity Display
 
 instance NFData Display
 
-instance IsParameter Display where
-  parameterName Proxy = "PARTSTAT"
-  parameterP =
-    singleParamP $
-      pure
-        . ( \pv -> case paramValueCI pv of
-              "BADGE" -> DisplayBadge
-              "GRAPHIC" -> DisplayGraphic
-              "FULLSIZE" -> DisplayFullSize
-              "THUMBNAIL" -> DisplayThumbnail
-              _ -> DisplayOther pv
-          )
-  parameterB = singleParamB $ \case
-    DisplayBadge -> "BADGE"
-    DisplayGraphic -> "GRAPHIC"
-    DisplayFullSize -> "FULLSIZE"
-    DisplayThumbnail -> "THUMBNAIL"
-    DisplayOther pv -> pv
+instance IsParameter (NonEmpty Display) where
+  parameterName Proxy = "DISPLAY"
+  parameterP = pure . NE.map parseDisplay
+  parameterB = NE.map renderDisplay
+
+-- @
+-- In the absence of this parameter, the default value
+-- "BADGE" MUST be used.
+-- @
+defaultDisplay :: NonEmpty Display
+defaultDisplay = DisplayBadge :| []
+
+parseDisplay :: ParamValue -> Display
+parseDisplay pv = case paramValueCI pv of
+  "BADGE" -> DisplayBadge
+  "GRAPHIC" -> DisplayGraphic
+  "FULLSIZE" -> DisplayFullSize
+  "THUMBNAIL" -> DisplayThumbnail
+  _ -> DisplayOther pv
+
+renderDisplay :: Display -> ParamValue
+renderDisplay = \case
+  DisplayBadge -> "BADGE"
+  DisplayGraphic -> "GRAPHIC"
+  DisplayFullSize -> "FULLSIZE"
+  DisplayThumbnail -> "THUMBNAIL"
+  DisplayOther pv -> pv

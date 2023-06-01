@@ -6,6 +6,7 @@
 
 module ICal.ParameterSpec where
 
+import Data.List.NonEmpty (NonEmpty)
 import ICal.Parameter
 import ICal.Parameter.Gen
 import Test.Syd
@@ -188,8 +189,8 @@ spec = do
     parameterExampleSpec ["END"] AlarmTriggerRelationshipEnd
 
   describe "Display" $ do
-    genValidSpec @Display
-    parameterSpec @Display
+    genValidSpec @(NonEmpty Display)
+    parameterSpec @(NonEmpty Display)
 
     -- RFC 7986:
     -- @
@@ -198,4 +199,5 @@ spec = do
     -- IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://exa
     --  mple.com/images/weather-cloudy.png
     -- @
-    parameterExampleSpec ["BADGE"] DisplayBadge
+    parameterExampleSpec ["BADGE"] ([DisplayBadge] :: NonEmpty Display)
+    parameterExampleSpec ["BADGE", "THUMBNAIL"] ([DisplayBadge, DisplayThumbnail] :: NonEmpty Display)
