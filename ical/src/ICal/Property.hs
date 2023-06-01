@@ -1276,17 +1276,36 @@ instance IsProperty Created where
 --
 --     SUMMARY:Department Party
 -- @
-newtype Summary = Summary {unSummary :: Text}
+data Summary = Summary
+  { summaryContents :: !Text,
+    summaryAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    summaryLanguage :: !(Maybe Language)
+  }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Summary
 
 instance NFData Summary
 
+instance IsString Summary where
+  fromString = makeSummary . fromString
+
 instance IsProperty Summary where
   propertyName Proxy = "SUMMARY"
-  propertyP = wrapPropertyTypeP Summary
-  propertyB = propertyTypeB . unSummary
+  propertyP clv = do
+    summaryAlternateTextRepresentation <- propertyParamP clv
+    summaryLanguage <- propertyParamP clv
+    wrapPropertyTypeP (\summaryContents -> Summary {..}) clv
+  propertyB Summary {..} =
+    insertMParam summaryAlternateTextRepresentation $
+      insertMParam summaryLanguage $
+        propertyTypeB summaryContents
+
+makeSummary :: Text -> Summary
+makeSummary summaryContents =
+  let summaryAlternateTextRepresentation = Nothing
+      summaryLanguage = Nothing
+   in Summary {..}
 
 -- |
 --
@@ -1351,12 +1370,12 @@ data Description = Description
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance IsString Description where
-  fromString = makeDescription . fromString
-
 instance Validity Description
 
 instance NFData Description
+
+instance IsString Description where
+  fromString = makeDescription . fromString
 
 instance IsProperty Description where
   propertyName Proxy = "DESCRIPTION"
@@ -1611,12 +1630,12 @@ data Location = Location
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance IsString Location where
-  fromString = makeLocation . fromString
-
 instance Validity Location
 
 instance NFData Location
+
+instance IsString Location where
+  fromString = makeLocation . fromString
 
 instance IsProperty Location where
   propertyName Proxy = "LOCATION"
@@ -2074,12 +2093,12 @@ data Comment = Comment
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance IsString Comment where
-  fromString = makeComment . fromString
-
 instance Validity Comment
 
 instance NFData Comment
+
+instance IsString Comment where
+  fromString = makeComment . fromString
 
 instance IsProperty Comment where
   propertyName Proxy = "COMMENT"

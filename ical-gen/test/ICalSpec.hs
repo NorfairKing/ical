@@ -79,7 +79,13 @@ spec = do
                                   )
                               )
                           ),
-                      eventSummary = Just $ Summary "Bastille Day Party",
+                      eventSummary =
+                        Just $
+                          Summary
+                            { summaryContents = "Bastille Day Party",
+                              summaryAlternateTextRepresentation = Nothing,
+                              summaryLanguage = Nothing
+                            },
                       eventDateTimeEndDuration =
                         Just
                           ( Left

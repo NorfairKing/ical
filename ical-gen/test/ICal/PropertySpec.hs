@@ -224,9 +224,19 @@ spec = do
   describe "Summary" $ do
     genValidSpec @Summary
     propertySpec @Summary
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     SUMMARY:Department Party
+    -- @
+
     propertyExampleSpec
       "SUMMARY:Department Party"
-      (Summary "Department Party")
+      Summary
+        { summaryContents = "Department Party",
+          summaryAlternateTextRepresentation = Nothing,
+          summaryLanguage = Nothing
+        }
 
   describe "Description" $ do
     genValidSpec @Description
