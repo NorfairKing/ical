@@ -164,6 +164,31 @@ spec = do
     -- @
     parameterExampleSpec ["image/vnd.microsoft.icon"] (FormatType "image/vnd.microsoft.icon")
 
+  describe "Language" $ do
+    genValidSpec @Language
+    parameterSpec @Language
+
+    -- @
+    -- SUMMARY;LANGUAGE=en-US:Company Holiday Party
+    --
+    -- LOCATION;LANGUAGE=en:Germany
+    --
+    -- LOCATION;LANGUAGE=no:Tyskland
+    -- @
+    parameterExampleSpec ["en-US"] (Language "en-US")
+    parameterExampleSpec ["en"] (Language "en")
+    parameterExampleSpec ["no"] (Language "no")
+
+    -- @
+    -- RESOURCES;LANGUAGE=fr:Nettoyeur haute pression
+    -- @
+    parameterExampleSpec ["fr"] (Language "fr")
+
+    -- @
+    -- TZNAME;LANGUAGE=fr-CA:HNE
+    -- @
+    parameterExampleSpec ["fr-CA"] (Language "fr-CA")
+
   describe "ParticipationStatus" $ do
     genValidSpec @ParticipationStatus
     parameterSpec @ParticipationStatus

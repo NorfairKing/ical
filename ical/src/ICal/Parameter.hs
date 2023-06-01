@@ -415,6 +415,57 @@ instance IsParameter FormatType where
   parameterP = singleParamP $ pure . FormatType
   parameterB = singleParamB unFormatType
 
+-- | Format Type
+--
+-- @
+-- [section 3.2.8](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.8)
+--
+-- Parameter Name:  LANGUAGE
+--
+-- Purpose:  To specify the language for text values in a property or
+--    property parameter.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     languageparam = "LANGUAGE" "=" language
+--
+--     language = Language-Tag
+--                ; As defined in [RFC5646].
+--
+-- Description:  This parameter identifies the language of the text in
+--    the property value and of all property parameter values of the
+--    property.  The value of the "LANGUAGE" property parameter is that
+--    defined in [RFC5646].
+--
+--    For transport in a MIME entity, the Content-Language header field
+--    can be used to set the default language for the entire body part.
+--    Otherwise, no default language is assumed.
+--
+-- Example:  The following are examples of this parameter on the
+--    "SUMMARY" and "LOCATION" properties:
+--
+--     SUMMARY;LANGUAGE=en-US:Company Holiday Party
+--
+--     LOCATION;LANGUAGE=en:Germany
+--
+--     LOCATION;LANGUAGE=no:Tyskland
+-- @
+newtype Language =
+  -- TODO consider actually implementing the tag from RFC5646 here.
+  Language {unLanguage :: ParamValue}
+  deriving stock (Show, Eq, Ord, Generic)
+  deriving newtype (IsString)
+
+instance Validity Language
+
+instance NFData Language
+
+instance IsParameter Language where
+  parameterName Proxy = "FMTTYPE"
+  parameterP = singleParamP $ pure . Language
+  parameterB = singleParamB unLanguage
+
 -- | Participation status
 --
 -- [section 3.2.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.12)
