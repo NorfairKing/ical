@@ -156,6 +156,9 @@ setParamMap params = case NE.nonEmpty (map parameterB (S.toList params)) of
 insertParam :: forall param. IsParameter param => param -> ContentLineValue -> ContentLineValue
 insertParam param clv = clv {contentLineValueParams = M.insert (parameterName (Proxy :: Proxy param)) (parameterB param) (contentLineValueParams clv)}
 
+insertMParam :: forall param. IsParameter param => Maybe param -> ContentLineValue -> ContentLineValue
+insertMParam = maybe id insertParam
+
 insertParamWithDefault :: forall param. (Eq param, IsParameter param) => param -> param -> ContentLineValue -> ContentLineValue
 insertParamWithDefault defaultParam param clv =
   if param == defaultParam

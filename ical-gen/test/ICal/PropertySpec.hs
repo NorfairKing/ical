@@ -399,7 +399,11 @@ spec = do
     propertySpec @Comment
     propertyExampleSpec
       "COMMENT:The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact\\, the venue for the meeting ought to be at their site. - - John"
-      (Comment "The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact, the venue for the meeting ought to be at their site. - - John")
+      Comment
+        { commentContents = "The meeting really needs to include both ourselves and the customer. We can't hold this meeting without them. As a matter of fact, the venue for the meeting ought to be at their site. - - John",
+          commentAlternateTextRepresentation = Nothing,
+          commentLanguage = Nothing
+        }
 
   describe "Transparency" $ do
     genValidSpec @Transparency

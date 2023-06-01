@@ -36,7 +36,7 @@ It's already being used in production at https://smos.online and https://social-
        - [ ] 3.2.7.  Inline Encoding
        - [ ] 3.2.8.  Format Type
        - [ ] 3.2.9.  Free/Busy Time Type
-       - [ ] 3.2.10. Language
+       - [X] 3.2.10. Language
        - [ ] 3.2.11. Group or List Membership
        - [X] 3.2.12. Participation Status
        - [X] 3.2.13. Recurrence Identifier Range

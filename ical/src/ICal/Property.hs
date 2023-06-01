@@ -784,8 +784,8 @@ instance IsProperty Attachment where
     -- @
     -- Value Type:  The default value type for this property is URI.
     -- @
-    AttachmentURI mFormatType uri -> maybe id insertParam mFormatType $ propertyTypeB uri
-    AttachmentBinary mFormatType binary -> maybe id insertParam mFormatType $ typedPropertyTypeB binary
+    AttachmentURI mFormatType uri -> insertMParam mFormatType $ propertyTypeB uri
+    AttachmentBinary mFormatType binary -> insertMParam mFormatType $ typedPropertyTypeB binary
 
 -- | Classification
 --
@@ -976,7 +976,7 @@ instance IsProperty Organizer where
 
     pure Organizer {..}
   propertyB Organizer {..} =
-    maybe id insertParam organizerCommonName $
+    insertMParam organizerCommonName $
       propertyTypeB organizerCalAddress
 
 mkOrganizer :: CalAddress -> Organizer
@@ -1119,8 +1119,8 @@ instance IsProperty RecurrenceIdentifier where
     -- @
     -- Value Type:  The default value type is DATE-TIME.
     -- @
-    RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier dt -> maybe id insertParam mRecurrenceRangeIdentifier $ propertyTypeB dt
-    RecurrenceIdentifierDate mRecurrenceRangeIdentifier d -> maybe id insertParam mRecurrenceRangeIdentifier $ typedPropertyTypeB d
+    RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier dt -> insertMParam mRecurrenceRangeIdentifier $ propertyTypeB dt
+    RecurrenceIdentifierDate mRecurrenceRangeIdentifier d -> insertMParam mRecurrenceRangeIdentifier $ typedPropertyTypeB d
 
 validateMRecurrenceIdentifierMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceIdentifier -> Validation
 validateMRecurrenceIdentifierMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
@@ -2008,7 +2008,11 @@ instance IsProperty TimeZoneName where
 --       As a matter of fact\, the venue for the meeting ought to be at
 --       their site. - - John
 -- @
-newtype Comment = Comment {unComment :: Text}
+data Comment = Comment
+  { commentContents :: Text,
+    commentAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    commentLanguage :: !(Maybe Language)
+  }
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Comment
@@ -2017,8 +2021,20 @@ instance NFData Comment
 
 instance IsProperty Comment where
   propertyName Proxy = "COMMENT"
-  propertyP = wrapPropertyTypeP Comment
-  propertyB = propertyTypeB . unComment
+  propertyP clv = do
+    commentAlternateTextRepresentation <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    commentLanguage <- conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+    wrapPropertyTypeP (\commentContents -> Comment {..}) clv
+  propertyB Comment {..} =
+    insertMParam commentAlternateTextRepresentation $
+      insertMParam commentLanguage $
+        propertyTypeB commentContents
+
+makeComment :: Text -> Comment
+makeComment commentContents =
+  let commentAlternateTextRepresentation = Nothing
+      commentLanguage = Nothing
+   in Comment {..}
 
 -- | Timezone Offset From
 --
@@ -2287,7 +2303,7 @@ instance IsProperty Attendee where
     insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
       insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
         insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation $
-          maybe id insertParam attendeeCommonName $
+          insertMParam attendeeCommonName $
             propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
@@ -2793,11 +2809,8 @@ instance IsProperty Trigger where
       Nothing -> parseDurationTrigger
   propertyB = \case
     TriggerDuration relationship duration ->
-      ( if relationship == defaultAlarmTriggerRelationship
-          then id
-          else insertParam relationship
-      )
-        (propertyTypeB duration)
+      insertParamWithDefault defaultAlarmTriggerRelationship relationship $
+        propertyTypeB duration
     TriggerDateTime date -> typedPropertyTypeB (DateTimeUTC date)
 
 -- | Image
@@ -2905,7 +2918,7 @@ instance IsProperty Image where
       Nothing -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
 
   propertyB Image {..} =
-    (if imageDisplay == defaultDisplay then id else insertParam imageDisplay) $
-      maybe id insertParam imageFormatType $ case imageContents of
+    insertParamWithDefault defaultDisplay imageDisplay $
+      insertMParam imageFormatType $ case imageContents of
         Left uri -> typedPropertyTypeB uri
         Right binary -> typedPropertyTypeB binary
