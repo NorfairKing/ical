@@ -987,7 +987,8 @@ defaultClassification = ClassificationPublic
 -- @
 data Organizer = Organizer
   { organizerCalAddress :: !CalAddress,
-    organizerCommonName :: !(Maybe CommonName)
+    organizerCommonName :: !(Maybe CommonName),
+    organizerLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -998,19 +999,21 @@ instance NFData Organizer
 instance IsProperty Organizer where
   propertyName Proxy = "ORGANIZER"
   propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
-    organizerCommonName <-
-      conformMapError (PropertyTypeParseError . ParameterParseError) (optionalParam (contentLineValueParams clv))
+    organizerCommonName <- propertyParamP clv
+    organizerLanguage <- propertyParamP clv
 
     pure Organizer {..}
   propertyB Organizer {..} =
     insertMParam organizerCommonName $
-      propertyTypeB organizerCalAddress
+      insertMParam organizerLanguage $
+        propertyTypeB organizerCalAddress
 
 mkOrganizer :: CalAddress -> Organizer
 mkOrganizer calAddress =
   Organizer
     { organizerCalAddress = calAddress,
-      organizerCommonName = Nothing
+      organizerCommonName = Nothing,
+      organizerLanguage = Nothing
     }
 
 -- |
