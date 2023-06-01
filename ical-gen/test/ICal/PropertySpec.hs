@@ -818,19 +818,28 @@ spec = do
     propertyParseExampleSpec
       "IMAGE;VALUE=URI;DISPLAY=BADGE;FMTTYPE=image/png:http://example.com/images/party.png"
       ( Image
-          { imageFormatType = Just "image/png",
-            imageContents = Left "http://example.com/images/party.png",
+          { imageContents = Left "http://example.com/images/party.png",
+            imageFormatType = Just "image/png",
+            imageAlternateTextRepresentation = Nothing,
             imageDisplay = [DisplayBadge]
           }
       )
     propertyRenderExampleSpec
       "IMAGE;VALUE=URI;FMTTYPE=image/png:http://example.com/images/party.png"
       ( Image
-          { imageFormatType = Just "image/png",
-            imageContents = Left "http://example.com/images/party.png",
+          { imageContents = Left "http://example.com/images/party.png",
+            imageFormatType = Just "image/png",
+            imageAlternateTextRepresentation = Nothing,
             imageDisplay = [DisplayBadge]
           }
       )
+
+    describe "makeURIImage" $
+      it "produces valid images" $
+        producesValid makeURIImage
+    describe "makeBinaryImage" $
+      it "produces valid images" $
+        producesValid makeBinaryImage
 
     -- @
     -- Example:
@@ -841,16 +850,18 @@ spec = do
     propertyParseExampleSpec
       "IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://example.com/images/weather-cloudy.png"
       ( Image
-          { imageFormatType = Just "image/png",
-            imageContents = Left "https://example.com/images/weather-cloudy.png",
+          { imageContents = Left "https://example.com/images/weather-cloudy.png",
+            imageFormatType = Just "image/png",
+            imageAlternateTextRepresentation = Nothing,
             imageDisplay = [DisplayBadge, DisplayThumbnail]
           }
       )
     propertyRenderExampleSpec
       "IMAGE;VALUE=URI;DISPLAY=BADGE,THUMBNAIL;FMTTYPE=image/png:https://example.com/images/weather-cloudy.png"
       ( Image
-          { imageFormatType = Just "image/png",
-            imageContents = Left "https://example.com/images/weather-cloudy.png",
+          { imageContents = Left "https://example.com/images/weather-cloudy.png",
+            imageFormatType = Just "image/png",
+            imageAlternateTextRepresentation = Nothing,
             imageDisplay = [DisplayBadge, DisplayThumbnail]
           }
       )

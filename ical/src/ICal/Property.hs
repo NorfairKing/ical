@@ -3133,6 +3133,14 @@ instance IsProperty Trigger where
 data Image = Image
   { imageContents :: !(Either URI Binary),
     imageFormatType :: !(Maybe FormatType),
+    -- | Alternate representation
+    -- @
+    -- The "ALTREP" parameter,
+    -- defined in [RFC5545], can be used to provide a "clickable" image
+    -- where the URI in the parameter value can be "launched" by a click
+    -- on the image in the calendar user agent.
+    -- @
+    imageAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
     imageDisplay :: !(NonEmpty Display)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -3146,6 +3154,7 @@ instance IsProperty Image where
   propertyP clv = do
     mValue <- propertyParamP clv
     imageFormatType <- propertyParamP clv
+    imageAlternateTextRepresentation <- propertyParamP clv
     imageDisplay <- propertyParamWithDefaultP defaultDisplay clv
 
     case mValue of
@@ -3155,7 +3164,25 @@ instance IsProperty Image where
       Nothing -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
 
   propertyB Image {..} =
-    insertParamWithDefault defaultDisplay imageDisplay $
-      insertMParam imageFormatType $ case imageContents of
-        Left uri -> typedPropertyTypeB uri
-        Right binary -> typedPropertyTypeB binary
+    insertMParam imageFormatType $
+      insertMParam imageAlternateTextRepresentation $
+        insertParamWithDefault defaultDisplay imageDisplay $
+          case imageContents of
+            Left uri -> typedPropertyTypeB uri
+            Right binary -> typedPropertyTypeB binary
+
+makeURIImage :: URI -> Image
+makeURIImage uri =
+  let imageContents = Left uri
+      imageFormatType = Nothing
+      imageAlternateTextRepresentation = Nothing
+      imageDisplay = defaultDisplay
+   in Image {..}
+
+makeBinaryImage :: Binary -> Image
+makeBinaryImage binary =
+  let imageContents = Right binary
+      imageFormatType = Nothing
+      imageAlternateTextRepresentation = Nothing
+      imageDisplay = defaultDisplay
+   in Image {..}
