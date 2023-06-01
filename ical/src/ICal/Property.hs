@@ -2417,7 +2417,8 @@ data Attendee = Attendee
     attendeeParticipationRole :: !ParticipationRole,
     attendeeParticipationStatus :: !ParticipationStatus,
     attendeeRSVPExpectation :: !RSVPExpectation,
-    attendeeCommonName :: !(Maybe CommonName)
+    attendeeCommonName :: !(Maybe CommonName),
+    attendeeLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -2432,13 +2433,16 @@ instance IsProperty Attendee where
     attendeeParticipationStatus <- propertyParamWithDefaultP defaultParticipationStatus clv
     attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
     attendeeCommonName <- propertyParamP clv
+    attendeeLanguage <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
     insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
       insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
         insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation $
           insertMParam attendeeCommonName $
-            propertyTypeB attendeeCalAddress
+            insertMParam attendeeLanguage $
+              propertyTypeB
+                attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
 mkAttendee calAddress =
@@ -2447,7 +2451,8 @@ mkAttendee calAddress =
       attendeeParticipationRole = defaultParticipationRole,
       attendeeParticipationStatus = defaultParticipationStatus,
       attendeeRSVPExpectation = defaultRSVPExpectation,
-      attendeeCommonName = Nothing
+      attendeeCommonName = Nothing,
+      attendeeLanguage = Nothing
     }
 
 -- | Exception Date-Times
