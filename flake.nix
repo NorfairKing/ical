@@ -6,7 +6,8 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-23.05";
+    nixpkgs-22_11.url = "github:NixOS/nixpkgs?ref=nixos-22.11";
     nixpkgs-22_05.url = "github:NixOS/nixpkgs?ref=nixos-22.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     validity.url = "github:NorfairKing/validity";
@@ -24,6 +25,7 @@
   outputs =
     { self
     , nixpkgs
+    , nixpkgs-22_11
     , nixpkgs-22_05
     , pre-commit-hooks
     , validity
@@ -59,6 +61,7 @@
             in pkgs'.icalRelease;
           allNixpkgs = {
             inherit
+              nixpkgs-22_11
               nixpkgs-22_05;
           };
           backwardCompatibilityChecks = pkgs.lib.mapAttrs (_: nixpkgs: backwardCompatibilityCheckFor nixpkgs) allNixpkgs;
