@@ -8,6 +8,7 @@
 
 module ICal.PropertyType.Class
   ( PropertyTypeParseError (..),
+    PropertyTypeFixableError (..),
     IsPropertyType (..),
 
     -- * Helpers for defining IsPropertyType
@@ -137,6 +138,14 @@ instance Exception PropertyTypeParseError where
     UnReadableBySetPos s -> unwords ["Unreadable BYSETPOS value:", show s]
     UnReadableDayOfWeek s -> unwords ["Unknown day of week value:", show s]
 
+data PropertyTypeFixableError
+  = UrlTextEncoded !Text
+  deriving (Show, Eq, Ord)
+
+instance Exception PropertyTypeFixableError where
+  displayException = \case
+    UrlTextEncoded t -> unwords ["URL was TEXT-encoded but should not have been:", show t]
+
 -- | Property type
 --
 -- === [section 3.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3)
@@ -161,7 +170,7 @@ class IsPropertyType propertyType where
   propertyTypeValueType :: Proxy propertyType -> ValueDataType
 
   -- | Parser for the property type
-  propertyTypeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void propertyType
+  propertyTypeP :: ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void propertyType
 
   -- | Builder for the property type
   propertyTypeB :: propertyType -> ContentLineValue
@@ -313,7 +322,7 @@ instance IsPropertyType Text where
   propertyTypeP = pure . unEscapeText . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
-propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Conform PropertyTypeParseError Void Void [propertyType]
+propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void [propertyType]
 propertyTypeListP clv =
   if T.null (contentLineValueRaw clv)
     then pure []
@@ -336,7 +345,7 @@ propertyTypeListB = \case
 propertyTypeSetP ::
   (Ord propertyType, IsPropertyType propertyType) =>
   ContentLineValue ->
-  Conform PropertyTypeParseError Void Void (Set propertyType)
+  Conform PropertyTypeParseError PropertyTypeFixableError Void (Set propertyType)
 propertyTypeSetP = fmap S.fromList . propertyTypeListP
 
 propertyTypeSetB ::
@@ -349,9 +358,9 @@ typedPropertyTypeP ::
   forall propertyType.
   IsPropertyType propertyType =>
   ContentLineValue ->
-  Conform PropertyTypeParseError Void Void propertyType
+  Conform PropertyTypeParseError PropertyTypeFixableError Void propertyType
 typedPropertyTypeP clv = do
-  mValueDataType <- conformMapError ParameterParseError $ optionalParam (contentLineValueParams clv)
+  mValueDataType <- conformMapAll ParameterParseError absurd id $ optionalParam (contentLineValueParams clv)
   let typ = propertyTypeValueType (Proxy :: Proxy propertyType)
   case mValueDataType of
     Just typ' ->
@@ -416,12 +425,12 @@ validateImpreciseTimeOfDay tod =
 proxyOf :: a -> Proxy a
 proxyOf !_ = Proxy
 
-parseTimeStr :: Time.ParseTime t => String -> String -> Conform PropertyTypeParseError void void t
+parseTimeStr :: Time.ParseTime t => String -> String -> Conform PropertyTypeParseError void void' t
 parseTimeStr formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
   Nothing -> unfixableError $ TimeStrParseError formatStr s
   Just t -> pure t
 
-parseTimesListText :: Time.ParseTime t => String -> Text -> Conform PropertyTypeParseError void void [t]
+parseTimesListText :: Time.ParseTime t => String -> Text -> Conform PropertyTypeParseError void void' [t]
 parseTimesListText formatStr t =
   if T.null t
     then pure []
@@ -429,5 +438,5 @@ parseTimesListText formatStr t =
       let texts = T.splitOn "," t
        in mapM (parseTimeStr formatStr . T.unpack) texts
 
-parseTimesSetText :: (Ord t, Time.ParseTime t) => String -> Text -> Conform PropertyTypeParseError void void (Set t)
+parseTimesSetText :: (Ord t, Time.ParseTime t) => String -> Text -> Conform PropertyTypeParseError void void' (Set t)
 parseTimesSetText formatStr t = S.fromList <$> parseTimesListText formatStr t

@@ -114,13 +114,13 @@ diffDates (Date a) (Date b) = Time.diffDays a b
 dateAddDays :: Integer -> Date -> Date
 dateAddDays diff (Date a) = Date $ Time.addDays diff a
 
-dateP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Date
+dateP :: ContentLineValue -> Conform PropertyTypeParseError void Void Date
 dateP = parseDate . contentLineValueRaw
 
 dateB :: Date -> ContentLineValue
 dateB = mkSimpleContentLineValue . renderDate
 
-parseDate :: Text -> Conform PropertyTypeParseError void void Date
+parseDate :: Text -> Conform PropertyTypeParseError void void' Date
 parseDate = fmap Date . parseTimeStr dateFormatStr . T.unpack
 
 renderDate :: Date -> Text

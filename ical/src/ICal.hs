@@ -97,7 +97,8 @@ instance Exception ICalParseError where
 -- | Fixable parse error
 --
 -- Use 'displayException'@ :: ICalParseFixableError -> String@ to display this error nicely.
-data ICalParseFixableError = CalendarParseFixableError !CalendarParseFixableError
+data ICalParseFixableError
+  = CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)
 
 instance Exception ICalParseFixableError where
@@ -241,7 +242,7 @@ parsePropertyFromText contents = do
     [] -> unfixableError $ ContentLineParseError "No unfolded lines."
     [unfoldedLine] -> do
       contentLine <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ parseContentLineFromUnfoldedLine unfoldedLine
-      conformMapAll (ContentLineParseError . show) absurd absurd $ propertyContentLineP contentLine
+      conformMapAll (ContentLineParseError . show) (CalendarParseFixableError . PropertyParseFixableError) absurd $ propertyContentLineP contentLine
     _ -> unfixableError $ ContentLineParseError "More than one unfolded line."
 
 -- | Render an individual property from Text directly

@@ -45,6 +45,6 @@ spec = do
                   contentLineValueParams = M.singleton "VALUE" ["DATE-TIME"]
                 }
             ) ::
-            Conform PropertyTypeParseError Void Void Date
+            Conform PropertyTypeParseError PropertyTypeFixableError Void Date
         )
         `shouldSatisfy` isLeft

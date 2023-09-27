@@ -110,4 +110,4 @@ spec = do
               { contentLineValueRaw = "19970714T173000Z",
                 contentLineValueParams = M.singleton "VALUE" ["DATE"]
               }
-       in runConformStrict (typedPropertyTypeP clv :: Conform PropertyTypeParseError Void Void DateTime) `shouldSatisfy` isLeft
+       in runConformStrict (typedPropertyTypeP clv :: Conform PropertyTypeParseError PropertyTypeFixableError Void DateTime) `shouldSatisfy` isLeft

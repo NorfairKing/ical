@@ -161,7 +161,7 @@ parseGeneralComponentHelper = \case
     Begin name <-
       conformMapAll
         PropertyParseError
-        absurd
+        PropertyParseFixableError
         absurd
         $ propertyContentLineP firstCL
     go name M.empty M.empty restCLs
@@ -184,7 +184,7 @@ parseGeneralComponentHelper = \case
             End name' <-
               conformMapAll
                 PropertyParseError
-                absurd
+                PropertyParseFixableError
                 absurd
                 $ propertyContentLineP
                   cl
@@ -287,7 +287,8 @@ instance Exception TimeZoneParseError where
         ]
 
 data CalendarParseFixableError
-  = MissingProductIdentifier !ProductIdentifier
+  = PropertyParseFixableError !PropertyFixableError
+  | MissingProductIdentifier !ProductIdentifier
   | UntilTypeGuess
       !DateTimeStart
       !Until
@@ -298,6 +299,7 @@ data CalendarParseFixableError
 
 instance Exception CalendarParseFixableError where
   displayException = \case
+    PropertyParseFixableError fe -> displayException fe
     MissingProductIdentifier prodid -> unwords ["Missing PRODID, added", show prodid]
     UntilTypeGuess dateTimeStart until1 until2 -> unwords ["UntilTypeGuess", show dateTimeStart, show until1, show until2]
 
@@ -384,7 +386,7 @@ requiredPropertyP m = case M.lookup name m of
   Nothing -> unfixableError $ CalendarParseErrorMissingRequiredProperty name
   Just values -> case values of
     (value :| _) ->
-      conformMapAll PropertyParseError absurd absurd $
+      conformMapAll PropertyParseError PropertyParseFixableError absurd $
         propertyContentLineP (ContentLine name value)
         -- TODO fixable error when there are multiple.
   where
@@ -418,7 +420,7 @@ optionalPropertyP m = case M.lookup name m of
   Just values -> case values of
     (value :| _) ->
       fmap Just $
-        conformMapAll PropertyParseError absurd absurd $
+        conformMapAll PropertyParseError PropertyParseFixableError absurd $
           propertyContentLineP (ContentLine name value)
           -- TODO warning when there are multiple.
   where
@@ -445,7 +447,7 @@ listOfPropertiesP ::
   CP [a]
 listOfPropertiesP m = do
   let values = maybe [] NE.toList $ M.lookup name m
-  mapM (conformMapAll PropertyParseError absurd absurd . propertyContentLineP) (map (ContentLine name) values)
+  mapM (conformMapAll PropertyParseError PropertyParseFixableError absurd . propertyContentLineP) (map (ContentLine name) values)
   where
     name = propertyName (Proxy :: Proxy a)
 

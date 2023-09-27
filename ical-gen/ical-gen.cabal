@@ -21,6 +21,7 @@ extra-source-files:
     test_resources/calendar/error/timezone-without-observances.ics
     test_resources/calendar/fixable/invalid-until.ics
     test_resources/calendar/fixable/missing-prodid.ics
+    test_resources/calendar/fixable/uri-with-encoded-comma.ics
     test_resources/calendar/valid/daily-bysetpos.ics
     test_resources/calendar/valid/dash.ics
     test_resources/calendar/valid/date.ics

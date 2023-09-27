@@ -1,0 +1,33 @@
+BEGIN:VCALENDAR
+PRODID:Example
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20211126
+DTEND;VALUE=DATE:20211213
+DTSTAMP:20230927T103242Z
+UID:06A297C3-85FF-41C9-92D4-384BB70A3471
+URL:message://%3C4Hd8Vb3hSCz1xHS%40mailrouter-205.lhr4.prod.booking.com%3E?
+ c=1635153447&k=%7Chotel%5C%7CApartamento%20Aguaviva\,%20tu%20lugar%20al%20l
+ ado%20del%20Oc%C3%A9ano%5C%7C2979806546
+CREATED:20211125T084327Z
+DESCRIPTION:Confirmation Code: 2979806546\n\nCheck-in: 12:00\nCheckout: 14:
+ 00
+LAST-MODIFIED:20220721T124312Z
+LOCATION:Apartamento Aguaviva\, tu lugar al lado del Océano\n3 Calle las Ag
+ uavivas 35508 Costa Teguise Spain
+SEQUENCE:1
+STATUS:CONFIRMED
+SUMMARY:Stay: Apartamento Aguaviva\, tu lugar al lado del Océano
+TRANSP:OPAQUE
+X-APPLE-SUGGESTION-INFO-TIMESTAMP:20521126T015745
+X-APPLE-SUGGESTION-INFO-CHANGED-FIELDS:0
+X-APPLE-SUGGESTION-INFO-OPAQUE-KEY:|hotel\\|Apartamento Aguaviva\, tu lugar
+  al lado del Océano\\|2979806546
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3 Calle las Aguavivas 35508
+  Costa Teguise Spain;X-TITLE="Apartamento Aguaviva, tu lugar al lado del Oc
+ éano":::geo:28.998079,-13.490198
+X-APPLE-SUGGESTION-INFO-UNIQUE-KEY:|2|\\|hotel\\\\\\|Apartamento Aguaviva\,
+  tu lugar al lado del Océano\\\\\\|2979806546|\\|16\\|\\\\\\|com.booking.Bo
+ okingApp\\\\\\|BOOKING_HOTEL-2979806546
+END:VEVENT
+END:VCALENDAR

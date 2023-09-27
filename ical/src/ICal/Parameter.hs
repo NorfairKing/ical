@@ -165,24 +165,24 @@ insertParamWithDefault defaultParam param clv =
     then clv
     else insertParam param clv
 
-singleParamP :: (ParamValue -> Conform ParameterParseError Void Void a) -> NonEmpty ParamValue -> Conform ParameterParseError Void Void a
+singleParamP :: (ParamValue -> Conform ParameterParseError void void' a) -> NonEmpty ParamValue -> Conform ParameterParseError void void' a
 singleParamP func = \case
   value :| [] -> func value
   ne -> unfixableError $ MultipleParametersfound ne
 
 -- TODO figure out if this text should be case-insensitive
 anySingleParamP ::
-  (CI Text -> Conform ParameterParseError Void Void a) ->
+  (CI Text -> Conform ParameterParseError void void' a) ->
   NonEmpty ParamValue ->
-  Conform ParameterParseError Void Void a
+  Conform ParameterParseError void void' a
 anySingleParamP func = singleParamP $ \case
   UnquotedParam c -> func c
   QuotedParam t -> func (CI.mk t)
 
 singleQuotedParamP ::
-  (Text -> Conform ParameterParseError Void Void a) ->
+  (Text -> Conform ParameterParseError void void' a) ->
   NonEmpty ParamValue ->
-  Conform ParameterParseError Void Void a
+  Conform ParameterParseError void void' a
 singleQuotedParamP func = \case
   value :| [] -> case value of
     QuotedParam t -> func t

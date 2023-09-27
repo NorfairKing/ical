@@ -294,7 +294,7 @@ renderSign = \case
   Positive -> []
   Negative -> "-"
 
-parseDuration :: Text -> Conform PropertyTypeParseError Void Void Duration
+parseDuration :: Text -> Conform PropertyTypeParseError void Void Duration
 parseDuration = either (unfixableError . UnparseableDuration) pure . parse go ""
   where
     go :: Parsec Void Text Duration

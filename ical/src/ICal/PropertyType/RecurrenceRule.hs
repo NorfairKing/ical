@@ -48,7 +48,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time as Time
 import Data.Time.Compat ()
--- Ord DayOfWeek and NFData DayOfWeek
 import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
@@ -566,28 +565,28 @@ instance IsPropertyType RecurrenceRule where
 
 recurrenceRuleP ::
   ContentLineValue ->
-  Conform PropertyTypeParseError Void Void RecurrenceRule
+  Conform PropertyTypeParseError PropertyTypeFixableError Void RecurrenceRule
 recurrenceRuleP ContentLineValue {..} = do
   let parts = T.splitOn ";" contentLineValueRaw
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
     [] -> error "cannot happen because T.splitOn never returns an empty list."
     (k : vs) -> pure (k, T.intercalate "=" vs)
-  let parsePart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void part
+  let parsePart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError PropertyTypeFixableError Void part
       parsePart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in case lookup name tups of
               Nothing -> unfixableError $ RecurrenceRulePartNotFound name
               Just val -> recurrenceRulePartP val
 
-      parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError Void Void (Maybe part)
+      parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError PropertyTypeFixableError Void (Maybe part)
       parseMPart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in mapM recurrenceRulePartP (lookup name tups)
 
-      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Conform PropertyTypeParseError Void Void part
+      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Conform PropertyTypeParseError PropertyTypeFixableError Void part
       parseDPart defaultValue = fromMaybe defaultValue <$> parseMPart
 
-      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Conform PropertyTypeParseError Void Void (Set part)
+      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Conform PropertyTypeParseError PropertyTypeFixableError Void (Set part)
       parseSetPart = parseDPart S.empty
 
   recurrenceRuleFrequency <- parsePart
@@ -657,10 +656,14 @@ recurrenceRuleB RecurrenceRule {..} =
 
 class IsRecurrenceRulePart part where
   recurrenceRulePartName :: Proxy part -> Text
-  recurrenceRulePartP :: Text -> Conform PropertyTypeParseError Void Void part
+  recurrenceRulePartP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void part
   recurrenceRulePartB :: part -> Text
 
-setP :: Ord part => (Text -> Conform PropertyTypeParseError Void Void part) -> Text -> Conform PropertyTypeParseError Void Void (Set part)
+setP ::
+  Ord part =>
+  (Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void part) ->
+  Text ->
+  Conform PropertyTypeParseError PropertyTypeFixableError Void (Set part)
 setP parser t =
   if T.null t
     then pure S.empty
@@ -714,7 +717,7 @@ instance IsRecurrenceRulePart Frequency where
   recurrenceRulePartP = frequencyP
   recurrenceRulePartB = frequencyB
 
-frequencyP :: Text -> Conform PropertyTypeParseError Void Void Frequency
+frequencyP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Frequency
 frequencyP = \case
   "SECONDLY" -> pure Secondly
   "MINUTELY" -> pure Minutely
@@ -757,7 +760,7 @@ instance IsRecurrenceRulePart Interval where
   recurrenceRulePartP = intervalP
   recurrenceRulePartB = intervalB
 
-intervalP :: Text -> Conform PropertyTypeParseError Void Void Interval
+intervalP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Interval
 intervalP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableInterval t
@@ -852,7 +855,7 @@ instance IsRecurrenceRulePart Until where
   recurrenceRulePartP = untilP
   recurrenceRulePartB = untilB
 
-untilP :: Text -> Conform PropertyTypeParseError Void Void Until
+untilP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Until
 untilP t =
   (UntilDate <$> parseDate t)
     `altConform` (UntilDateTimeUTC <$> parseDateTimeUTC t)
@@ -882,7 +885,7 @@ instance IsRecurrenceRulePart Count where
   recurrenceRulePartP = countP
   recurrenceRulePartB = countB
 
-countP :: Text -> Conform PropertyTypeParseError Void Void Count
+countP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Count
 countP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableCount t
@@ -912,7 +915,7 @@ instance IsRecurrenceRulePart (Set BySecond) where
   recurrenceRulePartP = setP bySecondP
   recurrenceRulePartB = setB bySecondB
 
-bySecondP :: Text -> Conform PropertyTypeParseError Void Void BySecond
+bySecondP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void BySecond
 bySecondP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableBySecond t
@@ -942,7 +945,7 @@ instance IsRecurrenceRulePart (Set ByMinute) where
   recurrenceRulePartP = setP byMinuteP
   recurrenceRulePartB = setB byMinuteB
 
-byMinuteP :: Text -> Conform PropertyTypeParseError Void Void ByMinute
+byMinuteP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByMinute
 byMinuteP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByMinute t
@@ -972,7 +975,7 @@ instance IsRecurrenceRulePart (Set ByHour) where
   recurrenceRulePartP = setP byHourP
   recurrenceRulePartB = setB byHourB
 
-byHourP :: Text -> Conform PropertyTypeParseError Void Void ByHour
+byHourP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByHour
 byHourP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByHour t
@@ -1022,15 +1025,15 @@ instance IsRecurrenceRulePart (Set ByDay) where
   recurrenceRulePartP = setP byDayP
   recurrenceRulePartB = setB byDayB
 
-byDayP :: Text -> Conform PropertyTypeParseError Void Void ByDay
+byDayP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByDay
 byDayP t =
   let ci = CI.mk t
    in everyP ci `altConform` specificP ci
 
-everyP :: CI Text -> Conform PropertyTypeParseError Void Void ByDay
+everyP :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByDay
 everyP = fmap Every . parseDayOfWeek
 
-specificP :: CI Text -> Conform PropertyTypeParseError Void Void ByDay
+specificP :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByDay
 specificP ci =
   let t = CI.original ci
    in case T.unpack t of
@@ -1046,7 +1049,7 @@ specificP ci =
             pure $ Specific i dow
         _ -> unfixableError $ UnReadableByDay t
 
-parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError Void Void DayOfWeek
+parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void DayOfWeek
 parseDayOfWeek = \case
   "MO" -> pure Monday
   "TU" -> pure Tuesday
@@ -1095,7 +1098,7 @@ instance IsRecurrenceRulePart (Set ByMonthDay) where
   recurrenceRulePartP = setP byMonthDayP
   recurrenceRulePartB = setB byMonthDayB
 
-byMonthDayP :: Text -> Conform PropertyTypeParseError Void Void ByMonthDay
+byMonthDayP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByMonthDay
 byMonthDayP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByMonthDay t
@@ -1127,7 +1130,7 @@ instance IsRecurrenceRulePart (Set ByYearDay) where
   recurrenceRulePartP = setP byYearDayP
   recurrenceRulePartB = setB byYearDayB
 
-byYearDayP :: Text -> Conform PropertyTypeParseError Void Void ByYearDay
+byYearDayP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByYearDay
 byYearDayP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByYearDay t
@@ -1168,7 +1171,7 @@ instance IsRecurrenceRulePart (Set ByWeekNo) where
   recurrenceRulePartP = setP byWeekNoP
   recurrenceRulePartB = setB byWeekNoB
 
-byWeekNoP :: Text -> Conform PropertyTypeParseError Void Void ByWeekNo
+byWeekNoP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByWeekNo
 byWeekNoP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByWeekNo t
@@ -1194,7 +1197,7 @@ instance IsRecurrenceRulePart (Set ByMonth) where
   recurrenceRulePartP = setP byMonthP
   recurrenceRulePartB = setB byMonthB
 
-byMonthP :: Text -> Conform PropertyTypeParseError Void Void ByMonth
+byMonthP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByMonth
 byMonthP t = case readMaybe (T.unpack t) >>= monthNoToMonth of
   Nothing -> unfixableError $ UnReadableByMonth t
   Just w -> pure $ ByMonth w
@@ -1238,7 +1241,7 @@ instance IsRecurrenceRulePart (Set BySetPos) where
   recurrenceRulePartP = setP bySetPosP
   recurrenceRulePartB = setB bySetPosB
 
-bySetPosP :: Text -> Conform PropertyTypeParseError Void Void BySetPos
+bySetPosP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void BySetPos
 bySetPosP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableBySetPos t
@@ -1268,7 +1271,7 @@ instance IsRecurrenceRulePart WeekStart where
   recurrenceRulePartP = weekStartP
   recurrenceRulePartB = weekStartB
 
-weekStartP :: Text -> Conform PropertyTypeParseError Void Void WeekStart
+weekStartP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void WeekStart
 weekStartP = fmap WeekStart <$> parseDayOfWeek . CI.mk
 
 weekStartB :: WeekStart -> Text

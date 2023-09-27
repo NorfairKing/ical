@@ -91,9 +91,11 @@ instance IsPropertyType Binary where
   propertyTypeP = binaryP
   propertyTypeB = binaryB
 
-binaryP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Binary
+binaryP ::
+  ContentLineValue ->
+  Conform PropertyTypeParseError PropertyTypeFixableError Void Binary
 binaryP ContentLineValue {..} = do
-  mEncoding <- conformMapError ParameterParseError $ optionalParam contentLineValueParams
+  mEncoding <- conformMapAll ParameterParseError absurd id $ optionalParam contentLineValueParams
   case mEncoding of
     Nothing -> unfixableError $ UnparseableBinary contentLineValueRaw "No ENCODING=BASE64 found for BINARY value" -- TODO: emit fixable error instead
     Just Encoding8Bit -> unfixableError $ UnparseableBinary contentLineValueRaw "ENCODING=8BIT found for BINARY value instead of ENCODING=BASE64" -- TODO: emit fixable error instead

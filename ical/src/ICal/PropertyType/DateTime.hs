@@ -260,7 +260,7 @@ dateTimeDate =
     -- This is where the warning is relevant
     DateTimeZoned _ lt -> Time.localDay lt
 
-dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTime
+dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError void Void DateTime
 dateTimeP clv@ContentLineValue {..} = do
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
@@ -269,13 +269,13 @@ dateTimeP clv@ContentLineValue {..} = do
         `altConform` (DateTimeFloating <$> dateTimeFloatingP clv)
     Just conformTzid ->
       DateTimeZoned
-        <$> conformMapError ParameterParseError conformTzid
+        <$> conformMapAll ParameterParseError absurd id conformTzid
         <*> parseTimeStr dateTimeZonedFormatStr s
 
-dateTimeFloatingP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time.LocalTime
+dateTimeFloatingP :: ContentLineValue -> Conform PropertyTypeParseError void Void Time.LocalTime
 dateTimeFloatingP = parseDateTimeFloating . contentLineValueRaw
 
-dateTimeUTCP :: ContentLineValue -> Conform PropertyTypeParseError Void Void Time.UTCTime
+dateTimeUTCP :: ContentLineValue -> Conform PropertyTypeParseError void Void Time.UTCTime
 dateTimeUTCP = parseDateTimeUTC . contentLineValueRaw
 
 dateTimeB :: DateTime -> ContentLineValue
@@ -297,7 +297,7 @@ dateTimeZonedB tzidParam lt =
       contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
     }
 
-parseDateTimeFloating :: Text -> Conform PropertyTypeParseError Void Void Time.LocalTime
+parseDateTimeFloating :: Text -> Conform PropertyTypeParseError void void' Time.LocalTime
 parseDateTimeFloating = parseTimeStr dateTimeFloatingFormatStr . T.unpack
 
 renderDateTimeFloating :: Time.LocalTime -> Text
@@ -306,7 +306,7 @@ renderDateTimeFloating = T.pack . Time.formatTime Time.defaultTimeLocale dateTim
 dateTimeFloatingFormatStr :: String
 dateTimeFloatingFormatStr = "%Y%m%dT%H%M%S"
 
-parseDateTimeUTC :: Text -> Conform PropertyTypeParseError Void Void Time.UTCTime
+parseDateTimeUTC :: Text -> Conform PropertyTypeParseError void void' Time.UTCTime
 parseDateTimeUTC = parseTimeStr dateTimeUTCFormatStr . T.unpack
 
 renderDateTimeUTC :: Time.UTCTime -> Text

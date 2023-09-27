@@ -76,6 +76,14 @@ instance Exception PropertyParseError where
           unwords ["Other options:", show otherTypes]
         ]
 
+data PropertyFixableError
+  = PropertyTypeFixableError !PropertyTypeFixableError
+  deriving (Show, Eq, Ord)
+
+instance Exception PropertyFixableError where
+  displayException = \case
+    PropertyTypeFixableError ptfe -> displayException ptfe
+
 -- |
 --
 -- === [section 3.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7)
@@ -105,7 +113,7 @@ class IsProperty property where
   propertyName :: Proxy property -> ContentLineName
 
   -- | Parser for the property
-  propertyP :: ContentLineValue -> Conform PropertyParseError Void Void property
+  propertyP :: ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property
 
   -- | Builder for the property
   propertyB :: property -> ContentLineValue
@@ -119,7 +127,7 @@ propertyContentLineP ::
   forall property.
   IsProperty property =>
   ContentLine ->
-  Conform PropertyParseError Void Void property
+  Conform PropertyParseError PropertyFixableError Void property
 propertyContentLineP ContentLine {..} =
   let name = propertyName (Proxy :: Proxy property)
    in if contentLineName == name
@@ -132,16 +140,16 @@ propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . pr
 viaPropertyTypeP ::
   forall propertyType property.
   IsPropertyType propertyType =>
-  (propertyType -> Conform PropertyParseError Void Void property) ->
-  (ContentLineValue -> Conform PropertyParseError Void Void property)
+  (propertyType -> Conform PropertyParseError PropertyFixableError Void property) ->
+  (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 viaPropertyTypeP func clv = do
-  propertyType <- conformMapError PropertyTypeParseError $ typedPropertyTypeP clv
+  propertyType <- conformMapAll PropertyTypeParseError PropertyTypeFixableError id $ typedPropertyTypeP clv
   func propertyType
 
 wrapPropertyTypeP ::
   IsPropertyType propertyType =>
   (propertyType -> property) ->
-  (ContentLineValue -> Conform PropertyParseError Void Void property)
+  (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
 propertyParamP ::
@@ -149,10 +157,10 @@ propertyParamP ::
   ContentLineValue ->
   Conform
     PropertyParseError
-    Void
+    PropertyFixableError
     Void
     (Maybe param)
-propertyParamP clv = conformMapError (PropertyTypeParseError . ParameterParseError) $ optionalParam $ contentLineValueParams clv
+propertyParamP clv = conformMapAll (PropertyTypeParseError . ParameterParseError) absurd id $ optionalParam $ contentLineValueParams clv
 
 propertyParamWithDefaultP ::
   IsParameter param =>
@@ -160,7 +168,7 @@ propertyParamWithDefaultP ::
   ContentLineValue ->
   Conform
     PropertyParseError
-    Void
+    PropertyFixableError
     Void
     param
 propertyParamWithDefaultP defaultValue clv = fromMaybe defaultValue <$> propertyParamP clv
@@ -3031,7 +3039,7 @@ instance IsProperty Trigger where
   propertyP clv = do
     mValue <- propertyParamP clv
     let parseDurationTrigger = do
-          duration <- conformMapError PropertyTypeParseError $ propertyTypeP clv
+          duration <- conformMapAll PropertyTypeParseError PropertyTypeFixableError id $ propertyTypeP clv
           relationship <- propertyParamWithDefaultP defaultAlarmTriggerRelationship clv
           pure $ TriggerDuration relationship duration
 

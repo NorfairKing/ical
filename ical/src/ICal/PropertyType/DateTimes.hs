@@ -85,7 +85,7 @@ instance IsPropertyType DateTimes where
   propertyTypeP = dateTimesP
   propertyTypeB = dateTimesB
 
-dateTimesP :: ContentLineValue -> Conform PropertyTypeParseError Void Void DateTimes
+dateTimesP :: ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void DateTimes
 dateTimesP ContentLineValue {..} =
   if T.null contentLineValueRaw
     then pure DateTimesEmpty
@@ -95,7 +95,7 @@ dateTimesP ContentLineValue {..} =
           `altConform` (DateTimesFloating <$> parseTimesSetText dateTimeFloatingFormatStr contentLineValueRaw)
       Just conformTzid ->
         DateTimesZoned
-          <$> conformMapError ParameterParseError conformTzid
+          <$> conformMapAll ParameterParseError absurd id conformTzid
           <*> parseTimesSetText dateTimeZonedFormatStr contentLineValueRaw
 
 dateTimesB :: DateTimes -> ContentLineValue
