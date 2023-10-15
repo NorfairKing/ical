@@ -115,7 +115,6 @@
         doBenchmark = true;
         buildInputs = (with pkgs; [
           cabal-install
-          niv
           vcal
           zlib
         ]) ++ builtins.attrValues pkgs.icalInterops ++ (with pre-commit-hooks.packages.${system};

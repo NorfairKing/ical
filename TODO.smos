@@ -593,13 +593,11 @@ value:
         time: 2022-10-03 00:56:20
       - state: TODO
         time: 2022-09-20 14:02:48
-  - header: Make all the MUST's errors, either fixable or not.
-    state-history:
-    - state: TODO
-      time: 2022-10-03 00:56:30
   - entry:
       header: recurrence
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:11
       - state: TODO
         time: 2022-09-09 14:11:25
     forest:
@@ -648,32 +646,94 @@ value:
         time: 2022-09-16 09:11:40
     - header: Implement timezone resolution to
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:10
       - state: TODO
         time: 2022-09-15 12:29:32
     - header: Implement date diffing
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:09
       - state: TODO
         time: 2022-09-15 12:29:33
     - header: Implement datetime diffing
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:09
       - state: TODO
         time: 2022-09-15 12:29:34
     - header: Test exact durations in rdates
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:09
       - state: TODO
         time: 2022-09-15 12:29:33
     - header: Implement exact duration
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:09
       - state: TODO
         time: 2022-09-15 12:29:34
     - header: Make a recurringevent type with start and endduration and recurrence
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:08
       - state: TODO
         time: 2022-09-13 13:38:23
     - header: make an unresolvedevent type with start and endduration
       state-history:
+      - state: DONE
+        time: 2023-10-15 07:04:08
       - state: TODO
         time: 2022-09-13 13:38:23
+  - header: Do a coverage analysis
+    state-history:
+    - state: DONE
+      time: 2023-10-15 07:03:36
+    - state: TODO
+      time: 2022-07-07 07:43:02
+  - entry:
+      header: Needed for use in smos
+      state-history:
+      - state: DONE
+        time: 2023-10-15 07:02:45
+      - state: TODO
+        time: 2022-07-04 22:16:15
+    forest:
+    - header: ical-recurrence
+      state-history:
+      - state: DONE
+        time: 2023-10-15 07:02:43
+      - state: TODO
+        time: 2022-07-04 22:16:41
+    - header: description
+      state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:12
+      - state: TODO
+        time: 2022-07-04 22:20:26
+    - header: summary
+      state-history:
+      - state: DONE
+        time: 2022-07-07 09:28:12
+      - state: TODO
+        time: 2022-07-04 22:20:25
+  - header: Prase into a typed ComponentSection before parsing the components
+    state-history:
+    - state: DONE
+      time: 2023-10-15 07:02:40
+    - state: TODO
+      time: 2022-12-27 07:34:20
+  - header: 'Don''t require prodid while parsing?: some people don''t make them'
+    state-history:
+    - state: DONE
+      time: 2023-10-15 07:04:17
+    - state: TODO
+      time: 2022-04-07 10:24:12
+  - header: Make all the MUST's errors, either fixable or not.
+    state-history:
+    - state: TODO
+      time: 2022-10-03 00:56:30
   - entry:
       header: Do end-to-end tests with other programs
       state-history:
@@ -700,41 +760,7 @@ value:
       state-history:
       - state: TODO
         time: 2022-09-06 21:15:47
-  - header: Do a coverage analysis
-    state-history:
-    - state: TODO
-      time: 2022-07-07 07:43:02
-  - entry:
-      header: Needed for use in smos
-      state-history:
-      - state: TODO
-        time: 2022-07-04 22:16:15
-    forest:
-    - header: ical-recurrence
-      state-history:
-      - state: TODO
-        time: 2022-07-04 22:16:41
-    - header: description
-      state-history:
-      - state: DONE
-        time: 2022-07-07 09:28:12
-      - state: TODO
-        time: 2022-07-04 22:20:26
-    - header: summary
-      state-history:
-      - state: DONE
-        time: 2022-07-07 09:28:12
-      - state: TODO
-        time: 2022-07-04 22:20:25
-  - header: 'Don''t require prodid while parsing?: some people don''t make them'
-    state-history:
-    - state: TODO
-      time: 2022-04-07 10:24:12
   - header: Test recurrence against other implementations
     state-history:
     - state: TODO
       time: 2022-09-15 07:53:56
-  - header: Prase into a typed ComponentSection before parsing the components
-    state-history:
-    - state: TODO
-      time: 2022-12-27 07:34:20
