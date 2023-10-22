@@ -31,7 +31,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.2.2.  Common Name
        - [X] 3.2.3.  Calendar User Type
        - [X] 3.2.4.  Delegators
-       - [ ] 3.2.5.  Delegatees
+       - [X] 3.2.5.  Delegatees
        - [ ] 3.2.6.  Directory Entry Reference
        - [ ] 3.2.7.  Inline Encoding
        - [ ] 3.2.8.  Format Type

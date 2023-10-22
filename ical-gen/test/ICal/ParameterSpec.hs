@@ -134,6 +134,16 @@ spec = do
     -- @
     parameterExampleSpec (QuotedParam "mailto:jsmith@example.com") (Delegator "mailto:jsmith@example.com")
 
+  describe "Delegatee" $ do
+    genValidSpec @Delegatee
+    parameterSpec @Delegatee
+
+    -- @
+    --     ATTENDEE;DELEGATED-TO="mailto:jdoe@example.com","mailto:jqpublic
+    --      @example.com":mailto:jsmith@example.com
+    -- @
+    parameterExampleSpec (QuotedParam "mailto:jdoe@example.com") (Delegatee "mailto:jdoe@example.com")
+
   describe "Encoding" $ do
     genValidSpec @Encoding
     parameterSpec @Encoding

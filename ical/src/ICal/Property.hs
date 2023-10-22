@@ -2525,7 +2525,7 @@ instance IsProperty TimeZoneOffsetTo where
 --      example.com
 --     ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=
 --      "mailto:hcabot@example.com";CN=The Big Cheese:mailto:iamboss
---      @example.com
+--       @example.com
 --     ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe
 --      :mailto:jdoe@example.com
 --
@@ -2542,7 +2542,8 @@ data Attendee = Attendee
     attendeeRSVPExpectation :: !RSVPExpectation,
     attendeeCommonName :: !(Maybe CommonName),
     attendeeCalendarUserType :: !CalendarUserType,
-    attendeeDelegator :: ![Delegator],
+    attendeeDelegators :: ![Delegator],
+    attendeeDelegatees :: ![Delegatee],
     attendeeLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -2559,7 +2560,8 @@ instance IsProperty Attendee where
     attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
     attendeeCommonName <- propertyParamP clv
     attendeeCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
-    attendeeDelegator <- propertyParamListP clv
+    attendeeDelegators <- propertyParamListP clv
+    attendeeDelegatees <- propertyParamListP clv
     attendeeLanguage <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
@@ -2568,7 +2570,8 @@ instance IsProperty Attendee where
       . insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation
       . insertMParam attendeeCommonName
       . insertParamWithDefault defaultCalendarUserType attendeeCalendarUserType
-      . insertParamList attendeeDelegator
+      . insertParamList attendeeDelegators
+      . insertParamList attendeeDelegatees
       . insertMParam attendeeLanguage
       $ propertyTypeB attendeeCalAddress
 
@@ -2581,7 +2584,8 @@ mkAttendee calAddress =
       attendeeRSVPExpectation = defaultRSVPExpectation,
       attendeeCommonName = Nothing,
       attendeeCalendarUserType = defaultCalendarUserType,
-      attendeeDelegator = [],
+      attendeeDelegators = [],
+      attendeeDelegatees = [],
       attendeeLanguage = Nothing
     }
 

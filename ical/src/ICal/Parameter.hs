@@ -218,6 +218,10 @@ instance IsParameter CalendarUserType where
 defaultCalendarUserType :: CalendarUserType
 defaultCalendarUserType = CalendarUserTypeIndividual
 
+-- | Delegator
+--
+-- [section 3.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.4)
+--
 -- @
 -- Parameter Name:  DELEGATED-FROM
 --
@@ -255,6 +259,48 @@ instance IsParameter Delegator where
     Nothing -> unfixableError $ InvalidCalAddress t
     Just ca -> pure $ Delegator ca
   parameterB = quotedParamB $ renderCalAddress . unDelegator
+
+-- | Delegatee
+--
+-- [section 3.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.4)
+--
+-- @
+-- Parameter Name:  DELEGATED-TO
+--
+-- Purpose:  To specify the calendar users to whom the calendar user
+--    specified by the property has delegated participation.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     deltoparam = "DELEGATED-TO" "=" DQUOTE cal-address DQUOTE
+--                  *("," DQUOTE cal-address DQUOTE)
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  This parameter specifies those calendar
+--    users whom have been delegated participation in a group-scheduled
+--    event or to-do by the calendar user specified by the property.
+--    The individual calendar address parameter values MUST each be
+--    specified in a quoted-string.
+--
+-- Example:
+--
+--     ATTENDEE;DELEGATED-TO="mailto:jdoe@example.com","mailto:jqpublic
+--      @example.com":mailto:jsmith@example.com
+-- @
+newtype Delegatee = Delegatee {unDelegatee :: CalAddress}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Delegatee
+
+instance NFData Delegatee
+
+instance IsParameter Delegatee where
+  parameterName Proxy = "DELEGATED-TO"
+  parameterP = quotedParamP $ \t -> case parseCalAddress t of
+    Nothing -> unfixableError $ InvalidCalAddress t
+    Just ca -> pure $ Delegatee ca
+  parameterB = quotedParamB $ renderCalAddress . unDelegatee
 
 -- | Encoding
 --

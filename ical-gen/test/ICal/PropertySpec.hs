@@ -503,7 +503,7 @@ spec = do
     propertyExampleSpec
       "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
       ( (mkAttendee "mailto:ildoit@example.com")
-          { attendeeDelegator = [Delegator "mailto:immud@example.com"]
+          { attendeeDelegators = [Delegator "mailto:immud@example.com"]
           }
       )
     propertyParseExampleSpec
@@ -527,7 +527,7 @@ spec = do
       ( (mkAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusAccepted,
-            attendeeDelegator = [Delegator "mailto:bob@example.com"],
+            attendeeDelegators = [Delegator "mailto:bob@example.com"],
             attendeeCommonName = Just "Jane Doe"
           }
       )
@@ -563,15 +563,16 @@ spec = do
       ( (mkAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusTentative,
-            attendeeDelegator = [Delegator "mailto:iamboss@example.com"],
+            attendeeDelegators = [Delegator "mailto:iamboss@example.com"],
             attendeeCommonName = Just "Henry Cabot"
           }
       )
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
       ( (mkAttendee "mailto:iamboss@example.com")
           { attendeeParticipationRole = ParticipationRoleNonParticipant,
             attendeeParticipationStatus = ParticipationStatusDelegated,
+            attendeeDelegatees = [Delegatee "mailto:hcabot@example.com"],
             attendeeCommonName = Just "The Big Cheese"
           }
       )
@@ -583,7 +584,7 @@ spec = do
             attendeeCommonName = Just "Jane Doe"
           }
       )
-    propertyRenderExampleSpec
+    propertyExampleSpec
       "ATTENDEE;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
       ( (mkAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
