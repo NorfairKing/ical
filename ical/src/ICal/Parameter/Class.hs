@@ -9,6 +9,7 @@
 module ICal.Parameter.Class where
 
 import Control.Exception
+import Control.Monad
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
@@ -32,9 +33,21 @@ deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
 
 deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
 
+data ParameterParseFixableError
+  = MultipleParametersfound !(NonEmpty ParamValue)
+  deriving (Show, Eq, Ord)
+
+instance Exception ParameterParseFixableError where
+  displayException = \case
+    MultipleParametersfound values ->
+      unlines
+        [ "Multiple parameter values found where one was expected.",
+          "values:",
+          show values
+        ]
+
 data ParameterParseError
   = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
-  | MultipleParametersfound !(NonEmpty ParamValue)
   | UnquotedParameterFound !(CI Text)
   | UnknownEncoding !ParamValue
   | UnknownRecurrenceIdentifierRange !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
@@ -50,12 +63,6 @@ instance Exception ParameterParseError where
         [ "Parameter not found: " <> show name,
           "while looking through these parameters:",
           show m
-        ]
-    MultipleParametersfound values ->
-      unlines
-        [ "Multiple parameter values found where one was expected.",
-          "values:",
-          show values
         ]
     UnquotedParameterFound value ->
       unlines
@@ -109,23 +116,35 @@ class IsParameter param where
   parameterName :: Proxy param -> ParamName
 
   -- | Parser for the parameter
-  parameterP :: NonEmpty ParamValue -> Conform ParameterParseError Void Void param
+  parameterP :: NonEmpty ParamValue -> Conform ParameterParseError ParameterParseFixableError Void param
 
   -- | Builder for the parameter
   parameterB :: param -> NonEmpty ParamValue
 
-lookupParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Maybe (Conform ParameterParseError Void Void param)
+lookupParam ::
+  forall param.
+  IsParameter param =>
+  Map ParamName (NonEmpty ParamValue) ->
+  Maybe (Conform ParameterParseError ParameterParseFixableError Void param)
 lookupParam m = do
   let name = parameterName (Proxy :: Proxy param)
   pvs <- M.lookup name m
   pure $ parameterP pvs
 
-optionalParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Conform ParameterParseError Void Void (Maybe param)
+optionalParam ::
+  forall param.
+  IsParameter param =>
+  Map ParamName (NonEmpty ParamValue) ->
+  Conform ParameterParseError ParameterParseFixableError Void (Maybe param)
 optionalParam m =
   let name = parameterName (Proxy :: Proxy param)
    in mapM parameterP (M.lookup name m)
 
-listParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Conform ParameterParseError Void Void [param]
+listParam ::
+  forall param.
+  IsParameter param =>
+  Map ParamName (NonEmpty ParamValue) ->
+  Conform ParameterParseError ParameterParseFixableError Void [param]
 listParam m =
   let name = parameterName (Proxy :: Proxy param)
    in mapM (parameterP . (:| [])) (maybe [] NE.toList (M.lookup name m))
@@ -134,14 +153,18 @@ optionalParamSet ::
   forall param.
   (Ord param, IsParameter param) =>
   Map ParamName (NonEmpty ParamValue) ->
-  Conform ParameterParseError Void Void (Maybe (Set param))
+  Conform ParameterParseError ParameterParseFixableError Void (Maybe (Set param))
 optionalParamSet m =
   let name = parameterName (Proxy :: Proxy param)
    in mapM
         (fmap S.fromList . mapM (parameterP . (:| [])) . NE.toList)
         (M.lookup name m)
 
-requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Conform ParameterParseError Void Void param
+requireParam ::
+  forall param.
+  IsParameter param =>
+  Map ParamName (NonEmpty ParamValue) ->
+  Conform ParameterParseError ParameterParseFixableError Void param
 requireParam m = case lookupParam m of
   Just errOrResult -> errOrResult
   Nothing -> unfixableError $ ParameterNotFound (parameterName (Proxy :: Proxy param)) m
@@ -174,35 +197,46 @@ insertParamList params clv =
             M.insert (parameterName (Proxy :: Proxy param)) (sconcat (NE.map parameterB paramsNE)) (contentLineValueParams clv)
         }
 
-insertParamWithDefault :: forall param. (Eq param, IsParameter param) => param -> param -> ContentLineValue -> ContentLineValue
+insertParamWithDefault ::
+  forall param.
+  (Eq param, IsParameter param) =>
+  param ->
+  param ->
+  ContentLineValue ->
+  ContentLineValue
 insertParamWithDefault defaultParam param clv =
   if param == defaultParam
     then clv
     else insertParam param clv
 
-singleParamP :: (ParamValue -> Conform ParameterParseError void void' a) -> NonEmpty ParamValue -> Conform ParameterParseError void void' a
-singleParamP func = \case
-  value :| [] -> func value
-  ne -> unfixableError $ MultipleParametersfound ne
+singleParamP ::
+  (ParamValue -> Conform ParameterParseError ParameterParseFixableError void a) ->
+  NonEmpty ParamValue ->
+  Conform ParameterParseError ParameterParseFixableError void a
+singleParamP func ne = case ne of
+  value :| rest -> do
+    when (not (null rest)) $ emitFixableError $ MultipleParametersfound ne
+    func value
 
 -- TODO figure out if this text should be case-insensitive
 anySingleParamP ::
-  (CI Text -> Conform ParameterParseError void void' a) ->
+  (CI Text -> Conform ParameterParseError ParameterParseFixableError void a) ->
   NonEmpty ParamValue ->
-  Conform ParameterParseError void void' a
+  Conform ParameterParseError ParameterParseFixableError void a
 anySingleParamP func = singleParamP $ \case
   UnquotedParam c -> func c
   QuotedParam t -> func (CI.mk t)
 
 singleQuotedParamP ::
-  (Text -> Conform ParameterParseError void void' a) ->
+  (Text -> Conform ParameterParseError ParameterParseFixableError void a) ->
   NonEmpty ParamValue ->
-  Conform ParameterParseError void void' a
-singleQuotedParamP func = \case
-  value :| [] -> case value of
-    QuotedParam t -> func t
-    UnquotedParam ci -> unfixableError $ UnquotedParameterFound ci -- TODO turn this into a fixable error.
-  ne -> unfixableError $ MultipleParametersfound ne
+  Conform ParameterParseError ParameterParseFixableError void a
+singleQuotedParamP func ne = case ne of
+  value :| rest -> do
+    when (not (null rest)) $ emitFixableError $ MultipleParametersfound ne
+    case value of
+      QuotedParam t -> func t
+      UnquotedParam ci -> unfixableError $ UnquotedParameterFound ci -- TODO turn this into a fixable error.
 
 singleQuotedParamB :: (a -> Text) -> a -> NonEmpty ParamValue
 singleQuotedParamB func = singleParamB $ QuotedParam . func

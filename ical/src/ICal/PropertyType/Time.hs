@@ -197,7 +197,7 @@ timeOfDayShowsPrec d (Time.TimeOfDay h_ m_ s_) =
             else showsPrec 11 s_
         )
 
-timeP :: ContentLineValue -> Conform PropertyTypeParseError void Void Time
+timeP :: ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void Time
 timeP ContentLineValue {..} = do
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
@@ -206,7 +206,7 @@ timeP ContentLineValue {..} = do
         `altConform` (TimeUTC <$> parseTimeStr timeUTCFormatStr s)
     Just conformTzid ->
       TimeZoned
-        <$> conformMapAll ParameterParseError absurd id conformTzid
+        <$> conformMapAll ParameterParseError ParameterParseFixableError id conformTzid
         <*> parseTimeStr timeZonedFormatStr s
 
 timeB :: Time -> ContentLineValue

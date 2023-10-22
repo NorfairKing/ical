@@ -6,4 +6,5 @@
 - ignore: { name: "Use newtype instead of data" }
 - ignore: { name: "Use ++" }
 - ignore: { name: "Use <$>" }
+- ignore: { name: "Use unless" }
 - ignore: { name: "Fuse mapM/map" }

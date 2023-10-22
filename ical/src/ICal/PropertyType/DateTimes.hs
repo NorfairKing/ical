@@ -95,7 +95,7 @@ dateTimesP ContentLineValue {..} =
           `altConform` (DateTimesFloating <$> parseTimesSetText dateTimeFloatingFormatStr contentLineValueRaw)
       Just conformTzid ->
         DateTimesZoned
-          <$> conformMapAll ParameterParseError absurd id conformTzid
+          <$> conformMapAll ParameterParseError ParameterParseFixableError id conformTzid
           <*> parseTimesSetText dateTimeZonedFormatStr contentLineValueRaw
 
 dateTimesB :: DateTimes -> ContentLineValue

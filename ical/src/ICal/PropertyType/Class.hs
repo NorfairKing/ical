@@ -140,11 +140,13 @@ instance Exception PropertyTypeParseError where
     UnReadableDayOfWeek s -> unwords ["Unknown day of week value:", show s]
 
 data PropertyTypeFixableError
-  = UrlTextEncoded !Text
+  = ParameterParseFixableError !ParameterParseFixableError
+  | UrlTextEncoded !Text
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyTypeFixableError where
   displayException = \case
+    ParameterParseFixableError ppfe -> displayException ppfe
     UrlTextEncoded t -> unwords ["URL was TEXT-encoded but should not have been:", show t]
 
 -- | Property type
@@ -323,7 +325,10 @@ instance IsPropertyType Text where
   propertyTypeP = pure . unEscapeText . contentLineValueRaw
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
-propertyTypeListP :: IsPropertyType propertyType => ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void [propertyType]
+propertyTypeListP ::
+  IsPropertyType propertyType =>
+  ContentLineValue ->
+  Conform PropertyTypeParseError PropertyTypeFixableError Void [propertyType]
 propertyTypeListP clv =
   if T.null (contentLineValueRaw clv)
     then pure []
@@ -361,7 +366,9 @@ typedPropertyTypeP ::
   ContentLineValue ->
   Conform PropertyTypeParseError PropertyTypeFixableError Void propertyType
 typedPropertyTypeP clv = do
-  mValueDataType <- conformMapAll ParameterParseError absurd id $ optionalParam (contentLineValueParams clv)
+  mValueDataType <-
+    conformMapAll ParameterParseError ParameterParseFixableError id $
+      optionalParam (contentLineValueParams clv)
   let typ = propertyTypeValueType (Proxy :: Proxy propertyType)
   case mValueDataType of
     Just typ' ->

@@ -160,7 +160,10 @@ propertyParamP ::
     PropertyFixableError
     Void
     (Maybe param)
-propertyParamP clv = conformMapAll (PropertyTypeParseError . ParameterParseError) absurd id $ optionalParam $ contentLineValueParams clv
+propertyParamP clv =
+  conformMapAll (PropertyTypeParseError . ParameterParseError) (PropertyTypeFixableError . ParameterParseFixableError) id $
+    optionalParam $
+      contentLineValueParams clv
 
 propertyParamWithDefaultP ::
   IsParameter param =>
@@ -181,7 +184,10 @@ propertyParamListP ::
     PropertyFixableError
     Void
     [param]
-propertyParamListP clv = conformMapAll (PropertyTypeParseError . ParameterParseError) absurd id $ listParam $ contentLineValueParams clv
+propertyParamListP clv =
+  conformMapAll (PropertyTypeParseError . ParameterParseError) (PropertyTypeFixableError . ParameterParseFixableError) id $
+    listParam $
+      contentLineValueParams clv
 
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Ord, Generic)

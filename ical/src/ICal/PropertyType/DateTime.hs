@@ -260,7 +260,7 @@ dateTimeDate =
     -- This is where the warning is relevant
     DateTimeZoned _ lt -> Time.localDay lt
 
-dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError void Void DateTime
+dateTimeP :: ContentLineValue -> Conform PropertyTypeParseError PropertyTypeFixableError Void DateTime
 dateTimeP clv@ContentLineValue {..} = do
   let s = T.unpack contentLineValueRaw
   case lookupParam contentLineValueParams of
@@ -269,7 +269,7 @@ dateTimeP clv@ContentLineValue {..} = do
         `altConform` (DateTimeFloating <$> dateTimeFloatingP clv)
     Just conformTzid ->
       DateTimeZoned
-        <$> conformMapAll ParameterParseError absurd id conformTzid
+        <$> conformMapAll ParameterParseError ParameterParseFixableError id conformTzid
         <*> parseTimeStr dateTimeZonedFormatStr s
 
 dateTimeFloatingP :: ContentLineValue -> Conform PropertyTypeParseError void Void Time.LocalTime
