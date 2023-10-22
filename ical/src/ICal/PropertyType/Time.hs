@@ -215,10 +215,10 @@ timeB =
     TimeFloating tod -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale timeFloatingFormatStr tod
     TimeUTC tod -> mkSimpleContentLineValue $ T.pack $ Time.formatTime Time.defaultTimeLocale timeUTCFormatStr tod
     TimeZoned tzidParam tod ->
-      ContentLineValue
-        { contentLineValueParams = paramMap tzidParam,
-          contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale timeZonedFormatStr tod
-        }
+      insertParam tzidParam $
+        mkSimpleContentLineValue $
+          T.pack $
+            Time.formatTime Time.defaultTimeLocale timeZonedFormatStr tod
 
 timeFloatingFormatStr :: String
 timeFloatingFormatStr = "%H%M%S"

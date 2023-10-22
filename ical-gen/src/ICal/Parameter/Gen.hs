@@ -10,7 +10,6 @@ import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
-import Data.List.NonEmpty (NonEmpty)
 import GHC.Stack
 import ICal.Conformance
 import ICal.Conformance.TestUtils
@@ -90,7 +89,7 @@ instance GenValid Display where
 
 parameterExampleSpec ::
   (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
-  NonEmpty ParamValue ->
+  ParamValue ->
   parameter ->
   Spec
 parameterExampleSpec params val = withFrozenCallStack $ do
@@ -99,7 +98,7 @@ parameterExampleSpec params val = withFrozenCallStack $ do
 
 parameterParseExampleSpec ::
   (Show parameter, Eq parameter, IsParameter parameter, HasCallStack) =>
-  NonEmpty ParamValue ->
+  ParamValue ->
   parameter ->
   Spec
 parameterParseExampleSpec params expected = withFrozenCallStack $ do
@@ -110,7 +109,7 @@ parameterParseExampleSpec params expected = withFrozenCallStack $ do
 
 parameterRenderExampleSpec ::
   (Show parameter, IsParameter parameter, HasCallStack) =>
-  NonEmpty ParamValue ->
+  ParamValue ->
   parameter ->
   Spec
 parameterRenderExampleSpec expected value = withFrozenCallStack $ do

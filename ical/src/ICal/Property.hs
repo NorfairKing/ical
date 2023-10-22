@@ -21,6 +21,7 @@ import Control.Exception
 import qualified Data.CaseInsensitive as CI
 import Data.Int
 import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -3186,18 +3187,17 @@ instance IsProperty Image where
     mValue <- propertyParamP clv
     imageFormatType <- propertyParamP clv
     imageAlternateTextRepresentation <- propertyParamP clv
-    imageDisplay <- propertyParamWithDefaultP defaultDisplay clv
+    imageDisplay <- fromMaybe defaultDisplay . NE.nonEmpty <$> propertyParamListP clv
 
     case mValue of
       Just TypeURI -> wrapPropertyTypeP (\u -> let imageContents = Left u in Image {..}) clv
       Just TypeBinary -> wrapPropertyTypeP (\b -> let imageContents = Right b in Image {..}) clv
-      Just _ -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
-      Nothing -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
+      _ -> unfixableError $ ValueMismatch "IMAGE" mValue Nothing [TypeURI, TypeBinary]
 
   propertyB Image {..} =
     insertMParam imageFormatType $
       insertMParam imageAlternateTextRepresentation $
-        insertParamWithDefault defaultDisplay imageDisplay $
+        (if imageDisplay == defaultDisplay then id else insertParamNE imageDisplay) $
           case imageContents of
             Left uri -> typedPropertyTypeB uri
             Right binary -> typedPropertyTypeB binary

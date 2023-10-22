@@ -33,7 +33,6 @@ module ICal.PropertyType.DateTime
 where
 
 import Control.DeepSeq
-import qualified Data.Map.Strict as M
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -292,10 +291,10 @@ dateTimeUTCB = mkSimpleContentLineValue . renderDateTimeUTC
 
 dateTimeZonedB :: TimeZoneIdentifierParam -> Time.LocalTime -> ContentLineValue
 dateTimeZonedB tzidParam lt =
-  ContentLineValue
-    { contentLineValueParams = M.singleton (parameterName (proxyOf tzidParam)) (parameterB tzidParam),
-      contentLineValueRaw = T.pack $ Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
-    }
+  insertParam tzidParam $
+    mkSimpleContentLineValue $
+      T.pack $
+        Time.formatTime Time.defaultTimeLocale dateTimeZonedFormatStr lt
 
 parseDateTimeFloating :: Text -> Conform PropertyTypeParseError void void' Time.LocalTime
 parseDateTimeFloating = parseTimeStr dateTimeFloatingFormatStr . T.unpack

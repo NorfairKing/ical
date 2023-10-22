@@ -93,26 +93,25 @@ instance NFData ValueDataType
 instance IsParameter ValueDataType where
   parameterName Proxy = "VALUE"
   parameterP =
-    singleParamP $
-      pure
-        . ( \pv -> case paramValueCI pv of
-              "BINARY" -> TypeBinary
-              "BOOLEAN" -> TypeBoolean
-              "CAL-ADDRESS" -> TypeCalendarAddress
-              "DATE" -> TypeDate
-              "DATE-TIME" -> TypeDateTime
-              "DURATION" -> TypeDuration
-              "FLOAT" -> TypeFloat
-              "INTEGER" -> TypeInteger
-              "PERIOD" -> TypePeriod
-              "RECUR" -> TypeRecur
-              "TEXT" -> TypeText
-              "TIME" -> TypeTime
-              "URI" -> TypeURI
-              "UTC-OFFSET" -> TypeUTCOffset
-              _ -> TypeOther pv
-          )
-  parameterB = singleParamB $ \case
+    pure
+      . ( \pv -> case paramValueCI pv of
+            "BINARY" -> TypeBinary
+            "BOOLEAN" -> TypeBoolean
+            "CAL-ADDRESS" -> TypeCalendarAddress
+            "DATE" -> TypeDate
+            "DATE-TIME" -> TypeDateTime
+            "DURATION" -> TypeDuration
+            "FLOAT" -> TypeFloat
+            "INTEGER" -> TypeInteger
+            "PERIOD" -> TypePeriod
+            "RECUR" -> TypeRecur
+            "TEXT" -> TypeText
+            "TIME" -> TypeTime
+            "URI" -> TypeURI
+            "UTC-OFFSET" -> TypeUTCOffset
+            _ -> TypeOther pv
+        )
+  parameterB = \case
     TypeBinary -> "BINARY"
     TypeBoolean -> "BOOLEAN"
     TypeCalendarAddress -> "CAL-ADDRESS"

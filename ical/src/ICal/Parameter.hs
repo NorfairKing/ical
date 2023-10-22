@@ -21,7 +21,6 @@ import Control.DeepSeq
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
-import qualified Data.List.NonEmpty as NE
 import Data.Proxy
 import Data.String
 import Data.Text (Text)
@@ -103,8 +102,8 @@ instance NFData AlternateTextRepresentation
 
 instance IsParameter AlternateTextRepresentation where
   parameterName Proxy = "ALTREP"
-  parameterP = singleQuotedParamP $ pure . AlternateTextRepresentation
-  parameterB = singleParamB $ QuotedParam . unAlternateTextRepresentation
+  parameterP = quotedParamP $ pure . AlternateTextRepresentation
+  parameterB = quotedParamB unAlternateTextRepresentation
 
 -- | Common name
 --
@@ -142,8 +141,8 @@ instance NFData CommonName
 
 instance IsParameter CommonName where
   parameterName Proxy = "CN"
-  parameterP = singleParamP $ pure . CommonName
-  parameterB = singleParamB unCommonName
+  parameterP = pure . CommonName
+  parameterB = unCommonName
 
 -- | Calendar User Type
 --
@@ -195,19 +194,18 @@ instance NFData CalendarUserType
 instance IsParameter CalendarUserType where
   parameterName Proxy = "CUTYPE"
   parameterP =
-    singleParamP $
-      pure . \case
-        "INDIVIDUAL" -> CalendarUserTypeIndividual
-        "GROUP" -> CalendarUserTypeGroup
-        "RESOURCE" -> CalendarUserTypeResource
-        "ROOM" -> CalendarUserTypeRoom
-        "UNKNOWN" -> CalendarUserTypeUnknown
-        -- @
-        --    Applications MUST treat x-name and iana-token values they don't
-        --    recognize the same way as they would the UNKNOWN value.
-        -- @
-        _ -> CalendarUserTypeUnknown
-  parameterB = singleParamB $ \case
+    pure . \case
+      "INDIVIDUAL" -> CalendarUserTypeIndividual
+      "GROUP" -> CalendarUserTypeGroup
+      "RESOURCE" -> CalendarUserTypeResource
+      "ROOM" -> CalendarUserTypeRoom
+      "UNKNOWN" -> CalendarUserTypeUnknown
+      -- @
+      --    Applications MUST treat x-name and iana-token values they don't
+      --    recognize the same way as they would the UNKNOWN value.
+      -- @
+      _ -> CalendarUserTypeUnknown
+  parameterB = \case
     CalendarUserTypeIndividual -> "INDIVIDUAL"
     CalendarUserTypeGroup -> "GROUP"
     CalendarUserTypeResource -> "RESOURCE"
@@ -253,10 +251,10 @@ instance NFData Delegator
 
 instance IsParameter Delegator where
   parameterName Proxy = "DELEGATED-FROM"
-  parameterP = singleQuotedParamP $ \t -> case parseCalAddress t of
+  parameterP = quotedParamP $ \t -> case parseCalAddress t of
     Nothing -> unfixableError $ InvalidCalAddress t
     Just ca -> pure $ Delegator ca
-  parameterB = singleQuotedParamB $ renderCalAddress . unDelegator
+  parameterB = quotedParamB $ renderCalAddress . unDelegator
 
 -- | Encoding
 --
@@ -312,11 +310,11 @@ instance NFData Encoding
 
 instance IsParameter Encoding where
   parameterName Proxy = "ENCODING"
-  parameterP = singleParamP $ \pv -> case paramValueCI pv of
-    "8Bit" -> pure Encoding8Bit
+  parameterP = \case
+    "8BIT" -> pure Encoding8Bit
     "BASE64" -> pure EncodingBase64
-    _ -> unfixableError $ UnknownEncoding pv
-  parameterB = singleParamB $ \case
+    pv -> unfixableError $ UnknownEncoding pv
+  parameterB = \case
     Encoding8Bit -> "8BIT"
     EncodingBase64 -> "BASE64"
 
@@ -362,8 +360,8 @@ instance NFData FormatType
 
 instance IsParameter FormatType where
   parameterName Proxy = "FMTTYPE"
-  parameterP = singleParamP $ pure . FormatType
-  parameterB = singleParamB unFormatType
+  parameterP = pure . FormatType
+  parameterB = unFormatType
 
 -- | Format Type
 --
@@ -413,8 +411,8 @@ instance NFData Language
 
 instance IsParameter Language where
   parameterName Proxy = "LANGUAGE"
-  parameterP = singleParamP $ pure . Language
-  parameterB = singleParamB unLanguage
+  parameterP = pure . Language
+  parameterB = unLanguage
 
 -- | Participation status
 --
@@ -516,19 +514,18 @@ instance NFData ParticipationStatus
 instance IsParameter ParticipationStatus where
   parameterName Proxy = "PARTSTAT"
   parameterP =
-    singleParamP $
-      pure
-        . ( \pv -> case paramValueCI pv of
-              "NEEDS-ACTION" -> ParticipationStatusNeedsAction
-              "ACCEPTED" -> ParticipationStatusAccepted
-              "DECLINED" -> ParticipationStatusDeclined
-              "TENTATIVE" -> ParticipationStatusTentative
-              "DELEGATED" -> ParticipationStatusDelegated
-              "COMPLETED" -> ParticipationStatusCompleted
-              "IN-PROCESS" -> ParticipationStatusInProcess
-              _ -> ParticipationStatusOther pv
-          )
-  parameterB = singleParamB $ \case
+    pure
+      . ( \pv -> case paramValueCI pv of
+            "NEEDS-ACTION" -> ParticipationStatusNeedsAction
+            "ACCEPTED" -> ParticipationStatusAccepted
+            "DECLINED" -> ParticipationStatusDeclined
+            "TENTATIVE" -> ParticipationStatusTentative
+            "DELEGATED" -> ParticipationStatusDelegated
+            "COMPLETED" -> ParticipationStatusCompleted
+            "IN-PROCESS" -> ParticipationStatusInProcess
+            _ -> ParticipationStatusOther pv
+        )
+  parameterB = \case
     ParticipationStatusNeedsAction -> "NEEDS-ACTION"
     ParticipationStatusAccepted -> "ACCEPTED"
     ParticipationStatusDeclined -> "DECLINED"
@@ -590,10 +587,10 @@ instance NFData RecurrenceIdentifierRange
 
 instance IsParameter RecurrenceIdentifierRange where
   parameterName Proxy = "RANGE"
-  parameterP = singleParamP $ \pv -> case paramValueCI pv of
+  parameterP = \case
     "THISANDFUTURE" -> pure RecurrenceIdentifierRangeThisAndFuture
-    _ -> unfixableError $ UnknownRecurrenceIdentifierRange pv
-  parameterB = singleParamB $ \case
+    pv -> unfixableError $ UnknownRecurrenceIdentifierRange pv
+  parameterB = \case
     RecurrenceIdentifierRangeThisAndFuture -> "THISANDFUTURE"
 
 -- | RSVP Expectation
@@ -635,11 +632,11 @@ instance NFData RSVPExpectation
 
 instance IsParameter RSVPExpectation where
   parameterName Proxy = "RSVP"
-  parameterP = singleParamP $ \pv -> case paramValueCI pv of
+  parameterP = \case
     "TRUE" -> pure RSVPExpectationTrue
     "FALSE" -> pure RSVPExpectationFalse
-    _ -> unfixableError $ UnknownRSVPExpectation pv
-  parameterB = singleParamB $ \case
+    pv -> unfixableError $ UnknownRSVPExpectation pv
+  parameterB = \case
     RSVPExpectationTrue -> "TRUE"
     RSVPExpectationFalse -> "FALSE"
 
@@ -705,16 +702,15 @@ instance NFData ParticipationRole
 instance IsParameter ParticipationRole where
   parameterName Proxy = "ROLE"
   parameterP =
-    singleParamP $
-      pure
-        . ( \pv -> case paramValueCI pv of
-              "CHAIR" -> ParticipationRoleChair
-              "REQ-PARTICIPANT" -> ParticipationRoleRequiredParticipant
-              "OPT-PARTICIPANT" -> ParticipationRoleOptionalParticipant
-              "NON-PARTICIPANT" -> ParticipationRoleNonParticipant
-              _ -> ParticipationRoleOther pv
-          )
-  parameterB = singleParamB $ \case
+    pure
+      . ( \case
+            "CHAIR" -> ParticipationRoleChair
+            "REQ-PARTICIPANT" -> ParticipationRoleRequiredParticipant
+            "OPT-PARTICIPANT" -> ParticipationRoleOptionalParticipant
+            "NON-PARTICIPANT" -> ParticipationRoleNonParticipant
+            pv -> ParticipationRoleOther pv
+        )
+  parameterB = \case
     ParticipationRoleChair -> "CHAIR"
     ParticipationRoleRequiredParticipant -> "REQ-PARTICIPANT"
     ParticipationRoleOptionalParticipant -> "OPT-PARTICIPANT"
@@ -864,12 +860,11 @@ instance NFData AlarmTriggerRelationship
 
 instance IsParameter AlarmTriggerRelationship where
   parameterName Proxy = "RELATED"
-  parameterP =
-    singleParamP $ \pv -> case paramValueCI pv of
-      "START" -> pure AlarmTriggerRelationshipStart
-      "END" -> pure AlarmTriggerRelationshipEnd
-      _ -> unfixableError $ UnknownAlarmTriggerRelationship pv
-  parameterB = singleParamB $ \case
+  parameterP = \case
+    "START" -> pure AlarmTriggerRelationshipStart
+    "END" -> pure AlarmTriggerRelationshipEnd
+    pv -> unfixableError $ UnknownAlarmTriggerRelationship pv
+  parameterB = \case
     AlarmTriggerRelationshipStart -> "START"
     AlarmTriggerRelationshipEnd -> "END"
 
@@ -937,10 +932,21 @@ instance Validity Display
 
 instance NFData Display
 
-instance IsParameter (NonEmpty Display) where
+instance IsParameter Display where
   parameterName Proxy = "DISPLAY"
-  parameterP = pure . NE.map parseDisplay
-  parameterB = NE.map renderDisplay
+  parameterP =
+    pure . \case
+      "BADGE" -> DisplayBadge
+      "GRAPHIC" -> DisplayGraphic
+      "FULLSIZE" -> DisplayFullSize
+      "THUMBNAIL" -> DisplayThumbnail
+      pv -> DisplayOther pv
+  parameterB = \case
+    DisplayBadge -> "BADGE"
+    DisplayGraphic -> "GRAPHIC"
+    DisplayFullSize -> "FULLSIZE"
+    DisplayThumbnail -> "THUMBNAIL"
+    DisplayOther pv -> pv
 
 -- @
 -- In the absence of this parameter, the default value
@@ -948,19 +954,3 @@ instance IsParameter (NonEmpty Display) where
 -- @
 defaultDisplay :: NonEmpty Display
 defaultDisplay = DisplayBadge :| []
-
-parseDisplay :: ParamValue -> Display
-parseDisplay pv = case paramValueCI pv of
-  "BADGE" -> DisplayBadge
-  "GRAPHIC" -> DisplayGraphic
-  "FULLSIZE" -> DisplayFullSize
-  "THUMBNAIL" -> DisplayThumbnail
-  _ -> DisplayOther pv
-
-renderDisplay :: Display -> ParamValue
-renderDisplay = \case
-  DisplayBadge -> "BADGE"
-  DisplayGraphic -> "GRAPHIC"
-  DisplayFullSize -> "FULLSIZE"
-  DisplayThumbnail -> "THUMBNAIL"
-  DisplayOther pv -> pv
