@@ -29,7 +29,7 @@ It's already being used in production at https://smos.online and https://social-
      - [ ] 3.2.  Property Parameters
        - [X] 3.2.1.  Alternate Text Representation
        - [X] 3.2.2.  Common Name
-       - [ ] 3.2.3.  Calendar User Type
+       - [X] 3.2.3.  Calendar User Type
        - [ ] 3.2.4.  Delegators
        - [ ] 3.2.5.  Delegatees
        - [ ] 3.2.6.  Directory Entry Reference

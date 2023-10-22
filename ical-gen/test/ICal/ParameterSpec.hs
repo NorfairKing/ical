@@ -112,6 +112,17 @@ spec = do
     -- @
     parameterExampleSpec ["JohnSmith"] (CommonName "JohnSmith")
 
+  describe "CalendarUserType" $ do
+    genValidSpec @CalendarUserType
+    parameterSpec @CalendarUserType
+
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;CUTYPE=GROUP:mailto:ietf-calsch@example.org
+    -- @
+    parameterExampleSpec ["GROUP"] CalendarUserTypeGroup
+
   describe "Encoding" $ do
     genValidSpec @Encoding
     parameterSpec @Encoding

@@ -1038,6 +1038,12 @@ defaultClassification = ClassificationPublic
 data Organizer = Organizer
   { organizerCalAddress :: !CalAddress,
     organizerCommonName :: !(Maybe CommonName),
+    -- From section 3.2.3 on the Calendar User Type:
+    -- @
+    -- Description:  This parameter can be specified on properties with a
+    -- CAL-ADDRESS value type.
+    -- @
+    organizerCalendarUserType :: !CalendarUserType,
     organizerLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -1050,19 +1056,22 @@ instance IsProperty Organizer where
   propertyName Proxy = "ORGANIZER"
   propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
     organizerCommonName <- propertyParamP clv
+    organizerCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
     organizerLanguage <- propertyParamP clv
 
     pure Organizer {..}
   propertyB Organizer {..} =
-    insertMParam organizerCommonName $
-      insertMParam organizerLanguage $
-        propertyTypeB organizerCalAddress
+    insertMParam organizerCommonName
+      . insertParamWithDefault defaultCalendarUserType organizerCalendarUserType
+      . insertMParam organizerLanguage
+      $ propertyTypeB organizerCalAddress
 
 mkOrganizer :: CalAddress -> Organizer
 mkOrganizer calAddress =
   Organizer
     { organizerCalAddress = calAddress,
       organizerCommonName = Nothing,
+      organizerCalendarUserType = defaultCalendarUserType,
       organizerLanguage = Nothing
     }
 
@@ -2524,6 +2533,7 @@ data Attendee = Attendee
     attendeeParticipationStatus :: !ParticipationStatus,
     attendeeRSVPExpectation :: !RSVPExpectation,
     attendeeCommonName :: !(Maybe CommonName),
+    attendeeCalendarUserType :: !CalendarUserType,
     attendeeLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -2539,16 +2549,17 @@ instance IsProperty Attendee where
     attendeeParticipationStatus <- propertyParamWithDefaultP defaultParticipationStatus clv
     attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
     attendeeCommonName <- propertyParamP clv
+    attendeeCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
     attendeeLanguage <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
-    insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus $
-      insertParamWithDefault defaultParticipationRole attendeeParticipationRole $
-        insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation $
-          insertMParam attendeeCommonName $
-            insertMParam attendeeLanguage $
-              propertyTypeB
-                attendeeCalAddress
+    insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus
+      . insertParamWithDefault defaultParticipationRole attendeeParticipationRole
+      . insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation
+      . insertMParam attendeeCommonName
+      . insertParamWithDefault defaultCalendarUserType attendeeCalendarUserType
+      . insertMParam attendeeLanguage
+      $ propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
 mkAttendee calAddress =
@@ -2558,6 +2569,7 @@ mkAttendee calAddress =
       attendeeParticipationStatus = defaultParticipationStatus,
       attendeeRSVPExpectation = defaultRSVPExpectation,
       attendeeCommonName = Nothing,
+      attendeeCalendarUserType = defaultCalendarUserType,
       attendeeLanguage = Nothing
     }
 

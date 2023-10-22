@@ -311,6 +311,81 @@ instance IsParameter CommonName where
   parameterP = singleParamP $ pure . CommonName
   parameterB = singleParamB unCommonName
 
+-- | Calendar User Type
+--
+-- [section 3.2.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.3)
+--
+-- @
+-- Parameter Name:  CUTYPE
+--
+-- Purpose:  To identify the type of calendar user specified by the
+--    property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     cutypeparam        = "CUTYPE" "="
+--                        ("INDIVIDUAL"   ; An individual
+--                       / "GROUP"        ; A group of individuals
+--                       / "RESOURCE"     ; A physical resource
+--                       / "ROOM"         ; A room resource
+--                       / "UNKNOWN"      ; Otherwise not known
+--                       / x-name         ; Experimental type
+--                       / iana-token)    ; Other IANA-registered
+--                                        ; type
+--     ; Default is INDIVIDUAL
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter identifies the type of
+--    calendar user specified by the property.  If not specified on a
+--    property that allows this parameter, the default is INDIVIDUAL.
+--    Applications MUST treat x-name and iana-token values they don't
+--    recognize the same way as they would the UNKNOWN value.
+--
+-- Example:
+--
+--     ATTENDEE;CUTYPE=GROUP:mailto:ietf-calsch@example.org
+-- @
+data CalendarUserType
+  = CalendarUserTypeIndividual
+  | CalendarUserTypeGroup
+  | CalendarUserTypeResource
+  | CalendarUserTypeRoom
+  | CalendarUserTypeUnknown
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity CalendarUserType
+
+instance NFData CalendarUserType
+
+instance IsParameter CalendarUserType where
+  parameterName Proxy = "CUTYPE"
+  parameterP =
+    singleParamP $
+      pure . \case
+        "INDIVIDUAL" -> CalendarUserTypeIndividual
+        "GROUP" -> CalendarUserTypeGroup
+        "RESOURCE" -> CalendarUserTypeResource
+        "ROOM" -> CalendarUserTypeRoom
+        "UNKNOWN" -> CalendarUserTypeUnknown
+        -- @
+        --    Applications MUST treat x-name and iana-token values they don't
+        --    recognize the same way as they would the UNKNOWN value.
+        -- @
+        _ -> CalendarUserTypeUnknown
+  parameterB = singleParamB $ \case
+    CalendarUserTypeIndividual -> "INDIVIDUAL"
+    CalendarUserTypeGroup -> "GROUP"
+    CalendarUserTypeResource -> "RESOURCE"
+    CalendarUserTypeRoom -> "ROOM"
+    CalendarUserTypeUnknown -> "UNKNOWN"
+
+-- @
+--     ; Default is INDIVIDUAL
+-- @
+defaultCalendarUserType :: CalendarUserType
+defaultCalendarUserType = CalendarUserTypeIndividual
+
 -- | Encoding
 --
 -- [section 3.2.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.7)
