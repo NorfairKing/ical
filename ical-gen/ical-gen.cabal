@@ -75,6 +75,7 @@ library
       ICal.Gen
       ICal.Parameter.Gen
       ICal.Property.Gen
+      ICal.PropertyType.CalAddress.Gen
       ICal.PropertyType.Duration.Gen
       ICal.PropertyType.Gen
       ICal.PropertyType.RecurrenceRule.Gen

@@ -17,6 +17,7 @@ import ICal.Conformance.TestUtils
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Parameter
+import ICal.PropertyType.CalAddress.Gen ()
 import Test.Syd
 import Test.Syd.Validity
 
@@ -29,6 +30,10 @@ instance GenValid CommonName where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid CalendarUserType where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid Delegator where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

@@ -24,7 +24,7 @@ import Data.Validity.URI
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
-import ICal.Parameter
+import ICal.Parameter.ValueDataType
 import ICal.PropertyType.Class
 import qualified Network.URI as Network
 

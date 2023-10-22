@@ -20,6 +20,7 @@ import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
 import ICal.PropertyType
+import ICal.PropertyType.CalAddress.Gen ()
 import ICal.PropertyType.Duration.Gen ()
 import Test.QuickCheck
 import Test.Syd
@@ -147,10 +148,6 @@ clampMaybe lower upper value =
   if lower <= value && value <= upper
     then Just value
     else Nothing
-
-instance GenValid CalAddress where
-  genValid = genValidStructurallyWithoutExtraChecking
-  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid URI where
   genValid = genValidStructurallyWithoutExtraChecking

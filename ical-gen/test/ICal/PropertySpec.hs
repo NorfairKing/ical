@@ -500,9 +500,12 @@ spec = do
     propertyParseExampleSpec
       "ATTENDEE;MEMBER=\"mailto:DEV-GROUP@example.com\":mailto:joecool@example.com"
       (mkAttendee "mailto:joecool@example.com")
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
-      (mkAttendee "mailto:ildoit@example.com")
+      ( (mkAttendee "mailto:ildoit@example.com")
+          { attendeeDelegator = [Delegator "mailto:immud@example.com"]
+          }
+      )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
       ( (mkAttendee "mailto:hcabot@example.com")
@@ -524,6 +527,7 @@ spec = do
       ( (mkAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusAccepted,
+            attendeeDelegator = [Delegator "mailto:bob@example.com"],
             attendeeCommonName = Just "Jane Doe"
           }
       )
@@ -559,6 +563,7 @@ spec = do
       ( (mkAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusTentative,
+            attendeeDelegator = [Delegator "mailto:iamboss@example.com"],
             attendeeCommonName = Just "Henry Cabot"
           }
       )

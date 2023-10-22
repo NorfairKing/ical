@@ -19,7 +19,7 @@ import Data.Text (Text)
 import Data.Validity
 import GHC.Generics (Generic)
 import ICal.ContentLine
-import ICal.Parameter
+import ICal.Parameter.ValueDataType
 import ICal.PropertyType.Class
 import ICal.PropertyType.URI
 import qualified Network.URI as Network

@@ -173,6 +173,16 @@ propertyParamWithDefaultP ::
     param
 propertyParamWithDefaultP defaultValue clv = fromMaybe defaultValue <$> propertyParamP clv
 
+propertyParamListP ::
+  IsParameter param =>
+  ContentLineValue ->
+  Conform
+    PropertyParseError
+    PropertyFixableError
+    Void
+    [param]
+propertyParamListP clv = conformMapAll (PropertyTypeParseError . ParameterParseError) absurd id $ listParam $ contentLineValueParams clv
+
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -1038,12 +1048,6 @@ defaultClassification = ClassificationPublic
 data Organizer = Organizer
   { organizerCalAddress :: !CalAddress,
     organizerCommonName :: !(Maybe CommonName),
-    -- From section 3.2.3 on the Calendar User Type:
-    -- @
-    -- Description:  This parameter can be specified on properties with a
-    -- CAL-ADDRESS value type.
-    -- @
-    organizerCalendarUserType :: !CalendarUserType,
     organizerLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -1056,13 +1060,11 @@ instance IsProperty Organizer where
   propertyName Proxy = "ORGANIZER"
   propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
     organizerCommonName <- propertyParamP clv
-    organizerCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
     organizerLanguage <- propertyParamP clv
 
     pure Organizer {..}
   propertyB Organizer {..} =
     insertMParam organizerCommonName
-      . insertParamWithDefault defaultCalendarUserType organizerCalendarUserType
       . insertMParam organizerLanguage
       $ propertyTypeB organizerCalAddress
 
@@ -1071,7 +1073,6 @@ mkOrganizer calAddress =
   Organizer
     { organizerCalAddress = calAddress,
       organizerCommonName = Nothing,
-      organizerCalendarUserType = defaultCalendarUserType,
       organizerLanguage = Nothing
     }
 
@@ -2534,6 +2535,7 @@ data Attendee = Attendee
     attendeeRSVPExpectation :: !RSVPExpectation,
     attendeeCommonName :: !(Maybe CommonName),
     attendeeCalendarUserType :: !CalendarUserType,
+    attendeeDelegator :: ![Delegator],
     attendeeLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -2550,6 +2552,7 @@ instance IsProperty Attendee where
     attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
     attendeeCommonName <- propertyParamP clv
     attendeeCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
+    attendeeDelegator <- propertyParamListP clv
     attendeeLanguage <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
@@ -2558,6 +2561,7 @@ instance IsProperty Attendee where
       . insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation
       . insertMParam attendeeCommonName
       . insertParamWithDefault defaultCalendarUserType attendeeCalendarUserType
+      . insertParamList attendeeDelegator
       . insertMParam attendeeLanguage
       $ propertyTypeB attendeeCalAddress
 
@@ -2570,6 +2574,7 @@ mkAttendee calAddress =
       attendeeRSVPExpectation = defaultRSVPExpectation,
       attendeeCommonName = Nothing,
       attendeeCalendarUserType = defaultCalendarUserType,
+      attendeeDelegator = [],
       attendeeLanguage = Nothing
     }
 

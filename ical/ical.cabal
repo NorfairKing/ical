@@ -19,6 +19,8 @@ library
       ICal.Conformance
       ICal.ContentLine
       ICal.Parameter
+      ICal.Parameter.Class
+      ICal.Parameter.ValueDataType
       ICal.Property
       ICal.PropertyType
       ICal.PropertyType.Binary

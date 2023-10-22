@@ -7,6 +7,7 @@
 module ICal.ParameterSpec where
 
 import Data.List.NonEmpty (NonEmpty)
+import ICal.ContentLine
 import ICal.Parameter
 import ICal.Parameter.Gen
 import Test.Syd
@@ -122,6 +123,16 @@ spec = do
     --     ATTENDEE;CUTYPE=GROUP:mailto:ietf-calsch@example.org
     -- @
     parameterExampleSpec ["GROUP"] CalendarUserTypeGroup
+
+  describe "Delegator" $ do
+    genValidSpec @Delegator
+    parameterSpec @Delegator
+
+    -- @
+    --  ATTENDEE;DELEGATED-FROM="mailto:jsmith@example.com":mailto:
+    --   jdoe@example.com
+    -- @
+    parameterExampleSpec [QuotedParam "mailto:jsmith@example.com"] (Delegator "mailto:jsmith@example.com")
 
   describe "Encoding" $ do
     genValidSpec @Encoding

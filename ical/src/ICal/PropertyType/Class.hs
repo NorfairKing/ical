@@ -53,7 +53,8 @@ import Data.Validity.Time ()
 import Data.Void
 import ICal.Conformance
 import ICal.ContentLine
-import ICal.Parameter
+import ICal.Parameter.Class
+import ICal.Parameter.ValueDataType
 import Text.Megaparsec
 import Text.Read
 

@@ -6,200 +6,34 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ICal.Parameter where
+module ICal.Parameter
+  ( module ICal.Parameter,
+    module ICal.Parameter.Class,
+    module ICal.Parameter.ValueDataType,
+  )
+where
 
 import Control.DeepSeq
-import Control.Exception
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
 import Data.Proxy
-import Data.Semigroup
-import Data.Set (Set)
-import qualified Data.Set as S
 import Data.String
 import Data.Text (Text)
 import Data.Validity
 import Data.Validity.Text
 import Data.Validity.Time ()
-import Data.Void
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
-import Text.Megaparsec
-
-deriving instance Ord s => Ord (PosState s)
-
-deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
-
-deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseErrorBundle s e)
-
-data ParameterParseError
-  = ParameterNotFound !ParamName !(Map ParamName (NonEmpty ParamValue))
-  | MultipleParametersfound !(NonEmpty ParamValue)
-  | UnquotedParameterFound !(CI Text)
-  | UnknownEncoding !ParamValue
-  | UnknownRecurrenceIdentifierRange !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
-  | UnknownRSVPExpectation !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
-  | UnknownAlarmTriggerRelationship !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
-  deriving (Show, Eq, Ord)
-
-instance Exception ParameterParseError where
-  displayException = \case
-    ParameterNotFound name m ->
-      unlines
-        [ "Parameter not found: " <> show name,
-          "while looking through these parameters:",
-          show m
-        ]
-    MultipleParametersfound values ->
-      unlines
-        [ "Multiple parameter values found where one was expected.",
-          "values:",
-          show values
-        ]
-    UnquotedParameterFound value ->
-      unlines
-        [ "An unquoted parameter value found where a quoted one was expected.",
-          "value:",
-          show value
-        ]
-    UnknownEncoding pv ->
-      unlines
-        [ "Unknown ENCODING Value:",
-          show pv
-        ]
-    UnknownRecurrenceIdentifierRange pv ->
-      unlines
-        [ "Unknown RANGE Value:",
-          show pv
-        ]
-    UnknownRSVPExpectation pv ->
-      unlines
-        [ "Unknown RSVP Value:",
-          show pv
-        ]
-    UnknownAlarmTriggerRelationship pv ->
-      unlines
-        [ "Unknown RELATED Value:",
-          show pv
-        ]
-
--- | Parameters
---
--- === Laws
---
--- * The 'NonEmpty ParamValue' that is built is valid:
---
--- >>> forAllValid $ \parameter -> isValid (parameterB parameter)
---
--- * Anything parsed is valid:
---
--- >>> forAllValid $ \paramValues -> isValid (parameterP paramValues)
---
--- * The parameter roundtrips through 'ContentLineValue'.
---
--- >>> forAllValid $ \parameter -> parameterP (parameterB parameter) == Right parameter
-class IsParameter param where
-  -- Name of the parameter
-  parameterName :: Proxy param -> ParamName
-
-  -- | Parser for the parameter
-  parameterP :: NonEmpty ParamValue -> Conform ParameterParseError Void Void param
-
-  -- | Builder for the parameter
-  parameterB :: param -> NonEmpty ParamValue
-
-lookupParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Maybe (Conform ParameterParseError Void Void param)
-lookupParam m = do
-  let name = parameterName (Proxy :: Proxy param)
-  pvs <- M.lookup name m
-  pure $ parameterP pvs
-
-optionalParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Conform ParameterParseError Void Void (Maybe param)
-optionalParam m =
-  let name = parameterName (Proxy :: Proxy param)
-   in mapM parameterP (M.lookup name m)
-
-optionalParamSet ::
-  forall param.
-  (Ord param, IsParameter param) =>
-  Map ParamName (NonEmpty ParamValue) ->
-  Conform ParameterParseError Void Void (Maybe (Set param))
-optionalParamSet m =
-  let name = parameterName (Proxy :: Proxy param)
-   in mapM
-        (fmap S.fromList . mapM (parameterP . (:| [])) . NE.toList)
-        (M.lookup name m)
-
-requireParam :: forall param. IsParameter param => Map ParamName (NonEmpty ParamValue) -> Conform ParameterParseError Void Void param
-requireParam m = case lookupParam m of
-  Just errOrResult -> errOrResult
-  Nothing -> unfixableError $ ParameterNotFound (parameterName (Proxy :: Proxy param)) m
-
-paramMap :: forall param. IsParameter param => param -> Map ParamName (NonEmpty ParamValue)
-paramMap param = M.singleton (parameterName (Proxy :: Proxy param)) (parameterB param)
-
-setParamMap :: forall param. IsParameter param => Set param -> Map ParamName (NonEmpty ParamValue)
-setParamMap params = case NE.nonEmpty (map parameterB (S.toList params)) of
-  Nothing -> M.empty
-  Just ne -> M.singleton (parameterName (Proxy :: Proxy param)) (sconcat ne)
-
-insertParam :: forall param. IsParameter param => param -> ContentLineValue -> ContentLineValue
-insertParam param clv = clv {contentLineValueParams = M.insert (parameterName (Proxy :: Proxy param)) (parameterB param) (contentLineValueParams clv)}
-
-insertMParam :: forall param. IsParameter param => Maybe param -> ContentLineValue -> ContentLineValue
-insertMParam = maybe id insertParam
-
-insertParamWithDefault :: forall param. (Eq param, IsParameter param) => param -> param -> ContentLineValue -> ContentLineValue
-insertParamWithDefault defaultParam param clv =
-  if param == defaultParam
-    then clv
-    else insertParam param clv
-
-singleParamP :: (ParamValue -> Conform ParameterParseError void void' a) -> NonEmpty ParamValue -> Conform ParameterParseError void void' a
-singleParamP func = \case
-  value :| [] -> func value
-  ne -> unfixableError $ MultipleParametersfound ne
-
--- TODO figure out if this text should be case-insensitive
-anySingleParamP ::
-  (CI Text -> Conform ParameterParseError void void' a) ->
-  NonEmpty ParamValue ->
-  Conform ParameterParseError void void' a
-anySingleParamP func = singleParamP $ \case
-  UnquotedParam c -> func c
-  QuotedParam t -> func (CI.mk t)
-
-singleQuotedParamP ::
-  (Text -> Conform ParameterParseError void void' a) ->
-  NonEmpty ParamValue ->
-  Conform ParameterParseError void void' a
-singleQuotedParamP func = \case
-  value :| [] -> case value of
-    QuotedParam t -> func t
-    UnquotedParam ci -> unfixableError $ UnquotedParameterFound ci -- TODO turn this into a fixable error.
-  ne -> unfixableError $ MultipleParametersfound ne
-
-singleParamB :: (a -> ParamValue) -> a -> NonEmpty ParamValue
-singleParamB func = (:| []) . func
-
--- TODO figure out if this text should be case-insensitive
-anySingleParamB :: (a -> CI Text) -> a -> NonEmpty ParamValue
-anySingleParamB func = singleParamB $ \a ->
-  let ci = func a
-      o = CI.original ci
-   in if haveToQuoteText o
-        then QuotedParam o
-        else UnquotedParam ci
+import ICal.Parameter.Class
+import ICal.Parameter.ValueDataType
+import ICal.PropertyType.CalAddress
 
 -- | Alternate Text Representation
 --
@@ -385,6 +219,44 @@ instance IsParameter CalendarUserType where
 -- @
 defaultCalendarUserType :: CalendarUserType
 defaultCalendarUserType = CalendarUserTypeIndividual
+
+-- @
+-- Parameter Name:  DELEGATED-FROM
+--
+-- Purpose:  To specify the calendar users that have delegated their
+--    participation to the calendar user specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     delfromparam       = "DELEGATED-FROM" "=" DQUOTE cal-address
+--                           DQUOTE *("," DQUOTE cal-address DQUOTE)
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  This parameter specifies those calendar
+--    users that have delegated their participation in a group-scheduled
+--    event or to-do to the calendar user specified by the property.
+--    The individual calendar address parameter values MUST each be
+--    specified in a quoted-string.
+--
+-- Example:
+--
+--     ATTENDEE;DELEGATED-FROM="mailto:jsmith@example.com":mailto:
+--      jdoe@example.com
+-- @
+newtype Delegator = Delegator {unDelegator :: CalAddress}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Delegator
+
+instance NFData Delegator
+
+instance IsParameter Delegator where
+  parameterName Proxy = "DELEGATED-FROM"
+  parameterP = singleQuotedParamP $ \t -> case parseCalAddress t of
+    Nothing -> unfixableError $ InvalidCalAddress t
+    Just ca -> pure $ Delegator ca
+  parameterB = singleQuotedParamB $ renderCalAddress . unDelegator
 
 -- | Encoding
 --
@@ -949,122 +821,6 @@ instance IsParameter TimeZoneIdentifierParam where
   parameterName Proxy = "TZID"
   parameterP = anySingleParamP $ pure . TimeZoneIdentifierParam
   parameterB = anySingleParamB unTimeZoneIdentifierParam
-
--- | Value Data Type
---
--- [section 3.2.20](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.20)
---
--- @
--- Parameter Name:  VALUE
---
--- Purpose:  To explicitly specify the value type format for a property
---    value.
---
--- Format Definition:  This property parameter is defined by the
---    following notation:
---
---     valuetypeparam = "VALUE" "=" valuetype
---
---     valuetype  = ("BINARY"
---                / "BOOLEAN"
---                / "CAL-ADDRESS"
---                / "DATE"
---                / "DATE-TIME"
---                / "DURATION"
---                / "FLOAT"
---                / "INTEGER"
---                / "PERIOD"
---                / "RECUR"
---                / "TEXT"
---                / "TIME"
---                / "URI"
---                / "UTC-OFFSET"
---                / x-name
---                ; Some experimental iCalendar value type.
---                / iana-token)
---                ; Some other IANA-registered iCalendar value type.
---
--- Description:  This parameter specifies the value type and format of
---    the property value.  The property values MUST be of a single value
---    type.  For example, a "RDATE" property cannot have a combination
---    of DATE-TIME and TIME value types.
---
---    If the property's value is the default value type, then this
---    parameter need not be specified.  However, if the property's
---    default value type is overridden by some other allowable value
---    type, then this parameter MUST be specified.
---
---    Applications MUST preserve the value data for x-name and iana-
---    token values that they don't recognize without attempting to
---    interpret or parse the value data.
--- @
-data ValueDataType
-  = TypeBinary
-  | TypeBoolean
-  | TypeCalendarAddress
-  | TypeDate
-  | TypeDateTime
-  | TypeDuration
-  | TypeFloat
-  | TypeInteger
-  | TypePeriod
-  | TypeRecur
-  | TypeText
-  | TypeTime
-  | TypeURI
-  | TypeUTCOffset
-  | -- | Other value type
-    --
-    -- @
-    -- Applications MUST preserve the value data for x-name and iana-
-    -- token values that they don't recognize without attempting to
-    -- interpret or parse the value data.
-    -- @
-    TypeOther !ParamValue
-  deriving stock (Show, Eq, Ord, Generic)
-
-instance Validity ValueDataType
-
-instance NFData ValueDataType
-
-instance IsParameter ValueDataType where
-  parameterName Proxy = "VALUE"
-  parameterP =
-    singleParamP $
-      pure
-        . ( \pv -> case paramValueCI pv of
-              "BINARY" -> TypeBinary
-              "BOOLEAN" -> TypeBoolean
-              "CAL-ADDRESS" -> TypeCalendarAddress
-              "DATE" -> TypeDate
-              "DATE-TIME" -> TypeDateTime
-              "DURATION" -> TypeDuration
-              "FLOAT" -> TypeFloat
-              "INTEGER" -> TypeInteger
-              "PERIOD" -> TypePeriod
-              "RECUR" -> TypeRecur
-              "TEXT" -> TypeText
-              "TIME" -> TypeTime
-              "URI" -> TypeURI
-              "UTC-OFFSET" -> TypeUTCOffset
-              _ -> TypeOther pv
-          )
-  parameterB = singleParamB $ \case
-    TypeBinary -> "BINARY"
-    TypeBoolean -> "BOOLEAN"
-    TypeCalendarAddress -> "CAL-ADDRESS"
-    TypeDate -> "DATE"
-    TypeDateTime -> "DATE-TIME"
-    TypeDuration -> "DURATION"
-    TypeFloat -> "FLOAT"
-    TypeInteger -> "INTEGER"
-    TypePeriod -> "PERIOD"
-    TypeRecur -> "RECUR"
-    TypeText -> "TEXT"
-    TypeTime -> "TIME"
-    TypeURI -> "URI"
-    TypeUTCOffset -> "UTC-OFFSET"
-    TypeOther pv -> pv
 
 -- | Alarm Trigger Relationship
 --

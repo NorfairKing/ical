@@ -8,7 +8,6 @@ import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
-import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import GHC.Stack
 import ICal.Conformance
