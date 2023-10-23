@@ -218,9 +218,13 @@ spec = do
     propertyExampleSpec
       "ORGANIZER;CN=John Smith:mailto:jsmith@example.com"
       ((mkOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "John Smith"})
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ORGANIZER;CN=JohnSmith;DIR=\"ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)\":mailto:jsmith@example.com"
-      ((mkOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "JohnSmith"})
+      ( (mkOrganizer "mailto:jsmith@example.com")
+          { organizerCommonName = Just "JohnSmith",
+            organizerDirectoryEntryReference = Just (DirectoryEntryReference "ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)")
+          }
+      )
     propertyParseExampleSpec
       "ORGANIZER;SENT-BY=\"mailto:jane_doe@example.com\":mailto:jsmith@example.com"
       (mkOrganizer "mailto:jsmith@example.com")
@@ -541,9 +545,13 @@ spec = do
     --      example.com
     --
     -- @
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ATTENDEE;CN=John Smith;DIR=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":mailto:jimdo@example.com"
-      ((mkAttendee "mailto:jimdo@example.com") {attendeeCommonName = Just "John Smith"})
+      ( (mkAttendee "mailto:jimdo@example.com")
+          { attendeeCommonName = Just "John Smith",
+            attendeeDirectoryEntryReference = Just (DirectoryEntryReference "ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)")
+          }
+      )
 
     -- @
     --    The following is an example of this property with "delegatee" and

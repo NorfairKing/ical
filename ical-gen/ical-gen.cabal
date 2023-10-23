@@ -79,6 +79,7 @@ library
       ICal.PropertyType.Duration.Gen
       ICal.PropertyType.Gen
       ICal.PropertyType.RecurrenceRule.Gen
+      ICal.PropertyType.URI.Gen
       ICal.UnfoldedLine.Gen
   other-modules:
       Paths_ical_gen

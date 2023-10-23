@@ -17,6 +17,7 @@ import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Parameter
 import ICal.PropertyType.CalAddress.Gen ()
+import ICal.PropertyType.URI.Gen ()
 import Test.Syd
 import Test.Syd.Validity
 
@@ -37,6 +38,10 @@ instance GenValid Delegator where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid Delegatee where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance GenValid DirectoryEntryReference where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

@@ -37,6 +37,7 @@ data ParameterParseError
   | UnknownRSVPExpectation !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   | UnknownAlarmTriggerRelationship !ParamValue -- TODO we can turn this into a fixable error by guessing the default value.
   | InvalidCalAddress !Text
+  | InvalidURI !Text
   deriving (Show, Eq, Ord)
 
 instance Exception ParameterParseError where
@@ -70,6 +71,11 @@ instance Exception ParameterParseError where
     InvalidCalAddress t ->
       unlines
         [ "Invalid cal-address in a parameter",
+          show t
+        ]
+    InvalidURI t ->
+      unlines
+        [ "Invalid uri in a parameter",
           show t
         ]
 

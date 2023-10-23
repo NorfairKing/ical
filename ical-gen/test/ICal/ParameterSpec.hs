@@ -144,6 +144,16 @@ spec = do
     -- @
     parameterExampleSpec (QuotedParam "mailto:jdoe@example.com") (Delegatee "mailto:jdoe@example.com")
 
+  describe "DirectoryEntryReference" $ do
+    genValidSpec @DirectoryEntryReference
+    parameterSpec @DirectoryEntryReference
+
+    -- @
+    --     ORGANIZER;DIR="ldap://example.com:6666/o=ABC%20Industries,
+    --      c=US???(cn=Jim%20Dolittle)":mailto:jimdo@example.com
+    -- @
+    parameterExampleSpec (QuotedParam "ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)") (DirectoryEntryReference "ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)")
+
   describe "Encoding" $ do
     genValidSpec @Encoding
     parameterSpec @Encoding

@@ -1055,6 +1055,7 @@ defaultClassification = ClassificationPublic
 data Organizer = Organizer
   { organizerCalAddress :: !CalAddress,
     organizerCommonName :: !(Maybe CommonName),
+    organizerDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
     organizerLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -1067,11 +1068,13 @@ instance IsProperty Organizer where
   propertyName Proxy = "ORGANIZER"
   propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
     organizerCommonName <- propertyParamP clv
+    organizerDirectoryEntryReference <- propertyParamP clv
     organizerLanguage <- propertyParamP clv
 
     pure Organizer {..}
   propertyB Organizer {..} =
     insertMParam organizerCommonName
+      . insertMParam organizerDirectoryEntryReference
       . insertMParam organizerLanguage
       $ propertyTypeB organizerCalAddress
 
@@ -1080,6 +1083,7 @@ mkOrganizer calAddress =
   Organizer
     { organizerCalAddress = calAddress,
       organizerCommonName = Nothing,
+      organizerDirectoryEntryReference = Nothing,
       organizerLanguage = Nothing
     }
 
@@ -2544,6 +2548,7 @@ data Attendee = Attendee
     attendeeCalendarUserType :: !CalendarUserType,
     attendeeDelegators :: ![Delegator],
     attendeeDelegatees :: ![Delegatee],
+    attendeeDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
     attendeeLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
@@ -2562,6 +2567,7 @@ instance IsProperty Attendee where
     attendeeCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
     attendeeDelegators <- propertyParamListP clv
     attendeeDelegatees <- propertyParamListP clv
+    attendeeDirectoryEntryReference <- propertyParamP clv
     attendeeLanguage <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
@@ -2572,6 +2578,7 @@ instance IsProperty Attendee where
       . insertParamWithDefault defaultCalendarUserType attendeeCalendarUserType
       . insertParamList attendeeDelegators
       . insertParamList attendeeDelegatees
+      . insertMParam attendeeDirectoryEntryReference
       . insertMParam attendeeLanguage
       $ propertyTypeB attendeeCalAddress
 
@@ -2586,6 +2593,7 @@ mkAttendee calAddress =
       attendeeCalendarUserType = defaultCalendarUserType,
       attendeeDelegators = [],
       attendeeDelegatees = [],
+      attendeeDirectoryEntryReference = Nothing,
       attendeeLanguage = Nothing
     }
 
