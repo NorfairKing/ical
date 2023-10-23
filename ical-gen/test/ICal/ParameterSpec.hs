@@ -206,6 +206,16 @@ spec = do
     -- @
     parameterExampleSpec "image/vnd.microsoft.icon" (FormatType "image/vnd.microsoft.icon")
 
+  describe "FreeBusyTimeType" $ do
+    genValidSpec @FreeBusyTimeType
+    parameterSpec @FreeBusyTimeType
+
+    -- @
+    -- FREEBUSY;FBTYPE=BUSY:19980415T133000Z/19980415T170000Z
+    -- @
+    parameterExampleSpec "FREE" FreeBusyTimeTypeFree
+    parameterExampleSpec "BUSY" FreeBusyTimeTypeBusy
+
   describe "Language" $ do
     genValidSpec @Language
     parameterSpec @Language
