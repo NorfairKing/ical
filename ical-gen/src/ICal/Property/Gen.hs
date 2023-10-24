@@ -102,6 +102,10 @@ instance GenValid Location where
 
 instance GenValid PercentComplete
 
+instance GenValid Priority where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance GenValid Status where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

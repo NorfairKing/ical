@@ -385,6 +385,30 @@ spec = do
     -- @
     propertyExampleSpec "PERCENT-COMPLETE:39" (PercentComplete 39)
 
+  describe "Priority" $ do
+    genValidSpec @Priority
+    propertySpec @Priority
+
+    -- @
+    -- Example:  The following is an example of a property with the highest
+    --    priority:
+    --
+    --     PRIORITY:1
+    --
+    --    The following is an example of a property with a next highest
+    --    priority:
+    --
+    --     PRIORITY:2
+    --
+    --    The following is an example of a property with no priority.  This
+    --    is equivalent to not specifying the "PRIORITY" property:
+    --
+    --     PRIORITY:0
+    -- @
+    propertyExampleSpec "PRIORITY:1" (Priority 1)
+    propertyExampleSpec "PRIORITY:2" (Priority 2)
+    propertyExampleSpec "PRIORITY:0" (Priority 0)
+
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd

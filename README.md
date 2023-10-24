@@ -86,7 +86,7 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.1.6.  Geographic Position
          - [X] 3.8.1.7.  Location
          - [X] 3.8.1.8.  Percent Complete
-         - [ ] 3.8.1.9.  Priority
+         - [X] 3.8.1.9.  Priority
          - [ ] 3.8.1.10. Resources
          - [X] 3.8.1.11. Status
          - [X] 3.8.1.12. Summary
