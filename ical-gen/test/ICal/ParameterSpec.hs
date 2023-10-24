@@ -305,6 +305,27 @@ spec = do
     parameterExampleSpec "REQ-PARTICIPANT" ParticipationRoleRequiredParticipant
     parameterExampleSpec "OPT-PARTICIPANT" ParticipationRoleOptionalParticipant
 
+  describe "AlarmTriggerRelationship" $ do
+    genValidSpec @AlarmTriggerRelationship
+    parameterSpec @AlarmTriggerRelationship
+
+    parameterExampleSpec "START" AlarmTriggerRelationshipStart
+    parameterExampleSpec "END" AlarmTriggerRelationshipEnd
+
+  describe "RelationshipType" $ do
+    genValidSpec @RelationshipType
+    parameterSpec @RelationshipType
+
+    -- @
+    -- Example:
+    --
+    --     RELATED-TO;RELTYPE=SIBLING:19960401-080045-4000F192713@
+    --      example.com
+    -- @
+    parameterExampleSpec "PARENT" RelationshipTypeParent
+    parameterExampleSpec "CHILD" RelationshipTypeChild
+    parameterExampleSpec "SIBLING" RelationshipTypeSibling
+
   describe "TimeZoneIdentifierParam" $ do
     genValidSpec @TimeZoneIdentifierParam
     parameterSpec @TimeZoneIdentifierParam
@@ -325,12 +346,6 @@ spec = do
 
     parameterExampleSpec "DATE" TypeDate
     parameterExampleSpec "DATE-TIME" TypeDateTime
-
-  describe "AlarmTriggerRelationship" $ do
-    genValidSpec @AlarmTriggerRelationship
-    parameterSpec @AlarmTriggerRelationship
-    parameterExampleSpec "START" AlarmTriggerRelationshipStart
-    parameterExampleSpec "END" AlarmTriggerRelationshipEnd
 
   describe "Display" $ do
     genValidSpec @Display

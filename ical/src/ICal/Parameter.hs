@@ -808,60 +808,136 @@ instance IsParameter RecurrenceIdentifierRange where
   parameterB = \case
     RecurrenceIdentifierRangeThisAndFuture -> "THISANDFUTURE"
 
--- | RSVP Expectation
+-- | Alarm Trigger Relationship
 --
--- [section 3.2.17](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.17)
+-- [section 3.2.14](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.14)
 --
 -- @
--- Parameter Name:  RSVP
+-- Parameter Name:  RELATED
 --
--- Purpose:  To specify whether there is an expectation of a favor of a
---    reply from the calendar user specified by the property value.
+-- Purpose:  To specify the relationship of the alarm trigger with
+--    respect to the start or end of the calendar component.
 --
 -- Format Definition:  This property parameter is defined by the
 --    following notation:
 --
---     rsvpparam = "RSVP" "=" ("TRUE" / "FALSE")
---     ; Default is FALSE
+--     trigrelparam       = "RELATED" "="
+--                         ("START"       ; Trigger off of start
+--                        / "END")        ; Trigger off of end
 --
--- Description:  This parameter can be specified on properties with a
---    CAL-ADDRESS value type.  The parameter identifies the expectation
---    of a reply from the calendar user specified by the property value.
---    This parameter is used by the "Organizer" to request a
---    participation status reply from an "Attendee" of a group-scheduled
---    event or to-do.  If not specified on a property that allows this
---    parameter, the default value is FALSE.
+-- Description:  This parameter can be specified on properties that
+--    specify an alarm trigger with a "DURATION" value type.  The
+--    parameter specifies whether the alarm will trigger relative to the
+--    start or end of the calendar component.  The parameter value START
+--    will set the alarm to trigger off the start of the calendar
+--    component; the parameter value END will set the alarm to trigger
+--    off the end of the calendar component.  If the parameter is not
+--    specified on an allowable property, then the default is START.
 --
 -- Example:
 --
---     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
--- @
-data RSVPExpectation
-  = RSVPExpectationTrue
-  | RSVPExpectationFalse
-  deriving stock (Show, Eq, Ord, Generic)
-
-instance Validity RSVPExpectation
-
-instance NFData RSVPExpectation
-
-instance IsParameter RSVPExpectation where
-  parameterName Proxy = "RSVP"
-  parameterP = \case
-    "TRUE" -> pure RSVPExpectationTrue
-    "FALSE" -> pure RSVPExpectationFalse
-    pv -> unfixableError $ UnknownRSVPExpectation pv
-  parameterB = \case
-    RSVPExpectationTrue -> "TRUE"
-    RSVPExpectationFalse -> "FALSE"
-
--- | Default RSVP Expectation
+--     TRIGGER;RELATED=END:PT5M
 --
 -- @
---     ; Default is FALSE
+data AlarmTriggerRelationship
+  = AlarmTriggerRelationshipStart
+  | AlarmTriggerRelationshipEnd
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity AlarmTriggerRelationship
+
+instance NFData AlarmTriggerRelationship
+
+instance IsParameter AlarmTriggerRelationship where
+  parameterName Proxy = "RELATED"
+  parameterP = \case
+    "START" -> pure AlarmTriggerRelationshipStart
+    "END" -> pure AlarmTriggerRelationshipEnd
+    pv -> unfixableError $ UnknownAlarmTriggerRelationship pv
+  parameterB = \case
+    AlarmTriggerRelationshipStart -> "START"
+    AlarmTriggerRelationshipEnd -> "END"
+
 -- @
-defaultRSVPExpectation :: RSVPExpectation
-defaultRSVPExpectation = RSVPExpectationFalse
+-- If the parameter is not
+-- specified on an allowable property, then the default is START.
+-- @
+defaultAlarmTriggerRelationship :: AlarmTriggerRelationship
+defaultAlarmTriggerRelationship = AlarmTriggerRelationshipStart
+
+-- | Relationship type
+--
+-- [section 3.2.15](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.15)
+--
+-- @
+-- Parameter Name:  RELTYPE
+--
+-- Purpose:  To specify the type of hierarchical relationship associated
+--    with the calendar component specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     reltypeparam       = "RELTYPE" "="
+--                         ("PARENT"    ; Parent relationship - Default
+--                        / "CHILD"     ; Child relationship
+--                        / "SIBLING"   ; Sibling relationship
+--                        / iana-token  ; Some other IANA-registered
+--                                      ; iCalendar relationship type
+--                        / x-name)     ; A non-standard, experimental
+--                                      ; relationship type
+--
+-- Description:  This parameter can be specified on a property that
+--    references another related calendar.  The parameter specifies the
+--    hierarchical relationship type of the calendar component
+--    referenced by the property.  The parameter value can be PARENT, to
+--    indicate that the referenced calendar component is a superior of
+--    calendar component; CHILD to indicate that the referenced calendar
+--    component is a subordinate of the calendar component; or SIBLING
+--    to indicate that the referenced calendar component is a peer of
+--    the calendar component.  If this parameter is not specified on an
+--    allowable property, the default relationship type is PARENT.
+--    Applications MUST treat x-name and iana-token values they don't
+--    recognize the same way as they would the PARENT value.
+--
+-- Example:
+--
+--     RELATED-TO;RELTYPE=SIBLING:19960401-080045-4000F192713@
+--      example.com
+-- @
+data RelationshipType
+  = RelationshipTypeParent
+  | RelationshipTypeChild
+  | RelationshipTypeSibling
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity RelationshipType
+
+instance NFData RelationshipType
+
+instance IsParameter RelationshipType where
+  parameterName Proxy = "RELTYPE"
+  parameterP =
+    pure . \case
+      "PARENT" -> RelationshipTypeParent
+      "CHILD" -> RelationshipTypeChild
+      "SIBLING" -> RelationshipTypeSibling
+      -- @
+      --    Applications MUST treat x-name and iana-token values they don't
+      --    recognize the same way as they would the PARENT value.
+      -- @
+      _ -> RelationshipTypeParent
+  parameterB = \case
+    RelationshipTypeParent -> "PARENT"
+    RelationshipTypeChild -> "CHILD"
+    RelationshipTypeSibling -> "SIBLING"
+
+-- @
+--    If this parameter is not specified on an
+--    allowable property, the default relationship type is PARENT.
+-- @
+defaultRelationshipType :: RelationshipType
+defaultRelationshipType = RelationshipTypeParent
 
 -- | Participation role
 --
@@ -939,6 +1015,61 @@ instance IsParameter ParticipationRole where
 -- @
 defaultParticipationRole :: ParticipationRole
 defaultParticipationRole = ParticipationRoleRequiredParticipant
+
+-- | RSVP Expectation
+--
+-- [section 3.2.17](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.17)
+--
+-- @
+-- Parameter Name:  RSVP
+--
+-- Purpose:  To specify whether there is an expectation of a favor of a
+--    reply from the calendar user specified by the property value.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     rsvpparam = "RSVP" "=" ("TRUE" / "FALSE")
+--     ; Default is FALSE
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter identifies the expectation
+--    of a reply from the calendar user specified by the property value.
+--    This parameter is used by the "Organizer" to request a
+--    participation status reply from an "Attendee" of a group-scheduled
+--    event or to-do.  If not specified on a property that allows this
+--    parameter, the default value is FALSE.
+--
+-- Example:
+--
+--     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
+-- @
+data RSVPExpectation
+  = RSVPExpectationTrue
+  | RSVPExpectationFalse
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity RSVPExpectation
+
+instance NFData RSVPExpectation
+
+instance IsParameter RSVPExpectation where
+  parameterName Proxy = "RSVP"
+  parameterP = \case
+    "TRUE" -> pure RSVPExpectationTrue
+    "FALSE" -> pure RSVPExpectationFalse
+    pv -> unfixableError $ UnknownRSVPExpectation pv
+  parameterB = \case
+    RSVPExpectationTrue -> "TRUE"
+    RSVPExpectationFalse -> "FALSE"
+
+-- | Default RSVP Expectation
+--
+-- @
+--     ; Default is FALSE
+-- @
+defaultRSVPExpectation :: RSVPExpectation
+defaultRSVPExpectation = RSVPExpectationFalse
 
 -- | Time Zone Identifier
 --
@@ -1032,63 +1163,6 @@ instance IsParameter TimeZoneIdentifierParam where
   parameterName Proxy = "TZID"
   parameterP = anySingleParamP $ pure . TimeZoneIdentifierParam
   parameterB = anySingleParamB unTimeZoneIdentifierParam
-
--- | Alarm Trigger Relationship
---
--- [section 3.8.4.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.5)
---
--- @
--- Parameter Name:  RELATED
---
--- Purpose:  To specify the relationship of the alarm trigger with
---    respect to the start or end of the calendar component.
---
--- Format Definition:  This property parameter is defined by the
---    following notation:
---
---     trigrelparam       = "RELATED" "="
---                         ("START"       ; Trigger off of start
---                        / "END")        ; Trigger off of end
---
--- Description:  This parameter can be specified on properties that
---    specify an alarm trigger with a "DURATION" value type.  The
---    parameter specifies whether the alarm will trigger relative to the
---    start or end of the calendar component.  The parameter value START
---    will set the alarm to trigger off the start of the calendar
---    component; the parameter value END will set the alarm to trigger
---    off the end of the calendar component.  If the parameter is not
---    specified on an allowable property, then the default is START.
---
--- Example:
---
---     TRIGGER;RELATED=END:PT5M
---
--- @
-data AlarmTriggerRelationship
-  = AlarmTriggerRelationshipStart
-  | AlarmTriggerRelationshipEnd
-  deriving stock (Show, Eq, Ord, Generic)
-
-instance Validity AlarmTriggerRelationship
-
-instance NFData AlarmTriggerRelationship
-
-instance IsParameter AlarmTriggerRelationship where
-  parameterName Proxy = "RELATED"
-  parameterP = \case
-    "START" -> pure AlarmTriggerRelationshipStart
-    "END" -> pure AlarmTriggerRelationshipEnd
-    pv -> unfixableError $ UnknownAlarmTriggerRelationship pv
-  parameterB = \case
-    AlarmTriggerRelationshipStart -> "START"
-    AlarmTriggerRelationshipEnd -> "END"
-
--- @
--- If the parameter is not
--- specified on an allowable property, then the default is START.
--- @
-defaultAlarmTriggerRelationship :: AlarmTriggerRelationship
-defaultAlarmTriggerRelationship = AlarmTriggerRelationshipStart
 
 -- | Display
 --
