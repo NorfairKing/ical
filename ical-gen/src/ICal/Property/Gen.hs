@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -40,7 +41,11 @@ instance GenValid Attachment where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Categories
+instance GenValid Categories where
+  genValid = do
+    categories <- genListOf (genValid `suchThat` (not . T.null))
+    categoriesLanguage <- genValid
+    pure Categories {..}
 
 instance GenValid RecurrenceIdentifier where
   genValid = genValidStructurallyWithoutExtraChecking
@@ -100,13 +105,18 @@ instance GenValid Location where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid PercentComplete
+instance GenValid PercentComplete where
+  genValid = PercentComplete <$> choose (0, 100)
 
 instance GenValid Priority where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Resources
+instance GenValid Resources where
+  genValid = do
+    resources <- genListOf (genValid `suchThat` (not . T.null))
+    resourcesLanguage <- genValid
+    pure Resources {..}
 
 instance GenValid Status where
   genValid = genValidStructurallyWithoutExtraChecking

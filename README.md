@@ -77,7 +77,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.7.3.  Product Identifier
        - [X] 3.7.4.  Version
      - [ ] 3.8.  Component Properties
-       - [ ] 3.8.1.  Descriptive Component Properties
+       - [X] 3.8.1.  Descriptive Component Properties
          - [X] 3.8.1.1.  Attachment
          - [X] 3.8.1.2.  Categories
          - [X] 3.8.1.3.  Classification
@@ -87,7 +87,7 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.1.7.  Location
          - [X] 3.8.1.8.  Percent Complete
          - [X] 3.8.1.9.  Priority
-         - [ ] 3.8.1.10. Resources
+         - [X] 3.8.1.10. Resources
          - [X] 3.8.1.11. Status
          - [X] 3.8.1.12. Summary
        - [ ] 3.8.2.  Date and Time Component Properties

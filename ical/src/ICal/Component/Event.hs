@@ -225,6 +225,7 @@ data Event = Event
     eventLastModified :: !(Maybe LastModified),
     eventLocation :: !(Maybe Location),
     eventOrganizer :: !(Maybe Organizer),
+    eventPriority :: !(Maybe Priority),
     -- @
     -- seq / status / summary / transp /
     -- @
@@ -266,7 +267,9 @@ data Event = Event
     eventAttachments :: !(Set Attachment),
     eventAttendees :: !(Set Attendee),
     eventCategories :: !(Set Categories),
+    eventComments :: !(Set Comment),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
+    eventResources :: !(Set Resources),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
     -- RFC 7986:
     -- @
@@ -315,6 +318,7 @@ vEventP Component {..} = do
   eventLastModified <- optionalPropertyP componentProperties
   eventLocation <- optionalPropertyP componentProperties
   eventOrganizer <- optionalPropertyP componentProperties
+  eventPriority <- optionalPropertyP componentProperties
   eventStatus <- optionalPropertyP componentProperties
   eventSummary <- optionalPropertyP componentProperties
   eventTransparency <- optionalPropertyWithDefaultP defaultTransparency componentProperties
@@ -335,7 +339,9 @@ vEventP Component {..} = do
   eventAttachments <- setOfPropertiesP componentProperties
   eventAttendees <- setOfPropertiesP componentProperties
   eventCategories <- setOfPropertiesP componentProperties
+  eventComments <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
+  eventResources <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
   eventImages <- listOfPropertiesP componentProperties
   eventAlarms <- subComponentsP componentSubcomponents
@@ -357,6 +363,7 @@ vEventB Event {..} =
             optionalPropertyB eventLastModified,
             optionalPropertyB eventLocation,
             optionalPropertyB eventOrganizer,
+            optionalPropertyB eventPriority,
             optionalPropertyB eventStatus,
             optionalPropertyB eventSummary,
             optionalPropertyWithDefaultB defaultTransparency eventTransparency,
@@ -371,7 +378,9 @@ vEventB Event {..} =
             setOfPropertiesB eventAttachments,
             setOfPropertiesB eventAttendees,
             setOfPropertiesB eventCategories,
+            setOfPropertiesB eventComments,
             setOfPropertiesB eventExceptionDateTimes,
+            setOfPropertiesB eventResources,
             setOfPropertiesB eventRecurrenceDateTimes,
             listOfPropertiesB eventImages
           ],
@@ -393,6 +402,7 @@ makeEvent uid dateTimeStamp =
       eventLastModified = Nothing,
       eventLocation = Nothing,
       eventOrganizer = Nothing,
+      eventPriority = Nothing,
       eventStatus = Nothing,
       eventSummary = Nothing,
       eventTransparency = defaultTransparency,
@@ -403,7 +413,9 @@ makeEvent uid dateTimeStamp =
       eventAttachments = S.empty,
       eventAttendees = S.empty,
       eventCategories = S.empty,
+      eventComments = S.empty,
       eventExceptionDateTimes = S.empty,
+      eventResources = S.empty,
       eventRecurrenceDateTimes = S.empty,
       eventImages = [],
       eventAlarms = []

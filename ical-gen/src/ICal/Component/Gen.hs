@@ -87,6 +87,7 @@ instance GenValid Event where
     eventLastModified <- genValid
     eventLocation <- genValid
     eventOrganizer <- genValid
+    eventPriority <- genValid
     eventStatus <- genValid
     eventSummary <- genValid
     eventTransparency <- genValid
@@ -108,7 +109,9 @@ instance GenValid Event where
     eventAttachments <- genValid
     eventAttendees <- genValid
     eventCategories <- genValid
+    eventComments <- genValid
     eventExceptionDateTimes <- genValid
+    eventResources <- genValid
     eventRecurrenceDateTimes <- genValid
     eventImages <- genValid
     eventAlarms <- genValid
