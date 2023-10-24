@@ -634,7 +634,6 @@ instance NFData Categories
 instance IsProperty Categories where
   propertyName Proxy = "CATEGORIES"
   propertyP clv = flip viaPropertyTypeListP clv $ \categories -> do
-    -- NE.fromList is safe because T.splitOn always returns a nonempty list
     categoriesLanguage <- propertyParamP clv
     pure Categories {..}
   propertyB Categories {..} =
@@ -1280,6 +1279,83 @@ instance IsProperty Priority where
   propertyName Proxy = "PRIORITY"
   propertyP = wrapPropertyTypeP $ Priority . (fromIntegral :: Int32 -> Word8) -- TODO unfixable error for out of range
   propertyB = propertyTypeB . (fromIntegral :: Word8 -> Int32) . unPriority
+
+-- | Resources
+--
+-- === [section 3.8.1.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.10)
+--
+-- @
+-- Property Name:  RESOURCES
+--
+-- Purpose:  This property defines the equipment or resources
+--    anticipated for an activity specified by a calendar component.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA, non-standard, alternate text
+--    representation, and language property parameters can be specified
+--    on this property.
+--
+-- Conformance:  This property can be specified once in "VEVENT" or
+--    "VTODO" calendar component.
+--
+-- Description:  The property value is an arbitrary text.  More than one
+--    resource can be specified as a COMMA-separated list of resources.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     resources  = "RESOURCES" resrcparam ":" text *("," text) CRLF
+--
+--     resrcparam = *(
+--                ;
+--                ; The following are OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" altrepparam) / (";" languageparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+-- Example:  The following is an example of this property:
+--
+--     RESOURCES:EASEL,PROJECTOR,VCR
+--
+--     RESOURCES;LANGUAGE=fr:Nettoyeur haute pression
+-- @
+data Resources = Resources
+  { resources :: [Text], -- TODO make this a nonempty list
+    resourcesLanguage :: Maybe Language
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Resources where
+  validate cs@Resources {..} =
+    mconcat
+      [ genericValidate cs,
+        decorateList resources $ \category ->
+          declare "The category is a nonempty text" $ not $ T.null category
+      ]
+
+instance NFData Resources
+
+instance IsProperty Resources where
+  propertyName Proxy = "RESOURCES"
+  propertyP clv = flip viaPropertyTypeListP clv $ \resources -> do
+    resourcesLanguage <- propertyParamP clv
+    pure Resources {..}
+  propertyB Resources {..} =
+    insertMParam resourcesLanguage $
+      propertyTypeListB resources
+
+makeResources :: [Text] -> Resources
+makeResources resources =
+  let resourcesLanguage = Nothing
+   in Resources {..}
 
 -- | Status
 --

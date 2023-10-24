@@ -228,6 +228,27 @@ spec = do
       "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
 
+  describe "Resources" $ do
+    genValidSpec @Resources
+    propertySpec @Resources
+
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     RESOURCES:EASEL,PROJECTOR,VCR
+    --
+    --     RESOURCES;LANGUAGE=fr:Nettoyeur haute pression
+    -- @
+    propertyExampleSpec
+      "RESOURCES:EASEL,PROJECTOR,VCR"
+      (makeResources ["EASEL", "PROJECTOR", "VCR"])
+    propertyExampleSpec
+      "RESOURCES;LANGUAGE=fr:Nettoyeur haute pression"
+      ( (makeResources ["Nettoyeur haute pression"])
+          { resourcesLanguage = Just "fr"
+          }
+      )
+
   describe "Classification" $ do
     genValidSpec @Classification
     propertySpec @Classification
