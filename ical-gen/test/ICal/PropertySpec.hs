@@ -18,6 +18,17 @@ import Test.Syd.Validity hiding (Location)
 
 spec :: Spec
 spec = do
+  describe "CalendarScale" $ do
+    genValidSpec @CalendarScale
+    propertySpec @CalendarScale
+
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     CALSCALE:GREGORIAN
+    -- @
+    propertyExampleSpec "CALSCALE:GREGORIAN" CalendarScaleGregorian
+
   describe "Method" $ do
     genValidSpec @Method
     propertySpec @Method
@@ -46,6 +57,75 @@ spec = do
     genValidSpec @Version
     propertySpec @Version
     propertyExampleSpec "VERSION:2.0" (Version "2.0")
+
+  describe "Attachment" $ do
+    genValidSpec @Attachment
+    propertySpec @Attachment
+
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --     ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com
+    --
+    --     ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/
+    --      reports/r-960812.ps
+    -- @
+    propertyExampleSpec
+      "ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com"
+      (AttachmentURI Nothing "CID:jsmith.part3.960817T083000.xyzMail@example.com")
+    propertyExampleSpec
+      "ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/reports/r-960812.ps"
+      (AttachmentURI (Just "application/postscript") "ftp://example.com/pub/reports/r-960812.ps")
+
+    -- @
+    -- Example:  The following is an example of a "BASE64" encoded binary
+    --    value data:
+    --
+    --   ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE
+    --    =BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAA
+    --    ACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAERE
+    --    AAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    --    AAAAAAAAAAAA
+    -- @
+    propertyExampleSpec
+      "ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE=BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ( AttachmentBinary
+          (Just "image/vnd.microsoft.icon")
+          "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      )
+
+  describe "Categories" $ do
+    genValidSpec @Categories
+    propertySpec @Categories
+
+    -- @
+    --    Example:  The following are examples of this property:
+    --
+    --        CATEGORIES:APPOINTMENT,EDUCATION
+    --
+    --        CATEGORIES:MEETING
+    -- @
+    propertyExampleSpec "CATEGORIES:APPOINTMENT,EDUCATION" (makeCategories ["APPOINTMENT", "EDUCATION"])
+    propertyExampleSpec "CATEGORIES:MEETING" (makeCategories ["MEETING"])
+
+    -- @
+    -- CATEGORIES:BUSINESS,HUMAN RESOURCES
+    -- @
+    propertyExampleSpec "CATEGORIES:BUSINESS,HUMAN RESOURCES" (makeCategories ["BUSINESS", "HUMAN RESOURCES"])
+
+    -- @
+    -- CATEGORIES:ANNIVERSARY,PERSONAL,SPECIAL OCCASION
+    -- @
+    propertyExampleSpec "CATEGORIES:ANNIVERSARY,PERSONAL,SPECIAL OCCASION" (makeCategories ["ANNIVERSARY", "PERSONAL", "SPECIAL OCCASION"])
+
+    -- @
+    -- CATEGORIES:FAMILY,FINANCE
+    -- @
+    propertyExampleSpec "CATEGORIES:FAMILY,FINANCE" (makeCategories ["FAMILY", "FINANCE"])
 
   describe "RecurrenceIdentifier" $ do
     genValidSpec @RecurrenceIdentifier
@@ -147,44 +227,6 @@ spec = do
     propertyParseExampleSpec
       "DTSTART;VALUE=DATE-TIME:19980118T073000Z"
       (DateTimeStartDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 01 18) (TimeOfDay 07 30 00)))))
-
-  describe "Attachment" $ do
-    genValidSpec @Attachment
-    propertySpec @Attachment
-    -- @
-    -- Example:  The following are examples of this property:
-    --
-    --     ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com
-    --
-    --     ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/
-    --      reports/r-960812.ps
-    -- @
-    propertyExampleSpec
-      "ATTACH:CID:jsmith.part3.960817T083000.xyzMail@example.com"
-      (AttachmentURI Nothing "CID:jsmith.part3.960817T083000.xyzMail@example.com")
-    propertyExampleSpec
-      "ATTACH;FMTTYPE=application/postscript:ftp://example.com/pub/reports/r-960812.ps"
-      (AttachmentURI (Just "application/postscript") "ftp://example.com/pub/reports/r-960812.ps")
-    -- @
-    -- Example:  The following is an example of a "BASE64" encoded binary
-    --    value data:
-    --
-    --   ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE
-    --    =BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAA
-    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAA
-    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    --    AAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAA
-    --    ACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAERE
-    --    AAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    --    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-    --    AAAAAAAAAAAA
-    -- @
-    propertyExampleSpec
-      "ATTACH;FMTTYPE=image/vnd.microsoft.icon;ENCODING=BASE64;VALUE=BINARY:AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      ( AttachmentBinary
-          (Just "image/vnd.microsoft.icon")
-          "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgIAAAICAgADAwMAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMwAAAAAAABNEMQAAAAAAAkQgAAAAAAJEREQgAAACECQ0QgEgAAQxQzM0E0AABERCRCREQAADRDJEJEQwAAAhA0QwEQAAAAAEREAAAAAAAAREQAAAAAAAAkQgAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      )
 
   describe "Classification" $ do
     genValidSpec @Classification

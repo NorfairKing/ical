@@ -79,7 +79,7 @@ It's already being used in production at https://smos.online and https://social-
      - [ ] 3.8.  Component Properties
        - [ ] 3.8.1.  Descriptive Component Properties
          - [X] 3.8.1.1.  Attachment
-         - [ ] 3.8.1.2.  Categories
+         - [X] 3.8.1.2.  Categories
          - [X] 3.8.1.3.  Classification
          - [X] 3.8.1.4.  Comment
          - [X] 3.8.1.5.  Description

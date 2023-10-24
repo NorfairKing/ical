@@ -107,6 +107,7 @@ instance GenValid Event where
     eventDateTimeEndDuration <- genValid
     eventAttachments <- genValid
     eventAttendees <- genValid
+    eventCategories <- genValid
     eventExceptionDateTimes <- genValid
     eventRecurrenceDateTimes <- genValid
     eventImages <- genValid

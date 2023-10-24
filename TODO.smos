@@ -764,3 +764,7 @@ value:
     state-history:
     - state: TODO
       time: 2022-09-15 07:53:56
+  - header: have the property type class take a string instead of a content line value
+    state-history:
+    - state: TODO
+      time: 2023-10-24 13:34:19

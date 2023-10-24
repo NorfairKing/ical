@@ -265,6 +265,7 @@ data Event = Event
     -- @
     eventAttachments :: !(Set Attachment),
     eventAttendees :: !(Set Attendee),
+    eventCategories :: !(Set Categories),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
     -- RFC 7986:
@@ -333,6 +334,7 @@ vEventP Component {..} = do
         (Just e, _) -> Just (Left e) -- Not failing to parse if both are present. TODO emit a warning or fixable error
   eventAttachments <- setOfPropertiesP componentProperties
   eventAttendees <- setOfPropertiesP componentProperties
+  eventCategories <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
   eventImages <- listOfPropertiesP componentProperties
@@ -368,6 +370,7 @@ vEventB Event {..} =
                 Right d -> requiredPropertyB d,
             setOfPropertiesB eventAttachments,
             setOfPropertiesB eventAttendees,
+            setOfPropertiesB eventCategories,
             setOfPropertiesB eventExceptionDateTimes,
             setOfPropertiesB eventRecurrenceDateTimes,
             listOfPropertiesB eventImages
@@ -399,6 +402,7 @@ makeEvent uid dateTimeStamp =
       eventDateTimeEndDuration = Nothing,
       eventAttachments = S.empty,
       eventAttendees = S.empty,
+      eventCategories = S.empty,
       eventExceptionDateTimes = S.empty,
       eventRecurrenceDateTimes = S.empty,
       eventImages = [],

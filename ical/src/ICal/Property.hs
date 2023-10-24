@@ -148,6 +148,15 @@ wrapPropertyTypeP ::
   (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
+viaPropertyTypeListP ::
+  forall propertyType property.
+  IsPropertyType propertyType =>
+  ([propertyType] -> Conform PropertyParseError PropertyFixableError Void property) ->
+  (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
+viaPropertyTypeListP func clv = do
+  propertyType <- conformMapAll PropertyTypeParseError PropertyTypeFixableError id $ propertyTypeListP clv
+  func propertyType
+
 propertyParamP ::
   IsParameter param =>
   ContentLineValue ->
@@ -555,6 +564,87 @@ instance IsProperty Attachment where
     AttachmentURI mFormatType uri -> insertMParam mFormatType $ propertyTypeB uri
     AttachmentBinary mFormatType binary -> insertMParam mFormatType $ typedPropertyTypeB binary
 
+-- | Categories
+--
+-- === [section 3.8.1.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.2)
+--
+-- @
+-- Property Name:  CATEGORIES
+--
+-- Purpose:  This property defines the categories for a calendar
+--    component.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA, non-standard, and language property
+--    parameters can be specified on this property.
+--
+-- Conformance:  The property can be specified within "VEVENT", "VTODO",
+--    or "VJOURNAL" calendar components.
+--
+-- escription:  This property is used to specify categories or subtypes
+--    of the calendar component.  The categories are useful in searching
+--    for a calendar component of a particular type and category.
+--    Within the "VEVENT", "VTODO", or "VJOURNAL" calendar components,
+--    more than one category can be specified as a COMMA-separated list
+--    of categories.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     categories = "CATEGORIES" catparam ":" text *("," text)
+--                  CRLF
+--
+--     catparam   = *(
+--                ;
+--                ; The following is OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" languageparam ) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+-- Example:  The following are examples of this property:
+--
+--     CATEGORIES:APPOINTMENT,EDUCATION
+--
+--     CATEGORIES:MEETING
+data Categories = Categories
+  { categories :: [Text], -- TODO make this a nonempty list, as well as the EXDATE sets
+    categoriesLanguage :: Maybe Language
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Categories where
+  validate cs@Categories {..} =
+    mconcat
+      [ genericValidate cs,
+        decorateList categories $ \category ->
+          declare "The category is a nonempty text" $ not $ T.null category
+      ]
+
+instance NFData Categories
+
+instance IsProperty Categories where
+  propertyName Proxy = "CATEGORIES"
+  propertyP clv = flip viaPropertyTypeListP clv $ \categories -> do
+    -- NE.fromList is safe because T.splitOn always returns a nonempty list
+    categoriesLanguage <- propertyParamP clv
+    pure Categories {..}
+  propertyB Categories {..} =
+    insertMParam categoriesLanguage $
+      propertyTypeListB categories
+
+makeCategories :: [Text] -> Categories
+makeCategories categories =
+  let categoriesLanguage = Nothing
+   in Categories {..}
+
 -- | Classification
 --
 -- === [section 3.8.1.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.3)
@@ -935,7 +1025,11 @@ instance NFData GeographicPosition
 
 instance IsProperty GeographicPosition where
   propertyName Proxy = "GEO"
-  propertyP = viaPropertyTypeP (\t -> maybe (unfixableError $ UnReadableGeographicPosition t) pure $ parseGeographicPosition t)
+  propertyP =
+    viaPropertyTypeP
+      ( \t ->
+          maybe (unfixableError $ UnReadableGeographicPosition t) pure $ parseGeographicPosition t
+      )
   propertyB = mkSimpleContentLineValue . renderGeographicPosition
 
 parseGeographicPosition :: Text -> Maybe GeographicPosition
