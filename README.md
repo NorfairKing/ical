@@ -16,12 +16,12 @@ It's already being used in production at https://smos.online and https://social-
 
 ### RFC 5545
 
-   - [x] 1.  Introduction
-   - [x] 2.  Basic Grammar and Conventions
-     - [x] 2.1.  Formatting Conventions
-     - [x] 2.2.  Related Memos
-   - [x] 3.  iCalendar Object Specification
-     - [x] 3.1.  Content Lines
+   - [X] 1.  Introduction
+   - [X] 2.  Basic Grammar and Conventions
+     - [X] 2.1.  Formatting Conventions
+     - [X] 2.2.  Related Memos
+   - [X] 3.  iCalendar Object Specification
+     - [X] 3.1.  Content Lines
        - [X] 3.1.1.  List and Field Separators
        - [X] 3.1.2.  Multiple Values
        - [X] 3.1.3.  Binary Content
@@ -103,7 +103,7 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.3.2.  Time Zone Name
          - [X] 3.8.3.3.  Time Zone Offset From
          - [X] 3.8.3.4.  Time Zone Offset To
-         - [X] 3.8.3.5.  Time Zone URL
+         - [ ] 3.8.3.5.  Time Zone URL
        - [ ] 3.8.4.  Relationship Component Properties
          - [X] 3.8.4.1.  Attendee
          - [ ] 3.8.4.2.  Contact
@@ -121,9 +121,9 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.6.2.  Repeat Count
          - [X] 3.8.6.3.  Trigger
        - [ ] 3.8.7.  Change Management Component Properties
-         - [ ] 3.8.7.1.  Date-Time Created
-         - [ ] 3.8.7.2.  Date-Time Stamp
-         - [ ] 3.8.7.3.  Last Modified
+         - [X] 3.8.7.1.  Date-Time Created
+         - [X] 3.8.7.2.  Date-Time Stamp
+         - [X] 3.8.7.3.  Last Modified
          - [ ] 3.8.7.4.  Sequence Number
        - [ ] 3.8.8.  Miscellaneous Component Properties
          - [ ] 3.8.8.1.  IANA Properties

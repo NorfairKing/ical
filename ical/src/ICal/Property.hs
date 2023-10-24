@@ -85,7 +85,7 @@ instance Exception PropertyFixableError where
   displayException = \case
     PropertyTypeFixableError ptfe -> displayException ptfe
 
--- |
+-- | Calendar Properties
 --
 -- === [section 3.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7)
 --
@@ -118,11 +118,6 @@ class IsProperty property where
 
   -- | Builder for the property
   propertyB :: property -> ContentLineValue
-
-instance IsProperty RecurrenceRule where
-  propertyName Proxy = "RRULE"
-  propertyP = wrapPropertyTypeP id
-  propertyB = recurrenceRuleB
 
 propertyContentLineP ::
   forall property.
@@ -190,6 +185,7 @@ propertyParamListP clv =
     listParam $
       contentLineValueParams clv
 
+-- | BEGIN of a calendar property
 newtype Begin = Begin {unBegin :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -202,6 +198,7 @@ instance IsProperty Begin where
   propertyP = wrapPropertyTypeP Begin
   propertyB = propertyTypeB . unBegin
 
+-- | END of a calendar property
 newtype End = End {unEnd :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -214,9 +211,73 @@ instance IsProperty End where
   propertyP = wrapPropertyTypeP End
   propertyB = propertyTypeB . unEnd
 
+-- | Calendar Scale
+--
+-- === [section 3.7.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1)
+--
+-- @
+-- Property Name:  CALSCALE
+--
+-- Purpose:  This property defines the calendar scale used for the
+--    calendar information specified in the iCalendar object.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.  The default value is "GREGORIAN".
+--
+-- Description:  This memo is based on the Gregorian calendar scale.
+--    The Gregorian calendar scale is assumed if this property is not
+--    specified in the iCalendar object.  It is expected that other
+--    calendar scales will be defined in other specifications or by
+--    future versions of this memo.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     calscale   = "CALSCALE" calparam ":" calvalue CRLF
+--
+--     calparam   = *(";" other-param)
+--
+--     calvalue   = "GREGORIAN"
+--
+-- Example:  The following is an example of this property:
+--
+--     CALSCALE:GREGORIAN
+-- @
+data CalendarScale
+  = CalendarScaleGregorian
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity CalendarScale
+
+instance NFData CalendarScale
+
+instance IsProperty CalendarScale where
+  propertyName Proxy = "CALSCALE"
+  propertyP = viaPropertyTypeP $ \t ->
+    case t :: Text of
+      "GREGORIAN" -> pure CalendarScaleGregorian
+      _ -> unfixableError $ UnknownCalendarScale t
+  propertyB =
+    propertyTypeB . \case
+      CalendarScaleGregorian -> "GREGORIAN" :: Text
+
+-- | Default Calendar Scale
+--
+-- @
+-- The default value is "GREGORIAN".
+-- @
+defaultCalendarScale :: CalendarScale
+defaultCalendarScale = CalendarScaleGregorian
+
 -- | Method
 --
 -- === [section 3.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.2)
+--
 -- @
 -- Property Name:  METHOD
 --
@@ -393,393 +454,6 @@ instance IsProperty Version where
 -- | The current version
 version20 :: Version
 version20 = Version "2.0"
-
--- | Calendar Scale
---
--- === [section 3.7.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1)
---
--- @
--- Property Name:  CALSCALE
---
--- Purpose:  This property defines the calendar scale used for the
---    calendar information specified in the iCalendar object.
---
--- Value Type:  TEXT
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  This property can be specified once in an iCalendar
---    object.  The default value is "GREGORIAN".
---
--- Description:  This memo is based on the Gregorian calendar scale.
---    The Gregorian calendar scale is assumed if this property is not
---    specified in the iCalendar object.  It is expected that other
---    calendar scales will be defined in other specifications or by
---    future versions of this memo.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     calscale   = "CALSCALE" calparam ":" calvalue CRLF
---
---     calparam   = *(";" other-param)
---
---     calvalue   = "GREGORIAN"
---
--- Example:  The following is an example of this property:
---
---     CALSCALE:GREGORIAN
--- @
-data CalendarScale
-  = CalendarScaleGregorian
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity CalendarScale
-
-instance NFData CalendarScale
-
-instance IsProperty CalendarScale where
-  propertyName Proxy = "CALSCALE"
-  propertyP = viaPropertyTypeP $ \t ->
-    case t :: Text of
-      "GREGORIAN" -> pure CalendarScaleGregorian
-      _ -> unfixableError $ UnknownCalendarScale t
-  propertyB =
-    propertyTypeB . \case
-      CalendarScaleGregorian -> "GREGORIAN" :: Text
-
--- | Default Calendar Scale
---
--- @
--- The default value is "GREGORIAN".
--- @
-defaultCalendarScale :: CalendarScale
-defaultCalendarScale = CalendarScaleGregorian
-
--- | Universal Identifier
---
--- === [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
---
--- @
--- Property Name:  UID
---
--- Purpose:  This property defines the persistent, globally unique
---    identifier for the calendar component.
---
--- Value Type:  TEXT
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  The property MUST be specified in the "VEVENT",
---    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
---
--- Description:  The "UID" itself MUST be a globally unique identifier.
---    The generator of the identifier MUST guarantee that the identifier
---    is unique.  There are several algorithms that can be used to
---    accomplish this.  A good method to assure uniqueness is to put the
---    domain name or a domain literal IP address of the host on which
---    the identifier was created on the right-hand side of an "@", and
---    on the left-hand side, put a combination of the current calendar
---    date and time of day (i.e., formatted in as a DATE-TIME value)
---    along with some other currently unique (perhaps sequential)
---    identifier available on the system (for example, a process id
---    number).  Using a DATE-TIME value on the left-hand side and a
---    domain name or domain literal on the right-hand side makes it
---    possible to guarantee uniqueness since no two hosts should be
---    using the same domain name or IP address at the same time.  Though
---    other algorithms will work, it is RECOMMENDED that the right-hand
---    side contain some domain identifier (either of the host itself or
---    otherwise) such that the generator of the message identifier can
---    guarantee the uniqueness of the left-hand side within the scope of
---    that domain.
---
---    This is the method for correlating scheduling messages with the
---    referenced "VEVENT", "VTODO", or "VJOURNAL" calendar component.
---    The full range of calendar components specified by a recurrence
---    set is referenced by referring to just the "UID" property value
---    corresponding to the calendar component.  The "RECURRENCE-ID"
---    property allows the reference to an individual instance within the
---    recurrence set.
---
---    This property is an important method for group-scheduling
---    applications to match requests with later replies, modifications,
---    or deletion requests.  Calendaring and scheduling applications
---    MUST generate this property in "VEVENT", "VTODO", and "VJOURNAL"
---    calendar components to assure interoperability with other group-
---    scheduling applications.  This identifier is created by the
---    calendar system that generates an iCalendar object.
---
---    Implementations MUST be able to receive and persist values of at
---    least 255 octets for this property, but they MUST NOT truncate
---    values in the middle of a UTF-8 multi-octet sequence.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     uid        = "UID" uidparam ":" text CRLF
---
---     uidparam   = *(";" other-param)
---
--- Example:  The following is an example of this property:
---
---     UID:19960401T080045Z-4000F192713-0052@example.com
--- @
---
--- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
---
--- @
--- This specification modifies the definition of the "UID" property to
--- allow it to be defined in an iCalendar object.  The following
--- additions are made to the definition of this property, originally
--- specified in Section 3.8.4.7 of [RFC5545].
---
--- Purpose:  This property specifies the persistent, globally unique
---    identifier for the iCalendar object.  This can be used, for
---    example, to identify duplicate calendar streams that a client may
---    have been given access to.  It can be used in conjunction with the
---    "LAST-MODIFIED" property also specified on the "VCALENDAR" object
---    to identify the most recent version of a calendar.
---
--- Conformance:  This property can be specified once in an iCalendar
---    object.
---
--- The description of the "UID" property in [RFC5545] contains some
--- recommendations on how the value can be constructed.  In particular,
--- it suggests use of host names, IP addresses, and domain names to
--- construct the value.  However, this is no longer considered good
--- practice, particularly from a security and privacy standpoint, since
--- use of such values can leak key information about a calendar user or
--- their client and network environment.  This specification updates
--- [RFC5545] by stating that "UID" values MUST NOT include any data that
--- might identify a user, host, domain, or any other security- or
--- privacy-sensitive information.  It is RECOMMENDED that calendar user
--- agents now generate "UID" values that are hex-encoded random
--- Universally Unique Identifier (UUID) values as defined in
--- Sections 4.4 and 4.5 of [RFC4122].
---
--- The following is an example of such a property value:
---
--- UID:5FC53010-1267-4F8E-BC28-1D7AE55A7C99
---
--- Additionally, if calendar user agents choose to use other forms of
--- opaque identifiers for the "UID" value, they MUST have a length less
--- than 255 octets and MUST conform to the "iana-token" ABNF syntax
--- defined in Section 3.1 of [RFC5545].
--- @
-newtype UID = UID {unUID :: Text}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity UID
-
-instance NFData UID
-
-instance IsProperty UID where
-  propertyName Proxy = "UID"
-  propertyP = wrapPropertyTypeP UID
-  propertyB = propertyTypeB . unUID
-
--- |
---
--- === [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
---
--- @
--- Property Name:  DTSTAMP
---
--- Purpose:  In the case of an iCalendar object that specifies a
---    "METHOD" property, this property specifies the date and time that
---    the instance of the iCalendar object was created.  In the case of
---    an iCalendar object that doesn't specify a "METHOD" property, this
---    property specifies the date and time that the information
---    associated with the calendar component was last revised in the
---    calendar store.
---
--- Value Type:  DATE-TIME
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  This property MUST be included in the "VEVENT",
---    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
---
--- Description:  The value MUST be specified in the UTC time format.
---
---    This property is also useful to protocols such as [2447bis] that
---    have inherent latency issues with the delivery of content.  This
---    property will assist in the proper sequencing of messages
---    containing iCalendar objects.
---
---    In the case of an iCalendar object that specifies a "METHOD"
---    property, this property differs from the "CREATED" and "LAST-
---    MODIFIED" properties.  These two properties are used to specify
---    when the particular calendar data in the calendar store was
---    created and last modified.  This is different than when the
---    iCalendar object representation of the calendar service
---    information was created or last modified.
---
---    In the case of an iCalendar object that doesn't specify a "METHOD"
---    property, this property is equivalent to the "LAST-MODIFIED"
---    property.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     dtstamp    = "DTSTAMP" stmparam ":" date-time CRLF
---
---     stmparam   = *(";" other-param)
---
--- Example:
---
---     DTSTAMP:19971210T080000Z
--- @
-newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity DateTimeStamp
-
-instance NFData DateTimeStamp
-
-instance IsProperty DateTimeStamp where
-  propertyName Proxy = "DTSTAMP"
-  propertyP = wrapPropertyTypeP DateTimeStamp
-  propertyB = propertyTypeB . unDateTimeStamp
-
--- | Timezone Identifier
---
--- === [section 3.8.3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.1)
---
--- @
--- Format Definition:  This property is defined by the following
---    notation:
---
---     tzid       = "TZID" tzidpropparam ":" [tzidprefix] text CRLF
---
---     tzidpropparam      = *(";" other-param)
---
---     ;tzidprefix        = "/"
---     ; Defined previously. Just listed here for reader convenience.
---
--- Example:  The following are examples of non-globally unique time zone
---    identifiers:
---
---     TZID:America/New_York
---
---     TZID:America/Los_Angeles
---
---    The following is an example of a fictitious globally unique time
---    zone identifier:
---
---     TZID:/example.org/America/New_York
--- @
-newtype TimeZoneIdentifier = TimeZoneIdentifier {unTimeZoneIdentifier :: Text}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity TimeZoneIdentifier
-
-instance NFData TimeZoneIdentifier
-
-instance IsProperty TimeZoneIdentifier where
-  propertyName Proxy = "TZID"
-  propertyP = wrapPropertyTypeP TimeZoneIdentifier
-  propertyB = propertyTypeB . unTimeZoneIdentifier
-
-tzidParam :: TimeZoneIdentifier -> TimeZoneIdentifierParam
-tzidParam = TimeZoneIdentifierParam . CI.mk . unTimeZoneIdentifier
-
--- |
---
--- === [section 3.8.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
---
--- @
--- Property Name:  DTSTART
---
--- Purpose:  This property specifies when the calendar component begins.
---
--- Value Type:  The default value type is DATE-TIME.  The time value
---    MUST be one of the forms defined for the DATE-TIME value type.
---    The value type can be set to a DATE value type.
---
--- Property Parameters:  IANA, non-standard, value data type, and time
---    zone identifier property parameters can be specified on this
---    property.
---
--- Conformance:  This property can be specified once in the "VEVENT",
---    "VTODO", or "VFREEBUSY" calendar components as well as in the
---    "STANDARD" and "DAYLIGHT" sub-components.  This property is
---    REQUIRED in all types of recurring calendar components that
---    specify the "RRULE" property.  This property is also REQUIRED in
---    "VEVENT" calendar components contained in iCalendar objects that
---    don't specify the "METHOD" property.
---
--- Description:  Within the "VEVENT" calendar component, this property
---    defines the start date and time for the event.
---
---    Within the "VFREEBUSY" calendar component, this property defines
---    the start date and time for the free or busy time information.
---    The time MUST be specified in UTC time.
---
---    Within the "STANDARD" and "DAYLIGHT" sub-components, this property
---    defines the effective start date and time for a time zone
---    specification.  This property is REQUIRED within each "STANDARD"
---    and "DAYLIGHT" sub-components included in "VTIMEZONE" calendar
---    components and MUST be specified as a date with local time without
---    the "TimeZoneIdentifier" property parameter.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     dtstart    = "DTSTART" dtstparam ":" dtstval CRLF
---
---     dtstparam  = *(
---                ;
---                ; The following are OPTIONAL,
---                ; but MUST NOT occur more than once.
---                ;
---                (";" "VALUE" "=" ("DATE-TIME" / "DATE")) /
---                (";" tzidparam) /
---                ;
---                ; The following is OPTIONAL,
---                ; and MAY occur more than once.
---                ;
---                (";" other-param)
---                ;
---                )
---
---     dtstval    = date-time / date
---     ;Value MUST match value type
---
--- Example:  The following is an example of this property:
---
---     DTSTART:19980118T073000Z
--- @
-data DateTimeStart
-  = DateTimeStartDate !Date
-  | DateTimeStartDateTime !DateTime
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity DateTimeStart
-
-instance NFData DateTimeStart
-
-instance IsProperty DateTimeStart where
-  propertyName Proxy = "DTSTART"
-  propertyP clv = do
-    mValue <- propertyParamP clv
-    case mValue of
-      Just TypeDateTime -> wrapPropertyTypeP DateTimeStartDateTime clv
-      Just TypeDate -> wrapPropertyTypeP DateTimeStartDate clv
-      Just _ -> unfixableError $ ValueMismatch "DTSTART" mValue (Just TypeDateTime) [TypeDate]
-      -- @
-      -- Value Type:  The default value type is DATE-TIME.
-      -- @
-      Nothing -> wrapPropertyTypeP DateTimeStartDateTime clv
-  propertyB = \case
-    DateTimeStartDateTime dateTime -> propertyTypeB dateTime
-    -- @
-    -- Value Type:  The default value type is DATE-TIME.
-    -- @
-    DateTimeStartDate date -> typedPropertyTypeB date
 
 -- | Attachment
 --
@@ -971,371 +645,34 @@ renderClassification = \case
 defaultClassification :: Classification
 defaultClassification = ClassificationPublic
 
--- | Organizer
+-- | Comment
 --
--- === [section 3.8.4.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.3)
---
--- @
--- Property Name:  ORGANIZER
---
--- Purpose:  This property defines the organizer for a calendar
---    component.
---
--- Value Type:  CAL-ADDRESS
---
--- Property Parameters:  IANA, non-standard, language, common name,
---    directory entry reference, and sent-by property parameters can be
---    specified on this property.
---
--- Conformance:  This property MUST be specified in an iCalendar object
---    that specifies a group-scheduled calendar entity.  This property
---    MUST be specified in an iCalendar object that specifies the
---    publication of a calendar user's busy time.  This property MUST
---    NOT be specified in an iCalendar object that specifies only a time
---    zone definition or that defines calendar components that are not
---    group-scheduled components, but are components only on a single
---    user's calendar.
---
--- Description:  This property is specified within the "VEVENT",
---    "VTODO", and "VJOURNAL" calendar components to specify the
---    organizer of a group-scheduled calendar entity.  The property is
---    specified within the "VFREEBUSY" calendar component to specify the
---    calendar user requesting the free or busy time.  When publishing a
---    "VFREEBUSY" calendar component, the property is used to specify
---    the calendar that the published busy time came from.
---
---    The property has the property parameters "CN", for specifying the
---    common or display name associated with the "Organizer", "DIR", for
---    specifying a pointer to the directory information associated with
---    the "Organizer", "SENT-BY", for specifying another calendar user
---    that is acting on behalf of the "Organizer".  The non-standard
---    parameters may also be specified on this property.  If the
---    "LANGUAGE" property parameter is specified, the identified
---    language applies to the "CN" parameter value.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     organizer  = "ORGANIZER" orgparam ":"
---                  cal-address CRLF
---
---     orgparam   = *(
---                ;
---                ; The following are OPTIONAL,
---                ; but MUST NOT occur more than once.
---                ;
---                (";" cnparam) / (";" dirparam) / (";" sentbyparam) /
---                (";" languageparam) /
---                ;
---                ; The following is OPTIONAL,
---                ; and MAY occur more than once.
---                ;
---                (";" other-param)
---                ;
---                )
---
--- Example:  The following is an example of this property:
---
---     ORGANIZER;CN=John Smith:mailto:jsmith@example.com
---
---    The following is an example of this property with a pointer to the
---    directory information associated with the organizer:
---
---     ORGANIZER;CN=JohnSmith;DIR="ldap://example.com:6666/o=DC%20Ass
---      ociates,c=US???(cn=John%20Smith)":mailto:jsmith@example.com
---
---    The following is an example of this property used by another
---    calendar user who is acting on behalf of the organizer, with
---    responses intended to be sent back to the organizer, not the other
---    calendar user:
---
---     ORGANIZER;SENT-BY="mailto:jane_doe@example.com":
---      mailto:jsmith@example.com
--- @
-data Organizer = Organizer
-  { organizerCalAddress :: !CalAddress,
-    organizerCommonName :: !(Maybe CommonName),
-    organizerDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
-    organizerLanguage :: !(Maybe Language),
-    organizerSentBy :: !(Maybe SentBy)
-  }
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity Organizer
-
-instance NFData Organizer
-
-instance IsProperty Organizer where
-  propertyName Proxy = "ORGANIZER"
-  propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
-    organizerCommonName <- propertyParamP clv
-    organizerDirectoryEntryReference <- propertyParamP clv
-    organizerLanguage <- propertyParamP clv
-    organizerSentBy <- propertyParamP clv
-    pure Organizer {..}
-  propertyB Organizer {..} =
-    insertMParam organizerCommonName
-      . insertMParam organizerDirectoryEntryReference
-      . insertMParam organizerLanguage
-      . insertMParam organizerSentBy
-      $ propertyTypeB organizerCalAddress
-
-mkOrganizer :: CalAddress -> Organizer
-mkOrganizer calAddress =
-  Organizer
-    { organizerCalAddress = calAddress,
-      organizerCommonName = Nothing,
-      organizerDirectoryEntryReference = Nothing,
-      organizerLanguage = Nothing,
-      organizerSentBy = Nothing
-    }
-
--- |
---
--- === [section 3.8.4.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.4)
+-- === [section 3.8.1.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.4)
 --
 -- @
--- Property Name:  RECURRENCE-ID
+-- Property Name:  COMMENT
 --
--- Purpose:  This property is used in conjunction with the "UID" and
---    "SEQUENCE" properties to identify a specific instance of a
---    recurring "VEVENT", "VTODO", or "VJOURNAL" calendar component.
---    The property value is the original value of the "DTSTART" property
---    of the recurrence instance.
---
--- Value Type:  The default value type is DATE-TIME.  The value type can
---    be set to a DATE value type.  This property MUST have the same
---    value type as the "DTSTART" property contained within the
---    recurring component.  Furthermore, this property MUST be specified
---    as a date with local time if and only if the "DTSTART" property
---    contained within the recurring component is specified as a date
---    with local time.
---
--- Property Parameters:  IANA, non-standard, value data type, time zone
---    identifier, and recurrence identifier range parameters can be
---    specified on this property.
---
--- Conformance:  This property can be specified in an iCalendar object
---    containing a recurring calendar component.
---
--- Description:  The full range of calendar components specified by a
---    recurrence set is referenced by referring to just the "UID"
---    property value corresponding to the calendar component.  The
---    "RECURRENCE-ID" property allows the reference to an individual
---    instance within the recurrence set.
---
---    If the value of the "DTSTART" property is a DATE type value, then
---    the value MUST be the calendar date for the recurrence instance.
---
---    The DATE-TIME value is set to the time when the original
---    recurrence instance would occur; meaning that if the intent is to
---    change a Friday meeting to Thursday, the DATE-TIME is still set to
---    the original Friday meeting.
---
---    The "RECURRENCE-ID" property is used in conjunction with the "UID"
---    and "SEQUENCE" properties to identify a particular instance of a
---    recurring event, to-do, or journal.  For a given pair of "UID" and
---    "SEQUENCE" property values, the "RECURRENCE-ID" value for a
---    recurrence instance is fixed.
---
---    The "RANGE" parameter is used to specify the effective range of
---    recurrence instances from the instance specified by the
---    "RECURRENCE-ID" property value.  The value for the range parameter
---    can only be "THISANDFUTURE" to indicate a range defined by the
---    given recurrence instance and all subsequent instances.
---    Subsequent instances are determined by their "RECURRENCE-ID" value
---    and not their current scheduled start time.  Subsequent instances
---    defined in separate components are not impacted by the given
---    recurrence instance.  When the given recurrence instance is
---    rescheduled, all subsequent instances are also rescheduled by the
---    same time difference.  For instance, if the given recurrence
---    instance is rescheduled to start 2 hours later, then all
---    subsequent instances are also rescheduled 2 hours later.
---
---
---    Similarly, if the duration of the given recurrence instance is
---    modified, then all subsequence instances are also modified to have
---    this same duration.
---
---       Note: The "RANGE" parameter may not be appropriate to
---       reschedule specific subsequent instances of complex recurring
---       calendar component.  Assuming an unbounded recurring calendar
---       component scheduled to occur on Mondays and Wednesdays, the
---       "RANGE" parameter could not be used to reschedule only the
---       future Monday instances to occur on Tuesday instead.  In such
---       cases, the calendar application could simply truncate the
---       unbounded recurring calendar component (i.e., with the "COUNT"
---       or "UNTIL" rule parts), and create two new unbounded recurring
---       calendar components for the future instances.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     recurid    = "RECURRENCE-ID" ridparam ":" ridval CRLF
---
---     ridparam   = *(
---                ;
---                ; The following are OPTIONAL,
---                ; but MUST NOT occur more than once.
---                ;
---                (";" "VALUE" "=" ("DATE-TIME" / "DATE")) /
---                (";" tzidparam) / (";" rangeparam) /
---                ;
---                ; The following is OPTIONAL,
---                ; and MAY occur more than once.
---                ;
---                (";" other-param)
---                ;
---                )
---
---     ridval     = date-time / date
---     ;Value MUST match value type
---
--- Example:  The following are examples of this property:
---
---     RECURRENCE-ID;VALUE=DATE:19960401
---
---     RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z
--- @
-data RecurrenceIdentifier
-  = RecurrenceIdentifierDate (Maybe RecurrenceIdentifierRange) !Date
-  | RecurrenceIdentifierDateTime (Maybe RecurrenceIdentifierRange) !DateTime
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity RecurrenceIdentifier
-
-instance NFData RecurrenceIdentifier
-
-instance IsProperty RecurrenceIdentifier where
-  propertyName Proxy = "RECURRENCE-ID"
-  propertyP clv = do
-    mValue <- propertyParamP clv
-    mRecurrenceRangeIdentifier <- propertyParamP clv
-    case mValue of
-      Just TypeDateTime -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
-      Just TypeDate -> wrapPropertyTypeP (RecurrenceIdentifierDate mRecurrenceRangeIdentifier) clv
-      Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue (Just TypeDateTime) [TypeDate]
-      -- @
-      -- Value Type:  The default value type is DATE-TIME.
-      -- @
-      Nothing -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
-  propertyB = \case
-    -- @
-    -- Value Type:  The default value type is DATE-TIME.
-    -- @
-    RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier dt -> insertMParam mRecurrenceRangeIdentifier $ propertyTypeB dt
-    RecurrenceIdentifierDate mRecurrenceRangeIdentifier d -> insertMParam mRecurrenceRangeIdentifier $ typedPropertyTypeB d
-
-validateMRecurrenceIdentifierMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceIdentifier -> Validation
-validateMRecurrenceIdentifierMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
-  Nothing -> valid
-  Just (dts, rid) -> validateRecurrenceIdentifierDateTimeStart dts rid
-
--- @
--- This property MUST have the same
--- value type as the "DTSTART" property contained within the
--- recurring component.
--- Furthermore, this property MUST be specified
--- as a date with local time if and only if the "DTSTART" property
--- contained within the recurring component is specified as a date
--- with local time.
--- @
-validateRecurrenceIdentifierDateTimeStart :: DateTimeStart -> RecurrenceIdentifier -> Validation
-validateRecurrenceIdentifierDateTimeStart dts rid = case (dts, rid) of
-  (DateTimeStartDate _, RecurrenceIdentifierDate _ _) -> valid
-  (DateTimeStartDateTime _, RecurrenceIdentifierDateTime _ _) -> valid
-  _ -> invalid "Value type of RecurrenceIdentifier and DTSTART differ."
-
--- | Created
---
--- === [section 3.8.7.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.1)
---
--- @
--- Property Name:  CREATED
---
--- Purpose:  This property specifies the date and time that the calendar
---    information was created by the calendar user agent in the calendar
---    store.
---
---       Note: This is analogous to the creation date and time for a
---       file in the file system.
---
--- Value Type:  DATE-TIME
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  The property can be specified once in "VEVENT",
---    "VTODO", or "VJOURNAL" calendar components.  The value MUST be
---    specified as a date with UTC time.
---
--- Description:  This property specifies the date and time that the
---    calendar information was created by the calendar user agent in the
---    calendar store.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     created    = "CREATED" creaparam ":" date-time CRLF
---
---     creaparam  = *(";" other-param)
---
--- Example:  The following is an example of this property:
---
---     CREATED:19960329T133000Z
--- @
---
--- Because the spec says "The value MUST bespecified as a date with UTC time.",
--- we will just store the 'LocalTime' (in the utc timezone) instead of a
--- 'DateTime'
-newtype Created = Created {unCreated :: Time.UTCTime}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity Created where
-  validate c@Created {..} =
-    mconcat
-      [ genericValidate c,
-        validateImpreciseUTCTime unCreated
-      ]
-
-instance NFData Created
-
-instance IsProperty Created where
-  propertyName Proxy = "CREATED"
-  propertyP = fmap Created . conformMapError PropertyTypeParseError . dateTimeUTCP
-  propertyB = dateTimeUTCB . unCreated
-
--- |
---
--- === [section 3.8.1.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.12)
---
--- @
--- Property Name:  SUMMARY
---
--- Purpose:  This property defines a short summary or subject for the
---    calendar component.
+-- Purpose:  This property specifies non-processing information intended
+--    to provide a comment to the calendar user.
 --
 -- Value Type:  TEXT
 --
 -- Property Parameters:  IANA, non-standard, alternate text
 --    representation, and language property parameters can be specified
 --    on this property.
+-- Conformance:  This property can be specified multiple times in
+--    "VEVENT", "VTODO", "VJOURNAL", and "VFREEBUSY" calendar components
+--    as well as in the "STANDARD" and "DAYLIGHT" sub-components.
 --
--- Conformance:  The property can be specified in "VEVENT", "VTODO",
---    "VJOURNAL", or "VALARM" calendar components.
---
--- Description:  This property is used in the "VEVENT", "VTODO", and
---    "VJOURNAL" calendar components to capture a short, one-line
---    summary about the activity or journal entry.
---
---    This property is used in the "VALARM" calendar component to
---    capture the subject of an EMAIL category of alarm.
+-- Description:  This property is used to specify a comment to the
+--    calendar user.
 --
 -- Format Definition:  This property is defined by the following
 --    notation:
---     summary    = "SUMMARY" summparam ":" text CRLF
 --
---     summparam  = *(
+--     comment    = "COMMENT" commparam ":" text CRLF
+--
+--     commparam  = *(
 --                ;
 --                ; The following are OPTIONAL,
 --                ; but MUST NOT occur more than once.
@@ -1351,38 +688,41 @@ instance IsProperty Created where
 --
 -- Example:  The following is an example of this property:
 --
---     SUMMARY:Department Party
+--     COMMENT:The meeting really needs to include both ourselves
+--       and the customer. We can't hold this meeting without them.
+--       As a matter of fact\, the venue for the meeting ought to be at
+--       their site. - - John
 -- @
-data Summary = Summary
-  { summaryContents :: !Text,
-    summaryAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
-    summaryLanguage :: !(Maybe Language)
+data Comment = Comment
+  { commentContents :: Text,
+    commentAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    commentLanguage :: !(Maybe Language)
   }
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity Summary
+instance Validity Comment
 
-instance NFData Summary
+instance NFData Comment
 
-instance IsString Summary where
-  fromString = makeSummary . fromString
+instance IsString Comment where
+  fromString = makeComment . fromString
 
-instance IsProperty Summary where
-  propertyName Proxy = "SUMMARY"
+instance IsProperty Comment where
+  propertyName Proxy = "COMMENT"
   propertyP clv = do
-    summaryAlternateTextRepresentation <- propertyParamP clv
-    summaryLanguage <- propertyParamP clv
-    wrapPropertyTypeP (\summaryContents -> Summary {..}) clv
-  propertyB Summary {..} =
-    insertMParam summaryAlternateTextRepresentation $
-      insertMParam summaryLanguage $
-        propertyTypeB summaryContents
+    commentAlternateTextRepresentation <- propertyParamP clv
+    commentLanguage <- propertyParamP clv
+    wrapPropertyTypeP (\commentContents -> Comment {..}) clv
+  propertyB Comment {..} =
+    insertMParam commentAlternateTextRepresentation $
+      insertMParam commentLanguage $
+        propertyTypeB commentContents
 
-makeSummary :: Text -> Summary
-makeSummary summaryContents =
-  let summaryAlternateTextRepresentation = Nothing
-      summaryLanguage = Nothing
-   in Summary {..}
+makeComment :: Text -> Comment
+makeComment commentContents =
+  let commentAlternateTextRepresentation = Nothing
+      commentLanguage = Nothing
+   in Comment {..}
 
 -- |
 --
@@ -1615,74 +955,6 @@ renderGeographicPosition GeographicPosition {..} =
         show geographicPositionLon
       ]
 
--- | Last Modified
---
--- === [section 3.8.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.3)
---
--- @
--- Property Name:  LAST_MODIFIED
---
--- Purpose:  This property specifies the date and time that the
---    information associated with the calendar component was last
---    revised in the calendar store.
---
---       Note: This is analogous to the modification date and time for a
---       file in the file system.
---
--- Value Type:  DATE-TIME
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  This property can be specified in the "VEVENT",
---    "VTODO", "VJOURNAL", or "VTIMEZONE" calendar components.
---
--- Description:  The property value MUST be specified in the UTC time
---    format.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     last-mod   = "LAST-MODIFIED" lstparam ":" date-time CRLF
---
---     lstparam   = *(";" other-param)
---
--- Example:  The following is an example of this property:
---
---     LAST-MODIFIED:19960817T133000Z
--- @
---
--- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
---
--- @
--- This specification modifies the definition of the "LAST-MODIFIED"
--- property to allow it to be defined in an iCalendar object.  The
--- following additions are made to the definition of this property,
--- originally specified in Section 3.8.7.3 of [RFC5545].
---
--- Purpose:  This property specifies the date and time that the
---    information associated with the calendar was last revised.
---
--- Conformance:  This property can be specified once in an iCalendar
---    object.
--- @
-newtype LastModified = LastModified {unLastModified :: Time.UTCTime}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity LastModified where
-  validate c@LastModified {..} =
-    mconcat
-      [ genericValidate c,
-        validateImpreciseUTCTime unLastModified
-      ]
-
-instance NFData LastModified
-
-instance IsProperty LastModified where
-  propertyName Proxy = "LAST-MODIFIED"
-  propertyP = fmap LastModified . conformMapError PropertyTypeParseError . dateTimeUTCP
-  propertyB = dateTimeUTCB . unLastModified
-
 -- | Location
 --
 -- === [section 3.8.1.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.7)
@@ -1871,6 +1143,85 @@ renderStatus = \case
 
 -- |
 --
+-- === [section 3.8.1.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.12)
+--
+-- @
+-- Property Name:  SUMMARY
+--
+-- Purpose:  This property defines a short summary or subject for the
+--    calendar component.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA, non-standard, alternate text
+--    representation, and language property parameters can be specified
+--    on this property.
+--
+-- Conformance:  The property can be specified in "VEVENT", "VTODO",
+--    "VJOURNAL", or "VALARM" calendar components.
+--
+-- Description:  This property is used in the "VEVENT", "VTODO", and
+--    "VJOURNAL" calendar components to capture a short, one-line
+--    summary about the activity or journal entry.
+--
+--    This property is used in the "VALARM" calendar component to
+--    capture the subject of an EMAIL category of alarm.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--     summary    = "SUMMARY" summparam ":" text CRLF
+--
+--     summparam  = *(
+--                ;
+--                ; The following are OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" altrepparam) / (";" languageparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+-- Example:  The following is an example of this property:
+--
+--     SUMMARY:Department Party
+-- @
+data Summary = Summary
+  { summaryContents :: !Text,
+    summaryAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
+    summaryLanguage :: !(Maybe Language)
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Summary
+
+instance NFData Summary
+
+instance IsString Summary where
+  fromString = makeSummary . fromString
+
+instance IsProperty Summary where
+  propertyName Proxy = "SUMMARY"
+  propertyP clv = do
+    summaryAlternateTextRepresentation <- propertyParamP clv
+    summaryLanguage <- propertyParamP clv
+    wrapPropertyTypeP (\summaryContents -> Summary {..}) clv
+  propertyB Summary {..} =
+    insertMParam summaryAlternateTextRepresentation $
+      insertMParam summaryLanguage $
+        propertyTypeB summaryContents
+
+makeSummary :: Text -> Summary
+makeSummary summaryContents =
+  let summaryAlternateTextRepresentation = Nothing
+      summaryLanguage = Nothing
+   in Summary {..}
+
+-- |
+--
 -- === [section 3.8.2.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.2)
 --
 -- @
@@ -1958,6 +1309,100 @@ instance IsProperty DateTimeEnd where
     -- Value Type:  The default value type is DATE-TIME.
     -- @
     DateTimeEndDate date -> typedPropertyTypeB date
+
+-- |
+--
+-- === [section 3.8.2.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.4)
+--
+-- @
+-- Property Name:  DTSTART
+--
+-- Purpose:  This property specifies when the calendar component begins.
+--
+-- Value Type:  The default value type is DATE-TIME.  The time value
+--    MUST be one of the forms defined for the DATE-TIME value type.
+--    The value type can be set to a DATE value type.
+--
+-- Property Parameters:  IANA, non-standard, value data type, and time
+--    zone identifier property parameters can be specified on this
+--    property.
+--
+-- Conformance:  This property can be specified once in the "VEVENT",
+--    "VTODO", or "VFREEBUSY" calendar components as well as in the
+--    "STANDARD" and "DAYLIGHT" sub-components.  This property is
+--    REQUIRED in all types of recurring calendar components that
+--    specify the "RRULE" property.  This property is also REQUIRED in
+--    "VEVENT" calendar components contained in iCalendar objects that
+--    don't specify the "METHOD" property.
+--
+-- Description:  Within the "VEVENT" calendar component, this property
+--    defines the start date and time for the event.
+--
+--    Within the "VFREEBUSY" calendar component, this property defines
+--    the start date and time for the free or busy time information.
+--    The time MUST be specified in UTC time.
+--
+--    Within the "STANDARD" and "DAYLIGHT" sub-components, this property
+--    defines the effective start date and time for a time zone
+--    specification.  This property is REQUIRED within each "STANDARD"
+--    and "DAYLIGHT" sub-components included in "VTIMEZONE" calendar
+--    components and MUST be specified as a date with local time without
+--    the "TimeZoneIdentifier" property parameter.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     dtstart    = "DTSTART" dtstparam ":" dtstval CRLF
+--
+--     dtstparam  = *(
+--                ;
+--                ; The following are OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" "VALUE" "=" ("DATE-TIME" / "DATE")) /
+--                (";" tzidparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+--     dtstval    = date-time / date
+--     ;Value MUST match value type
+--
+-- Example:  The following is an example of this property:
+--
+--     DTSTART:19980118T073000Z
+-- @
+data DateTimeStart
+  = DateTimeStartDate !Date
+  | DateTimeStartDateTime !DateTime
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity DateTimeStart
+
+instance NFData DateTimeStart
+
+instance IsProperty DateTimeStart where
+  propertyName Proxy = "DTSTART"
+  propertyP clv = do
+    mValue <- propertyParamP clv
+    case mValue of
+      Just TypeDateTime -> wrapPropertyTypeP DateTimeStartDateTime clv
+      Just TypeDate -> wrapPropertyTypeP DateTimeStartDate clv
+      Just _ -> unfixableError $ ValueMismatch "DTSTART" mValue (Just TypeDateTime) [TypeDate]
+      -- @
+      -- Value Type:  The default value type is DATE-TIME.
+      -- @
+      Nothing -> wrapPropertyTypeP DateTimeStartDateTime clv
+  propertyB = \case
+    DateTimeStartDateTime dateTime -> propertyTypeB dateTime
+    -- @
+    -- Value Type:  The default value type is DATE-TIME.
+    -- @
+    DateTimeStartDate date -> typedPropertyTypeB date
 
 -- | Duration
 --
@@ -2095,69 +1540,47 @@ renderTransparency = \case
 defaultTransparency :: Transparency
 defaultTransparency = TransparencyOpaque
 
--- | Uniform Resource Locator
+-- | Timezone Identifier
 --
--- === [section 3.8.2.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.5)
+-- === [section 3.8.3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.3.1)
 --
 -- @
--- Property Name:  URL
---
--- Purpose:  This property defines a Uniform Resource Locator (URL)
---    associated with the iCalendar object.
---
--- Value Type:  URI
---
--- Property Parameters:  IANA and non-standard property parameters can
---    be specified on this property.
---
--- Conformance:  This property can be specified once in the "VEVENT",
---    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
---
--- Description:  This property may be used in a calendar component to
---    convey a location where a more dynamic rendition of the calendar
---    information associated with the calendar component can be found.
---    This memo does not attempt to standardize the form of the URI, nor
---    the format of the resource pointed to by the property value.  If
---    the URL property and Content-Location MIME header are both
---    specified, they MUST point to the same resource.
---
 -- Format Definition:  This property is defined by the following
 --    notation:
 --
---     url        = "URL" urlparam ":" uri CRLF
+--     tzid       = "TZID" tzidpropparam ":" [tzidprefix] text CRLF
 --
---     urlparam   = *(";" other-param)
+--     tzidpropparam      = *(";" other-param)
 --
--- Example:  The following is an example of this property:
+--     ;tzidprefix        = "/"
+--     ; Defined previously. Just listed here for reader convenience.
 --
---     URL:http://example.com/pub/calendars/jsmith/mytime.ics
+-- Example:  The following are examples of non-globally unique time zone
+--    identifiers:
+--
+--     TZID:America/New_York
+--
+--     TZID:America/Los_Angeles
+--
+--    The following is an example of a fictitious globally unique time
+--    zone identifier:
+--
+--     TZID:/example.org/America/New_York
 -- @
---
--- === [section 5.5 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.5)
---
--- @
--- This specification modifies the definition of the "URL" property to
--- allow it to be defined in an iCalendar object.  The following
--- additions are made to the definition of this property, originally
--- specified in Section 3.8.4.6 of [RFC5545].
---
--- Purpose:  This property may be used to convey a location where a more
---    dynamic rendition of the calendar information can be found.
---
--- Conformance:  This property can be specified once in an iCalendar
---    object.
--- @
-newtype URL = URL {unURL :: URI}
+newtype TimeZoneIdentifier = TimeZoneIdentifier {unTimeZoneIdentifier :: Text}
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity URL
+instance Validity TimeZoneIdentifier
 
-instance NFData URL
+instance NFData TimeZoneIdentifier
 
-instance IsProperty URL where
-  propertyName Proxy = "URL"
-  propertyP = wrapPropertyTypeP URL
-  propertyB = propertyTypeB . unURL
+instance IsProperty TimeZoneIdentifier where
+  propertyName Proxy = "TZID"
+  propertyP = wrapPropertyTypeP TimeZoneIdentifier
+  propertyB = propertyTypeB . unTimeZoneIdentifier
+
+tzidParam :: TimeZoneIdentifier -> TimeZoneIdentifierParam
+tzidParam = TimeZoneIdentifierParam . CI.mk . unTimeZoneIdentifier
 
 -- | Timezone Name
 --
@@ -2232,81 +1655,6 @@ makeTimeZoneName :: Text -> TimeZoneName
 makeTimeZoneName timeZoneNameContents =
   let timeZoneNameLanguage = Nothing
    in TimeZoneName {..}
-
--- @
--- Property Name:  COMMENT
---
--- Purpose:  This property specifies non-processing information intended
---    to provide a comment to the calendar user.
---
--- Value Type:  TEXT
---
--- Property Parameters:  IANA, non-standard, alternate text
---    representation, and language property parameters can be specified
---    on this property.
--- Conformance:  This property can be specified multiple times in
---    "VEVENT", "VTODO", "VJOURNAL", and "VFREEBUSY" calendar components
---    as well as in the "STANDARD" and "DAYLIGHT" sub-components.
---
--- Description:  This property is used to specify a comment to the
---    calendar user.
---
--- Format Definition:  This property is defined by the following
---    notation:
---
---     comment    = "COMMENT" commparam ":" text CRLF
---
---     commparam  = *(
---                ;
---                ; The following are OPTIONAL,
---                ; but MUST NOT occur more than once.
---                ;
---                (";" altrepparam) / (";" languageparam) /
---                ;
---                ; The following is OPTIONAL,
---                ; and MAY occur more than once.
---                ;
---                (";" other-param)
---                ;
---                )
---
--- Example:  The following is an example of this property:
---
---     COMMENT:The meeting really needs to include both ourselves
---       and the customer. We can't hold this meeting without them.
---       As a matter of fact\, the venue for the meeting ought to be at
---       their site. - - John
--- @
-data Comment = Comment
-  { commentContents :: Text,
-    commentAlternateTextRepresentation :: !(Maybe AlternateTextRepresentation),
-    commentLanguage :: !(Maybe Language)
-  }
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity Comment
-
-instance NFData Comment
-
-instance IsString Comment where
-  fromString = makeComment . fromString
-
-instance IsProperty Comment where
-  propertyName Proxy = "COMMENT"
-  propertyP clv = do
-    commentAlternateTextRepresentation <- propertyParamP clv
-    commentLanguage <- propertyParamP clv
-    wrapPropertyTypeP (\commentContents -> Comment {..}) clv
-  propertyB Comment {..} =
-    insertMParam commentAlternateTextRepresentation $
-      insertMParam commentLanguage $
-        propertyTypeB commentContents
-
-makeComment :: Text -> Comment
-makeComment commentContents =
-  let commentAlternateTextRepresentation = Nothing
-      commentLanguage = Nothing
-   in Comment {..}
 
 -- | Timezone Offset From
 --
@@ -2608,6 +1956,468 @@ mkAttendee calAddress =
       attendeeSentBy = Nothing
     }
 
+-- | Organizer
+--
+-- === [section 3.8.4.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.3)
+--
+-- @
+-- Property Name:  ORGANIZER
+--
+-- Purpose:  This property defines the organizer for a calendar
+--    component.
+--
+-- Value Type:  CAL-ADDRESS
+--
+-- Property Parameters:  IANA, non-standard, language, common name,
+--    directory entry reference, and sent-by property parameters can be
+--    specified on this property.
+--
+-- Conformance:  This property MUST be specified in an iCalendar object
+--    that specifies a group-scheduled calendar entity.  This property
+--    MUST be specified in an iCalendar object that specifies the
+--    publication of a calendar user's busy time.  This property MUST
+--    NOT be specified in an iCalendar object that specifies only a time
+--    zone definition or that defines calendar components that are not
+--    group-scheduled components, but are components only on a single
+--    user's calendar.
+--
+-- Description:  This property is specified within the "VEVENT",
+--    "VTODO", and "VJOURNAL" calendar components to specify the
+--    organizer of a group-scheduled calendar entity.  The property is
+--    specified within the "VFREEBUSY" calendar component to specify the
+--    calendar user requesting the free or busy time.  When publishing a
+--    "VFREEBUSY" calendar component, the property is used to specify
+--    the calendar that the published busy time came from.
+--
+--    The property has the property parameters "CN", for specifying the
+--    common or display name associated with the "Organizer", "DIR", for
+--    specifying a pointer to the directory information associated with
+--    the "Organizer", "SENT-BY", for specifying another calendar user
+--    that is acting on behalf of the "Organizer".  The non-standard
+--    parameters may also be specified on this property.  If the
+--    "LANGUAGE" property parameter is specified, the identified
+--    language applies to the "CN" parameter value.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     organizer  = "ORGANIZER" orgparam ":"
+--                  cal-address CRLF
+--
+--     orgparam   = *(
+--                ;
+--                ; The following are OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" cnparam) / (";" dirparam) / (";" sentbyparam) /
+--                (";" languageparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+-- Example:  The following is an example of this property:
+--
+--     ORGANIZER;CN=John Smith:mailto:jsmith@example.com
+--
+--    The following is an example of this property with a pointer to the
+--    directory information associated with the organizer:
+--
+--     ORGANIZER;CN=JohnSmith;DIR="ldap://example.com:6666/o=DC%20Ass
+--      ociates,c=US???(cn=John%20Smith)":mailto:jsmith@example.com
+--
+--    The following is an example of this property used by another
+--    calendar user who is acting on behalf of the organizer, with
+--    responses intended to be sent back to the organizer, not the other
+--    calendar user:
+--
+--     ORGANIZER;SENT-BY="mailto:jane_doe@example.com":
+--      mailto:jsmith@example.com
+-- @
+data Organizer = Organizer
+  { organizerCalAddress :: !CalAddress,
+    organizerCommonName :: !(Maybe CommonName),
+    organizerDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
+    organizerLanguage :: !(Maybe Language),
+    organizerSentBy :: !(Maybe SentBy)
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Organizer
+
+instance NFData Organizer
+
+instance IsProperty Organizer where
+  propertyName Proxy = "ORGANIZER"
+  propertyP clv = flip viaPropertyTypeP clv $ \organizerCalAddress -> do
+    organizerCommonName <- propertyParamP clv
+    organizerDirectoryEntryReference <- propertyParamP clv
+    organizerLanguage <- propertyParamP clv
+    organizerSentBy <- propertyParamP clv
+    pure Organizer {..}
+  propertyB Organizer {..} =
+    insertMParam organizerCommonName
+      . insertMParam organizerDirectoryEntryReference
+      . insertMParam organizerLanguage
+      . insertMParam organizerSentBy
+      $ propertyTypeB organizerCalAddress
+
+mkOrganizer :: CalAddress -> Organizer
+mkOrganizer calAddress =
+  Organizer
+    { organizerCalAddress = calAddress,
+      organizerCommonName = Nothing,
+      organizerDirectoryEntryReference = Nothing,
+      organizerLanguage = Nothing,
+      organizerSentBy = Nothing
+    }
+
+-- |
+--
+-- === [section 3.8.4.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.4)
+--
+-- @
+-- Property Name:  RECURRENCE-ID
+--
+-- Purpose:  This property is used in conjunction with the "UID" and
+--    "SEQUENCE" properties to identify a specific instance of a
+--    recurring "VEVENT", "VTODO", or "VJOURNAL" calendar component.
+--    The property value is the original value of the "DTSTART" property
+--    of the recurrence instance.
+--
+-- Value Type:  The default value type is DATE-TIME.  The value type can
+--    be set to a DATE value type.  This property MUST have the same
+--    value type as the "DTSTART" property contained within the
+--    recurring component.  Furthermore, this property MUST be specified
+--    as a date with local time if and only if the "DTSTART" property
+--    contained within the recurring component is specified as a date
+--    with local time.
+--
+-- Property Parameters:  IANA, non-standard, value data type, time zone
+--    identifier, and recurrence identifier range parameters can be
+--    specified on this property.
+--
+-- Conformance:  This property can be specified in an iCalendar object
+--    containing a recurring calendar component.
+--
+-- Description:  The full range of calendar components specified by a
+--    recurrence set is referenced by referring to just the "UID"
+--    property value corresponding to the calendar component.  The
+--    "RECURRENCE-ID" property allows the reference to an individual
+--    instance within the recurrence set.
+--
+--    If the value of the "DTSTART" property is a DATE type value, then
+--    the value MUST be the calendar date for the recurrence instance.
+--
+--    The DATE-TIME value is set to the time when the original
+--    recurrence instance would occur; meaning that if the intent is to
+--    change a Friday meeting to Thursday, the DATE-TIME is still set to
+--    the original Friday meeting.
+--
+--    The "RECURRENCE-ID" property is used in conjunction with the "UID"
+--    and "SEQUENCE" properties to identify a particular instance of a
+--    recurring event, to-do, or journal.  For a given pair of "UID" and
+--    "SEQUENCE" property values, the "RECURRENCE-ID" value for a
+--    recurrence instance is fixed.
+--
+--    The "RANGE" parameter is used to specify the effective range of
+--    recurrence instances from the instance specified by the
+--    "RECURRENCE-ID" property value.  The value for the range parameter
+--    can only be "THISANDFUTURE" to indicate a range defined by the
+--    given recurrence instance and all subsequent instances.
+--    Subsequent instances are determined by their "RECURRENCE-ID" value
+--    and not their current scheduled start time.  Subsequent instances
+--    defined in separate components are not impacted by the given
+--    recurrence instance.  When the given recurrence instance is
+--    rescheduled, all subsequent instances are also rescheduled by the
+--    same time difference.  For instance, if the given recurrence
+--    instance is rescheduled to start 2 hours later, then all
+--    subsequent instances are also rescheduled 2 hours later.
+--
+--
+--    Similarly, if the duration of the given recurrence instance is
+--    modified, then all subsequence instances are also modified to have
+--    this same duration.
+--
+--       Note: The "RANGE" parameter may not be appropriate to
+--       reschedule specific subsequent instances of complex recurring
+--       calendar component.  Assuming an unbounded recurring calendar
+--       component scheduled to occur on Mondays and Wednesdays, the
+--       "RANGE" parameter could not be used to reschedule only the
+--       future Monday instances to occur on Tuesday instead.  In such
+--       cases, the calendar application could simply truncate the
+--       unbounded recurring calendar component (i.e., with the "COUNT"
+--       or "UNTIL" rule parts), and create two new unbounded recurring
+--       calendar components for the future instances.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     recurid    = "RECURRENCE-ID" ridparam ":" ridval CRLF
+--
+--     ridparam   = *(
+--                ;
+--                ; The following are OPTIONAL,
+--                ; but MUST NOT occur more than once.
+--                ;
+--                (";" "VALUE" "=" ("DATE-TIME" / "DATE")) /
+--                (";" tzidparam) / (";" rangeparam) /
+--                ;
+--                ; The following is OPTIONAL,
+--                ; and MAY occur more than once.
+--                ;
+--                (";" other-param)
+--                ;
+--                )
+--
+--     ridval     = date-time / date
+--     ;Value MUST match value type
+--
+-- Example:  The following are examples of this property:
+--
+--     RECURRENCE-ID;VALUE=DATE:19960401
+--
+--     RECURRENCE-ID;RANGE=THISANDFUTURE:19960120T120000Z
+-- @
+data RecurrenceIdentifier
+  = RecurrenceIdentifierDate (Maybe RecurrenceIdentifierRange) !Date
+  | RecurrenceIdentifierDateTime (Maybe RecurrenceIdentifierRange) !DateTime
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity RecurrenceIdentifier
+
+instance NFData RecurrenceIdentifier
+
+instance IsProperty RecurrenceIdentifier where
+  propertyName Proxy = "RECURRENCE-ID"
+  propertyP clv = do
+    mValue <- propertyParamP clv
+    mRecurrenceRangeIdentifier <- propertyParamP clv
+    case mValue of
+      Just TypeDateTime -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
+      Just TypeDate -> wrapPropertyTypeP (RecurrenceIdentifierDate mRecurrenceRangeIdentifier) clv
+      Just _ -> unfixableError $ ValueMismatch "RECURRENCE-ID" mValue (Just TypeDateTime) [TypeDate]
+      -- @
+      -- Value Type:  The default value type is DATE-TIME.
+      -- @
+      Nothing -> wrapPropertyTypeP (RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier) clv
+  propertyB = \case
+    -- @
+    -- Value Type:  The default value type is DATE-TIME.
+    -- @
+    RecurrenceIdentifierDateTime mRecurrenceRangeIdentifier dt -> insertMParam mRecurrenceRangeIdentifier $ propertyTypeB dt
+    RecurrenceIdentifierDate mRecurrenceRangeIdentifier d -> insertMParam mRecurrenceRangeIdentifier $ typedPropertyTypeB d
+
+validateMRecurrenceIdentifierMDateTimeStart :: Maybe DateTimeStart -> Maybe RecurrenceIdentifier -> Validation
+validateMRecurrenceIdentifierMDateTimeStart mdts mrid = case (,) <$> mdts <*> mrid of
+  Nothing -> valid
+  Just (dts, rid) -> validateRecurrenceIdentifierDateTimeStart dts rid
+
+-- @
+-- This property MUST have the same
+-- value type as the "DTSTART" property contained within the
+-- recurring component.
+-- Furthermore, this property MUST be specified
+-- as a date with local time if and only if the "DTSTART" property
+-- contained within the recurring component is specified as a date
+-- with local time.
+-- @
+validateRecurrenceIdentifierDateTimeStart :: DateTimeStart -> RecurrenceIdentifier -> Validation
+validateRecurrenceIdentifierDateTimeStart dts rid = case (dts, rid) of
+  (DateTimeStartDate _, RecurrenceIdentifierDate _ _) -> valid
+  (DateTimeStartDateTime _, RecurrenceIdentifierDateTime _ _) -> valid
+  _ -> invalid "Value type of RecurrenceIdentifier and DTSTART differ."
+
+-- | Uniform Resource Locator
+--
+-- === [section 3.8.4.6](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.6)
+--
+-- @
+-- Property Name:  URL
+--
+-- Purpose:  This property defines a Uniform Resource Locator (URL)
+--    associated with the iCalendar object.
+--
+-- Value Type:  URI
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property can be specified once in the "VEVENT",
+--    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
+--
+-- Description:  This property may be used in a calendar component to
+--    convey a location where a more dynamic rendition of the calendar
+--    information associated with the calendar component can be found.
+--    This memo does not attempt to standardize the form of the URI, nor
+--    the format of the resource pointed to by the property value.  If
+--    the URL property and Content-Location MIME header are both
+--    specified, they MUST point to the same resource.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     url        = "URL" urlparam ":" uri CRLF
+--
+--     urlparam   = *(";" other-param)
+--
+-- Example:  The following is an example of this property:
+--
+--     URL:http://example.com/pub/calendars/jsmith/mytime.ics
+-- @
+--
+-- === [section 5.5 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.5)
+--
+-- @
+-- This specification modifies the definition of the "URL" property to
+-- allow it to be defined in an iCalendar object.  The following
+-- additions are made to the definition of this property, originally
+-- specified in Section 3.8.4.6 of [RFC5545].
+--
+-- Purpose:  This property may be used to convey a location where a more
+--    dynamic rendition of the calendar information can be found.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
+-- @
+newtype URL = URL {unURL :: URI}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity URL
+
+instance NFData URL
+
+instance IsProperty URL where
+  propertyName Proxy = "URL"
+  propertyP = wrapPropertyTypeP URL
+  propertyB = propertyTypeB . unURL
+
+-- | Unique Identifier
+--
+-- === [section 3.8.4.7](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7)
+--
+-- @
+-- Property Name:  UID
+--
+-- Purpose:  This property defines the persistent, globally unique
+--    identifier for the calendar component.
+--
+-- Value Type:  TEXT
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  The property MUST be specified in the "VEVENT",
+--    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
+--
+-- Description:  The "UID" itself MUST be a globally unique identifier.
+--    The generator of the identifier MUST guarantee that the identifier
+--    is unique.  There are several algorithms that can be used to
+--    accomplish this.  A good method to assure uniqueness is to put the
+--    domain name or a domain literal IP address of the host on which
+--    the identifier was created on the right-hand side of an "@", and
+--    on the left-hand side, put a combination of the current calendar
+--    date and time of day (i.e., formatted in as a DATE-TIME value)
+--    along with some other currently unique (perhaps sequential)
+--    identifier available on the system (for example, a process id
+--    number).  Using a DATE-TIME value on the left-hand side and a
+--    domain name or domain literal on the right-hand side makes it
+--    possible to guarantee uniqueness since no two hosts should be
+--    using the same domain name or IP address at the same time.  Though
+--    other algorithms will work, it is RECOMMENDED that the right-hand
+--    side contain some domain identifier (either of the host itself or
+--    otherwise) such that the generator of the message identifier can
+--    guarantee the uniqueness of the left-hand side within the scope of
+--    that domain.
+--
+--    This is the method for correlating scheduling messages with the
+--    referenced "VEVENT", "VTODO", or "VJOURNAL" calendar component.
+--    The full range of calendar components specified by a recurrence
+--    set is referenced by referring to just the "UID" property value
+--    corresponding to the calendar component.  The "RECURRENCE-ID"
+--    property allows the reference to an individual instance within the
+--    recurrence set.
+--
+--    This property is an important method for group-scheduling
+--    applications to match requests with later replies, modifications,
+--    or deletion requests.  Calendaring and scheduling applications
+--    MUST generate this property in "VEVENT", "VTODO", and "VJOURNAL"
+--    calendar components to assure interoperability with other group-
+--    scheduling applications.  This identifier is created by the
+--    calendar system that generates an iCalendar object.
+--
+--    Implementations MUST be able to receive and persist values of at
+--    least 255 octets for this property, but they MUST NOT truncate
+--    values in the middle of a UTF-8 multi-octet sequence.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     uid        = "UID" uidparam ":" text CRLF
+--
+--     uidparam   = *(";" other-param)
+--
+-- Example:  The following is an example of this property:
+--
+--     UID:19960401T080045Z-4000F192713-0052@example.com
+-- @
+--
+-- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
+--
+-- @
+-- This specification modifies the definition of the "UID" property to
+-- allow it to be defined in an iCalendar object.  The following
+-- additions are made to the definition of this property, originally
+-- specified in Section 3.8.4.7 of [RFC5545].
+--
+-- Purpose:  This property specifies the persistent, globally unique
+--    identifier for the iCalendar object.  This can be used, for
+--    example, to identify duplicate calendar streams that a client may
+--    have been given access to.  It can be used in conjunction with the
+--    "LAST-MODIFIED" property also specified on the "VCALENDAR" object
+--    to identify the most recent version of a calendar.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
+--
+-- The description of the "UID" property in [RFC5545] contains some
+-- recommendations on how the value can be constructed.  In particular,
+-- it suggests use of host names, IP addresses, and domain names to
+-- construct the value.  However, this is no longer considered good
+-- practice, particularly from a security and privacy standpoint, since
+-- use of such values can leak key information about a calendar user or
+-- their client and network environment.  This specification updates
+-- [RFC5545] by stating that "UID" values MUST NOT include any data that
+-- might identify a user, host, domain, or any other security- or
+-- privacy-sensitive information.  It is RECOMMENDED that calendar user
+-- agents now generate "UID" values that are hex-encoded random
+-- Universally Unique Identifier (UUID) values as defined in
+-- Sections 4.4 and 4.5 of [RFC4122].
+--
+-- The following is an example of such a property value:
+--
+-- UID:5FC53010-1267-4F8E-BC28-1D7AE55A7C99
+--
+-- Additionally, if calendar user agents choose to use other forms of
+-- opaque identifiers for the "UID" value, they MUST have a length less
+-- than 255 octets and MUST conform to the "iana-token" ABNF syntax
+-- defined in Section 3.1 of [RFC5545].
+-- @
+newtype UID = UID {unUID :: Text}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity UID
+
+instance NFData UID
+
+instance IsProperty UID where
+  propertyName Proxy = "UID"
+  propertyP = wrapPropertyTypeP UID
+  propertyB = propertyTypeB . unUID
+
 -- | Exception Date-Times
 --
 -- === [section 3.8.5.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.1)
@@ -2839,6 +2649,14 @@ instance IsProperty RecurrenceDateTimes where
     RecurrenceDates ds -> typedPropertyTypeB ds
     RecurrencePeriods ps -> typedPropertyTypeB ps
 
+-- | Recurrence Rule
+--
+-- === [section 3.8.5.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.3)
+instance IsProperty RecurrenceRule where
+  propertyName Proxy = "RRULE"
+  propertyP = wrapPropertyTypeP id
+  propertyB = recurrenceRuleB
+
 -- | Action
 --
 -- === [section 3.8.6.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.6.1)
@@ -2910,7 +2728,7 @@ renderAction = \case
   ActionEmail -> "EMAIL"
   ActionOther t -> t
 
--- | Repeat
+-- | Repeat Count
 --
 -- === [section 3.8.6.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.6.2)
 --
@@ -2960,7 +2778,7 @@ instance IsProperty Repeat where
   propertyP = wrapPropertyTypeP Repeat
   propertyB = propertyTypeB . unRepeat
 
--- | Action
+-- | Trigger
 --
 -- === [section 3.8.6.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.6.3)
 --
@@ -3104,6 +2922,198 @@ instance IsProperty Trigger where
       insertParamWithDefault defaultAlarmTriggerRelationship relationship $
         propertyTypeB duration
     TriggerDateTime date -> typedPropertyTypeB (DateTimeUTC date)
+
+-- | Created
+--
+-- === [section 3.8.7.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.1)
+--
+-- @
+-- Property Name:  CREATED
+--
+-- Purpose:  This property specifies the date and time that the calendar
+--    information was created by the calendar user agent in the calendar
+--    store.
+--
+--       Note: This is analogous to the creation date and time for a
+--       file in the file system.
+--
+-- Value Type:  DATE-TIME
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  The property can be specified once in "VEVENT",
+--    "VTODO", or "VJOURNAL" calendar components.  The value MUST be
+--    specified as a date with UTC time.
+--
+-- Description:  This property specifies the date and time that the
+--    calendar information was created by the calendar user agent in the
+--    calendar store.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     created    = "CREATED" creaparam ":" date-time CRLF
+--
+--     creaparam  = *(";" other-param)
+--
+-- Example:  The following is an example of this property:
+--
+--     CREATED:19960329T133000Z
+-- @
+--
+-- Because the spec says "The value MUST bespecified as a date with UTC time.",
+-- we will just store the 'LocalTime' (in the utc timezone) instead of a
+-- 'DateTime'
+newtype Created = Created {unCreated :: Time.UTCTime}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity Created where
+  validate c@Created {..} =
+    mconcat
+      [ genericValidate c,
+        validateImpreciseUTCTime unCreated
+      ]
+
+instance NFData Created
+
+instance IsProperty Created where
+  propertyName Proxy = "CREATED"
+  propertyP = fmap Created . conformMapError PropertyTypeParseError . dateTimeUTCP
+  propertyB = dateTimeUTCB . unCreated
+
+-- |
+--
+-- === [section 3.8.7.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2)
+--
+-- @
+-- Property Name:  DTSTAMP
+--
+-- Purpose:  In the case of an iCalendar object that specifies a
+--    "METHOD" property, this property specifies the date and time that
+--    the instance of the iCalendar object was created.  In the case of
+--    an iCalendar object that doesn't specify a "METHOD" property, this
+--    property specifies the date and time that the information
+--    associated with the calendar component was last revised in the
+--    calendar store.
+--
+-- Value Type:  DATE-TIME
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property MUST be included in the "VEVENT",
+--    "VTODO", "VJOURNAL", or "VFREEBUSY" calendar components.
+--
+-- Description:  The value MUST be specified in the UTC time format.
+--
+--    This property is also useful to protocols such as [2447bis] that
+--    have inherent latency issues with the delivery of content.  This
+--    property will assist in the proper sequencing of messages
+--    containing iCalendar objects.
+--
+--    In the case of an iCalendar object that specifies a "METHOD"
+--    property, this property differs from the "CREATED" and "LAST-
+--    MODIFIED" properties.  These two properties are used to specify
+--    when the particular calendar data in the calendar store was
+--    created and last modified.  This is different than when the
+--    iCalendar object representation of the calendar service
+--    information was created or last modified.
+--
+--    In the case of an iCalendar object that doesn't specify a "METHOD"
+--    property, this property is equivalent to the "LAST-MODIFIED"
+--    property.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     dtstamp    = "DTSTAMP" stmparam ":" date-time CRLF
+--
+--     stmparam   = *(";" other-param)
+--
+-- Example:
+--
+--     DTSTAMP:19971210T080000Z
+-- @
+newtype DateTimeStamp = DateTimeStamp {unDateTimeStamp :: DateTime}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity DateTimeStamp
+
+instance NFData DateTimeStamp
+
+instance IsProperty DateTimeStamp where
+  propertyName Proxy = "DTSTAMP"
+  propertyP = wrapPropertyTypeP DateTimeStamp
+  propertyB = propertyTypeB . unDateTimeStamp
+
+-- | Last Modified
+--
+-- === [section 3.8.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.3)
+--
+-- @
+-- Property Name:  LAST_MODIFIED
+--
+-- Purpose:  This property specifies the date and time that the
+--    information associated with the calendar component was last
+--    revised in the calendar store.
+--
+--       Note: This is analogous to the modification date and time for a
+--       file in the file system.
+--
+-- Value Type:  DATE-TIME
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property can be specified in the "VEVENT",
+--    "VTODO", "VJOURNAL", or "VTIMEZONE" calendar components.
+--
+-- Description:  The property value MUST be specified in the UTC time
+--    format.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     last-mod   = "LAST-MODIFIED" lstparam ":" date-time CRLF
+--
+--     lstparam   = *(";" other-param)
+--
+-- Example:  The following is an example of this property:
+--
+--     LAST-MODIFIED:19960817T133000Z
+-- @
+--
+-- === [section 5.3 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.3)
+--
+-- @
+-- This specification modifies the definition of the "LAST-MODIFIED"
+-- property to allow it to be defined in an iCalendar object.  The
+-- following additions are made to the definition of this property,
+-- originally specified in Section 3.8.7.3 of [RFC5545].
+--
+-- Purpose:  This property specifies the date and time that the
+--    information associated with the calendar was last revised.
+--
+-- Conformance:  This property can be specified once in an iCalendar
+--    object.
+-- @
+newtype LastModified = LastModified {unLastModified :: Time.UTCTime}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity LastModified where
+  validate c@LastModified {..} =
+    mconcat
+      [ genericValidate c,
+        validateImpreciseUTCTime unLastModified
+      ]
+
+instance NFData LastModified
+
+instance IsProperty LastModified where
+  propertyName Proxy = "LAST-MODIFIED"
+  propertyP = fmap LastModified . conformMapError PropertyTypeParseError . dateTimeUTCP
+  propertyB = dateTimeUTCB . unLastModified
 
 -- | Image
 --
