@@ -218,6 +218,17 @@ spec = do
       "DTSTAMP:18581117T000000Z"
       (DateTimeStamp (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1858 11 17) (TimeOfDay 00 00 00)))))
 
+  describe "DateTimeDue" $ do
+    genValidSpec @DateTimeDue
+    propertySpec @DateTimeDue
+
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --     DUE:19980430T000000Z
+    -- @
+    propertyExampleSpec "DUE:19980430T000000Z" (DateTimeDueDateTime (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1998 04 30) (TimeOfDay 00 00 00)))))
+
   describe "DateTimeStart" $ do
     genValidSpec @DateTimeStart
     propertySpec @DateTimeStart
