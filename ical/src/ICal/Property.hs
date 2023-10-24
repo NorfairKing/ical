@@ -2549,7 +2549,8 @@ data Attendee = Attendee
     attendeeDelegators :: ![Delegator],
     attendeeDelegatees :: ![Delegatee],
     attendeeDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
-    attendeeLanguage :: !(Maybe Language)
+    attendeeLanguage :: !(Maybe Language),
+    attendeeMemberships :: ![Membership]
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -2569,6 +2570,7 @@ instance IsProperty Attendee where
     attendeeDelegatees <- propertyParamListP clv
     attendeeDirectoryEntryReference <- propertyParamP clv
     attendeeLanguage <- propertyParamP clv
+    attendeeMemberships <- propertyParamListP clv
     pure Attendee {..}
   propertyB Attendee {..} =
     insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus
@@ -2580,6 +2582,7 @@ instance IsProperty Attendee where
       . insertParamList attendeeDelegatees
       . insertMParam attendeeDirectoryEntryReference
       . insertMParam attendeeLanguage
+      . insertParamList attendeeMemberships
       $ propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
@@ -2594,7 +2597,8 @@ mkAttendee calAddress =
       attendeeDelegators = [],
       attendeeDelegatees = [],
       attendeeDirectoryEntryReference = Nothing,
-      attendeeLanguage = Nothing
+      attendeeLanguage = Nothing,
+      attendeeMemberships = []
     }
 
 -- | Exception Date-Times

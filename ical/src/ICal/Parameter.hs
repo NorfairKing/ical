@@ -583,6 +583,52 @@ instance IsParameter Language where
   parameterP = pure . Language
   parameterB = unLanguage
 
+-- | Group or List Membership
+--
+-- [section 3.2.11](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.11)
+--
+-- @
+-- Parameter Name:  MEMBER
+--
+-- Purpose:  To specify the group or list membership of the calendar
+--    user specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     memberparam        = "MEMBER" "=" DQUOTE cal-address DQUOTE
+--                          *("," DQUOTE cal-address DQUOTE)
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter identifies the groups or
+--    list membership for the calendar user specified by the property.
+--    The parameter value is either a single calendar address in a
+--    quoted-string or a COMMA-separated list of calendar addresses,
+--    each in a quoted-string.  The individual calendar address
+--    parameter values MUST each be specified in a quoted-string.
+--
+-- Example:
+--
+--     ATTENDEE;MEMBER="mailto:ietf-calsch@example.org":mailto:
+--      jsmith@example.com
+--
+--     ATTENDEE;MEMBER="mailto:projectA@example.com","mailto:pr
+--      ojectB@example.com":mailto:janedoe@example.com
+-- @
+newtype Membership = Membership {unMembership :: CalAddress}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Membership
+
+instance NFData Membership
+
+instance IsParameter Membership where
+  parameterName Proxy = "MEMBER"
+  parameterP = quotedParamP $ \t -> case parseCalAddress t of
+    Nothing -> unfixableError $ InvalidCalAddress t
+    Just ca -> pure $ Membership ca
+  parameterB = quotedParamB $ renderCalAddress . unMembership
+
 -- | Participation status
 --
 -- [section 3.2.12](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.12)

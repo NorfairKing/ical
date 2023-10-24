@@ -501,9 +501,12 @@ spec = do
     --      example.com
     --
     -- @
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ATTENDEE;MEMBER=\"mailto:DEV-GROUP@example.com\":mailto:joecool@example.com"
-      (mkAttendee "mailto:joecool@example.com")
+      ( (mkAttendee "mailto:joecool@example.com")
+          { attendeeMemberships = [Membership "mailto:DEV-GROUP@example.com"]
+          }
+      )
     propertyExampleSpec
       "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
       ( (mkAttendee "mailto:ildoit@example.com")
@@ -638,6 +641,31 @@ spec = do
     propertyParseExampleSpec
       "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
       ((mkAttendee "mailto:jsmith@example.com") {attendeeCommonName = Just "John Smith"})
+
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;MEMBER="mailto:ietf-calsch@example.org":mailto:
+    --      jsmith@example.com
+    --
+    --     ATTENDEE;MEMBER="mailto:projectA@example.com","mailto:pr
+    --      ojectB@example.com":mailto:janedoe@example.com
+    -- @
+    propertyExampleSpec
+      "ATTENDEE;MEMBER=\"mailto:ietf-calsch@example.org\":mailto:jsmith@example.com"
+      ( (mkAttendee "mailto:jsmith@example.com")
+          { attendeeMemberships = [Membership "mailto:ietf-calsch@example.org"]
+          }
+      )
+    propertyExampleSpec
+      "ATTENDEE;MEMBER=\"mailto:projectA@example.com\",\"mailto:projectB@example.com\":mailto:janedoe@example.com"
+      ( (mkAttendee "mailto:janedoe@example.com")
+          { attendeeMemberships =
+              [ Membership "mailto:projectA@example.com",
+                Membership "mailto:projectB@example.com"
+              ]
+          }
+      )
 
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes

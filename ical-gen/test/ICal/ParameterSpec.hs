@@ -241,6 +241,20 @@ spec = do
     -- @
     parameterExampleSpec "fr-CA" (Language "fr-CA")
 
+  describe "Membership" $ do
+    genValidSpec @Membership
+    parameterSpec @Membership
+
+    -- @
+    -- ATTENDEE;MEMBER="mailto:ietf-calsch@example.org":mailto:
+    --  jsmith@example.com
+
+    -- ATTENDEE;MEMBER="mailto:projectA@example.com","mailto:pr
+    --  ojectB@example.com":mailto:janedoe@example.com
+    -- @
+    parameterExampleSpec (QuotedParam "mailto:ietf-calsch@example.org") (Membership "mailto:ietf-calsch@example.org")
+    parameterExampleSpec (QuotedParam "mailto:projectA@example.org") (Membership "mailto:projectA@example.org")
+
   describe "ParticipationStatus" $ do
     genValidSpec @ParticipationStatus
     parameterSpec @ParticipationStatus

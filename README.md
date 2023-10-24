@@ -37,7 +37,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.2.8.  Format Type
        - [X] 3.2.9.  Free/Busy Time Type
        - [X] 3.2.10. Language
-       - [ ] 3.2.11. Group or List Membership
+       - [X] 3.2.11. Group or List Membership
        - [X] 3.2.12. Participation Status
        - [X] 3.2.13. Recurrence Identifier Range
        - [X] 3.2.14. Alarm Trigger Relationship
