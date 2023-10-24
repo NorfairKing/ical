@@ -33,6 +33,7 @@ import Data.Validity hiding (Location)
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
+import Data.Word
 import GHC.Generics (Generic)
 import ICal.Conformance
 import ICal.ContentLine
@@ -1133,6 +1134,23 @@ makeLocation locationContents =
   let locationAlternateTextRepresentation = Nothing
       locationLanguage = Nothing
    in Location {..}
+
+newtype PercentComplete = PercentComplete {unPercentComplete :: Word8}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity PercentComplete where
+  validate pc@(PercentComplete i) =
+    mconcat
+      [ genericValidate pc,
+        declare "the percentage is between 0 and 100" $ 0 <= i && i <= 100
+      ]
+
+instance NFData PercentComplete
+
+instance IsProperty PercentComplete where
+  propertyName Proxy = "PERCENT-COMPLETE"
+  propertyP = wrapPropertyTypeP $ PercentComplete . (fromIntegral :: Int32 -> Word8) -- TODO unfixable error for out of range
+  propertyB = propertyTypeB . (fromIntegral :: Word8 -> Int32) . unPercentComplete
 
 -- | Status
 --

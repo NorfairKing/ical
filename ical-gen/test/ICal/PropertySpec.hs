@@ -373,9 +373,22 @@ spec = do
     -- @
     propertyExampleSpec "STATUS:TENTATIVE" StatusTentative
 
+  describe "PercentComplete" $ do
+    genValidSpec @PercentComplete
+    propertySpec @PercentComplete
+
+    -- @
+    --   Example:  The following is an example of this property to show 39%
+    --      completion:
+    --
+    --       PERCENT-COMPLETE:39
+    -- @
+    propertyExampleSpec "PERCENT-COMPLETE:39" (PercentComplete 39)
+
   describe "DateTimeEnd" $ do
     genValidSpec @DateTimeEnd
     propertySpec @DateTimeEnd
+
     -- From the spec:
     -- @
     -- Example:  The following is an example of this property:
