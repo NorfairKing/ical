@@ -26,7 +26,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.1.2.  Multiple Values
        - [X] 3.1.3.  Binary Content
        - [X] 3.1.4.  Character Set
-     - [ ] 3.2.  Property Parameters
+     - [X] 3.2.  Property Parameters
        - [X] 3.2.1.  Alternate Text Representation
        - [X] 3.2.2.  Common Name
        - [X] 3.2.3.  Calendar User Type
@@ -44,7 +44,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.2.15. Relationship Type
        - [X] 3.2.16. Participation Role
        - [X] 3.2.17. RSVP Expectation
-       - [ ] 3.2.18. Sent By
+       - [X] 3.2.18. Sent By
        - [X] 3.2.19. Time Zone Identifier
        - [X] 3.2.20. Value Data Types
      - [X] 3.3.  Property Value Data Types

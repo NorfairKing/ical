@@ -32,6 +32,7 @@ spec = do
     parameterExampleSpec
       "http://xyzcorp.com/conf-rooms/f123.vcf"
       (AlternateTextRepresentation "http://xyzcorp.com/conf-rooms/f123.vcf")
+
     -- @
     -- CONTACT;ALTREP="ldap://example.com:6666/o=ABC%20Industries\,
     --  c=US???(cn=Jim%20Dolittle)":Jim Dolittle\, ABC Industries\,
@@ -103,7 +104,9 @@ spec = do
     -- ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe
     --  :mailto:jdoe@example.com
     -- @
+    parameterExampleSpec "Henry Cabot" (CommonName "Henry Cabot")
     parameterExampleSpec "The Big Cheese" (CommonName "The Big Cheese")
+    parameterExampleSpec "Jane Doe" (CommonName "Jane Doe")
 
     -- @
     --     ORGANIZER;CN=John Smith:mailto:jsmith@example.com
@@ -248,7 +251,7 @@ spec = do
     -- @
     -- ATTENDEE;MEMBER="mailto:ietf-calsch@example.org":mailto:
     --  jsmith@example.com
-
+    --
     -- ATTENDEE;MEMBER="mailto:projectA@example.com","mailto:pr
     --  ojectB@example.com":mailto:janedoe@example.com
     -- @
@@ -280,31 +283,6 @@ spec = do
     -- @
     parameterExampleSpec "THISANDFUTURE" RecurrenceIdentifierRangeThisAndFuture
 
-  describe "RSVPExpectation" $ do
-    genValidSpec @RSVPExpectation
-    parameterSpec @RSVPExpectation
-
-    -- @
-    -- Example:
-    --
-    --     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
-    -- @
-    parameterExampleSpec "TRUE" RSVPExpectationTrue
-    parameterExampleSpec "FALSE" RSVPExpectationFalse
-
-  describe "ParticipationRole" $ do
-    genValidSpec @ParticipationRole
-    parameterSpec @ParticipationRole
-
-    -- @
-    -- Example:
-    --
-    --     ATTENDEE;ROLE=CHAIR:mailto:mrbig@example.com
-    -- @
-    parameterExampleSpec "CHAIR" ParticipationRoleChair
-    parameterExampleSpec "REQ-PARTICIPANT" ParticipationRoleRequiredParticipant
-    parameterExampleSpec "OPT-PARTICIPANT" ParticipationRoleOptionalParticipant
-
   describe "AlarmTriggerRelationship" $ do
     genValidSpec @AlarmTriggerRelationship
     parameterSpec @AlarmTriggerRelationship
@@ -325,6 +303,41 @@ spec = do
     parameterExampleSpec "PARENT" RelationshipTypeParent
     parameterExampleSpec "CHILD" RelationshipTypeChild
     parameterExampleSpec "SIBLING" RelationshipTypeSibling
+
+  describe "ParticipationRole" $ do
+    genValidSpec @ParticipationRole
+    parameterSpec @ParticipationRole
+
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;ROLE=CHAIR:mailto:mrbig@example.com
+    -- @
+    parameterExampleSpec "CHAIR" ParticipationRoleChair
+    parameterExampleSpec "REQ-PARTICIPANT" ParticipationRoleRequiredParticipant
+    parameterExampleSpec "OPT-PARTICIPANT" ParticipationRoleOptionalParticipant
+
+  describe "RSVPExpectation" $ do
+    genValidSpec @RSVPExpectation
+    parameterSpec @RSVPExpectation
+
+    -- @
+    -- Example:
+    --
+    --     ATTENDEE;RSVP=TRUE:mailto:jsmith@example.com
+    -- @
+    parameterExampleSpec "TRUE" RSVPExpectationTrue
+    parameterExampleSpec "FALSE" RSVPExpectationFalse
+
+  describe "SentBy" $ do
+    genValidSpec @SentBy
+    parameterSpec @SentBy
+
+    -- @
+    --     ORGANIZER;SENT-BY="mailto:sray@example.com":mailto:
+    --      jsmith@example.com
+    -- @
+    parameterExampleSpec (QuotedParam "mailto:sray@example.com") (SentBy "mailto:sray@example.com")
 
   describe "TimeZoneIdentifierParam" $ do
     genValidSpec @TimeZoneIdentifierParam

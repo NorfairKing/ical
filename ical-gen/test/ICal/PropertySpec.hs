@@ -225,9 +225,12 @@ spec = do
             organizerDirectoryEntryReference = Just (DirectoryEntryReference "ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)")
           }
       )
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ORGANIZER;SENT-BY=\"mailto:jane_doe@example.com\":mailto:jsmith@example.com"
-      (mkOrganizer "mailto:jsmith@example.com")
+      ( (mkOrganizer "mailto:jsmith@example.com")
+          { organizerSentBy = Just (SentBy "mailto:jane_doe@example.com")
+          }
+      )
 
   describe "Created" $ do
     genValidSpec @Created
@@ -638,9 +641,13 @@ spec = do
     --
     -- sentbyparam = "SENT-BY" "=" DQUOTE cal-address DQUOTE
     -- @
-    propertyParseExampleSpec
+    propertyExampleSpec
       "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
-      ((mkAttendee "mailto:jsmith@example.com") {attendeeCommonName = Just "John Smith"})
+      ( (mkAttendee "mailto:jsmith@example.com")
+          { attendeeCommonName = Just "John Smith",
+            attendeeSentBy = Just (SentBy "mailto:jan_doe@example.com")
+          }
+      )
 
     -- @
     -- Example:

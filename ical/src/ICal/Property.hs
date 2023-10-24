@@ -1056,7 +1056,8 @@ data Organizer = Organizer
   { organizerCalAddress :: !CalAddress,
     organizerCommonName :: !(Maybe CommonName),
     organizerDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
-    organizerLanguage :: !(Maybe Language)
+    organizerLanguage :: !(Maybe Language),
+    organizerSentBy :: !(Maybe SentBy)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -1070,12 +1071,13 @@ instance IsProperty Organizer where
     organizerCommonName <- propertyParamP clv
     organizerDirectoryEntryReference <- propertyParamP clv
     organizerLanguage <- propertyParamP clv
-
+    organizerSentBy <- propertyParamP clv
     pure Organizer {..}
   propertyB Organizer {..} =
     insertMParam organizerCommonName
       . insertMParam organizerDirectoryEntryReference
       . insertMParam organizerLanguage
+      . insertMParam organizerSentBy
       $ propertyTypeB organizerCalAddress
 
 mkOrganizer :: CalAddress -> Organizer
@@ -1084,7 +1086,8 @@ mkOrganizer calAddress =
     { organizerCalAddress = calAddress,
       organizerCommonName = Nothing,
       organizerDirectoryEntryReference = Nothing,
-      organizerLanguage = Nothing
+      organizerLanguage = Nothing,
+      organizerSentBy = Nothing
     }
 
 -- |
@@ -2541,16 +2544,17 @@ instance IsProperty TimeZoneOffsetTo where
 -- @
 data Attendee = Attendee
   { attendeeCalAddress :: !CalAddress,
-    attendeeParticipationRole :: !ParticipationRole,
-    attendeeParticipationStatus :: !ParticipationStatus,
-    attendeeRSVPExpectation :: !RSVPExpectation,
     attendeeCommonName :: !(Maybe CommonName),
     attendeeCalendarUserType :: !CalendarUserType,
     attendeeDelegators :: ![Delegator],
     attendeeDelegatees :: ![Delegatee],
     attendeeDirectoryEntryReference :: !(Maybe DirectoryEntryReference),
     attendeeLanguage :: !(Maybe Language),
-    attendeeMemberships :: ![Membership]
+    attendeeMemberships :: ![Membership],
+    attendeeParticipationStatus :: !ParticipationStatus,
+    attendeeParticipationRole :: !ParticipationRole,
+    attendeeRSVPExpectation :: !RSVPExpectation,
+    attendeeSentBy :: !(Maybe SentBy)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -2561,9 +2565,6 @@ instance NFData Attendee
 instance IsProperty Attendee where
   propertyName Proxy = "ATTENDEE"
   propertyP clv = flip viaPropertyTypeP clv $ \attendeeCalAddress -> do
-    attendeeParticipationRole <- propertyParamWithDefaultP defaultParticipationRole clv
-    attendeeParticipationStatus <- propertyParamWithDefaultP defaultParticipationStatus clv
-    attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
     attendeeCommonName <- propertyParamP clv
     attendeeCalendarUserType <- fromMaybe defaultCalendarUserType <$> propertyParamP clv
     attendeeDelegators <- propertyParamListP clv
@@ -2571,34 +2572,40 @@ instance IsProperty Attendee where
     attendeeDirectoryEntryReference <- propertyParamP clv
     attendeeLanguage <- propertyParamP clv
     attendeeMemberships <- propertyParamListP clv
+    attendeeParticipationStatus <- propertyParamWithDefaultP defaultParticipationStatus clv
+    attendeeParticipationRole <- propertyParamWithDefaultP defaultParticipationRole clv
+    attendeeRSVPExpectation <- propertyParamWithDefaultP defaultRSVPExpectation clv
+    attendeeSentBy <- propertyParamP clv
     pure Attendee {..}
   propertyB Attendee {..} =
-    insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus
-      . insertParamWithDefault defaultParticipationRole attendeeParticipationRole
-      . insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation
-      . insertMParam attendeeCommonName
+    insertMParam attendeeCommonName
       . insertParamWithDefault defaultCalendarUserType attendeeCalendarUserType
       . insertParamList attendeeDelegators
       . insertParamList attendeeDelegatees
       . insertMParam attendeeDirectoryEntryReference
       . insertMParam attendeeLanguage
       . insertParamList attendeeMemberships
+      . insertParamWithDefault defaultParticipationStatus attendeeParticipationStatus
+      . insertParamWithDefault defaultParticipationRole attendeeParticipationRole
+      . insertParamWithDefault defaultRSVPExpectation attendeeRSVPExpectation
+      . insertMParam attendeeSentBy
       $ propertyTypeB attendeeCalAddress
 
 mkAttendee :: CalAddress -> Attendee
 mkAttendee calAddress =
   Attendee
     { attendeeCalAddress = calAddress,
-      attendeeParticipationRole = defaultParticipationRole,
-      attendeeParticipationStatus = defaultParticipationStatus,
-      attendeeRSVPExpectation = defaultRSVPExpectation,
       attendeeCommonName = Nothing,
       attendeeCalendarUserType = defaultCalendarUserType,
       attendeeDelegators = [],
       attendeeDelegatees = [],
       attendeeDirectoryEntryReference = Nothing,
       attendeeLanguage = Nothing,
-      attendeeMemberships = []
+      attendeeMemberships = [],
+      attendeeParticipationStatus = defaultParticipationStatus,
+      attendeeParticipationRole = defaultParticipationRole,
+      attendeeRSVPExpectation = defaultRSVPExpectation,
+      attendeeSentBy = Nothing
     }
 
 -- | Exception Date-Times

@@ -1071,6 +1071,47 @@ instance IsParameter RSVPExpectation where
 defaultRSVPExpectation :: RSVPExpectation
 defaultRSVPExpectation = RSVPExpectationFalse
 
+-- | Sent By
+--
+-- [section 3.2.18](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.18)
+--
+-- @
+-- Parameter Name:  SENT-BY
+--
+-- Purpose:  To specify the calendar user that is acting on behalf of
+--    the calendar user specified by the property.
+--
+-- Format Definition:  This property parameter is defined by the
+--    following notation:
+--
+--     sentbyparam        = "SENT-BY" "=" DQUOTE cal-address DQUOTE
+--
+-- Description:  This parameter can be specified on properties with a
+--    CAL-ADDRESS value type.  The parameter specifies the calendar user
+--    that is acting on behalf of the calendar user specified by the
+--    property.  The parameter value MUST be a mailto URI as defined in
+--    [RFC2368].  The individual calendar address parameter values MUST
+--    each be specified in a quoted-string.
+--
+-- Example:
+--
+--     ORGANIZER;SENT-BY="mailto:sray@example.com":mailto:
+--      jsmith@example.com
+-- @
+newtype SentBy = SentBy {unSentBy :: CalAddress}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity SentBy
+
+instance NFData SentBy
+
+instance IsParameter SentBy where
+  parameterName Proxy = "SENT-BY"
+  parameterP = quotedParamP $ \t -> case parseCalAddress t of
+    Nothing -> unfixableError $ InvalidCalAddress t
+    Just ca -> pure $ SentBy ca
+  parameterB = quotedParamB $ renderCalAddress . unSentBy
+
 -- | Time Zone Identifier
 --
 -- [section 3.2.19](https://datatracker.ietf.org/doc/html/rfc5545#section-3.2.19)
