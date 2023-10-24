@@ -202,6 +202,17 @@ spec = do
     propertyExampleSpec "TZID:America/Los_Angeles" (TimeZoneIdentifier "America/Los_Angeles")
     propertyExampleSpec "TZID:/example.org/America/New_York" (TimeZoneIdentifier "/example.org/America/New_York")
 
+  describe "DateTimeCompleted" $ do
+    genValidSpec @DateTimeCompleted
+    propertySpec @DateTimeCompleted
+
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --  COMPLETED:19960401T150000Z
+    -- @
+    propertyExampleSpec "COMPLETED:19960401T150000Z" (DateTimeCompleted (DateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1996 04 01) (TimeOfDay 15 00 00)))))
+
   describe "DateTimeStamp" $ do
     genValidSpec @DateTimeStamp
     propertySpec @DateTimeStamp
