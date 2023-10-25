@@ -2298,6 +2298,56 @@ instance IsProperty TimeZoneOffsetTo where
   propertyP = wrapPropertyTypeP TimeZoneOffsetTo
   propertyB = propertyTypeB . unTimeZoneOffsetTo
 
+-- | Time Zone URL
+--
+-- === [section 3.8.4.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.5)
+--
+-- @
+-- Property Name:  TZURL
+--
+-- Purpose:  This property provides a means for a "VTIMEZONE" component
+--    to point to a network location that can be used to retrieve an up-
+--    to-date version of itself.
+--
+-- Value Type:  URI
+--
+-- Property Parameters:  IANA and non-standard property parameters can
+--    be specified on this property.
+--
+-- Conformance:  This property can be specified in a "VTIMEZONE"
+--    calendar component.
+--
+-- Description:  This property provides a means for a "VTIMEZONE"
+--    component to point to a network location that can be used to
+--    retrieve an up-to-date version of itself.  This provides a hook to
+--    handle changes government bodies impose upon time zone
+--    definitions.  Retrieval of this resource results in an iCalendar
+--    object containing a single "VTIMEZONE" component and a "METHOD"
+--    property set to PUBLISH.
+--
+-- Format Definition:  This property is defined by the following
+--    notation:
+--
+--     tzurl      = "TZURL" tzurlparam ":" uri CRLF
+--
+--     tzurlparam = *(";" other-param)
+--
+-- Example:  The following is an example of this property:
+--
+--  TZURL:http://timezones.example.org/tz/America-Los_Angeles.ics
+-- @
+newtype TimeZoneURL = TimeZoneURL {unTimeZoneURL :: URI}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity TimeZoneURL
+
+instance NFData TimeZoneURL
+
+instance IsProperty TimeZoneURL where
+  propertyName Proxy = "TZURL"
+  propertyP = wrapPropertyTypeP TimeZoneURL
+  propertyB = propertyTypeB . unTimeZoneURL
+
 -- | Attendee
 --
 -- === [section 3.8.4.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.1)

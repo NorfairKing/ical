@@ -103,7 +103,7 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.3.2.  Time Zone Name
          - [X] 3.8.3.3.  Time Zone Offset From
          - [X] 3.8.3.4.  Time Zone Offset To
-         - [ ] 3.8.3.5.  Time Zone URL
+         - [X] 3.8.3.5.  Time Zone URL
        - [ ] 3.8.4.  Relationship Component Properties
          - [X] 3.8.4.1.  Attendee
          - [ ] 3.8.4.2.  Contact

@@ -176,6 +176,8 @@ instance GenValid Daylight where
 instance GenValid TimeZone where
   genValid = do
     timeZoneId <- genValid
+    timeZoneLastModified <- genValid
+    timeZoneURL <- genValid
     timeZoneObservances <- S.fromList . NE.toList <$> genValid
     pure TimeZone {..}
 

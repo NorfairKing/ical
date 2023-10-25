@@ -549,6 +549,7 @@ spec = do
   describe "TimeZoneOffsetFrom" $ do
     genValidSpec @TimeZoneOffsetFrom
     propertySpec @TimeZoneOffsetFrom
+
     -- @
     -- Example:  The following are examples of this property:
     --
@@ -562,6 +563,8 @@ spec = do
   describe "TimeZoneOffsetTo" $ do
     genValidSpec @TimeZoneOffsetTo
     propertySpec @TimeZoneOffsetTo
+
+    -- @
     -- Example:  The following are examples of this property:
     --
     --     TZOFFSETTO:-0400
@@ -570,6 +573,17 @@ spec = do
     -- @
     propertyExampleSpec "TZOFFSETTO:-0400" (TimeZoneOffsetTo (UTCOffset (-14400)))
     propertyExampleSpec "TZOFFSETTO:+1245" (TimeZoneOffsetTo (UTCOffset 45900))
+
+  describe "TimeZoneURL" $ do
+    genValidSpec @TimeZoneURL
+    propertySpec @TimeZoneURL
+
+    -- @
+    -- Example:  The following is an example of this property:
+    --
+    --  TZURL:http://timezones.example.org/tz/America-Los_Angeles.ics
+    -- @
+    propertyExampleSpec "TZURL:http://timezones.example.org/tz/America-Los_Angeles.ics" (TimeZoneURL "http://timezones.example.org/tz/America-Los_Angeles.ics")
 
   describe "Comment" $ do
     genValidSpec @Comment

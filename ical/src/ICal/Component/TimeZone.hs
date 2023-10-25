@@ -465,7 +465,8 @@ data TimeZone = TimeZone
     -- ;
     -- last-mod / tzurl /
     -- @
-    -- TODO
+    timeZoneLastModified :: !(Maybe LastModified),
+    timeZoneURL :: !(Maybe TimeZoneURL),
     -- @
     -- ; One of 'standardc' or 'daylightc' MUST occur
     -- ; and each MAY occur more than once.
@@ -502,12 +503,17 @@ makeTimeZone :: TimeZoneIdentifier -> Set TimeZoneObservance -> TimeZone
 makeTimeZone tzid observances =
   TimeZone
     { timeZoneId = tzid,
+      timeZoneLastModified = Nothing,
+      timeZoneURL = Nothing,
       timeZoneObservances = observances
     }
 
 vTimeZoneP :: Component -> CP TimeZone
 vTimeZoneP Component {..} = do
   timeZoneId <- requiredPropertyP componentProperties
+
+  timeZoneLastModified <- optionalPropertyP componentProperties
+  timeZoneURL <- optionalPropertyP componentProperties
 
   standards <- subComponentsP componentSubcomponents
   daylights <- subComponentsP componentSubcomponents
@@ -522,7 +528,11 @@ vTimeZoneB :: TimeZone -> Component
 vTimeZoneB TimeZone {..} =
   Component
     { componentProperties =
-        requiredPropertyB timeZoneId,
+        mconcat
+          [ requiredPropertyB timeZoneId,
+            optionalPropertyB timeZoneLastModified,
+            optionalPropertyB timeZoneURL
+          ],
       componentSubcomponents =
         M.unionsWith (<>) $
           map
