@@ -268,6 +268,7 @@ data Event = Event
     eventAttendees :: !(Set Attendee),
     eventCategories :: !(Set Categories),
     eventComments :: !(Set Comment),
+    eventContacts :: !(Set Contact),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
     eventResources :: !(Set Resources),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
@@ -340,6 +341,7 @@ vEventP Component {..} = do
   eventAttendees <- setOfPropertiesP componentProperties
   eventCategories <- setOfPropertiesP componentProperties
   eventComments <- setOfPropertiesP componentProperties
+  eventContacts <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
   eventResources <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
@@ -379,6 +381,7 @@ vEventB Event {..} =
             setOfPropertiesB eventAttendees,
             setOfPropertiesB eventCategories,
             setOfPropertiesB eventComments,
+            setOfPropertiesB eventContacts,
             setOfPropertiesB eventExceptionDateTimes,
             setOfPropertiesB eventResources,
             setOfPropertiesB eventRecurrenceDateTimes,
@@ -414,6 +417,7 @@ makeEvent uid dateTimeStamp =
       eventAttendees = S.empty,
       eventCategories = S.empty,
       eventComments = S.empty,
+      eventContacts = S.empty,
       eventExceptionDateTimes = S.empty,
       eventResources = S.empty,
       eventRecurrenceDateTimes = S.empty,

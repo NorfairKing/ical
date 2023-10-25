@@ -302,17 +302,17 @@ spec = do
     -- @
     propertyExampleSpec
       "ORGANIZER;CN=John Smith:mailto:jsmith@example.com"
-      ((mkOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "John Smith"})
+      ((makeOrganizer "mailto:jsmith@example.com") {organizerCommonName = Just "John Smith"})
     propertyExampleSpec
       "ORGANIZER;CN=JohnSmith;DIR=\"ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)\":mailto:jsmith@example.com"
-      ( (mkOrganizer "mailto:jsmith@example.com")
+      ( (makeOrganizer "mailto:jsmith@example.com")
           { organizerCommonName = Just "JohnSmith",
             organizerDirectoryEntryReference = Just (DirectoryEntryReference "ldap://example.com:6666/o=DC%20Associates,c=US???(cn=John%20Smith)")
           }
       )
     propertyExampleSpec
       "ORGANIZER;SENT-BY=\"mailto:jane_doe@example.com\":mailto:jsmith@example.com"
-      ( (mkOrganizer "mailto:jsmith@example.com")
+      ( (makeOrganizer "mailto:jsmith@example.com")
           { organizerSentBy = Just (SentBy "mailto:jane_doe@example.com")
           }
       )
@@ -734,19 +734,19 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTENDEE;MEMBER=\"mailto:DEV-GROUP@example.com\":mailto:joecool@example.com"
-      ( (mkAttendee "mailto:joecool@example.com")
+      ( (makeAttendee "mailto:joecool@example.com")
           { attendeeMemberships = [Membership "mailto:DEV-GROUP@example.com"]
           }
       )
     propertyExampleSpec
       "ATTENDEE;DELEGATED-FROM=\"mailto:immud@example.com\":mailto:ildoit@example.com"
-      ( (mkAttendee "mailto:ildoit@example.com")
+      ( (makeAttendee "mailto:ildoit@example.com")
           { attendeeDelegators = [Delegator "mailto:immud@example.com"]
           }
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
-      ( (mkAttendee "mailto:hcabot@example.com")
+      ( (makeAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusTentative,
             attendeeCommonName = Just "HenryCabot"
@@ -754,7 +754,7 @@ spec = do
       )
     propertyRenderExampleSpec
       "ATTENDEE;PARTSTAT=TENTATIVE;CN=HenryCabot:mailto:hcabot@example.com"
-      ( (mkAttendee "mailto:hcabot@example.com")
+      ( (makeAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusTentative,
             attendeeCommonName = Just "HenryCabot"
@@ -762,7 +762,7 @@ spec = do
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;DELEGATED-FROM=\"mailto:bob@example.com\";PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      ( (mkAttendee "mailto:jdoe@example.com")
+      ( (makeAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusAccepted,
             attendeeDelegators = [Delegator "mailto:bob@example.com"],
@@ -781,7 +781,7 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTENDEE;CN=John Smith;DIR=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":mailto:jimdo@example.com"
-      ( (mkAttendee "mailto:jimdo@example.com")
+      ( (makeAttendee "mailto:jimdo@example.com")
           { attendeeCommonName = Just "John Smith",
             attendeeDirectoryEntryReference = Just (DirectoryEntryReference "ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)")
           }
@@ -802,7 +802,7 @@ spec = do
     -- @
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=TENTATIVE;DELEGATED-FROM=\"mailto:iamboss@example.com\";CN=Henry Cabot:mailto:hcabot@example.com"
-      ( (mkAttendee "mailto:hcabot@example.com")
+      ( (makeAttendee "mailto:hcabot@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusTentative,
             attendeeDelegators = [Delegator "mailto:iamboss@example.com"],
@@ -811,7 +811,7 @@ spec = do
       )
     propertyExampleSpec
       "ATTENDEE;ROLE=NON-PARTICIPANT;PARTSTAT=DELEGATED;DELEGATED-TO=\"mailto:hcabot@example.com\";CN=The Big Cheese:mailto:iamboss@example.com"
-      ( (mkAttendee "mailto:iamboss@example.com")
+      ( (makeAttendee "mailto:iamboss@example.com")
           { attendeeParticipationRole = ParticipationRoleNonParticipant,
             attendeeParticipationStatus = ParticipationStatusDelegated,
             attendeeDelegatees = [Delegatee "mailto:hcabot@example.com"],
@@ -820,7 +820,7 @@ spec = do
       )
     propertyParseExampleSpec
       "ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      ( (mkAttendee "mailto:jdoe@example.com")
+      ( (makeAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusAccepted,
             attendeeCommonName = Just "Jane Doe"
@@ -828,7 +828,7 @@ spec = do
       )
     propertyExampleSpec
       "ATTENDEE;PARTSTAT=ACCEPTED;CN=Jane Doe:mailto:jdoe@example.com"
-      ( (mkAttendee "mailto:jdoe@example.com")
+      ( (makeAttendee "mailto:jdoe@example.com")
           { attendeeParticipationRole = ParticipationRoleRequiredParticipant,
             attendeeParticipationStatus = ParticipationStatusAccepted,
             attendeeCommonName = Just "Jane Doe"
@@ -871,7 +871,7 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTENDEE;SENT-BY=\"mailto:jan_doe@example.com\";CN=John Smith:mailto:jsmith@example.com"
-      ( (mkAttendee "mailto:jsmith@example.com")
+      ( (makeAttendee "mailto:jsmith@example.com")
           { attendeeCommonName = Just "John Smith",
             attendeeSentBy = Just (SentBy "mailto:jan_doe@example.com")
           }
@@ -888,17 +888,72 @@ spec = do
     -- @
     propertyExampleSpec
       "ATTENDEE;MEMBER=\"mailto:ietf-calsch@example.org\":mailto:jsmith@example.com"
-      ( (mkAttendee "mailto:jsmith@example.com")
+      ( (makeAttendee "mailto:jsmith@example.com")
           { attendeeMemberships = [Membership "mailto:ietf-calsch@example.org"]
           }
       )
     propertyExampleSpec
       "ATTENDEE;MEMBER=\"mailto:projectA@example.com\",\"mailto:projectB@example.com\":mailto:janedoe@example.com"
-      ( (mkAttendee "mailto:janedoe@example.com")
+      ( (makeAttendee "mailto:janedoe@example.com")
           { attendeeMemberships =
               [ Membership "mailto:projectA@example.com",
                 Membership "mailto:projectB@example.com"
               ]
+          }
+      )
+
+  describe "Contact" $ do
+    genValidSpec @Contact
+    propertySpec @Contact
+
+    -- @
+    -- Example:  The following is an example of this property referencing
+    --    textual contact information:
+    --
+    --     CONTACT:Jim Dolittle\, ABC Industries\, +1-919-555-1234
+    --
+    --    The following is an example of this property with an alternate
+    --    representation of an LDAP URI to a directory entry containing the
+    --    contact information:
+    --
+    --     CONTACT;ALTREP="ldap://example.com:6666/o=ABC%20Industries\,
+    --      c=US???(cn=Jim%20Dolittle)":Jim Dolittle\, ABC Industries\,
+    --      +1-919-555-1234
+    --
+    --    The following is an example of this property with an alternate
+    --    representation of a MIME body part containing the contact
+    --    information, such as a vCard [RFC2426] embedded in a text/
+    --    directory media type [RFC2425]:
+    --
+    --     CONTACT;ALTREP="CID:part3.msg970930T083000SILVER@example.com":
+    --      Jim Dolittle\, ABC Industries\, +1-919-555-1234
+    --
+    --    The following is an example of this property referencing a network
+    --    resource, such as a vCard [RFC2426] object containing the contact
+    --    information:
+    --
+    --     CONTACT;ALTREP="http://example.com/pdi/jdoe.vcf":Jim
+    --       Dolittle\, ABC Industries\, +1-919-555-1234
+    -- @
+    propertyExampleSpec
+      "CONTACT:Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
+      (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
+    propertyExampleSpec
+      "CONTACT;ALTREP=\"ldap://example.com:6666/o=ABC%20Industries\\,c=US???(cn=Jim%20Dolittle)\":Jim Dolittle\\, ABC Industries\\,+1-919-555-1234"
+      ( (makeContact "Jim Dolittle, ABC Industries,+1-919-555-1234")
+          { contactAlternateTextRepresentation = Just (AlternateTextRepresentation "ldap://example.com:6666/o=ABC%20Industries\\,c=US???(cn=Jim%20Dolittle)")
+          }
+      )
+    propertyExampleSpec
+      "CONTACT;ALTREP=\"CID:part3.msg970930T083000SILVER@example.com\":Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
+      ( (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
+          { contactAlternateTextRepresentation = Just (AlternateTextRepresentation "CID:part3.msg970930T083000SILVER@example.com")
+          }
+      )
+    propertyExampleSpec
+      "CONTACT;ALTREP=\"http://example.com/pdi/jdoe.vcf\":Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
+      ( (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
+          { contactAlternateTextRepresentation = Just (AlternateTextRepresentation "http://example.com/pdi/jdoe.vcf")
           }
       )
 

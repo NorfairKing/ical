@@ -110,6 +110,7 @@ instance GenValid Event where
     eventAttendees <- genValid
     eventCategories <- genValid
     eventComments <- genValid
+    eventContacts <- genValid
     eventExceptionDateTimes <- genValid
     eventResources <- genValid
     eventRecurrenceDateTimes <- genValid

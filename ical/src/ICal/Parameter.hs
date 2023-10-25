@@ -93,8 +93,7 @@ import ICal.PropertyType.URI
 --       </body>
 --     </html>
 -- @
-newtype AlternateTextRepresentation = AlternateTextRepresentation
-  {unAlternateTextRepresentation :: Text}
+newtype AlternateTextRepresentation = AlternateTextRepresentation {unAlternateTextRepresentation :: Text}
   deriving stock (Show, Eq, Ord, Generic)
   deriving newtype (IsString)
 
