@@ -16,7 +16,6 @@ module ICal.ContentLine
     renderContentLineToUnfoldedLine,
     ParamName (..),
     ParamValue (..),
-    VendorId (..),
     paramValueCI,
     haveToQuoteText,
 
@@ -27,7 +26,6 @@ module ICal.ContentLine
     contentLineValueP,
     paramNameP,
     paramValueP,
-    vendorIdP,
 
     -- * Raw builders
     contentLineB,
@@ -36,7 +34,6 @@ module ICal.ContentLine
     contentLineValueB,
     paramNameB,
     paramValueB,
-    vendorIdB,
 
     -- * Validation helpers
     validateSafeChar,
@@ -57,7 +54,6 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -116,7 +112,7 @@ instance IsString ContentLine where
 mkSimpleContentLine :: CI Text -> Text -> ContentLine
 mkSimpleContentLine name value =
   ContentLine
-    { contentLineName = ContentLineNameIANA name,
+    { contentLineName = ContentLineName name,
       contentLineValue = mkSimpleContentLineValue value
     }
 
@@ -140,31 +136,15 @@ mkSimpleContentLineValue value =
 emptyContentLineValue :: ContentLineValue
 emptyContentLineValue = mkSimpleContentLineValue ""
 
-data ContentLineName
-  = ContentLineNameIANA !(CI Text)
-  | ContentLineNameX
-      !(Maybe VendorId)
-      -- ^ Vendor ID (at least 3 chars)
-      !(CI Text)
-      -- ^ Actual name
+newtype ContentLineName = ContentLineName {unContentLineName :: CI Text}
   deriving stock (Show, Read, Eq, Ord, Generic)
 
 instance Validity ContentLineName where
-  validate cln =
+  validate cln@(ContentLineName t) =
     mconcat
       [ genericValidate cln,
-        case cln of
-          ContentLineNameIANA t ->
-            mconcat
-              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorateText (CI.original t) validateNameChar
-              ]
-          ContentLineNameX _ t ->
-            mconcat
-              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorateText (CI.original t) validateNameChar
-              ]
+        declare "The name is not empty" $ not $ T.null $ CI.original t,
+        decorateText (CI.original t) validateNameChar
       ]
 
 instance NFData ContentLineName
@@ -176,31 +156,15 @@ instance IsString ContentLineName where
           Left err -> error $ errorBundlePretty err
           Right cln -> cln
 
-data ParamName
-  = ParamNameIANA !(CI Text)
-  | ParamNameX
-      !(Maybe VendorId)
-      -- ^ Vendor ID
-      !(CI Text)
-      -- ^ Actual name
+newtype ParamName = ParamName {unParamName :: CI Text}
   deriving stock (Show, Read, Eq, Ord, Generic)
 
 instance Validity ParamName where
-  validate cln =
+  validate pn@(ParamName t) =
     mconcat
-      [ genericValidate cln,
-        case cln of
-          ParamNameIANA t ->
-            mconcat
-              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                declare "The name does not start with 'X-'" $ isNothing $ T.stripPrefix "x-" (CI.foldedCase t),
-                decorateText (CI.original t) validateNameChar
-              ]
-          ParamNameX _ t ->
-            mconcat
-              [ declare "The name is not empty" $ not $ T.null $ CI.original t,
-                decorateText (CI.original t) validateNameChar
-              ]
+      [ genericValidate pn,
+        declare "The name is not empty" $ not $ T.null $ CI.original t,
+        decorateText (CI.original t) validateNameChar
       ]
 
 instance NFData ParamName
@@ -211,19 +175,6 @@ instance IsString ParamName where
      in case parse paramNameP "" t of
           Left err -> error $ errorBundlePretty err
           Right pn -> pn
-
-newtype VendorId = VendorId {unVendorId :: CI Text}
-  deriving stock (Show, Read, Eq, Ord, Generic)
-
-instance Validity VendorId where
-  validate vi@VendorId {..} =
-    mconcat
-      [ genericValidate vi,
-        declare "The VendorId is at least three characters long" $ T.length (CI.original unVendorId) >= 3,
-        decorateText (CI.original unVendorId) validateVendorIdChar
-      ]
-
-instance NFData VendorId
 
 -- https://datatracker.ietf.org/doc/html/rfc5545#section-3.2
 -- "Property parameter values that are not in quoted-strings are case-
@@ -276,10 +227,10 @@ contentLineP = do
   pure ContentLine {..}
 
 -- name          = iana-token / x-name
+-- iana-token    = 1*(ALPHA / DIGIT / "-")
+-- ; iCalendar identifier registered with IANA
 contentLineNameP :: P ContentLineName
-contentLineNameP =
-  try (uncurry ContentLineNameX <$> xNameP)
-    <|> (ContentLineNameIANA <$> ianaTokenP)
+contentLineNameP = ContentLineName <$> tokenTextP
 
 contentLineValueP :: P ContentLineValue
 contentLineValueP = do
@@ -295,42 +246,11 @@ contentLineValueRawP :: P Text
 contentLineValueRawP = takeRest
 
 -- iana-token    = 1*(ALPHA / DIGIT / "-")
--- ; iCalendar identifier registered with IANA
-ianaTokenP :: P (CI Text)
-ianaTokenP = tokenTextP
-
--- x-name        = "X-" [vendorid "-"] 1*(ALPHA / DIGIT / "-")
--- ; Reserved for experimental use.
-xNameP :: P (Maybe VendorId, CI Text)
-xNameP = do
-  void $ string' "X-"
-  mVendorId <- optional $
-    try $ do
-      i <- vendorIdP
-      void $ char' '-'
-      pure i
-  name <- tokenTextP
-  pure (mVendorId, name)
-
 tokenTextP :: P (CI Text)
 tokenTextP = CI.mk . T.pack <$> some (letterChar <|> digitChar <|> char '-')
 
 validateNameChar :: Char -> Validation
 validateNameChar c = declare "The character is a name character" $ Char.isAlpha c || Char.isDigit c || c == '-'
-
--- vendorid      = 3*(ALPHA / DIGIT)
--- ; Vendor identification
-vendorIdP :: P VendorId
-vendorIdP = VendorId . CI.mk . T.pack <$> atLeastNOf 3 vendorIdCharP
-
-atLeastNOf :: Int -> P a -> P [a]
-atLeastNOf i p = do
-  as1 <- replicateM i p
-  as2 <- many p
-  pure (as1 ++ as2)
-
-vendorIdCharP :: P Char
-vendorIdCharP = letterChar <|> digitChar
 
 validateVendorIdChar :: Char -> Validation
 validateVendorIdChar c =
@@ -353,7 +273,7 @@ paramP = do
 
 -- param-name    = iana-token / x-name
 paramNameP :: P ParamName
-paramNameP = try (uncurry ParamNameX <$> xNameP) <|> (ParamNameIANA <$> ianaTokenP)
+paramNameP = ParamName <$> tokenTextP
 
 -- param-value   = paramtext / quoted-string
 paramValueP :: P ParamValue
@@ -436,23 +356,7 @@ renderContentLineName :: ContentLineName -> Text
 renderContentLineName = LT.toStrict . LTB.toLazyText . contentLineNameB
 
 contentLineNameB :: ContentLineName -> Text.Builder
-contentLineNameB = \case
-  ContentLineNameIANA c -> LTB.fromText $ CI.original c
-  ContentLineNameX mVendorId c ->
-    mconcat
-      [ "X-",
-        case mVendorId of
-          Nothing -> mempty
-          Just vendorId ->
-            mconcat
-              [ vendorIdB vendorId,
-                LTB.singleton '-'
-              ],
-        LTB.fromText $ CI.original c
-      ]
-
-vendorIdB :: VendorId -> Text.Builder
-vendorIdB = LTB.fromText . CI.original . unVendorId
+contentLineNameB = LTB.fromText . CI.original . unContentLineName
 
 contentLineParamsB :: Map ParamName (NonEmpty ParamValue) -> Text.Builder
 contentLineParamsB = foldMap go . M.toList
@@ -470,20 +374,7 @@ paramValuesB :: NonEmpty ParamValue -> Text.Builder
 paramValuesB = mconcat . intersperse (LTB.singleton ',') . map paramValueB . NE.toList
 
 paramNameB :: ParamName -> Text.Builder
-paramNameB = \case
-  ParamNameIANA c -> LTB.fromText $ CI.original c
-  ParamNameX mVendorId c ->
-    mconcat
-      [ "X-",
-        case mVendorId of
-          Nothing -> mempty
-          Just vendorId ->
-            mconcat
-              [ vendorIdB vendorId,
-                LTB.singleton '-'
-              ],
-        LTB.fromText $ CI.original c
-      ]
+paramNameB = LTB.fromText . CI.original . unParamName
 
 paramValueB :: ParamValue -> Text.Builder
 paramValueB = \case

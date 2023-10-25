@@ -23,19 +23,11 @@ instance GenValid ContentLineValue where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid ContentLineName where
-  genValid =
-    oneof
-      [ ContentLineNameIANA . CI.mk <$> genNonEmptyTextBy genNameChar,
-        ContentLineNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
-      ]
+  genValid = ContentLineName . CI.mk <$> genNonEmptyTextBy genNameChar
   shrinkValid = shrinkValidStructurally
 
 instance GenValid ParamName where
-  genValid =
-    oneof
-      [ ParamNameIANA . CI.mk <$> genNonEmptyTextBy genNameChar,
-        ParamNameX <$> genValid <*> (CI.mk <$> genNonEmptyTextBy genNameChar)
-      ]
+  genValid = ParamName . CI.mk <$> genNonEmptyTextBy genNameChar
   shrinkValid = shrinkValidStructurally
 
 genNonEmptyTextBy :: Gen Char -> Gen Text
@@ -59,18 +51,6 @@ genQSafeChar = genValid `suchThat` (validationIsValid . validateQSafeChar)
 
 genSafeChar :: Gen Char
 genSafeChar = genValid `suchThat` (validationIsValid . validateSafeChar)
-
-instance GenValid VendorId where
-  genValid = VendorId . CI.mk . T.pack <$> genAtLeastNOf 3 genVendorIdChar
-  shrinkValid (VendorId v) = filter isValid $ VendorId <$> shrinkValid v
-
-genAtLeastNOf :: Int -> Gen a -> Gen [a]
-genAtLeastNOf i g
-  | i <= 0 = pure []
-  | otherwise = (:) <$> g <*> genAtLeastNOf (pred i) g
-
-genVendorIdChar :: Gen Char
-genVendorIdChar = genValid `suchThat` (validationIsValid . validateVendorIdChar)
 
 renderContentLines :: [ContentLine] -> Text
 renderContentLines =

@@ -93,7 +93,7 @@ import ICal.PropertyType.URI
 --       </body>
 --     </html>
 -- @
-newtype AlternateTextRepresentation = AlternateTextRepresentation {unAlternateTextRepresentation :: Text}
+newtype AlternateTextRepresentation = AlternateTextRepresentation {unAlternateTextRepresentation :: URI}
   deriving stock (Show, Eq, Ord, Generic)
   deriving newtype (IsString)
 
@@ -103,8 +103,10 @@ instance NFData AlternateTextRepresentation
 
 instance IsParameter AlternateTextRepresentation where
   parameterName Proxy = "ALTREP"
-  parameterP = quotedParamP $ pure . AlternateTextRepresentation
-  parameterB = quotedParamB unAlternateTextRepresentation
+  parameterP = quotedParamP $ \t -> case parseURI t of
+    Nothing -> unfixableError $ InvalidURI t
+    Just uri -> pure $ AlternateTextRepresentation uri
+  parameterB = quotedParamB $ renderURI . unAlternateTextRepresentation
 
 -- | Common name
 --

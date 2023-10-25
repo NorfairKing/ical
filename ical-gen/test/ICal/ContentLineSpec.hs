@@ -26,10 +26,6 @@ import Text.Megaparsec
 
 spec :: Spec
 spec = do
-  describe "VendorId" $ do
-    genValidSpec @VendorId
-    it "roundtrips VendorIds" $ parserBuilderRoundtrip vendorIdP vendorIdB
-
   describe "ParamValue" $ do
     genValidSpec @ParamValue
     it "roundtrips ParamValues" $ parserBuilderRoundtrip paramValueP paramValueB
