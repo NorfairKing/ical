@@ -377,10 +377,19 @@ qSafeCharP :: P Char
 qSafeCharP = satisfy $ validationIsValid . validateQSafeChar
 
 validateQSafeChar :: Char -> Validation
-validateQSafeChar =
-  declare "The character is a quote-safe char" . \case
-    '"' -> False
-    c -> not (Char.isControl c)
+validateQSafeChar c = do
+  let o = ord c
+  declare "The character is a quote-safe character" $ case c of
+    _ | o < 0x09 -> True
+    '\t' -> True -- 0x09, part of WSP
+    _ | 0x09 < o && o < 0x20 -> True
+    ' ' -> True -- 0x20, part of WSP
+    _ | 0x21 == o -> True -- %x21
+    '"' -> False -- 0x22
+    _ | 0x23 <= o && o <= 0x7E -> True -- %x23-7E
+    '\DEL' -> False -- 0x7F
+    _ | o >= 0x80 -> True -- NON-US-ASCII
+    _ -> False
 
 -- SAFE-CHAR     = WSP / %x21 / %x23-2B / %x2D-39 / %x3C-7E
 --               / NON-US-ASCII
@@ -389,13 +398,24 @@ safeCharP :: P Char
 safeCharP = satisfy $ validationIsValid . validateSafeChar
 
 validateSafeChar :: Char -> Validation
-validateSafeChar =
-  declare "The character is a safe character" . \case
-    '"' -> False
-    ';' -> False
-    ':' -> False
-    ',' -> False
-    c -> not (Char.isControl c)
+validateSafeChar c = do
+  let o = ord c
+  declare "The character is a safe character" $ case c of
+    _ | o < 0x09 -> True
+    '\t' -> True -- 0x09, part of WSP
+    _ | 0x09 < o && o < 0x20 -> True
+    ' ' -> True -- 0x20, part of WSP
+    _ | 0x21 == o -> True -- %x21
+    '"' -> False -- 0x22
+    _ | 0x23 <= o && o <= 0x2B -> True -- %x23-2B
+    ',' -> False -- 0x2C
+    _ | 0x2D <= o && o <= 0x39 -> True -- %x2D-39
+    ':' -> False -- 0x3A
+    ';' -> False -- 0x3B
+    _ | 0x3C <= o && o <= 0x7E -> True -- %x3C-7E
+    '\DEL' -> False -- 0x7F
+    _ | o >= 0x80 -> True -- NON-US-ASCII
+    _ -> False
 
 contentLineB :: ContentLine -> Text.Builder
 contentLineB ContentLine {..} =

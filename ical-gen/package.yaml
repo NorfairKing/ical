@@ -82,6 +82,7 @@ tests:
     - dlist
     - genvalidity
     - genvalidity-sydtest
+    - genvalidity-text
     - ical
     - ical-gen
     - megaparsec

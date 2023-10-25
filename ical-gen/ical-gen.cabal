@@ -164,6 +164,7 @@ test-suite ical-test
     , dlist
     , genvalidity
     , genvalidity-sydtest
+    , genvalidity-text
     , ical
     , ical-gen
     , megaparsec

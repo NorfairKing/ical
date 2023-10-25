@@ -26,8 +26,8 @@ mkDerivation {
   ];
   testHaskellDepends = [
     base bytestring containers dlist genvalidity genvalidity-sydtest
-    ical megaparsec network-uri path path-io pretty-show QuickCheck
-    sydtest text time validity-network-uri
+    genvalidity-text ical megaparsec network-uri path path-io
+    pretty-show QuickCheck sydtest text time validity-network-uri
   ];
   testToolDepends = [ sydtest-discover ];
   benchmarkHaskellDepends = [

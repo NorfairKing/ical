@@ -389,32 +389,40 @@ typedPropertyTypeB =
 
 -- | Escape 'Text'
 --
--- FIXME this could probably go a LOT faster
 -- @
 -- ; \\ encodes \, \N or \n encodes newline
 -- ; \; encodes ;, \, encodes ,
 -- @
 escapeText :: Text -> Text
-escapeText =
-  T.replace "\n" "\\n"
-    . T.replace "," "\\,"
-    . T.replace ";" "\\;"
-    . T.replace "\\" "\\\\"
+escapeText = T.concatMap go
+  where
+    -- FIXME this could probably go a LOT faster but we need to benchmark it
+    go = \case
+      '\n' -> "\\n"
+      ',' -> "\\,"
+      ';' -> "\\;"
+      '\\' -> "\\\\"
+      c -> T.singleton c
 
 -- | Un-Escape 'Text'
 --
--- FIXME this could probably go a LOT faster
 -- @
 -- ; \\ encodes \, \N or \n encodes newline
 -- ; \; encodes ;, \, encodes ,
 -- @
 unEscapeText :: Text -> Text
-unEscapeText =
-  T.replace "\\\\" "\\"
-    . T.replace "\\," ","
-    . T.replace "\\;" ";"
-    . T.replace "\\n" "\n"
-    . T.replace "\\N" "\n"
+unEscapeText = T.pack . go . T.unpack
+  where
+    -- FIXME this could probably go a LOT faster
+
+    go = \case
+      [] -> []
+      '\\' : '\\' : rest -> '\\' : go rest
+      '\\' : ',' : rest -> ',' : go rest
+      '\\' : ';' : rest -> ';' : go rest
+      '\\' : 'n' : rest -> '\n' : go rest
+      '\\' : 'N' : rest -> '\n' : go rest
+      c : rest -> c : go rest
 
 validateImpreciseUTCTime :: Time.UTCTime -> Validation
 validateImpreciseUTCTime = validateImpreciseLocalTime . Time.utcToLocalTime Time.utc
