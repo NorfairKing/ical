@@ -334,7 +334,7 @@ propertyTypeListP clv =
     then pure []
     else
       let clvs = do
-            raw <- T.splitOn "," (contentLineValueRaw clv)
+            raw <- splitOnCommas (contentLineValueRaw clv)
             pure (clv {contentLineValueRaw = raw})
        in mapM typedPropertyTypeP clvs
 
@@ -347,6 +347,18 @@ propertyTypeListB = \case
           T.intercalate "," $
             contentLineValueRaw clv : map (contentLineValueRaw . propertyTypeB) pts
      in clv {contentLineValueRaw = raw}
+
+-- Split on commas, but not escaped commas.
+splitOnCommas :: Text -> [Text]
+splitOnCommas = map T.pack . go [] . T.unpack
+  where
+    go :: String -> String -> [String]
+    go acc = \case
+      [] -> if null acc then [] else [reverse acc]
+      '\\' : '\\' : rest -> go ('\\' : '\\' : acc) rest
+      '\\' : ',' : rest -> go (',' : '\\' : acc) rest
+      ',' : rest -> reverse acc : go [] rest
+      c : rest -> go (c : acc) rest
 
 propertyTypeSetP ::
   (Ord propertyType, IsPropertyType propertyType) =>

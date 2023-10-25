@@ -70,7 +70,7 @@ instance NFData URI
 
 instance IsString URI where
   fromString s = case parseURI (fromString s) of
-    Nothing -> error "unparseable calendar address"
+    Nothing -> error $ "unparseable URI in literal string: " <> s
     Just ca -> ca
 
 instance IsPropertyType URI where

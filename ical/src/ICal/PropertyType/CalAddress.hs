@@ -59,7 +59,7 @@ instance NFData CalAddress
 
 instance IsString CalAddress where
   fromString s = case parseCalAddress (fromString s) of
-    Nothing -> error "unparseable calendar address"
+    Nothing -> error $ "unparseable calendar address in literal string: " <> s
     Just ca -> ca
 
 instance IsPropertyType CalAddress where

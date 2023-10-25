@@ -938,10 +938,18 @@ spec = do
     propertyExampleSpec
       "CONTACT:Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
       (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
+    -- WARNING: DEVIATION FROM THE SPEC
+    -- This example from the spec makes no sense.
+    -- On the one hand there is an escaped comma in the parameter value of ALTREP.
+    -- This is allowed and should not be unescaped in such a situation.
+    -- HOWEVER, if we don't unescape it then the result is not a valid URI.
+    -- There are no errata about this so I assume that this is an unfound
+    -- mistake in the spec and the comma after Industries, should not be
+    -- escaped.
     propertyExampleSpec
-      "CONTACT;ALTREP=\"ldap://example.com:6666/o=ABC%20Industries\\,c=US???(cn=Jim%20Dolittle)\":Jim Dolittle\\, ABC Industries\\,+1-919-555-1234"
-      ( (makeContact "Jim Dolittle, ABC Industries,+1-919-555-1234")
-          { contactAlternateTextRepresentation = Just (AlternateTextRepresentation "ldap://example.com:6666/o=ABC%20Industries\\,c=US???(cn=Jim%20Dolittle)")
+      "CONTACT;ALTREP=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
+      ( (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
+          { contactAlternateTextRepresentation = Just (AlternateTextRepresentation "ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)")
           }
       )
     propertyExampleSpec
@@ -960,6 +968,7 @@ spec = do
   describe "ExceptionDateTimes" $ do
     genValidSpec @ExceptionDateTimes
     propertySpec @ExceptionDateTimes
+
     -- From the spec:
     -- @
     -- Example:  The following is an example of this property:
