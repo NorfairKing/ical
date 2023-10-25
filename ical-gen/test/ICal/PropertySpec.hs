@@ -582,10 +582,102 @@ spec = do
           commentLanguage = Nothing
         }
 
+  describe "FreeBusyIntervals" $ do
+    genValidSpec @FreeBusyIntervals
+    propertySpec @FreeBusyIntervals
+
+    -- @
+    -- Example:  The following are some examples of this property:
+    --
+    --     FREEBUSY;FBTYPE=BUSY-UNAVAILABLE:19970308T160000Z/PT8H30M
+    --
+    --     FREEBUSY;FBTYPE=FREE:19970308T160000Z/PT3H,19970308T200000Z/PT1H
+    --
+    --     FREEBUSY;FBTYPE=FREE:19970308T160000Z/PT3H,19970308T200000Z/PT1H
+    --      ,19970308T230000Z/19970309T000000Z
+    -- @
+    propertyExampleSpec
+      "FREEBUSY;FBTYPE=BUSY-UNAVAILABLE:19970308T160000Z/PT8H30M"
+      ( ( makeFreeBusyIntervals
+            [ PeriodStartDuration
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 16 00 00)))
+                ( DurationTime
+                    DurTime
+                      { durTimeSign = Positive,
+                        durTimeHour = 8,
+                        durTimeMinute = 30,
+                        durTimeSecond = 0
+                      }
+                )
+            ]
+        )
+          { freeBusyIntervalsType = FreeBusyTimeTypeBusyUnavailable
+          }
+      )
+    propertyExampleSpec
+      "FREEBUSY;FBTYPE=FREE:19970308T160000Z/PT3H,19970308T200000Z/PT1H"
+      ( ( makeFreeBusyIntervals
+            [ PeriodStartDuration
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 16 00 00)))
+                ( DurationTime
+                    DurTime
+                      { durTimeSign = Positive,
+                        durTimeHour = 3,
+                        durTimeMinute = 0,
+                        durTimeSecond = 0
+                      }
+                ),
+              PeriodStartDuration
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 20 00 00)))
+                ( DurationTime
+                    DurTime
+                      { durTimeSign = Positive,
+                        durTimeHour = 1,
+                        durTimeMinute = 0,
+                        durTimeSecond = 0
+                      }
+                )
+            ]
+        )
+          { freeBusyIntervalsType = FreeBusyTimeTypeFree
+          }
+      )
+    propertyExampleSpec
+      "FREEBUSY;FBTYPE=FREE:19970308T160000Z/PT3H,19970308T200000Z/PT1H,19970308T230000Z/19970309T000000Z"
+      ( ( makeFreeBusyIntervals
+            [ PeriodStartDuration
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 16 00 00)))
+                ( DurationTime
+                    DurTime
+                      { durTimeSign = Positive,
+                        durTimeHour = 3,
+                        durTimeMinute = 0,
+                        durTimeSecond = 0
+                      }
+                ),
+              PeriodStartDuration
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 20 00 00)))
+                ( DurationTime
+                    DurTime
+                      { durTimeSign = Positive,
+                        durTimeHour = 1,
+                        durTimeMinute = 0,
+                        durTimeSecond = 0
+                      }
+                ),
+              PeriodStartEnd
+                (UTCTime (fromGregorian 1997 03 08) (timeOfDayToTime (TimeOfDay 23 00 00)))
+                (UTCTime (fromGregorian 1997 03 09) (timeOfDayToTime (TimeOfDay 00 00 00)))
+            ]
+        )
+          { freeBusyIntervalsType = FreeBusyTimeTypeFree
+          }
+      )
+
   describe "Transparency" $ do
     genValidSpec @Transparency
     propertySpec @Transparency
-    -- From the spec:
+
     -- @
     -- Example:  The following is an example of this property for an event
     --    that is transparent or does not block on free/busy time searches:

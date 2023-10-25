@@ -90,13 +90,13 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.1.10. Resources
          - [X] 3.8.1.11. Status
          - [X] 3.8.1.12. Summary
-       - [ ] 3.8.2.  Date and Time Component Properties
+       - [X] 3.8.2.  Date and Time Component Properties
          - [X] 3.8.2.1.  Date-Time Completed
          - [X] 3.8.2.2.  Date-Time End
          - [X] 3.8.2.3.  Date-Time Due
          - [X] 3.8.2.4.  Date-Time Start
          - [X] 3.8.2.5.  Duration
-         - [ ] 3.8.2.6.  Free/Busy Time
+         - [X] 3.8.2.6.  Free/Busy Time
          - [X] 3.8.2.7.  Time Transparency
        - [X] 3.8.3.  Time Zone Component Properties
          - [X] 3.8.3.1.  Time Zone Identifier
