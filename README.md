@@ -76,7 +76,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.7.2.  Method
        - [X] 3.7.3.  Product Identifier
        - [X] 3.7.4.  Version
-     - [ ] 3.8.  Component Properties
+     - [X] 3.8.  Component Properties
        - [X] 3.8.1.  Descriptive Component Properties
          - [X] 3.8.1.1.  Attachment
          - [X] 3.8.1.2.  Categories
@@ -125,10 +125,10 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.7.2.  Date-Time Stamp
          - [X] 3.8.7.3.  Last Modified
          - [X] 3.8.7.4.  Sequence Number
-       - [ ] 3.8.8.  Miscellaneous Component Properties
-         - [ ] 3.8.8.1.  IANA Properties
-         - [ ] 3.8.8.2.  Non-Standard Properties
-         - [ ] 3.8.8.3.  Request Status
+       - [X] 3.8.8.  Miscellaneous Component Properties
+         - [X] 3.8.8.1.  IANA Properties
+         - [X] 3.8.8.2.  Non-Standard Properties
+         - [X] 3.8.8.3.  Request Status
    - [X] 4.  iCalendar Object Examples
    - [X] 5.  Recommended Practices
    - [X] 6.  Internationalization Considerations

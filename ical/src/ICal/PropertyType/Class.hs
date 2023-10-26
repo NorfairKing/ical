@@ -30,6 +30,7 @@ module ICal.PropertyType.Class
     proxyOf,
     escapeText,
     unEscapeText,
+    splitOnCommas,
 
     -- * Validation Helpers
     validateImpreciseLocalTime,
@@ -354,7 +355,7 @@ splitOnCommas = map T.pack . go [] . T.unpack
   where
     go :: String -> String -> [String]
     go acc = \case
-      [] -> if null acc then [] else [reverse acc]
+      [] -> [reverse acc]
       '\\' : '\\' : rest -> go ('\\' : '\\' : acc) rest
       '\\' : ',' : rest -> go (',' : '\\' : acc) rest
       ',' : rest -> reverse acc : go [] rest

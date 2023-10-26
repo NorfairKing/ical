@@ -6,13 +6,16 @@
 
 module ICal.PropertySpec where
 
+import Data.GenValidity.Text
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Data.Time
 import ICal.Parameter
 import ICal.Property
 import ICal.Property.Gen
 import ICal.PropertyType
 import ICal.PropertyType.Duration.Gen ()
+import Test.QuickCheck (forAll, oneof)
 import Test.Syd
 import Test.Syd.Validity hiding (Location)
 
@@ -281,6 +284,7 @@ spec = do
   describe "Organizer" $ do
     genValidSpec @Organizer
     propertySpec @Organizer
+
     -- @
     -- Example:  The following is an example of this property:
     --
@@ -477,7 +481,7 @@ spec = do
   describe "Duration" $ do
     genValidSpec @Duration
     propertySpec @Duration
-    -- From the spec:
+
     -- @
     -- Example:  The following is an example of this property that specifies
     --    an interval of time of one hour and zero minutes and zero seconds:
@@ -1166,6 +1170,7 @@ spec = do
   describe "SequenceNumber" $ do
     genValidSpec @SequenceNumber
     propertySpec @SequenceNumber
+
     -- @
     -- Example:  The following is an example of this property for a calendar
     --    component that was just created by the "Organizer":
@@ -1181,9 +1186,52 @@ spec = do
     propertyExampleSpec "SEQUENCE:0" (SequenceNumber 0)
     propertyExampleSpec "SEQUENCE:2" (SequenceNumber 2)
 
+  describe "RequestStatus" $ do
+    genValidSpec @RequestStatus
+    propertySpec @RequestStatus
+
+    describe "splitOnSemicolons" $ do
+      it "can split two empty strings" $
+        splitOnSemicolons ";" `shouldBe` ["", ""]
+      it "can split three empty strings" $
+        splitOnSemicolons ";;" `shouldBe` ["", "", ""]
+      it "roundtrips with intercalate" $
+        forAll (genTextBy (oneof [pure ';', genValid])) $ \t ->
+          T.intercalate ";" (splitOnSemicolons t) `shouldBe` t
+
+    -- @
+    --     REQUEST-STATUS:2.0;Success
+    --
+    --     REQUEST-STATUS:3.1;Invalid property value;DTSTART:96-Apr-01
+    --
+    --     REQUEST-STATUS:2.8; Success\, repeating event ignored. Scheduled
+    --      as a single event.;RRULE:FREQ=WEEKLY\;INTERVAL=2
+    --
+    --     REQUEST-STATUS:4.1;Event conflict.  Date-time is busy.
+    --
+    --     REQUEST-STATUS:3.7;Invalid calendar user;ATTENDEE:
+    --      mailto:jsmith@example.com
+    -- @
+    propertyExampleSpec
+      "REQUEST-STATUS:2.0;Success"
+      (makeRequestStatus "2.0" "Success" [])
+    propertyExampleSpec
+      "REQUEST-STATUS:3.1;Invalid property value;DTSTART:96-Apr-01"
+      (makeRequestStatus "3.1" "Invalid property value" ["DTSTART:96-Apr-01"])
+    propertyExampleSpec
+      "REQUEST-STATUS:2.8; Success\\, repeating event ignored. Scheduled as a single event.;RRULE:FREQ=WEEKLY\\;INTERVAL=2"
+      (makeRequestStatus "2.8" " Success, repeating event ignored. Scheduled as a single event." ["RRULE:FREQ=WEEKLY;INTERVAL=2"])
+    propertyExampleSpec
+      "REQUEST-STATUS:4.1;Event conflict.  Date-time is busy."
+      (makeRequestStatus "4.1" "Event conflict.  Date-time is busy." [])
+    propertyExampleSpec
+      "REQUEST-STATUS:3.7;Invalid calendar user;ATTENDEE:mailto:jsmith@example.com"
+      (makeRequestStatus "3.7" "Invalid calendar user" ["ATTENDEE:mailto:jsmith@example.com"])
+
   describe "Image" $ do
     genValidSpec @Image
     propertySpec @Image
+
     -- @
     -- Example:  The following are examples of this property:
     --

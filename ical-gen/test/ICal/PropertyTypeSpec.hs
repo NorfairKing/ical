@@ -8,6 +8,7 @@ module ICal.PropertyTypeSpec where
 import Data.GenValidity.Text
 import Data.Int
 import Data.Text (Text)
+import qualified Data.Text as T
 import ICal.ContentLine
 import ICal.PropertyType.Class
 import ICal.PropertyType.Gen
@@ -17,6 +18,15 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "splitOnCommas" $ do
+    it "can split two empty strings" $
+      splitOnCommas "," `shouldBe` ["", ""]
+    it "can split three empty strings" $
+      splitOnCommas ",," `shouldBe` ["", "", ""]
+    it "roundtrips with intercalate" $
+      forAll (genTextBy (oneof [pure ',', genValid])) $ \t ->
+        T.intercalate "," (splitOnCommas t) `shouldBe` t
+
   describe "Integer" $ do
     propertyTypeSpec @Int32
     propertyTypeExampleSpec
