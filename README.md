@@ -120,11 +120,11 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.6.1.  Action
          - [X] 3.8.6.2.  Repeat Count
          - [X] 3.8.6.3.  Trigger
-       - [ ] 3.8.7.  Change Management Component Properties
+       - [X] 3.8.7.  Change Management Component Properties
          - [X] 3.8.7.1.  Date-Time Created
          - [X] 3.8.7.2.  Date-Time Stamp
          - [X] 3.8.7.3.  Last Modified
-         - [ ] 3.8.7.4.  Sequence Number
+         - [X] 3.8.7.4.  Sequence Number
        - [ ] 3.8.8.  Miscellaneous Component Properties
          - [ ] 3.8.8.1.  IANA Properties
          - [ ] 3.8.8.2.  Non-Standard Properties

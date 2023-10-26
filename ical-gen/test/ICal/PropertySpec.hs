@@ -1163,6 +1163,24 @@ spec = do
       "TRIGGER;VALUE=DATE-TIME:19980101T050000Z"
       (TriggerDateTime (UTCTime (fromGregorian 1998 01 01) (timeOfDayToTime (TimeOfDay 05 00 00))))
 
+  describe "SequenceNumber" $ do
+    genValidSpec @SequenceNumber
+    propertySpec @SequenceNumber
+    -- @
+    -- Example:  The following is an example of this property for a calendar
+    --    component that was just created by the "Organizer":
+    --
+    --     SEQUENCE:0
+    --
+    --    The following is an example of this property for a calendar
+    --    component that has been revised two different times by the
+    --    "Organizer":
+    --
+    --     SEQUENCE:2
+    -- @
+    propertyExampleSpec "SEQUENCE:0" (SequenceNumber 0)
+    propertyExampleSpec "SEQUENCE:2" (SequenceNumber 2)
+
   describe "Image" $ do
     genValidSpec @Image
     propertySpec @Image

@@ -229,6 +229,7 @@ data Event = Event
     -- @
     -- seq / status / summary / transp /
     -- @
+    eventSequenceNumber :: !SequenceNumber,
     eventStatus :: !(Maybe Status),
     eventSummary :: !(Maybe Summary),
     eventTransparency :: !Transparency,
@@ -321,6 +322,7 @@ vEventP Component {..} = do
   eventLocation <- optionalPropertyP componentProperties
   eventOrganizer <- optionalPropertyP componentProperties
   eventPriority <- optionalPropertyP componentProperties
+  eventSequenceNumber <- optionalPropertyWithDefaultP defaultSequenceNumber componentProperties
   eventStatus <- optionalPropertyP componentProperties
   eventSummary <- optionalPropertyP componentProperties
   eventTransparency <- optionalPropertyWithDefaultP defaultTransparency componentProperties
@@ -368,6 +370,7 @@ vEventB Event {..} =
             optionalPropertyB eventLocation,
             optionalPropertyB eventOrganizer,
             optionalPropertyB eventPriority,
+            optionalPropertyWithDefaultB defaultSequenceNumber eventSequenceNumber,
             optionalPropertyB eventStatus,
             optionalPropertyB eventSummary,
             optionalPropertyWithDefaultB defaultTransparency eventTransparency,
@@ -409,6 +412,7 @@ makeEvent uid dateTimeStamp =
       eventLocation = Nothing,
       eventOrganizer = Nothing,
       eventPriority = Nothing,
+      eventSequenceNumber = defaultSequenceNumber,
       eventStatus = Nothing,
       eventSummary = Nothing,
       eventTransparency = defaultTransparency,

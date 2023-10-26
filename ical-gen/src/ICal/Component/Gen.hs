@@ -88,6 +88,7 @@ instance GenValid Event where
     eventLocation <- genValid
     eventOrganizer <- genValid
     eventPriority <- genValid
+    eventSequenceNumber <- genValid
     eventStatus <- genValid
     eventSummary <- genValid
     eventTransparency <- genValid
