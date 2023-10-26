@@ -104,12 +104,12 @@ It's already being used in production at https://smos.online and https://social-
          - [X] 3.8.3.3.  Time Zone Offset From
          - [X] 3.8.3.4.  Time Zone Offset To
          - [X] 3.8.3.5.  Time Zone URL
-       - [ ] 3.8.4.  Relationship Component Properties
+       - [X] 3.8.4.  Relationship Component Properties
          - [X] 3.8.4.1.  Attendee
          - [X] 3.8.4.2.  Contact
          - [X] 3.8.4.3.  Organizer
          - [X] 3.8.4.4.  Recurrence ID
-         - [ ] 3.8.4.5.  Related To
+         - [X] 3.8.4.5.  Related To
          - [X] 3.8.4.6.  Uniform Resource Locator
          - [X] 3.8.4.7.  Unique Identifier
        - [X] 3.8.5.  Recurrence Component Properties

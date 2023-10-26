@@ -511,11 +511,27 @@ spec = do
               }
           )
       )
+  describe "RelatedTo" $ do
+    genValidSpec @RelatedTo
+    propertySpec @RelatedTo
+
+    -- @
+    --
+    --     RELATED-TO:jsmith.part7.19960817T083000.xyzMail@example.com
+    --
+    --     RELATED-TO:19960401-080045-4000F192713-0052@example.com
+    -- @
+    propertyExampleSpec
+      "RELATED-TO:jsmith.part7.19960817T083000.xyzMail@example.com"
+      (makeRelatedTo "jsmith.part7.19960817T083000.xyzMail@example.com")
+    propertyExampleSpec
+      "RELATED-TO:19960401-080045-4000F192713-0052@example.com"
+      (makeRelatedTo "19960401-080045-4000F192713-0052@example.com")
 
   describe "URL" $ do
     genValidSpec @URL
     propertySpec @URL
-    -- From the spec:
+
     -- @
     -- Example:  The following is an example of this property:
     --

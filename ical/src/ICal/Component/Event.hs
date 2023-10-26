@@ -270,6 +270,7 @@ data Event = Event
     eventComments :: !(Set Comment),
     eventContacts :: !(Set Contact),
     eventExceptionDateTimes :: !(Set ExceptionDateTimes),
+    eventRelatedTos :: !(Set RelatedTo),
     eventResources :: !(Set Resources),
     eventRecurrenceDateTimes :: !(Set RecurrenceDateTimes),
     -- RFC 7986:
@@ -343,6 +344,7 @@ vEventP Component {..} = do
   eventComments <- setOfPropertiesP componentProperties
   eventContacts <- setOfPropertiesP componentProperties
   eventExceptionDateTimes <- setOfPropertiesP componentProperties
+  eventRelatedTos <- setOfPropertiesP componentProperties
   eventResources <- setOfPropertiesP componentProperties
   eventRecurrenceDateTimes <- setOfPropertiesP componentProperties
   eventImages <- listOfPropertiesP componentProperties
@@ -383,6 +385,7 @@ vEventB Event {..} =
             setOfPropertiesB eventComments,
             setOfPropertiesB eventContacts,
             setOfPropertiesB eventExceptionDateTimes,
+            setOfPropertiesB eventRelatedTos,
             setOfPropertiesB eventResources,
             setOfPropertiesB eventRecurrenceDateTimes,
             listOfPropertiesB eventImages
@@ -419,6 +422,7 @@ makeEvent uid dateTimeStamp =
       eventComments = S.empty,
       eventContacts = S.empty,
       eventExceptionDateTimes = S.empty,
+      eventRelatedTos = S.empty,
       eventResources = S.empty,
       eventRecurrenceDateTimes = S.empty,
       eventImages = [],

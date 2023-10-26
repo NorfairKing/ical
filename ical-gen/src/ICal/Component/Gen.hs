@@ -112,6 +112,7 @@ instance GenValid Event where
     eventComments <- genValid
     eventContacts <- genValid
     eventExceptionDateTimes <- genValid
+    eventRelatedTos <- genValid
     eventResources <- genValid
     eventRecurrenceDateTimes <- genValid
     eventImages <- genValid
