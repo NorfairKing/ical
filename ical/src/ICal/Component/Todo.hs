@@ -14,14 +14,19 @@ module ICal.Component.Todo
 where
 
 import Control.DeepSeq
+import Control.Monad
 import qualified Data.Map.Strict as M
 import Data.Proxy
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
+import ICal.Conformance
 import ICal.Property
+import ICal.PropertyType
 
 -- | To-Do Component
 --
@@ -161,7 +166,7 @@ data Todo = Todo
     --                summary / url /
     -- @
     todoSummary :: !(Maybe Summary),
-    todoURL :: !(Maybe URL)
+    todoURL :: !(Maybe URL),
     -- @
     --                ;
     --                ; The following is OPTIONAL,
@@ -169,6 +174,7 @@ data Todo = Todo
     --                ;
     --                rrule /
     -- @
+    todoRecurrenceRules :: !(Set RecurrenceRule)
     -- @
     --                ;
     --                ; Either 'due' or 'duration' MAY appear in
@@ -193,9 +199,10 @@ data Todo = Todo
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Todo where
-  validate t@Todo {} =
+  validate t@Todo {..} =
     mconcat
-      [ genericValidate t
+      [ genericValidate t,
+        validateMDateTimeStartRRule todoDateTimeStart todoRecurrenceRules
       ]
 
 instance NFData Todo
@@ -226,6 +233,11 @@ vTodoP Component {..} = do
   todoSummary <- optionalPropertyP componentProperties
   todoURL <- optionalPropertyP componentProperties
 
+  todoRecurrenceRules <-
+    S.fromList
+      <$> (listOfPropertiesP componentProperties >>= traverse (fixUntil todoDateTimeStart))
+  when (S.size todoRecurrenceRules > 1) $ emitWarning $ WarnMultipleRecurrenceRules todoRecurrenceRules
+
   pure Todo {..}
 
 vTodoB :: Todo -> Component
@@ -250,7 +262,8 @@ vTodoB Todo {..} =
             optionalPropertyWithDefaultB defaultSequenceNumber todoSequenceNumber,
             optionalPropertyB todoStatus,
             optionalPropertyB todoSummary,
-            optionalPropertyB todoURL
+            optionalPropertyB todoURL,
+            setOfPropertiesB todoRecurrenceRules
           ],
       componentSubcomponents = mempty
     }
@@ -274,5 +287,6 @@ makeTodo uid dateTimeStamp =
       todoSequenceNumber = defaultSequenceNumber,
       todoStatus = Nothing,
       todoSummary = Nothing,
-      todoURL = Nothing
+      todoURL = Nothing,
+      todoRecurrenceRules = S.empty
     }

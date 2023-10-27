@@ -142,6 +142,10 @@ instance GenValid Todo where
     todoSummary <- genValid
     todoURL <- genValid
 
+    todoRecurrenceRules <- case todoDateTimeStart of
+      Nothing -> pure S.empty
+      Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
+
     pure Todo {..}
 
 instance GenValid Alarm where
