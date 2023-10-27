@@ -152,7 +152,8 @@ data Todo = Todo
     -- @
     todoDateTimeStart :: !(Maybe DateTimeStart),
     todoGeographicPosition :: !(Maybe GeographicPosition),
-    todoLocation :: !(Maybe LastModified),
+    todoLastModified :: !(Maybe LastModified),
+    todoLocation :: !(Maybe Location),
     todoOrganizer :: !(Maybe Organizer),
     todoPercentComplete :: !(Maybe PercentComplete),
     -- @
@@ -234,6 +235,7 @@ vTodoP Component {..} = do
   todoDescription <- optionalPropertyP componentProperties
   todoDateTimeStart <- optionalPropertyP componentProperties
   todoGeographicPosition <- optionalPropertyP componentProperties
+  todoLastModified <- optionalPropertyP componentProperties
   todoLocation <- optionalPropertyP componentProperties
   todoOrganizer <- optionalPropertyP componentProperties
   todoPercentComplete <- optionalPropertyP componentProperties
@@ -284,6 +286,7 @@ vTodoB Todo {..} =
             optionalPropertyB todoDescription,
             optionalPropertyB todoDateTimeStart,
             optionalPropertyB todoGeographicPosition,
+            optionalPropertyB todoLastModified,
             optionalPropertyB todoLocation,
             optionalPropertyB todoOrganizer,
             optionalPropertyB todoPercentComplete,
@@ -323,6 +326,7 @@ makeTodo uid dateTimeStamp =
       todoDescription = Nothing,
       todoDateTimeStart = Nothing,
       todoGeographicPosition = Nothing,
+      todoLastModified = Nothing,
       todoLocation = Nothing,
       todoOrganizer = Nothing,
       todoPercentComplete = Nothing,

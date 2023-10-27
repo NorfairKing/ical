@@ -11,6 +11,7 @@ module ICal.Component
   ( module ICal.Component,
     module ICal.Component.Class,
     module ICal.Component.Event,
+    module ICal.Component.Journal,
     module ICal.Component.Todo,
     module ICal.Component.Alarm,
     module ICal.Component.TimeZone,
@@ -30,6 +31,7 @@ import GHC.Generics (Generic)
 import ICal.Component.Alarm
 import ICal.Component.Class
 import ICal.Component.Event
+import ICal.Component.Journal
 import ICal.Component.TimeZone
 import ICal.Component.Todo
 import ICal.Conformance

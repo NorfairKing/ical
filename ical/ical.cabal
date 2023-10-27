@@ -15,6 +15,7 @@ library
       ICal.Component.Alarm
       ICal.Component.Class
       ICal.Component.Event
+      ICal.Component.Journal
       ICal.Component.TimeZone
       ICal.Component.Todo
       ICal.Conformance

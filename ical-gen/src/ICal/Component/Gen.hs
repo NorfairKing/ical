@@ -132,6 +132,7 @@ instance GenValid Todo where
     todoDescription <- genValid
     todoDateTimeStart <- genValid
     todoGeographicPosition <- genValid
+    todoLastModified <- genValid
     todoLocation <- genValid
     todoOrganizer <- genValid
     todoPercentComplete <- genValid
@@ -160,6 +161,39 @@ instance GenValid Todo where
     todoRecurrenceDateTimes <- genValid
 
     pure Todo {..}
+
+instance GenValid Journal where
+  genValid = do
+    journalDateTimeStamp <- genValid
+    journalUID <- genValid
+
+    journalClassification <- genValid
+    journalCreated <- genValid
+    journalDateTimeStart <- genValid
+    journalLastModified <- genValid
+    journalOrganizer <- genValid
+    journalRecurrenceIdentifier <- genValid
+    journalSequenceNumber <- genValid
+    journalStatus <- genValid
+    journalSummary <- genValid
+    journalURL <- genValid
+
+    journalRecurrenceRules <- case journalDateTimeStart of
+      Nothing -> pure S.empty
+      Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
+
+    journalAttachments <- genValid
+    journalAttendees <- genValid
+    journalCategories <- genValid
+    journalComments <- genValid
+    journalContacts <- genValid
+    journalDescriptions <- genValid
+    journalExceptionDateTimes <- genValid
+    journalRelatedTos <- genValid
+    journalRecurrenceDateTimes <- genValid
+    journalRequestStatusses <- genValid
+
+    pure Journal {..}
 
 instance GenValid Alarm where
   genValid = do

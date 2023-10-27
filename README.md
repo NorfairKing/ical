@@ -4,7 +4,8 @@ An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545) and [RFC7986
 
 ## Status
 
-This library does not cover even close to all parts of the spec yet, but it is good at the parts that it does cover already.
+This library now covers all of RFC 5545 and some of RFC 7986.
+
 It's already being used in production at https://smos.online and https://social-dance.today.
 
 ## Goals
@@ -67,7 +68,7 @@ It's already being used in production at https://smos.online and https://social-
      - [X] 3.6.  Calendar Components
        - [X] 3.6.1.  Event Component
        - [X] 3.6.2.  To-Do Component
-       - [ ] 3.6.3.  Journal Component
+       - [X] 3.6.3.  Journal Component
        - [ ] 3.6.4.  Free/Busy Component
        - [X] 3.6.5.  Time Zone Component
        - [X] 3.6.6.  Alarm Component
