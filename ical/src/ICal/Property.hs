@@ -1282,6 +1282,12 @@ instance IsProperty Priority where
   propertyP = wrapPropertyTypeP $ Priority . (fromIntegral :: Int32 -> Word8) -- TODO unfixable error for out of range
   propertyB = propertyTypeB . (fromIntegral :: Word8 -> Int32) . unPriority
 
+-- @
+--     ;Default is zero (i.e., undefined).
+-- @
+defaultPriority :: Priority
+defaultPriority = Priority 0
+
 -- | Resources
 --
 -- === [section 3.8.1.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.10)

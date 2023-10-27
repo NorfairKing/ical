@@ -130,17 +130,38 @@ data Todo = Todo
     --                dtstamp / uid /
     -- @
     todoDateTimeStamp :: DateTimeStamp,
-    todoUID :: UID
+    todoUID :: UID,
     -- @
     --                ;
     --                ; The following are OPTIONAL,
     --                ; but MUST NOT occur more than once.
     --                ;
     --                class / completed / created / description /
+    -- @
+    todoClassification :: !Classification,
+    todoCompleted :: !(Maybe DateTimeCompleted),
+    todoCreated :: !(Maybe Created),
+    todoDescription :: !(Maybe Description),
+    -- @
     --                dtstart / geo / last-mod / location / organizer /
+    -- @
+    todoDateTimeStart :: !(Maybe DateTimeStart),
+    todoGeographicPosition :: !(Maybe GeographicPosition),
+    todoLocation :: !(Maybe LastModified),
+    todoOrganizer :: !(Maybe Organizer),
+    todoPercentComplete :: !(Maybe PercentComplete),
+    -- @
     --                percent / priority / recurid / seq / status /
+    -- @
+    todoPriority :: !Priority,
+    todoRecurrenceIdentifier :: !(Maybe RecurrenceIdentifier),
+    todoSequenceNumber :: !SequenceNumber,
+    todoStatus :: !(Maybe Status),
+    -- @
     --                summary / url /
     -- @
+    todoSummary :: !(Maybe Summary),
+    todoURL :: !(Maybe URL)
     -- @
     --                ;
     --                ; The following is OPTIONAL,
@@ -188,6 +209,23 @@ vTodoP :: Component -> CP Todo
 vTodoP Component {..} = do
   todoDateTimeStamp <- requiredPropertyP componentProperties
   todoUID <- requiredPropertyP componentProperties
+
+  todoClassification <- optionalPropertyWithDefaultP defaultClassification componentProperties
+  todoCompleted <- optionalPropertyP componentProperties
+  todoCreated <- optionalPropertyP componentProperties
+  todoDescription <- optionalPropertyP componentProperties
+  todoDateTimeStart <- optionalPropertyP componentProperties
+  todoGeographicPosition <- optionalPropertyP componentProperties
+  todoLocation <- optionalPropertyP componentProperties
+  todoOrganizer <- optionalPropertyP componentProperties
+  todoPercentComplete <- optionalPropertyP componentProperties
+  todoPriority <- optionalPropertyWithDefaultP defaultPriority componentProperties
+  todoRecurrenceIdentifier <- optionalPropertyP componentProperties
+  todoSequenceNumber <- optionalPropertyWithDefaultP defaultSequenceNumber componentProperties
+  todoStatus <- optionalPropertyP componentProperties
+  todoSummary <- optionalPropertyP componentProperties
+  todoURL <- optionalPropertyP componentProperties
+
   pure Todo {..}
 
 vTodoB :: Todo -> Component
@@ -197,7 +235,22 @@ vTodoB Todo {..} =
         M.unionsWith
           (<>)
           [ requiredPropertyB todoDateTimeStamp,
-            requiredPropertyB todoUID
+            requiredPropertyB todoUID,
+            optionalPropertyWithDefaultB defaultClassification todoClassification,
+            optionalPropertyB todoCompleted,
+            optionalPropertyB todoCreated,
+            optionalPropertyB todoDescription,
+            optionalPropertyB todoDateTimeStart,
+            optionalPropertyB todoGeographicPosition,
+            optionalPropertyB todoLocation,
+            optionalPropertyB todoOrganizer,
+            optionalPropertyB todoPercentComplete,
+            optionalPropertyWithDefaultB defaultPriority todoPriority,
+            optionalPropertyB todoRecurrenceIdentifier,
+            optionalPropertyWithDefaultB defaultSequenceNumber todoSequenceNumber,
+            optionalPropertyB todoStatus,
+            optionalPropertyB todoSummary,
+            optionalPropertyB todoURL
           ],
       componentSubcomponents = mempty
     }
@@ -206,5 +259,20 @@ makeTodo :: UID -> DateTimeStamp -> Todo
 makeTodo uid dateTimeStamp =
   Todo
     { todoUID = uid,
-      todoDateTimeStamp = dateTimeStamp
+      todoDateTimeStamp = dateTimeStamp,
+      todoClassification = defaultClassification,
+      todoCompleted = Nothing,
+      todoCreated = Nothing,
+      todoDescription = Nothing,
+      todoDateTimeStart = Nothing,
+      todoGeographicPosition = Nothing,
+      todoLocation = Nothing,
+      todoOrganizer = Nothing,
+      todoPercentComplete = Nothing,
+      todoPriority = defaultPriority,
+      todoRecurrenceIdentifier = Nothing,
+      todoSequenceNumber = defaultSequenceNumber,
+      todoStatus = Nothing,
+      todoSummary = Nothing,
+      todoURL = Nothing
     }

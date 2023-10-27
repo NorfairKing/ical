@@ -125,6 +125,23 @@ instance GenValid Todo where
   genValid = do
     todoDateTimeStamp <- genValid
     todoUID <- genValid
+
+    todoClassification <- genValid
+    todoCompleted <- genValid
+    todoCreated <- genValid
+    todoDescription <- genValid
+    todoDateTimeStart <- genValid
+    todoGeographicPosition <- genValid
+    todoLocation <- genValid
+    todoOrganizer <- genValid
+    todoPercentComplete <- genValid
+    todoPriority <- genValid
+    todoRecurrenceIdentifier <- genValid
+    todoSequenceNumber <- genValid
+    todoStatus <- genValid
+    todoSummary <- genValid
+    todoURL <- genValid
+
     pure Todo {..}
 
 instance GenValid Alarm where

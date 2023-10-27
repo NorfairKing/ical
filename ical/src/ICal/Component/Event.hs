@@ -225,7 +225,7 @@ data Event = Event
     eventLastModified :: !(Maybe LastModified),
     eventLocation :: !(Maybe Location),
     eventOrganizer :: !(Maybe Organizer),
-    eventPriority :: !(Maybe Priority),
+    eventPriority :: !Priority,
     -- @
     -- seq / status / summary / transp /
     -- @
@@ -322,7 +322,7 @@ vEventP Component {..} = do
   eventLastModified <- optionalPropertyP componentProperties
   eventLocation <- optionalPropertyP componentProperties
   eventOrganizer <- optionalPropertyP componentProperties
-  eventPriority <- optionalPropertyP componentProperties
+  eventPriority <- optionalPropertyWithDefaultP defaultPriority componentProperties
   eventSequenceNumber <- optionalPropertyWithDefaultP defaultSequenceNumber componentProperties
   eventStatus <- optionalPropertyP componentProperties
   eventSummary <- optionalPropertyP componentProperties
@@ -371,7 +371,7 @@ vEventB Event {..} =
             optionalPropertyB eventLastModified,
             optionalPropertyB eventLocation,
             optionalPropertyB eventOrganizer,
-            optionalPropertyB eventPriority,
+            optionalPropertyWithDefaultB defaultPriority eventPriority,
             optionalPropertyWithDefaultB defaultSequenceNumber eventSequenceNumber,
             optionalPropertyB eventStatus,
             optionalPropertyB eventSummary,
@@ -414,7 +414,7 @@ makeEvent uid dateTimeStamp =
       eventLastModified = Nothing,
       eventLocation = Nothing,
       eventOrganizer = Nothing,
-      eventPriority = Nothing,
+      eventPriority = defaultPriority,
       eventSequenceNumber = defaultSequenceNumber,
       eventStatus = Nothing,
       eventSummary = Nothing,
