@@ -146,6 +146,8 @@ instance GenValid Todo where
       Nothing -> pure S.empty
       Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
 
+    todoDateTimeDueDuration <- genValid
+
     pure Todo {..}
 
 instance GenValid Alarm where

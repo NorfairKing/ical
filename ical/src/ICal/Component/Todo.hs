@@ -174,7 +174,7 @@ data Todo = Todo
     --                ;
     --                rrule /
     -- @
-    todoRecurrenceRules :: !(Set RecurrenceRule)
+    todoRecurrenceRules :: !(Set RecurrenceRule),
     -- @
     --                ;
     --                ; Either 'due' or 'duration' MAY appear in
@@ -186,6 +186,7 @@ data Todo = Todo
     --                ;
     --                due / duration /
     -- @
+    todoDateTimeDueDuration :: !(Maybe (Either DateTimeDue Duration))
     -- @
     --                ;
     --                ; The following are OPTIONAL,
@@ -238,6 +239,12 @@ vTodoP Component {..} = do
       <$> (listOfPropertiesP componentProperties >>= traverse (fixUntil todoDateTimeStart))
   when (S.size todoRecurrenceRules > 1) $ emitWarning $ WarnMultipleRecurrenceRules todoRecurrenceRules
 
+  mDue <- optionalPropertyP componentProperties
+  mDuration <- optionalPropertyP componentProperties
+  let todoDateTimeDueDuration = case (mDue, mDuration) of
+        (Nothing, Nothing) -> Nothing
+        (Nothing, Just d) -> Just (Right d)
+        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present. TODO emit a warning or fixable error
   pure Todo {..}
 
 vTodoB :: Todo -> Component
@@ -263,7 +270,11 @@ vTodoB Todo {..} =
             optionalPropertyB todoStatus,
             optionalPropertyB todoSummary,
             optionalPropertyB todoURL,
-            setOfPropertiesB todoRecurrenceRules
+            setOfPropertiesB todoRecurrenceRules,
+            case todoDateTimeDueDuration of
+              Nothing -> mempty
+              Just (Left due) -> requiredPropertyB due
+              Just (Right duration) -> requiredPropertyB duration
           ],
       componentSubcomponents = mempty
     }
@@ -288,5 +299,6 @@ makeTodo uid dateTimeStamp =
       todoStatus = Nothing,
       todoSummary = Nothing,
       todoURL = Nothing,
-      todoRecurrenceRules = S.empty
+      todoRecurrenceRules = S.empty,
+      todoDateTimeDueDuration = Nothing
     }
