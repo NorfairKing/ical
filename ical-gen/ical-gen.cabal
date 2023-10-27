@@ -131,6 +131,7 @@ test-suite ical-test
       ICal.Component.AlarmSpec
       ICal.Component.EventSpec
       ICal.Component.TimeZoneSpec
+      ICal.Component.TodoSpec
       ICal.ComponentSpec
       ICal.ContentLineSpec
       ICal.ParameterSpec

@@ -768,3 +768,7 @@ value:
     state-history:
     - state: TODO
       time: 2023-10-24 13:34:19
+  - header: 'Fixable error: Unparseable optional property'
+    state-history:
+    - state: TODO
+      time: 2023-10-27 07:19:59

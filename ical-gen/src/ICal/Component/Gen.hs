@@ -121,6 +121,46 @@ instance GenValid Event where
     eventAlarms <- genValid
     pure Event {..}
 
+instance GenValid Todo where
+  genValid = do
+    todoDateTimeStamp <- genValid
+    todoUID <- genValid
+
+    todoClassification <- genValid
+    todoCompleted <- genValid
+    todoCreated <- genValid
+    todoDescription <- genValid
+    todoDateTimeStart <- genValid
+    todoGeographicPosition <- genValid
+    todoLocation <- genValid
+    todoOrganizer <- genValid
+    todoPercentComplete <- genValid
+    todoPriority <- genValid
+    todoRecurrenceIdentifier <- genValid
+    todoSequenceNumber <- genValid
+    todoStatus <- genValid
+    todoSummary <- genValid
+    todoURL <- genValid
+
+    todoRecurrenceRules <- case todoDateTimeStart of
+      Nothing -> pure S.empty
+      Just dtstart -> genSetOf $ genValid >>= fixUntilCount dtstart
+
+    todoDateTimeDueDuration <- genValid
+
+    todoAttachments <- genValid
+    todoAttendees <- genValid
+    todoCategories <- genValid
+    todoComments <- genValid
+    todoContacts <- genValid
+    todoExceptionDateTimes <- genValid
+    todoRequestStatusses <- genValid
+    todoRelatedTos <- genValid
+    todoResources <- genValid
+    todoRecurrenceDateTimes <- genValid
+
+    pure Todo {..}
+
 instance GenValid Alarm where
   genValid = do
     alarmAction <- genValid

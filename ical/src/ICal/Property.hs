@@ -1282,6 +1282,12 @@ instance IsProperty Priority where
   propertyP = wrapPropertyTypeP $ Priority . (fromIntegral :: Int32 -> Word8) -- TODO unfixable error for out of range
   propertyB = propertyTypeB . (fromIntegral :: Word8 -> Int32) . unPriority
 
+-- @
+--     ;Default is zero (i.e., undefined).
+-- @
+defaultPriority :: Priority
+defaultPriority = Priority 0
+
 -- | Resources
 --
 -- === [section 3.8.1.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.10)
@@ -1434,6 +1440,10 @@ data Status
   = StatusTentative
   | StatusConfirmed
   | StatusCancelled
+  | StatusNeedsAction
+  | StatusInProgress
+  | StatusDraft
+  | StatusFinal
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity Status
@@ -1452,6 +1462,10 @@ parseStatus = \case
   "TENTATIVE" -> pure StatusTentative
   "CONFIRMED" -> pure StatusConfirmed
   "CANCELLED" -> pure StatusCancelled
+  "NEEDS-ACTION" -> pure StatusNeedsAction
+  "IN-PROGRESS" -> pure StatusInProgress
+  "DRAFT" -> pure StatusDraft
+  "FINAL" -> pure StatusFinal
   _ -> Nothing
 
 renderStatus :: Status -> Text
@@ -1459,6 +1473,12 @@ renderStatus = \case
   StatusTentative -> "TENTATIVE"
   StatusConfirmed -> "CONFIRMED"
   StatusCancelled -> "CANCELLED"
+  StatusNeedsAction -> "NEEDS-ACTION"
+  StatusInProgress -> "IN-PROGRESS"
+  StatusDraft -> "DRAFT"
+  StatusFinal -> "FINAL"
+
+-- TODO validation for the per-component-type allowed-statuses
 
 -- |
 --
