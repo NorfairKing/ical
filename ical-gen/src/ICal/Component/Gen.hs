@@ -148,6 +148,17 @@ instance GenValid Todo where
 
     todoDateTimeDueDuration <- genValid
 
+    todoAttachments <- genValid
+    todoAttendees <- genValid
+    todoCategories <- genValid
+    todoComments <- genValid
+    todoContacts <- genValid
+    todoExceptionDateTimes <- genValid
+    todoRequestStatusses <- genValid
+    todoRelatedTos <- genValid
+    todoResources <- genValid
+    todoRecurrenceDateTimes <- genValid
+
     pure Todo {..}
 
 instance GenValid Alarm where

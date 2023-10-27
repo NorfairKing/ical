@@ -186,7 +186,7 @@ data Todo = Todo
     --                ;
     --                due / duration /
     -- @
-    todoDateTimeDueDuration :: !(Maybe (Either DateTimeDue Duration))
+    todoDateTimeDueDuration :: !(Maybe (Either DateTimeDue Duration)),
     -- @
     --                ;
     --                ; The following are OPTIONAL,
@@ -196,6 +196,16 @@ data Todo = Todo
     --                exdate / rstatus / related / resources /
     --                rdate / x-prop / iana-prop
     -- @
+    todoAttachments :: !(Set Attachment),
+    todoAttendees :: !(Set Attendee),
+    todoCategories :: !(Set Categories),
+    todoComments :: !(Set Comment),
+    todoContacts :: !(Set Contact),
+    todoExceptionDateTimes :: !(Set ExceptionDateTimes),
+    todoRequestStatusses :: !(Set RequestStatus),
+    todoRelatedTos :: !(Set RelatedTo),
+    todoResources :: !(Set Resources),
+    todoRecurrenceDateTimes :: !(Set RecurrenceDateTimes)
   }
   deriving (Show, Eq, Ord, Generic)
 
@@ -244,7 +254,20 @@ vTodoP Component {..} = do
   let todoDateTimeDueDuration = case (mDue, mDuration) of
         (Nothing, Nothing) -> Nothing
         (Nothing, Just d) -> Just (Right d)
-        (Just e, _) -> Just (Left e) -- Not failing to parse if both are present. TODO emit a warning or fixable error
+        -- Not failing to parse if both are present. TODO emit a warning or fixable error
+        (Just e, _) -> Just (Left e)
+
+  todoAttachments <- setOfPropertiesP componentProperties
+  todoAttendees <- setOfPropertiesP componentProperties
+  todoCategories <- setOfPropertiesP componentProperties
+  todoComments <- setOfPropertiesP componentProperties
+  todoContacts <- setOfPropertiesP componentProperties
+  todoExceptionDateTimes <- setOfPropertiesP componentProperties
+  todoRequestStatusses <- setOfPropertiesP componentProperties
+  todoRelatedTos <- setOfPropertiesP componentProperties
+  todoResources <- setOfPropertiesP componentProperties
+  todoRecurrenceDateTimes <- setOfPropertiesP componentProperties
+
   pure Todo {..}
 
 vTodoB :: Todo -> Component
@@ -274,7 +297,17 @@ vTodoB Todo {..} =
             case todoDateTimeDueDuration of
               Nothing -> mempty
               Just (Left due) -> requiredPropertyB due
-              Just (Right duration) -> requiredPropertyB duration
+              Just (Right duration) -> requiredPropertyB duration,
+            setOfPropertiesB todoAttachments,
+            setOfPropertiesB todoAttendees,
+            setOfPropertiesB todoCategories,
+            setOfPropertiesB todoComments,
+            setOfPropertiesB todoContacts,
+            setOfPropertiesB todoExceptionDateTimes,
+            setOfPropertiesB todoRequestStatusses,
+            setOfPropertiesB todoRelatedTos,
+            setOfPropertiesB todoResources,
+            setOfPropertiesB todoRecurrenceDateTimes
           ],
       componentSubcomponents = mempty
     }
@@ -300,5 +333,15 @@ makeTodo uid dateTimeStamp =
       todoSummary = Nothing,
       todoURL = Nothing,
       todoRecurrenceRules = S.empty,
-      todoDateTimeDueDuration = Nothing
+      todoDateTimeDueDuration = Nothing,
+      todoAttachments = S.empty,
+      todoAttendees = S.empty,
+      todoCategories = S.empty,
+      todoComments = S.empty,
+      todoContacts = S.empty,
+      todoExceptionDateTimes = S.empty,
+      todoRequestStatusses = S.empty,
+      todoRelatedTos = S.empty,
+      todoResources = S.empty,
+      todoRecurrenceDateTimes = S.empty
     }
