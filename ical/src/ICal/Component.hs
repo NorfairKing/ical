@@ -11,6 +11,7 @@ module ICal.Component
   ( module ICal.Component,
     module ICal.Component.Class,
     module ICal.Component.Event,
+    module ICal.Component.Todo,
     module ICal.Component.Alarm,
     module ICal.Component.TimeZone,
   )
@@ -30,6 +31,7 @@ import ICal.Component.Alarm
 import ICal.Component.Class
 import ICal.Component.Event
 import ICal.Component.TimeZone
+import ICal.Component.Todo
 import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
@@ -195,6 +197,7 @@ data Calendar = Calendar
     --                  timezonec / iana-comp / x-comp)
     -- @
     calendarEvents :: ![Event],
+    calendarTodos :: ![Todo],
     calendarTimeZones :: ![TimeZone]
   }
   deriving (Show, Eq, Generic)
@@ -244,6 +247,7 @@ instance IsComponent Calendar where
 
     calendarTimeZones <- subComponentsP componentSubcomponents
     calendarEvents <- subComponentsP componentSubcomponents
+    calendarTodos <- subComponentsP componentSubcomponents
 
     pure $ Calendar {..}
 
@@ -266,6 +270,7 @@ instance IsComponent Calendar where
           M.unionsWith
             (<>)
             [ subComponentsB calendarEvents,
+              subComponentsB calendarTodos,
               subComponentsB calendarTimeZones
             ]
       }
@@ -283,6 +288,7 @@ makeCalendar prodId =
       calendarDescriptions = [],
       calendarImages = [],
       calendarEvents = [],
+      calendarTodos = [],
       calendarTimeZones = []
     }
 

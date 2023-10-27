@@ -121,6 +121,12 @@ instance GenValid Event where
     eventAlarms <- genValid
     pure Event {..}
 
+instance GenValid Todo where
+  genValid = do
+    todoDateTimeStamp <- genValid
+    todoUID <- genValid
+    pure Todo {..}
+
 instance GenValid Alarm where
   genValid = do
     alarmAction <- genValid
