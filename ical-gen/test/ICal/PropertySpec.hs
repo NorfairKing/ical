@@ -733,7 +733,7 @@ spec = do
   describe "Attendee" $ do
     genValidSpec @Attendee
     propertySpec @Attendee
-    -- From the spec:
+
     -- @
     -- Example:  The following are examples of this property's use for a
     --    to-do:
@@ -919,6 +919,26 @@ spec = do
               [ Membership "mailto:projectA@example.com",
                 Membership "mailto:projectB@example.com"
               ]
+          }
+      )
+
+    -- From [RFC 6868 Section 3.1](https://datatracker.ietf.org/doc/html/rfc6868#section-3.1)
+    -- @
+    -- The following example is an "ATTENDEE" property with a "CN" parameter
+    -- whose value includes two double-quote characters.  The parameter
+    -- value is not quoted, as there are no characters in the value that
+    -- would trigger quoting as required by iCalendar.
+    --
+    -- ATTENDEE;CN=George Herman ^'Babe^' Ruth:mailto:babe@example.com
+    --
+    -- The unescaped parameter value is
+    --
+    -- George Herman "Babe" Ruth
+    -- @
+    propertyExampleSpec
+      "ATTENDEE;CN=George Herman ^'Babe^' Ruth:mailto:babe@example.com"
+      ( (makeAttendee "mailto:babe@example.com")
+          { attendeeCommonName = Just (CommonName "George Herman \"Babe\" Ruth")
           }
       )
 

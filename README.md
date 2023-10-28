@@ -3,6 +3,7 @@
 An implementation of:
 
 * [RCF5545: Internet Calendaring and Scheduling Core Object Specification (iCalendar)](https://tools.ietf.org/html/rfc5545)
+* [RFC6868: Parameter Value Encoding in iCalendar and vCard](https://datatracker.ietf.org/doc/html/rfc6868)
 * [RFC7986: New Properties for iCalendar](https://datatracker.ietf.org/doc/html/rfc7986#section-5.10).
 
 ## Status
@@ -168,6 +169,26 @@ It's already being used in production at https://smos.online and https://social-
   - [x] A.2.  Restrictions Removed
   - [x] A.3.  Deprecated Features
 
+#### Errata
+
+TODO
+
+### RFC 6868
+
+- [x] 1. Introduction
+- [x] 2. Conventions Used in This Document
+- [ ] 3. Parameter Value Encoding Scheme
+    - [x] 3.1. iCalendar Example
+    - [ ] 3.2. vCard Example
+- [x] 4. Security Considerations
+- [x] 5. Acknowledgments
+- [x] 6. Normative References
+- [x] Appendix A. Choice of Quoting Mechanism
+
+#### Errata
+
+- [ ] [4383](https://www.rfc-editor.org/errata/eid4383)
+
 ### RFC 7986
 
 - [ ] 1. Introduction
@@ -200,3 +221,7 @@ It's already being used in production at https://smos.online and https://social-
 - [x] 10. References
    - [x] 10.1. Normative References
    - [x] 10.2. Informative References
+
+#### Errata
+
+TODO

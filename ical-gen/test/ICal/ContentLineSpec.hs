@@ -7,6 +7,7 @@ module ICal.ContentLineSpec where
 import Control.Arrow (left)
 import Control.Monad
 import qualified Data.ByteString as SB
+import Data.GenValidity.Text
 import qualified Data.Map.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -26,6 +27,12 @@ import Text.Megaparsec
 
 spec :: Spec
 spec = do
+  describe "escapeParamValue" $ do
+    it "roundtrips with unescapeParamValue" $
+      forAll (genTextBy (oneof [pure '^', genValid])) $ \t -> do
+        let rendered = escapeParamValue t
+        context (show rendered) $ unescapeParamValue rendered `shouldBe` t
+
   describe "ParamValue" $ do
     genValidSpec @ParamValue
     it "roundtrips ParamValues" $ parserBuilderRoundtrip paramValueP paramValueB

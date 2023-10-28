@@ -18,6 +18,8 @@ module ICal.ContentLine
     ParamValue (..),
     paramValueCI,
     haveToQuoteText,
+    escapeParamValue,
+    unescapeParamValue,
 
     -- * Raw parser
     P,
@@ -277,17 +279,19 @@ paramNameP = ParamName <$> tokenTextP
 
 -- param-value   = paramtext / quoted-string
 paramValueP :: P ParamValue
-paramValueP = try (QuotedParam <$> quotedStringP) <|> (UnquotedParam <$> paramTextP)
+paramValueP =
+  try (QuotedParam <$> quotedStringP)
+    <|> (UnquotedParam <$> paramTextP)
 
 --  paramtext     = *SAFE-CHAR
 paramTextP :: P (CI Text)
-paramTextP = CI.mk . T.pack <$> many safeCharP
+paramTextP = CI.mk . unescapeParamValue . T.pack <$> many safeCharP
 
 -- quoted-string = DQUOTE *QSAFE-CHAR DQUOTE
 quotedStringP :: P Text
 quotedStringP = do
   void $ char' '"'
-  t <- T.pack <$> many qSafeCharP
+  t <- unescapeParamValue . T.pack <$> many qSafeCharP
   void $ char' '"'
   pure t
 
@@ -378,20 +382,85 @@ paramNameB = LTB.fromText . CI.original . unParamName
 
 paramValueB :: ParamValue -> Text.Builder
 paramValueB = \case
-  UnquotedParam c -> LTB.fromText (CI.original c)
+  -- From [RFC 6868 Section 3](https://datatracker.ietf.org/doc/html/rfc6868#section-3)
+  --
+  -- @
+  -- The
+  -- \^-escaping mechanism can be used when the value is either unquoted or
+  -- quoted (i.e., whether or not the value is surrounded by double-
+  -- quotes).
+  -- @
+  UnquotedParam c -> LTB.fromText (escapeParamValue (CI.original c))
   QuotedParam t ->
     mconcat
       [ LTB.singleton '"',
-        LTB.fromText t,
+        LTB.fromText (escapeParamValue t),
         LTB.singleton '"'
       ]
+
+-- | Escape a parameter value
+--
+-- From [RFC 6868 Section 3](https://datatracker.ietf.org/doc/html/rfc6868#section-3)
+--
+-- @
+-- When generating iCalendar or vCard parameter values, the following
+-- apply:
+--
+-- o  formatted text line breaks are encoded into ^n (U+005E, U+006E)
+--
+-- o  the ^ character (U+005E) is encoded into ^^ (U+005E, U+005E)
+--
+-- o  the " character (U+0022) is encoded into ^' (U+005E, U+0027)
+-- @
+escapeParamValue :: Text -> Text
+escapeParamValue = T.concatMap go
+  where
+    -- FIXME this could probably go a LOT faster but we need to benchmark it
+    go = \case
+      '\n' -> "^n"
+      '^' -> "^^"
+      '"' -> "^'"
+      c -> T.singleton c
+
+-- | Un-escape a parameter value
+--
+-- From [RFC 6868 Section 3](https://datatracker.ietf.org/doc/html/rfc6868#section-3)
+--
+-- @
+-- When parsing iCalendar or vCard parameter values, the following
+-- apply:
+--
+-- o  the character sequence ^n (U+005E, U+006E) is decoded into an
+--    appropriate formatted line break according to the type of system
+--    being used
+--
+-- o  the character sequence ^^ (U+005E, U+005E) is decoded into the ^
+--    character (U+005E)
+--
+-- o  the character sequence ^' (U+005E, U+0027) is decoded into the "
+--    character (U+0022)
+--
+-- o  if a ^ (U+005E) character is followed by any character other than
+--    the ones above, parsers MUST leave both the ^ and the following
+--    character in place
+-- @
+unescapeParamValue :: Text -> Text
+unescapeParamValue = T.pack . go . T.unpack
+  where
+    -- FIXME this could probably go a LOT faster
+
+    go = \case
+      [] -> []
+      '^' : 'n' : rest -> '\n' : go rest
+      '^' : '^' : rest -> '^' : go rest
+      '^' : '\'' : rest -> '"' : go rest
+      c : rest -> c : go rest
 
 haveToQuoteText :: Text -> Bool
 haveToQuoteText = T.any haveToQuoteChar
 
 haveToQuoteChar :: Char -> Bool
 haveToQuoteChar = \case
-  '"' -> True
   ';' -> True
   ':' -> True
   ',' -> True
