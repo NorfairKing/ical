@@ -2,13 +2,14 @@
 , haskell
 , symlinkJoin
 , vcal
-, icalInterops
+, callPackage
 , ...
 }:
 with lib;
 with haskell.lib;
 self: super:
 let
+  python-echo = callPackage ../ical-interop-test/interop-packages/python { };
   icalPackages =
     let
       icalPkg = name:
@@ -39,12 +40,19 @@ let
     {
       ical = icalPkg "ical";
       ical-gen = icalPkg "ical-gen";
-      ical-interop-test = addBuildDepends (icalPkg "ical-interop-test") [
-        vcal
-        icalInterops.python-echo
-      ];
       ical-recurrence = icalPkg "ical-recurrence";
       ical-recurrence-gen = icalPkg "ical-recurrence-gen";
+      ical-interop-test =
+        let
+          interop-inputs = [
+            vcal
+            python-echo
+          ];
+        in
+        overrideCabal (icalPkg "ical-interop-test") (old: {
+          buildDepends = (old.buildDepends or [ ]) ++ interop-inputs;
+          passthru.interop-inputs = interop-inputs;
+        });
     };
 in
 {
@@ -56,4 +64,3 @@ in
     paths = attrValues self.icalPackages;
   };
 } // icalPackages
-

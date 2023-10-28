@@ -43,16 +43,7 @@
     }:
     let
       system = "x86_64-linux";
-      nixpkgsFor = nixpkgs: import nixpkgs {
-        inherit system; overlays =
-        [
-          (final: prev: {
-            icalInterops = {
-              python-echo = final.callPackage ./ical-interop-test/interop-packages/python { };
-            };
-          })
-        ];
-      };
+      nixpkgsFor = nixpkgs: import nixpkgs { inherit system; };
       pkgs = nixpkgsFor nixpkgs;
       allOverrides = pkgs.lib.composeManyExtensions [
         (pkgs.callPackage (validity + "/nix/overrides.nix") { })
@@ -117,7 +108,7 @@
           cabal-install
           vcal
           zlib
-        ]) ++ builtins.attrValues pkgs.icalInterops ++ (with pre-commit-hooks.packages.${system};
+        ]) ++ haskellPackages.ical-interop-test.interop-inputs ++ (with pre-commit-hooks.packages.${system};
           [
             hlint
             hpack
