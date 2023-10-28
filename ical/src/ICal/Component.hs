@@ -9,12 +9,13 @@
 
 module ICal.Component
   ( module ICal.Component,
+    module ICal.Component.Alarm,
     module ICal.Component.Class,
     module ICal.Component.Event,
+    module ICal.Component.FreeBusy,
     module ICal.Component.Journal,
-    module ICal.Component.Todo,
-    module ICal.Component.Alarm,
     module ICal.Component.TimeZone,
+    module ICal.Component.Todo,
   )
 where
 
@@ -31,6 +32,7 @@ import GHC.Generics (Generic)
 import ICal.Component.Alarm
 import ICal.Component.Class
 import ICal.Component.Event
+import ICal.Component.FreeBusy
 import ICal.Component.Journal
 import ICal.Component.TimeZone
 import ICal.Component.Todo
@@ -200,6 +202,8 @@ data Calendar = Calendar
     -- @
     calendarEvents :: ![Event],
     calendarTodos :: ![Todo],
+    calendarJournals :: ![Journal],
+    calendarFreeBusys :: ![FreeBusy],
     calendarTimeZones :: ![TimeZone]
   }
   deriving (Show, Eq, Generic)
@@ -247,9 +251,11 @@ instance IsComponent Calendar where
     calendarDescriptions <- listOfPropertiesP componentProperties
     calendarImages <- listOfPropertiesP componentProperties
 
-    calendarTimeZones <- subComponentsP componentSubcomponents
     calendarEvents <- subComponentsP componentSubcomponents
     calendarTodos <- subComponentsP componentSubcomponents
+    calendarJournals <- subComponentsP componentSubcomponents
+    calendarFreeBusys <- subComponentsP componentSubcomponents
+    calendarTimeZones <- subComponentsP componentSubcomponents
 
     pure $ Calendar {..}
 
@@ -273,6 +279,8 @@ instance IsComponent Calendar where
             (<>)
             [ subComponentsB calendarEvents,
               subComponentsB calendarTodos,
+              subComponentsB calendarJournals,
+              subComponentsB calendarFreeBusys,
               subComponentsB calendarTimeZones
             ]
       }
@@ -291,6 +299,8 @@ makeCalendar prodId =
       calendarImages = [],
       calendarEvents = [],
       calendarTodos = [],
+      calendarJournals = [],
+      calendarFreeBusys = [],
       calendarTimeZones = []
     }
 

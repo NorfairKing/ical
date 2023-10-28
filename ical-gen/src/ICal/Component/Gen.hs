@@ -195,6 +195,8 @@ instance GenValid Journal where
 
     pure Journal {..}
 
+instance GenValid FreeBusy
+
 instance GenValid Alarm where
   genValid = do
     alarmAction <- genValid

@@ -69,7 +69,7 @@ It's already being used in production at https://smos.online and https://social-
        - [X] 3.6.1.  Event Component
        - [X] 3.6.2.  To-Do Component
        - [X] 3.6.3.  Journal Component
-       - [ ] 3.6.4.  Free/Busy Component
+       - [X] 3.6.4.  Free/Busy Component
        - [X] 3.6.5.  Time Zone Component
        - [X] 3.6.6.  Alarm Component
      - [X] 3.7.  Calendar Properties
