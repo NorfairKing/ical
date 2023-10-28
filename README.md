@@ -1,10 +1,13 @@
 # ICal
 
-An implementation of [RCF5545](https://tools.ietf.org/html/rfc5545) and [RFC7986](https://datatracker.ietf.org/doc/html/rfc7986#section-5.10).
+An implementation of:
+
+* [RCF5545: Internet Calendaring and Scheduling Core Object Specification (iCalendar)](https://tools.ietf.org/html/rfc5545)
+* [RFC7986: New Properties for iCalendar](https://datatracker.ietf.org/doc/html/rfc7986#section-5.10).
 
 ## Status
 
-This library now covers all of RFC 5545 and some of RFC 7986.
+This library now covers all of `RFC 5545` and some of `RFC 7986`.
 
 It's already being used in production at https://smos.online and https://social-dance.today.
 
