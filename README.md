@@ -169,9 +169,36 @@ It's already being used in production at https://smos.online and https://social-
   - [x] A.2.  Restrictions Removed
   - [x] A.3.  Deprecated Features
 
-#### Errata
+#### [Errata](https://www.rfc-editor.org/errata/rfc5545)
 
-TODO
+
+- [ ] [1911](https://www.rfc-editor.org/errata/eid1911)
+- [ ] [1916](https://www.rfc-editor.org/errata/eid1916)
+- [ ] [4271](https://www.rfc-editor.org/errata/eid4271)
+- [ ] [2677](https://www.rfc-editor.org/errata/eid2677)
+- [ ] [3740](https://www.rfc-editor.org/errata/eid3740)
+- [ ] [3779](https://www.rfc-editor.org/errata/eid3779)
+- [ ] [3883](https://www.rfc-editor.org/errata/eid3883)
+- [ ] [4149](https://www.rfc-editor.org/errata/eid4149)
+- [ ] [2497](https://www.rfc-editor.org/errata/eid2497)
+- [ ] [2038](https://www.rfc-editor.org/errata/eid2038)
+- [ ] [2516](https://www.rfc-editor.org/errata/eid2516)
+- [ ] [2527](https://www.rfc-editor.org/errata/eid2527)
+- [ ] [3747](https://www.rfc-editor.org/errata/eid3747)
+- [ ] [4414](https://www.rfc-editor.org/errata/eid4414)
+
+- [ ] [5794](https://www.rfc-editor.org/errata/eid5794)
+- [ ] [5214](https://www.rfc-editor.org/errata/eid5214)
+- [ ] [5215](https://www.rfc-editor.org/errata/eid5215)
+- [ ] [5505](https://www.rfc-editor.org/errata/eid5505)
+- [ ] [5602](https://www.rfc-editor.org/errata/eid5602)
+- [ ] [5920](https://www.rfc-editor.org/errata/eid5920)
+- [ ] [6212](https://www.rfc-editor.org/errata/eid6212)
+- [ ] [6109](https://www.rfc-editor.org/errata/eid6109)
+- [ ] [6316](https://www.rfc-editor.org/errata/eid6316)
+- [ ] [7332](https://www.rfc-editor.org/errata/eid7332)
+- [ ] [2495](https://www.rfc-editor.org/errata/eid2495)
+- [ ] [4626](https://www.rfc-editor.org/errata/eid4626)
 
 ### RFC 6868
 
@@ -185,7 +212,7 @@ TODO
 - [x] 6. Normative References
 - [x] Appendix A. Choice of Quoting Mechanism
 
-#### Errata
+#### [Errata](https://www.rfc-editor.org/errata/rfc6868)
 
 - [ ] [4383](https://www.rfc-editor.org/errata/eid4383)
 
