@@ -178,6 +178,20 @@ runConformLenient ::
   Either ue (a, Notes fe w)
 runConformLenient = runIdentity . runConformTLenient
 
+-- | Try to run a conform function, return Nothing if there were unfixable
+-- errors or unfixed fixable errors.
+tryConform ::
+  Monad m =>
+  ConformT ue fe w m a ->
+  ConformT ue fe w m (Maybe a)
+tryConform c = ConformT $ ReaderT $ \predicate -> do
+  errOrRes <- lift $ lift $ runConformTFlexible predicate c
+  case errOrRes of
+    Left _ -> pure Nothing
+    Right (result, notes) -> do
+      tell notes
+      pure (Just result)
+
 fixAll :: fe -> Bool
 fixAll = const True
 
