@@ -4,6 +4,7 @@
 
 module ICal.ContentLineSpec where
 
+import Conformance
 import Control.Arrow (left)
 import Control.Monad
 import qualified Data.ByteString as SB
@@ -15,7 +16,6 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Builder as Text
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.UnfoldedLine

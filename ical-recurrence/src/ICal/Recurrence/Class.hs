@@ -18,6 +18,7 @@ module ICal.Recurrence.Class
   )
 where
 
+import Conformance
 import Control.Exception
 import Control.Monad.Reader
 import Data.Map.Strict (Map)
@@ -27,7 +28,6 @@ import Data.Validity
 import Data.Void
 import GHC.Generics (Generic)
 import ICal.Component.TimeZone
-import ICal.Conformance
 import ICal.Parameter
 import ICal.Property
 import ICal.PropertyType

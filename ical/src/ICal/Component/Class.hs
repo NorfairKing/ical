@@ -56,6 +56,7 @@ module ICal.Component.Class
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Exception
 import Data.DList (DList (..))
@@ -75,7 +76,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType

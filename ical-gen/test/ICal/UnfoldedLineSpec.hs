@@ -2,12 +2,12 @@
 
 module ICal.UnfoldedLineSpec where
 
+import Conformance
+import Conformance.TestUtils
 import Control.Arrow (left)
 import Control.Monad
 import qualified Data.ByteString as SB
 import qualified Data.Text.Encoding as TE
-import ICal.Conformance
-import ICal.Conformance.TestUtils
 import ICal.UnfoldedLine
 import ICal.UnfoldedLine.Gen ()
 import Path

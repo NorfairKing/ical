@@ -12,6 +12,7 @@ module ICal.PropertyType.URI
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Data.Proxy
 import Data.String
@@ -22,7 +23,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Validity.URI
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter.ValueDataType
 import ICal.PropertyType.Class

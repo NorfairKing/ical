@@ -19,6 +19,7 @@ module ICal.Component
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import Data.DList (DList (..))
@@ -36,7 +37,6 @@ import ICal.Component.FreeBusy
 import ICal.Component.Journal
 import ICal.Component.TimeZone
 import ICal.Component.Todo
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.Property

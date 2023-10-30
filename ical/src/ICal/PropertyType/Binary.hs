@@ -14,6 +14,7 @@ module ICal.PropertyType.Binary
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Data.ByteString (ByteString)
 import Data.ByteString.Base64
@@ -25,7 +26,6 @@ import Data.Validity
 import Data.Validity.ByteString ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

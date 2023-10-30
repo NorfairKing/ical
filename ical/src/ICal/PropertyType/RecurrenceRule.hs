@@ -36,6 +36,7 @@ module ICal.PropertyType.RecurrenceRule
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI (..))
@@ -53,7 +54,6 @@ import Data.Validity.Containers ()
 import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

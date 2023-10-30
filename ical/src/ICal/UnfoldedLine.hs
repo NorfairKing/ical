@@ -12,6 +12,7 @@ module ICal.UnfoldedLine
   )
 where
 
+import Conformance
 import Control.Exception
 import Data.String
 import Data.Text (Text)
@@ -23,7 +24,6 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 
 -- | An unfolded line of text, the required newlines are already stripped.
 --

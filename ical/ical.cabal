@@ -48,6 +48,7 @@ library
     , base64
     , bytestring
     , case-insensitive
+    , conformance
     , containers
     , deepseq
     , dlist

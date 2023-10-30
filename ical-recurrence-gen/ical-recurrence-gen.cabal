@@ -51,6 +51,8 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , conformance
+    , conformance-gen
     , containers
     , genvalidity
     , genvalidity-containers
@@ -81,6 +83,8 @@ test-suite ical-recurrence-test
       QuickCheck
     , base >=4.7 && <5
     , bytestring
+    , conformance
+    , conformance-gen
     , containers
     , genvalidity-sydtest
     , genvalidity-time

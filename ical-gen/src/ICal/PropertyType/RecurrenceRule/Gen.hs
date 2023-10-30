@@ -6,6 +6,8 @@
 
 module ICal.PropertyType.RecurrenceRule.Gen where
 
+import Conformance
+import Conformance.TestUtils
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers
@@ -14,8 +16,6 @@ import Data.GenValidity.Time ()
 import qualified Data.Set as S
 import Data.Text (Text)
 import GHC.Stack
-import ICal.Conformance
-import ICal.Conformance.TestUtils
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
 import Test.QuickCheck

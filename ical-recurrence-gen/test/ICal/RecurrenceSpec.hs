@@ -4,6 +4,8 @@
 
 module ICal.RecurrenceSpec (spec) where
 
+import Conformance
+import Conformance.TestUtils
 import Control.Applicative
 import Control.Monad
 import qualified Data.ByteString as SB
@@ -15,8 +17,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
 import ICal
-import ICal.Conformance
-import ICal.Conformance.TestUtils
 import ICal.Recurrence
 import Path
 import Path.IO

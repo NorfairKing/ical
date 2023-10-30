@@ -6,6 +6,8 @@
 
 module ICal.Component.Gen where
 
+import Conformance
+import Conformance.TestUtils
 import Control.Arrow (left)
 import Control.Exception
 import qualified Data.ByteString as SB
@@ -22,8 +24,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Void
 import ICal
-import ICal.Conformance
-import ICal.Conformance.TestUtils
 import ICal.ContentLine.Gen ()
 import ICal.Property.Gen ()
 import ICal.PropertyType.Duration.Gen ()

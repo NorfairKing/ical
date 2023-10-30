@@ -2,10 +2,10 @@
 
 module ICal.Recurrence.TimeZoneSpec (spec) where
 
+import Conformance.TestUtils
 import qualified Data.Time as Time
 import ICal.Component
 import ICal.Component.Gen ()
-import ICal.Conformance.TestUtils
 import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence

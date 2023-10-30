@@ -6,13 +6,13 @@
 
 module ICal.Parameter.Gen where
 
+import Conformance
+import Conformance.TestUtils
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
 import GHC.Stack
-import ICal.Conformance
-import ICal.Conformance.TestUtils
 import ICal.ContentLine
 import ICal.ContentLine.Gen ()
 import ICal.Parameter

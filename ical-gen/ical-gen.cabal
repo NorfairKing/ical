@@ -95,6 +95,8 @@ library
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , conformance
+    , conformance-gen
     , containers
     , dlist
     , genvalidity
@@ -167,6 +169,8 @@ test-suite ical-test
       QuickCheck
     , base >=4.7 && <5
     , bytestring
+    , conformance
+    , conformance-gen
     , containers
     , dlist
     , genvalidity

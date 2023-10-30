@@ -5,11 +5,11 @@
 
 module ICal.ComponentSpec where
 
+import Conformance.TestUtils
 import qualified Data.DList as DList
 import qualified Data.Text as T
 import ICal.Component
 import ICal.Component.Gen
-import ICal.Conformance.TestUtils
 import ICal.ContentLine.Gen
 import Test.Syd
 import Test.Syd.Validity

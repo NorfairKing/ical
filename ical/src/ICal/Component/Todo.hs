@@ -13,6 +13,7 @@ module ICal.Component.Todo
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import qualified Data.Map.Strict as M
@@ -24,7 +25,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
-import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType
 

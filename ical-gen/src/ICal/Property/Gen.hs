@@ -5,13 +5,13 @@
 
 module ICal.Property.Gen where
 
+import Conformance
 import Data.GenValidity
 import Data.GenValidity.CaseInsensitive ()
 import Data.GenValidity.Containers ()
 import Data.GenValidity.Text ()
 import qualified Data.Text as T
 import GHC.Stack
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter.Gen ()
 import ICal.Property

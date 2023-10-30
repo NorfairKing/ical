@@ -6,6 +6,7 @@
 
 module ICal.PropertyType.Period (Period (..)) where
 
+import Conformance
 import Control.DeepSeq
 import Data.Data
 import Data.Set (Set)
@@ -13,7 +14,6 @@ import qualified Data.Text as T
 import qualified Data.Time as Time
 import Data.Validity
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

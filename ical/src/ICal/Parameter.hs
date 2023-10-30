@@ -17,6 +17,7 @@ module ICal.Parameter
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Proxy
@@ -25,7 +26,6 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter.Class
 import ICal.Parameter.ValueDataType

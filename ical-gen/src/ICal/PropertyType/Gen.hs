@@ -6,6 +6,7 @@
 
 module ICal.PropertyType.Gen where
 
+import Conformance
 import Data.GenValidity
 import Data.GenValidity.ByteString ()
 import Data.GenValidity.CaseInsensitive ()
@@ -15,7 +16,6 @@ import Data.GenValidity.Time ()
 import Data.GenValidity.URI ()
 import Data.Time (LocalTime (..), TimeOfDay (..), UTCTime (..), localTimeToUTC, utc, utcToLocalTime)
 import GHC.Stack
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter ()
 import ICal.Parameter.Gen ()
