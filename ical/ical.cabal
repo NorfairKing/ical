@@ -19,7 +19,6 @@ library
       ICal.Component.Journal
       ICal.Component.TimeZone
       ICal.Component.Todo
-      ICal.Conformance
       ICal.ContentLine
       ICal.Parameter
       ICal.Parameter.Class

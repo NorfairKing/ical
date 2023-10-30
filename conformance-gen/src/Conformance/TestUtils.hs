@@ -1,7 +1,7 @@
-module ICal.Conformance.TestUtils where
+module Conformance.TestUtils where
 
+import Conformance
 import Control.Monad.IO.Class
-import ICal.Conformance
 import Test.Syd
 
 shouldConformStrict :: (Show ue, Show fe, Show w) => Conform ue fe w a -> IO a

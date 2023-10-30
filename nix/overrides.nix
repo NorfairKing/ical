@@ -57,10 +57,15 @@ let
 in
 {
   inherit icalPackages;
+  inherit conformancePackages;
   # Tests fail
   timeout = unmarkBroken (dontCheck super.timeout);
   icalRelease = symlinkJoin {
     name = "ical-release";
     paths = attrValues self.icalPackages;
   };
-} // icalPackages
+  conformanceRelease = symlinkJoin {
+    name = "conformance-release";
+    paths = attrValues self.conformancePackages;
+  };
+} // icalPackages // conformancePackages

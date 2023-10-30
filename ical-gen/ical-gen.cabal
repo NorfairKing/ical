@@ -76,7 +76,6 @@ extra-source-files:
 library
   exposed-modules:
       ICal.Component.Gen
-      ICal.Conformance.TestUtils
       ICal.ContentLine.Gen
       ICal.Gen
       ICal.Parameter.Gen

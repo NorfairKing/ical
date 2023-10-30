@@ -3,7 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module ICal.Conformance where
+module Conformance where
 
 import Control.Exception
 import Control.Monad.Except
@@ -147,6 +147,8 @@ type Conform ue fe w = ConformT ue fe w Identity
 
 -- | Most flexible way to run a 'Conform'
 runConformFlexible ::
+  -- | Predicate to select fixable errors that should be fixed and thereby
+  -- become a warning instead.
   (fe -> Bool) ->
   Conform ue fe w a ->
   Either (HaltReason ue fe) (a, Notes fe w)

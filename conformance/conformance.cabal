@@ -1,0 +1,21 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           conformance
+version:        0.0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Conformance
+  other-modules:
+      Paths_conformance
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , mtl
+  default-language: Haskell2010

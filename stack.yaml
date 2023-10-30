@@ -1,5 +1,7 @@
 resolver: lts-20.25
 packages:
+- conformance
+- conformance-gen
 - ical
 - ical-gen
 - ical-recurrence

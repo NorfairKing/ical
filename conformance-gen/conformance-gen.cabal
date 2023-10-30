@@ -1,0 +1,40 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           conformance-gen
+version:        0.0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Conformance.TestUtils
+  other-modules:
+      Paths_conformance_gen
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , conformance
+    , sydtest
+  default-language: Haskell2010
+
+test-suite conformance-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      ConformanceSpec
+      Paths_conformance_gen
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      base >=4.7 && <5
+    , conformance
+    , genvalidity-sydtest
+    , sydtest
+  default-language: Haskell2010
