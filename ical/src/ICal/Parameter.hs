@@ -18,14 +18,11 @@ module ICal.Parameter
 where
 
 import Control.DeepSeq
-import Data.CaseInsensitive (CI)
-import qualified Data.CaseInsensitive as CI
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Proxy
 import Data.String
-import Data.Text (Text)
 import Data.Validity
-import Data.Validity.Text
+import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Conformance
@@ -1202,30 +1199,19 @@ instance IsParameter SentBy where
 -- quoted, and existing implementations already accept quoted TZIDs.
 -- @
 newtype TimeZoneIdentifierParam = TimeZoneIdentifierParam
-  { unTimeZoneIdentifierParam ::
-      -- We assume that TimeZoneIdentifier parameters are case-insensitive because the examples in the spec are not quoted and the spec says:
-      -- @
-      -- Property parameter values that are not in quoted-strings are case-
-      -- insensitive.
-      -- @
-      CI Text
+  { unTimeZoneIdentifierParam :: ParamValue
   }
   deriving stock (Eq, Ord, Generic)
   deriving newtype (Show, IsString, Read)
 
-instance Validity TimeZoneIdentifierParam where
-  validate p@(TimeZoneIdentifierParam ci) =
-    mconcat
-      [ genericValidate p,
-        decorateText (CI.original ci) validateSafeChar
-      ]
+instance Validity TimeZoneIdentifierParam
 
 instance NFData TimeZoneIdentifierParam
 
 instance IsParameter TimeZoneIdentifierParam where
   parameterName Proxy = "TZID"
-  parameterP = anySingleParamP $ pure . TimeZoneIdentifierParam
-  parameterB = anySingleParamB unTimeZoneIdentifierParam
+  parameterP = pure . TimeZoneIdentifierParam
+  parameterB = unTimeZoneIdentifierParam
 
 -- | Display
 --

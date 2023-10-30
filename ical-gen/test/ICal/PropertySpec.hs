@@ -64,6 +64,33 @@ spec = do
   describe "Attachment" $ do
     genValidSpec @Attachment
     propertySpec @Attachment
+    -- From Section 3.1.3 with [Erratum 5602](https://www.rfc-editor.org/errata/eid5602):
+    --
+    -- @
+    -- Section 3.1.3 says:
+    --
+    --      ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:VGhlIH
+    --       F1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4
+    --
+    -- It should say:
+    --
+    --      ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:VGhlIH
+    --       F1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=
+    --
+    -- Notes:
+    --
+    -- The base64 text used in the example misses the base64 padding. RFC 5545
+    -- appears to be using base64 according to RFC 4648 Section 4 with padding
+    -- throughout, except for this example. (The corrected text decodes to "The
+    -- quick brown fox jumps over the lazy dog.") Beyond temporary confusion in
+    -- implementers, it is possible that this example will turn up in a test suite
+    -- and ultimately cause unnecessarily lenient behavior of decoders ("soup"); it
+    -- should be either clarified that this lenient behavior is not the intention
+    -- or the behavior should be codified.
+    -- @
+    propertyExampleSpec
+      "ATTACH;FMTTYPE=text/plain;ENCODING=BASE64;VALUE=BINARY:VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4="
+      (AttachmentBinary (Just "text/plain") "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=")
 
     -- @
     -- Example:  The following are examples of this property:

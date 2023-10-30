@@ -67,3 +67,35 @@ spec = do
         }
     )
     ex2
+  -- We reject the corrected version of the second example from
+  -- [Erratum 7332](https://www.rfc-editor.org/errata/eid7332):
+  --
+  -- @
+  -- Section 3.3.9 says:
+  --
+  -- The period start at 18:00:00 on January 1, 1997 and lasting 5
+  -- hours and 30 minutes would be:
+  --
+  -- 19970101T180000Z/PT5H30M
+  --
+  -- It should say:
+  --
+  -- The period start at 18:00:00 on January 1, 1997 and lasting 5
+  -- hours and 30 minutes would be:
+  --
+  -- 19970101T180000/PT5H30M
+  --
+  -- Notes:
+  --
+  -- I do not know if this is an editorial or technical issue.
+  --
+  -- If I understand the datetime value (Section 3.3.5) correct the last
+  -- character should only be "Z" if the value is in UTC.
+  --
+  -- In the first example in section 3.3.9 UTC is explicitely mentioned but not
+  -- in the second example.
+  -- @
+  xdescribe "rejected" $
+    propertyTypeExampleSpec
+      (mkSimpleContentLineValue "19970101T180000/PT5H30M")
+      ex2

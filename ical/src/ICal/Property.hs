@@ -2141,7 +2141,7 @@ instance IsProperty TimeZoneIdentifier where
   propertyB = propertyTypeB . unTimeZoneIdentifier
 
 tzidParam :: TimeZoneIdentifier -> TimeZoneIdentifierParam
-tzidParam = TimeZoneIdentifierParam . CI.mk . unTimeZoneIdentifier
+tzidParam = TimeZoneIdentifierParam . ciToParamValue . CI.mk . unTimeZoneIdentifier
 
 -- | Timezone Name
 --
@@ -3315,15 +3315,86 @@ instance IsProperty UID where
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
 -- @
 --
--- The above does not include [Erratum
--- 5215](https://www.rfc-editor.org/errata/eid5215), which suggests that this
--- property may not be included in time zone definitions because the section on
--- time zone definitions does not iclude the exdate property.
+-- The above does not include [Erratum 5215](https://www.rfc-editor.org/errata/eid5215),
+-- which suggests that this property may not be included in time zone
+-- definitions because the section on time zone definitions does not iclude the
+-- exdate property:
+--
+-- @
+-- Section 3.8.5.1 says:
+--
+--    Purpose:  This property defines the list of DATE-TIME exceptions for
+--    recurring events, to-dos, journal entries, or time zone
+--    definitions.
+--
+-- ...
+--
+--    Conformance:  This property can be specified in recurring "VEVENT",
+--    "VTODO", and "VJOURNAL" calendar components as well as in the
+--    "STANDARD" and "DAYLIGHT" sub-components of the "VTIMEZONE"
+--    calendar component.
+--
+-- It should say:
+--
+--    Purpose:  This property defines the list of DATE-TIME exceptions for
+--    recurring events, to-dos or journal entries.
+--
+-- ...
+--
+--    Conformance:  This property can be specified in recurring "VEVENT",
+--    "VTODO", and "VJOURNAL" calendar components.
+--
+-- Notes:
+--
+-- Section 3.8.5.1 describes Exception Date-Times (EXDATE).
+--
+-- tzprop (section 3.6.5) does not allow EXDATE.
+--
+-- (Of course, the problem could be that 3.6.5 should include EXDATE.)
+-- @
 --
 -- TODO parse exception dates for those too, just to be sure?
 --
 --
--- TODO check this SHOULD:
+--
+-- The above also does not include [Erratum 6316](https://www.rfc-editor.org/errata/eid6316)
+-- because, while I agree with the sentiment, it adds an additional restriction
+-- that is not adhered to in existing implementations.
+-- As such we have to deal with the less restrictive version.
+--
+-- @
+-- Section 3.8.5.1 says:
+--
+--     Value Type:  The default value type for this property is DATE-TIME.
+--        The value type can be set to DATE.
+--
+-- It should say:
+--
+--     Value Type:  The default value type for this property is DATE-TIME.
+--        The value type can be set to DATE.  This property MUST have the same
+--        value type as the "DTSTART" property contained within the
+--        recurring component.  Furthermore, this property MUST be specified
+--        as a date with local time if and only if the "DTSTART" property
+--        contained within the recurring component is specified as a date
+--        with local time.
+--
+-- Notes:
+--
+-- EXDATE excludes a specific instance of a recurring event and therefore
+-- should have the same value type as DTSTART. This is analogous to
+-- RECURRENCE-ID which overrides a specific instance and has the same value
+-- type as DTSTART.
+--
+-- I will note however that there is iCalendar data in the wild with
+-- DTSTART;VALUE=DATE-TIME and EXDATE;VALUE=DATE. If this errata is rejected as
+-- incorrect, then a new errata should be opened with additional text
+-- describing how EXDATE;VALUE=DATE is supposed to be handled when
+-- DTSTART;VALUE=DATE-TIME. For instance, does EXDATE;VALUE=DATE exclude ALL
+-- instances of a FREQ=HOURLY recurrence on the given day?
+-- @
+--
+--
+-- TODO check this SHOULD and warn about it:
 --
 -- @
 --    defines the first instance in the recurrence set.  The "DTSTART"

@@ -191,14 +191,14 @@ It's already being used in production at https://smos.online and https://social-
 - [x] [5214](https://www.rfc-editor.org/errata/eid5214)
 - [x] [5215](https://www.rfc-editor.org/errata/eid5215)
 - [x] [5505](https://www.rfc-editor.org/errata/eid5505)
-- [ ] [5602](https://www.rfc-editor.org/errata/eid5602)
-- [ ] [5920](https://www.rfc-editor.org/errata/eid5920)
-- [ ] [6212](https://www.rfc-editor.org/errata/eid6212)
-- [ ] [6109](https://www.rfc-editor.org/errata/eid6109)
-- [ ] [6316](https://www.rfc-editor.org/errata/eid6316)
-- [ ] [7332](https://www.rfc-editor.org/errata/eid7332)
-- [ ] [2495](https://www.rfc-editor.org/errata/eid2495)
-- [ ] [4626](https://www.rfc-editor.org/errata/eid4626)
+- [x] [5602](https://www.rfc-editor.org/errata/eid5602)
+- [x] [5920](https://www.rfc-editor.org/errata/eid5920)
+- [x] [6212](https://www.rfc-editor.org/errata/eid6212)
+- [x] [6109](https://www.rfc-editor.org/errata/eid6109)
+- [x] [6316](https://www.rfc-editor.org/errata/eid6316)
+- [x] [7332](https://www.rfc-editor.org/errata/eid7332)
+- [x] [2495](https://www.rfc-editor.org/errata/eid2495)
+- [x] [4626](https://www.rfc-editor.org/errata/eid4626)
 
 ### RFC 6868
 

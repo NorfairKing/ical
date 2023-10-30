@@ -17,6 +17,7 @@ module ICal.ContentLine
     ParamName (..),
     ParamValue (..),
     paramValueCI,
+    ciToParamValue,
     haveToQuoteText,
     escapeParamValue,
     unescapeParamValue,
@@ -198,16 +199,19 @@ instance Validity ParamValue where
 instance NFData ParamValue
 
 instance IsString ParamValue where
-  fromString s =
-    let t = fromString s
-     in if haveToQuoteText t
-          then QuotedParam t
-          else UnquotedParam (CI.mk t)
+  fromString = ciToParamValue . CI.mk . fromString
 
 paramValueCI :: ParamValue -> CI Text
 paramValueCI = \case
   UnquotedParam ci -> ci
   QuotedParam t -> CI.mk t
+
+ciToParamValue :: CI Text -> ParamValue
+ciToParamValue c =
+  let t = CI.original c
+   in if haveToQuoteText t
+        then QuotedParam t
+        else UnquotedParam c
 
 -- @
 -- When parsing a content line, folded lines MUST first be unfolded

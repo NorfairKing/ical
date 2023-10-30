@@ -46,6 +46,58 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         to = fromGregorian 1997 12 23
     exampleSpec limit dtstart rule $
       S.fromList (map (\d -> LocalTime d (TimeOfDay 09 00 00)) [from .. to])
+
+  it "Daily until December 24, 1997, erratum 6212" $ do
+    -- Based on [Erratum 6212](https://www.rfc-editor.org/errata/eid6212):
+    --
+    -- @
+    -- Section 3.8.5.3 says:
+    --
+    --       Daily until December 24, 1997:
+    --
+    --        DTSTART;TZID=America/New_York:19970902T090000
+    --        RRULE:FREQ=DAILY;UNTIL=19971224T000000Z
+    --
+    --        ==> (1997 9:00 AM EDT) September 2-30;October 1-25
+    --            (1997 9:00 AM EST) October 26-31;November 1-30;December 1-23
+    --
+    -- It should say:
+    --
+    --       Daily until December 24, 1997:
+    --
+    --        DTSTART;TZID=America/New_York:19970902T090000
+    --        RRULE:FREQ=DAILY;UNTIL=19971224T140000Z
+    --                                        ^^
+    --        ==> (1997 9:00 AM EDT) September 2-30;October 1-25
+    --            (1997 9:00 AM EST) October 26-31;November 1-30;December 1-24
+    --                                                                      ^^
+    --
+    -- Notes:
+    --
+    -- The UNTIL rule part has value type DATE-TIME (same as DTSTART), but the
+    -- introductory text "Daily until December 24, 1997" mentions a DATE only.
+    -- Assuming that "until", like UNTIL, is inclusive, I would expect
+    --
+    -- (1997 9:00 AM EST) December 24
+    --
+    -- to be the last instance, i.e. the unstated time is 9:00 AM. Translating to
+    -- UTC you get
+    --
+    -- 19971224T140000Z
+    --
+    -- The same error occurs in all examples of section 3.8.5.3 with "December 24,
+    -- 1997", four in all: pages 123 (above), 125 (twice) and 126. The resulting
+    -- occurrences are only affected for pages 123 and 125 (second).
+    -- @
+    let dtstart = LocalTime (fromGregorian 1997 09 02) (TimeOfDay 09 00 00)
+        rule = (makeRecurrenceRule Daily) {recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC (localTimeToUTC utc (LocalTime (fromGregorian 1997 12 24) (TimeOfDay 14 00 00)))}
+        -- Limit: the set is finite so the limit will just be some point beyond the end
+        limit = fromGregorian 2000 01 01
+        from = fromGregorian 1997 09 02
+        to = fromGregorian 1997 12 24
+    exampleSpec limit dtstart rule $
+      S.fromList (map (\d -> LocalTime d (TimeOfDay 09 00 00)) [from .. to])
+
   it "Every other day - forever" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
@@ -900,6 +952,7 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1999 08 19) (TimeOfDay 09 00 00),
         LocalTime (fromGregorian 1999 08 26) (TimeOfDay 09 00 00)
       ]
+
   it "Every Friday the 13th, forever" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
@@ -929,6 +982,42 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1999 08 13) (TimeOfDay 09 00 00),
         LocalTime (fromGregorian 2000 10 13) (TimeOfDay 09 00 00)
       ]
+
+  it "Every Friday the 13th, forever, erratum 5920" $ do
+    -- Based on [Erratum 5920](https://www.rfc-editor.org/errata/eid5920)
+    --
+    -- @
+    -- Every Friday the 13th, forever:
+    --
+    --        DTSTART;TZID=America/New_York:19980213T090000
+    --        RRULE:FREQ=MONTHLY;BYDAY=FR;BYMONTHDAY=13
+    --
+    --        ==> (1998 9:00 AM EST) February 13;March 13;November 13
+    --            (1999 9:00 AM EDT) August 13
+    --            (2000 9:00 AM EDT) October 13
+    --            ...
+    -- @
+    --
+    -- We test both the original and the corrected version because they are
+    -- both considered valid.
+    let dtstart = LocalTime (fromGregorian 1998 02 13) (TimeOfDay 09 00 00)
+        rule =
+          (makeRecurrenceRule Monthly)
+            { recurrenceRuleByDay = [Every Friday],
+              recurrenceRuleByMonthDay = [ByMonthDay 13]
+            }
+        limit = fromGregorian 2000 10 14
+    exampleSpec
+      limit
+      dtstart
+      rule
+      [ LocalTime (fromGregorian 1998 02 13) (TimeOfDay 09 00 00),
+        LocalTime (fromGregorian 1998 03 13) (TimeOfDay 09 00 00),
+        LocalTime (fromGregorian 1998 11 13) (TimeOfDay 09 00 00),
+        LocalTime (fromGregorian 1999 08 13) (TimeOfDay 09 00 00),
+        LocalTime (fromGregorian 2000 10 13) (TimeOfDay 09 00 00)
+      ]
+
   it "The first Saturday that follows the first Sunday of the month, forever" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970913T090000

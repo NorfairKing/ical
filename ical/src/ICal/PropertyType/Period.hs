@@ -74,6 +74,10 @@ import ICal.PropertyType.Duration
 -- @
 --
 -- TODO these should probably contain DATE-TIME values, but it's not clear.
+--
+-- TODO Erratum 7332 suggests that a period may be started by a datetime
+-- without the 'Z' characted.
+-- Should we support this?
 data Period
   = PeriodStartEnd !Time.UTCTime !Time.UTCTime
   | PeriodStartDuration !Time.UTCTime !Duration
