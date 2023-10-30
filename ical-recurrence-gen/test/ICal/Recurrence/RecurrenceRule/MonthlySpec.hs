@@ -4,7 +4,7 @@ module ICal.Recurrence.RecurrenceRule.MonthlySpec (spec) where
 
 import Data.GenValidity.Time ()
 import Data.Maybe
-import Data.Time
+import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, midnight)
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Monthly

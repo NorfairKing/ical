@@ -21,6 +21,7 @@ extra-source-files:
     test_resources/calendar/error/timezone-without-observances.ics
     test_resources/calendar/fixable/invalid-until.ics
     test_resources/calendar/fixable/missing-prodid.ics
+    test_resources/calendar/fixable/uid.ics
     test_resources/calendar/fixable/uri-with-encoded-comma.ics
     test_resources/calendar/valid/daily-bysetpos.ics
     test_resources/calendar/valid/dash.ics
@@ -76,7 +77,6 @@ extra-source-files:
 library
   exposed-modules:
       ICal.Component.Gen
-      ICal.Conformance.TestUtils
       ICal.ContentLine.Gen
       ICal.Gen
       ICal.Parameter.Gen
@@ -96,6 +96,8 @@ library
     , base >=4.7 && <5
     , bytestring
     , case-insensitive
+    , conformance
+    , conformance-gen
     , containers
     , dlist
     , genvalidity
@@ -168,6 +170,8 @@ test-suite ical-test
       QuickCheck
     , base >=4.7 && <5
     , bytestring
+    , conformance
+    , conformance-gen
     , containers
     , dlist
     , genvalidity

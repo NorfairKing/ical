@@ -8,13 +8,13 @@ import Data.List
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Time as Time
+import qualified Data.Time as Time
 import ICal.PropertyType
 import ICal.Recurrence.RecurrenceRule.Util
 
 monthlyDateTimeRecurrence ::
-  Day ->
-  LocalTime ->
+  Time.Day ->
+  Time.LocalTime ->
   Interval ->
   Set ByMonth ->
   Set ByMonthDay ->
@@ -23,7 +23,7 @@ monthlyDateTimeRecurrence ::
   Set ByMinute ->
   Set BySecond ->
   Set BySetPos ->
-  [LocalTime]
+  [Time.LocalTime]
 monthlyDateTimeRecurrence
   limit
   start
@@ -35,10 +35,11 @@ monthlyDateTimeRecurrence
   byMinutes
   bySeconds
   bySetPoss = do
-    (year, month) <- monthlyMonthRecurrence (localDay start) limit interval
+    let startDay = Time.localDay start
+    (year, month) <- monthlyMonthRecurrence startDay limit interval
     m <- maybeToList $ monthNoToMonth month
     guard $ byMonthLimitMonth byMonths m
-    let (_, _, md_) = toGregorian (localDay start)
+    let (_, _, md_) = Time.toGregorian startDay
     next <- filterSetPos bySetPoss $
       sort $ do
         d <-
@@ -46,25 +47,26 @@ monthlyDateTimeRecurrence
             then byDayExpand year month md_ byDays
             else do
               md <- byMonthDayExpand year m md_ byMonthDays
-              d' <- maybeToList $ fromGregorianValid year month md
+              d' <- maybeToList $ Time.fromGregorianValid year month md
               guard $ byDayLimit byDays d'
               pure d'
         guard (d <= limit) -- Early check
-        tod <- timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
-        let next = LocalTime d tod
+        let startTime = Time.localTimeOfDay start
+        tod <- timeOfDayExpand startTime byHours byMinutes bySeconds
+        let next = Time.LocalTime d tod
         pure next
     guard (next > start) -- Don't take the current one again
-    guard (next < LocalTime (addDays 1 limit) midnight) -- Don't go beyond the limit
+    guard (next < Time.LocalTime (Time.addDays 1 limit) Time.midnight) -- Don't go beyond the limit
     pure next
 
 monthlyMonthRecurrence ::
-  Day ->
-  Day ->
+  Time.Day ->
+  Time.Day ->
   Interval ->
   [(Integer, Int)]
 monthlyMonthRecurrence d_ limit (Interval interval) = do
-  let (year_, month_, _) = toGregorian d_
-  let (limitYear, limitMonth, _) = toGregorian limit
+  let (year_, month_, _) = Time.toGregorian d_
+  let (limitYear, limitMonth, _) = Time.toGregorian limit
   takeEvery interval $
     takeWhile (<= (limitYear, limitMonth)) $
       dropWhile (< (year_, month_)) $

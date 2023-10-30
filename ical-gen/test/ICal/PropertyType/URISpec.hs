@@ -5,7 +5,7 @@
 
 module ICal.PropertyType.URISpec where
 
-import ICal.Conformance
+import Conformance
 import ICal.ContentLine
 import ICal.PropertyType
 import ICal.PropertyType.Gen

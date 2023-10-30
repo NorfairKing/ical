@@ -39,6 +39,7 @@ module ICal.PropertyType.Class
   )
 where
 
+import Conformance
 import Control.Exception
 import Data.CaseInsensitive (CI)
 import Data.Int
@@ -52,7 +53,6 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter.Class
 import ICal.Parameter.ValueDataType

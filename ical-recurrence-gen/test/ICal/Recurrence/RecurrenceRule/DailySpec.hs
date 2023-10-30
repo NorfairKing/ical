@@ -5,7 +5,7 @@ module ICal.Recurrence.RecurrenceRule.DailySpec (spec) where
 import Data.GenValidity.Time ()
 import Data.Maybe
 import qualified Data.Set as S
-import Data.Time
+import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, midnight)
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Daily

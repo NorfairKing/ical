@@ -10,6 +10,8 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - conformance
+  - conformance-gen
   - containers
   - genvalidity
   - genvalidity-containers
@@ -28,6 +30,8 @@ tests:
     dependencies:
     - QuickCheck
     - bytestring
+    - conformance
+    - conformance-gen
     - containers
     - genvalidity-sydtest
     - genvalidity-time

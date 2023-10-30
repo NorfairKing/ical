@@ -1,6 +1,6 @@
 module ICal.Recurrence.TestUtils where
 
-import ICal.Conformance.TestUtils
+import Conformance.TestUtils
 import ICal.PropertyType.RecurrenceRule.Gen ()
 import ICal.Recurrence
 

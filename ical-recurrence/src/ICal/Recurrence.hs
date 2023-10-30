@@ -44,6 +44,7 @@ module ICal.Recurrence
   )
 where
 
+import Conformance
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
@@ -54,7 +55,6 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Time as Time
 import ICal
-import ICal.Conformance
 import ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule

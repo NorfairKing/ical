@@ -4,7 +4,7 @@
 
 module ICal.PropertyType.DateTimesSpec where
 
-import ICal.Conformance
+import Conformance
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime
 import ICal.PropertyType.DateTimes

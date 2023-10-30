@@ -36,6 +36,7 @@ module ICal.PropertyType.RecurrenceRule
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI (..))
@@ -46,14 +47,13 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time as Time
+import qualified Data.Time as Time
 import Data.Time.Compat ()
 import Data.Validity
 import Data.Validity.Containers ()
 import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
@@ -61,9 +61,9 @@ import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import Text.Read
 
-deriving instance Generic DayOfWeek
+deriving instance Generic Time.DayOfWeek
 
-deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
+deriving instance Bounded Time.DayOfWeek -- Silly that this doesn't exist.
 
 -- | Recurrence Rule
 --
@@ -229,8 +229,8 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --    this revision of iCalendar).
 --
 --    The BYDAY rule part specifies a COMMA-separated list of days of
---    the week; SU indicates Sunday; MO indicates Monday; TU indicates
---    Tuesday; WE indicates Wednesday; TH indicates Thursday; FR
+--    the week; SU indicates Sunday; MO indicates Time.Monday; TU indicates
+--    Time.Tuesday; WE indicates Wednesday; TH indicates Thursday; FR
 --    indicates Friday; and SA indicates Saturday.
 --
 --    Each BYDAY value can also be preceded by a positive (+n) or
@@ -239,15 +239,15 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --
 --
 --    For example, within a MONTHLY rule, +1MO (or simply 1MO)
---    represents the first Monday within the month, whereas -1MO
---    represents the last Monday of the month.  The numeric value in a
+--    represents the first Time.Monday within the month, whereas -1MO
+--    represents the last Time.Monday of the month.  The numeric value in a
 --    BYDAY rule part with the FREQ rule part set to YEARLY corresponds
 --    to an offset within the month when the BYMONTH rule part is
 --    present, and corresponds to an offset within the year when the
 --    BYMONTH rule part is not present.  If an integer
 --    modifier is not present, it means all days of this type within the
 --    specified frequency.  For example, within a MONTHLY rule, MO
---    represents all Mondays within the month.  The BYDAY rule part MUST
+--    represents all Time.Mondays within the month.  The BYDAY rule part MUST
 --    NOT be specified with a numeric value when the FREQ rule part is
 --    not set to MONTHLY or YEARLY.  Furthermore, the BYDAY rule part
 --    MUST NOT be specified with a numeric value with the FREQ rule part
@@ -277,7 +277,7 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --    part is set to anything other than YEARLY.  For example, 3
 --    represents the third week of the year.
 --
---       Note: Assuming a Monday week start, week 53 can only occur when
+--       Note: Assuming a Time.Monday week start, week 53 can only occur when
 --       Thursday is January 1 or if it is a leap year and Wednesday is
 --       January 1.
 --
@@ -506,7 +506,7 @@ data RecurrenceRule = RecurrenceRule
     -- in a YEARLY "RRULE" when a BYWEEKNO rule part is specified.  The
     -- default value is MO.
     --
-    -- Note: We did not chose 'Maybe DayOfWeek' because that would have two ways to represent the default value.
+    -- Note: We did not chose 'Maybe Time.DayOfWeek' because that would have two ways to represent the default value.
     recurrenceRuleWeekStart :: !WeekStart,
     -- | The BYSETPOS rule part specifies a COMMA-separated list of values
     -- that corresponds to the nth occurrence within the set of recurrence
@@ -615,7 +615,7 @@ recurrenceRuleP ContentLineValue {..} = do
   recurrenceRuleByYearDay <- parseSetPart
   recurrenceRuleByWeekNo <- parseSetPart
   recurrenceRuleByMonth <- parseSetPart
-  recurrenceRuleWeekStart <- parseDPart (WeekStart Monday)
+  recurrenceRuleWeekStart <- parseDPart (WeekStart Time.Monday)
   recurrenceRuleBySetPos <- parseSetPart
 
   pure RecurrenceRule {..}
@@ -654,7 +654,7 @@ recurrenceRuleB RecurrenceRule {..} =
             setTup recurrenceRuleByYearDay,
             setTup recurrenceRuleByWeekNo,
             setTup recurrenceRuleByMonth,
-            dTup (WeekStart Monday) recurrenceRuleWeekStart,
+            dTup (WeekStart Time.Monday) recurrenceRuleWeekStart,
             setTup recurrenceRuleBySetPos
           ]
       parts :: [Text]
@@ -999,18 +999,18 @@ byHourB = T.pack . show . unByHour
 -- occurrence of a specific day within the MONTHLY or YEARLY "RRULE".
 --
 -- For example, within a MONTHLY rule, +1MO (or simply 1MO)
--- represents the first Monday within the month, whereas -1MO
--- represents the last Monday of the month.  The numeric value in a
+-- represents the first Time.Monday within the month, whereas -1MO
+-- represents the last Time.Monday of the month.  The numeric value in a
 -- BYDAY rule part with the FREQ rule part set to YEARLY corresponds
 -- to an offset within the month when the BYMONTH rule part is
 -- present, and corresponds to an offset within the year when the
 -- BYWEEKNO or BYMONTH rule parts are present.  If an integer
 -- modifier is not present, it means all days of this type within the
 -- specified frequency.  For example, within a MONTHLY rule, MO
--- represents all Mondays within the month.
+-- represents all Time.Mondays within the month.
 data ByDay
-  = Every DayOfWeek
-  | Specific Int DayOfWeek
+  = Every Time.DayOfWeek
+  | Specific Int Time.DayOfWeek
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity ByDay where
@@ -1057,26 +1057,26 @@ specificP ci =
             pure $ Specific i dow
         _ -> unfixableError $ UnReadableByDay t
 
-parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void DayOfWeek
+parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Time.DayOfWeek
 parseDayOfWeek = \case
-  "MO" -> pure Monday
-  "TU" -> pure Tuesday
-  "WE" -> pure Wednesday
-  "TH" -> pure Thursday
-  "FR" -> pure Friday
-  "SA" -> pure Saturday
-  "SU" -> pure Sunday
+  "MO" -> pure Time.Monday
+  "TU" -> pure Time.Tuesday
+  "WE" -> pure Time.Wednesday
+  "TH" -> pure Time.Thursday
+  "FR" -> pure Time.Friday
+  "SA" -> pure Time.Saturday
+  "SU" -> pure Time.Sunday
   t -> unfixableError $ UnReadableDayOfWeek t
 
-renderDayOfWeek :: DayOfWeek -> CI Text
+renderDayOfWeek :: Time.DayOfWeek -> CI Text
 renderDayOfWeek = \case
-  Monday -> "MO"
-  Tuesday -> "TU"
-  Wednesday -> "WE"
-  Thursday -> "TH"
-  Friday -> "FR"
-  Saturday -> "SA"
-  Sunday -> "SU"
+  Time.Monday -> "MO"
+  Time.Tuesday -> "TU"
+  Time.Wednesday -> "WE"
+  Time.Thursday -> "TH"
+  Time.Friday -> "FR"
+  Time.Saturday -> "SA"
+  Time.Sunday -> "SU"
 
 byDayB :: ByDay -> Text
 byDayB =
@@ -1159,7 +1159,7 @@ byYearDayB = T.pack . show . unByYearDay
 --
 -- For example, 3 represents the third week of the year.
 --
--- Note: Assuming a Monday week start, week 53 can only occur when Thursday is
+-- Note: Assuming a Time.Monday week start, week 53 can only occur when Thursday is
 -- January 1 or if it is a leap year and Wednesday is January 1.
 newtype ByWeekNo = ByWeekNo {unByWeekNo :: Int}
   deriving (Show, Eq, Ord, Generic)
@@ -1267,7 +1267,7 @@ bySetPosB = T.pack . show . unBySetPos
 -- in a YEARLY "RRULE" when a BYWEEKNO rule part is specified.  The
 -- default value is MO.
 -- @
-newtype WeekStart = WeekStart {unWeekStart :: DayOfWeek}
+newtype WeekStart = WeekStart {unWeekStart :: Time.DayOfWeek}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity WeekStart
@@ -1353,6 +1353,6 @@ makeRecurrenceRule freq =
       recurrenceRuleByYearDay = S.empty,
       recurrenceRuleByWeekNo = S.empty,
       recurrenceRuleByMonth = S.empty,
-      recurrenceRuleWeekStart = WeekStart Monday,
+      recurrenceRuleWeekStart = WeekStart Time.Monday,
       recurrenceRuleBySetPos = S.empty
     }

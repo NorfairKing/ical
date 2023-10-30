@@ -4,10 +4,10 @@
 
 module ICal.Recurrence.RecurrenceRuleSpec (spec) where
 
+import Conformance.TestUtils
 import qualified Data.Set as S
-import Data.Time
+import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal
-import ICal.Conformance.TestUtils
 import ICal.Recurrence
 import Test.Syd
 

@@ -23,6 +23,7 @@ module ICal.PropertyType.Date
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Data.Proxy
 import Data.Set (Set)
@@ -34,7 +35,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

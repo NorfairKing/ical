@@ -56,6 +56,7 @@ module ICal.Component.Class
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Exception
 import Data.DList (DList (..))
@@ -75,7 +76,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Property
 import ICal.PropertyType
@@ -294,7 +294,9 @@ data CalendarParseFixableError
       !Until
       -- ^ Old 'UNTIL'
       !Until
-      -- ^ New guessed 'UNTIL'
+      -- ^ New guessed 'UNTIL
+  | MoreThanOneRequiredPropertyValue ContentLineName ContentLineValue ContentLineValue [ContentLineValue]
+  | InvalidPropertyOmitted !ContentLine
   deriving (Show, Eq, Ord)
 
 instance Exception CalendarParseFixableError where
@@ -302,14 +304,20 @@ instance Exception CalendarParseFixableError where
     PropertyParseFixableError fe -> displayException fe
     MissingProductIdentifier prodid -> unwords ["Missing PRODID, added", show prodid]
     UntilTypeGuess dateTimeStart until1 until2 -> unwords ["UntilTypeGuess", show dateTimeStart, show until1, show until2]
+    MoreThanOneRequiredPropertyValue name v1 v2 vRest ->
+      unlines $ unwords ["Multiple values of required property, guessing the first:", show name] : map show (v1 : v2 : vRest)
+    InvalidPropertyOmitted cl -> unwords ["Invalid property omitted:", show cl]
 
 data CalendarParseWarning
   = WarnMultipleRecurrenceRules !(Set RecurrenceRule)
+  | WarnMoreThanOneOptionalPropertyValue ContentLineName ContentLineValue ContentLineValue [ContentLineValue]
   deriving (Show, Eq, Ord)
 
 instance Exception CalendarParseWarning where
   displayException = \case
     WarnMultipleRecurrenceRules rrs -> unwords ["Component has multiple recurrence rules:", show rrs]
+    WarnMoreThanOneOptionalPropertyValue name v1 v2 vRest ->
+      unlines $ unwords ["Multiple values of optional property:", show name] : map show (v1 : v2 : vRest)
 
 parseComponentFromContentLines ::
   IsComponent component =>
@@ -384,11 +392,12 @@ namedComponentMapB component =
 requiredPropertyP :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredPropertyP m = case M.lookup name m of
   Nothing -> unfixableError $ CalendarParseErrorMissingRequiredProperty name
-  Just values -> case values of
-    (value :| _) ->
-      conformMapAll PropertyParseError PropertyParseFixableError absurd $
-        propertyContentLineP (ContentLine name value)
-        -- TODO fixable error when there are multiple.
+  Just (value :| restValues) -> do
+    case NE.nonEmpty restValues of
+      Nothing -> pure ()
+      Just (secondValue :| lastValues) ->
+        emitFixableError $ MoreThanOneRequiredPropertyValue name value secondValue lastValues
+    conformMapAll PropertyParseError PropertyParseFixableError absurd $ propertyContentLineP (ContentLine name value)
   where
     name = propertyName (Proxy :: Proxy a)
 
@@ -412,23 +421,33 @@ optionalPropertyWithDefaultB defaultValue value =
 
 optionalPropertyP ::
   forall a.
-  IsProperty a =>
+  ( Validity a,
+    IsProperty a
+  ) =>
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP (Maybe a)
 optionalPropertyP m = case M.lookup name m of
   Nothing -> pure Nothing
-  Just values -> case values of
-    (value :| _) ->
-      fmap Just $
+  Just (value :| restValues) -> do
+    case NE.nonEmpty restValues of
+      Nothing -> pure ()
+      Just (secondValue :| lastValues) ->
+        emitWarning $ WarnMoreThanOneOptionalPropertyValue name value secondValue lastValues
+    mPValue <-
+      tryConform $
         conformMapAll PropertyParseError PropertyParseFixableError absurd $
           propertyContentLineP (ContentLine name value)
-          -- TODO warning when there are multiple.
+    case mPValue of
+      Just pValue | isValid pValue -> pure (Just pValue)
+      _ -> do
+        emitFixableError $ InvalidPropertyOmitted (ContentLine name value)
+        pure Nothing
   where
     name = propertyName (Proxy :: Proxy a)
 
 optionalPropertyWithDefaultP ::
   forall a.
-  IsProperty a =>
+  (Validity a, IsProperty a) =>
   a ->
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP a

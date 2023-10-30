@@ -14,8 +14,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Time
-import Data.Time.Calendar.MonthDay
+import qualified Data.Time as Time
+import qualified Data.Time.Calendar.MonthDay as Time
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.WeekDate
 
@@ -29,45 +29,45 @@ takeEvery i = go 0
 byMonthLimitMonth :: Set ByMonth -> Month -> Bool
 byMonthLimitMonth = limitBy $ \m1 (ByMonth m2) -> m1 == m2
 
-byMonthLimit :: Set ByMonth -> Day -> Bool
+byMonthLimit :: Set ByMonth -> Time.Day -> Bool
 byMonthLimit = limitBy $ \d (ByMonth m) ->
-  let (_, month, _) = toGregorian d
+  let (_, month, _) = Time.toGregorian d
    in month == monthToMonthNo m
 
-byMonthDayLimit :: Set ByMonthDay -> Day -> Bool
+byMonthDayLimit :: Set ByMonthDay -> Time.Day -> Bool
 byMonthDayLimit = limitBy $ \d (ByMonthDay md) ->
   let (positiveMonthDayIndex, negativeMonthDayIndex) = monthIndices d
    in positiveMonthDayIndex == md
         || negativeMonthDayIndex == md
 
-monthIndices :: Day -> (Int, Int) -- (Positive index, Negative index)
+monthIndices :: Time.Day -> (Int, Int) -- (Positive index, Negative index)
 monthIndices d =
-  let (y, month, day) = toGregorian d
-      leap = isLeapYear y
-      monthLen = monthLength leap month
+  let (y, month, day) = Time.toGregorian d
+      leap = Time.isLeapYear y
+      monthLen = Time.monthLength leap month
       negativeMonthDayIndex = negate $ monthLen - day + 1
    in (day, negativeMonthDayIndex)
 
-byDayLimit :: Set ByDay -> Day -> Bool
+byDayLimit :: Set ByDay -> Time.Day -> Bool
 byDayLimit = limitBy $ \d bd -> case bd of
-  Every dow -> dayOfWeek d == dow
+  Every dow -> Time.dayOfWeek d == dow
   Specific i dow ->
-    dayOfWeek d == dow
+    Time.dayOfWeek d == dow
       && ( let (pos, neg) = specificWeekDayIndex d
             in i == pos || i == neg
          )
 
-byDayLimitInYear :: Set ByDay -> Day -> Bool
+byDayLimitInYear :: Set ByDay -> Time.Day -> Bool
 byDayLimitInYear = limitBy $ \d bd -> case bd of
-  Every dow -> dayOfWeek d == dow
+  Every dow -> Time.dayOfWeek d == dow
   Specific i dow ->
-    dayOfWeek d == dow
+    Time.dayOfWeek d == dow
       && ( let (pos, neg) = specificYearWeekDayIndex d
             in i == pos || i == neg
          )
 
-byEveryWeekDayLimit :: Set DayOfWeek -> Day -> Bool
-byEveryWeekDayLimit = limitBy $ \d dow -> dow == dayOfWeek d
+byEveryWeekDayLimit :: Set Time.DayOfWeek -> Time.Day -> Bool
+byEveryWeekDayLimit = limitBy $ \d dow -> dow == Time.dayOfWeek d
 
 byYearDayExpand :: Integer -> Set ByYearDay -> Maybe (NonEmpty Word)
 byYearDayExpand year s = NE.nonEmpty $
@@ -84,7 +84,7 @@ byMonthDayExpandEveryMonth year s = NE.nonEmpty $
   sort $
     flip concatMap (S.toList s) $ \(ByMonthDay md) -> do
       month <- [January .. December]
-      let days = monthLength (isLeapYear year) (monthToMonthNo month)
+      let days = Time.monthLength (Time.isLeapYear year) (monthToMonthNo month)
       case compare md 0 of
         EQ -> [] -- Wouldn't be valid, but that's fine
         GT -> pure (month, fromIntegral md)
@@ -94,13 +94,13 @@ byMonthDayExpandMonth :: Integer -> Month -> Set ByMonthDay -> Maybe (NonEmpty W
 byMonthDayExpandMonth year month s = NE.nonEmpty $
   sort $
     flip mapMaybe (S.toList s) $ \(ByMonthDay md) ->
-      let days = monthLength (isLeapYear year) (monthToMonthNo month)
+      let days = Time.monthLength (Time.isLeapYear year) (monthToMonthNo month)
        in case compare md 0 of
             EQ -> Nothing -- Wouldn't be valid, but that's fine
             GT -> Just $ fromIntegral md
             LT -> Just $ fromIntegral $ days + md + 1 -- Must be positive
 
-byEveryWeekDayWeek :: Set ByDay -> Maybe (NonEmpty DayOfWeek)
+byEveryWeekDayWeek :: Set ByDay -> Maybe (NonEmpty Time.DayOfWeek)
 byEveryWeekDayWeek =
   NE.nonEmpty
     . mapMaybe
@@ -110,7 +110,7 @@ byEveryWeekDayWeek =
       )
     . S.toList
 
-byEveryWeekDayExpandYear :: WeekStart -> Integer -> Set ByDay -> Maybe (NonEmpty Day)
+byEveryWeekDayExpandYear :: WeekStart -> Integer -> Set ByDay -> Maybe (NonEmpty Time.Day)
 byEveryWeekDayExpandYear weekStart year s = NE.nonEmpty $
   sort $
     flip concatMap (S.toList s) $
@@ -121,7 +121,7 @@ byEveryWeekDayExpandYear weekStart year s = NE.nonEmpty $
         Specific i dow -> do
           wn <- [1 .. weeksInYear weekStart year]
           d <- maybeToList $ fromWeekDateWithStart weekStart year wn dow
-          guard $ dayOfWeek d == dow
+          guard $ Time.dayOfWeek d == dow
           let (pn, nn) = specificYearWeekDayIndex d
           guard $ i == pn || i == nn
           pure d
@@ -137,7 +137,7 @@ byWeekNoExpand weekStart year s =
               GT -> Just $ fromIntegral wn
               LT -> Just $ fromIntegral $ fromIntegral weeks + wn + 1 -- Must be positive
 
-byDayExpand :: Integer -> Int -> Int -> Set ByDay -> [Day]
+byDayExpand :: Integer -> Int -> Int -> Set ByDay -> [Time.Day]
 byDayExpand y m md s =
   concat $
     expand
@@ -157,7 +157,7 @@ byDayExpand y m md s =
                     )
                     qdrups
       )
-      (maybeToList $ fromGregorianValid y m md)
+      (maybeToList $ Time.fromGregorianValid y m md)
       s
 
 byMonthExpand :: Set ByMonth -> Maybe (NonEmpty Month)
@@ -165,7 +165,7 @@ byMonthExpand = NE.nonEmpty . map unByMonth . S.toList
 
 byMonthDayExpand :: Integer -> Month -> Int -> Set ByMonthDay -> [Int]
 byMonthDayExpand y m = expandM $ \(ByMonthDay md) ->
-  let len = monthLength (isLeapYear y) (monthToMonthNo m)
+  let len = Time.monthLength (Time.isLeapYear y) (monthToMonthNo m)
    in case compare md 0 of
         EQ -> Nothing -- Should not happen
         LT ->
@@ -173,15 +173,15 @@ byMonthDayExpand y m = expandM $ \(ByMonthDay md) ->
           Just $ len + md + 1
         GT -> Just md
 
-byEveryWeekDayExpand :: DayOfWeek -> Set DayOfWeek -> [DayOfWeek]
+byEveryWeekDayExpand :: Time.DayOfWeek -> Set Time.DayOfWeek -> [Time.DayOfWeek]
 byEveryWeekDayExpand = expand id
 
-timeOfDayExpand :: TimeOfDay -> Set ByHour -> Set ByMinute -> Set BySecond -> [TimeOfDay]
-timeOfDayExpand (TimeOfDay h_ m_ s_) byHours byMinutes bySeconds = do
+timeOfDayExpand :: Time.TimeOfDay -> Set ByHour -> Set ByMinute -> Set BySecond -> [Time.TimeOfDay]
+timeOfDayExpand (Time.TimeOfDay h_ m_ s_) byHours byMinutes bySeconds = do
   h <- byHourExpand h_ byHours
   m <- byMinuteExpand m_ byMinutes
   s <- bySecondExpand s_ bySeconds
-  let tod = TimeOfDay h m s
+  let tod = Time.TimeOfDay h m s
   pure tod
 
 byHourExpand :: Int -> Set ByHour -> [Int]
@@ -218,47 +218,47 @@ limitBy func bys b =
     else any (func b) bys
 
 -- This can probably be sped up a lot using the weekdate module
-specificWeekDayIndex :: Day -> (Int, Int) -- (Positive index, Negative index)
+specificWeekDayIndex :: Time.Day -> (Int, Int) -- (Positive index, Negative index)
 specificWeekDayIndex d =
-  let (y, month, _) = toGregorian d
-      firstDayOfTheMonth = fromGregorian y month 1
-      lastDayOfTheMonth = fromGregorian y month 31 -- Will be clipped
+  let (y, month, _) = Time.toGregorian d
+      firstDayOfTheMonth = Time.fromGregorian y month 1
+      lastDayOfTheMonth = Time.fromGregorian y month 31 -- Will be clipped
       daysOfThisMonth = numberWeekdays [firstDayOfTheMonth .. lastDayOfTheMonth]
-      numberOfThisWeekDayInTheMonth = length $ filter ((== dayOfWeek d) . fst . snd) daysOfThisMonth
+      numberOfThisWeekDayInTheMonth = length $ filter ((== Time.dayOfWeek d) . fst . snd) daysOfThisMonth
       (_, positiveSpecificWeekDayIndex) = fromJust (lookup d daysOfThisMonth) -- Must be there
    in (positiveSpecificWeekDayIndex, negate $ numberOfThisWeekDayInTheMonth - positiveSpecificWeekDayIndex + 1)
 
 -- This can probably be sped up a lot using the weekdate module
-specificYearWeekDayIndex :: Day -> (Int, Int) -- (Positive index, Negative index)
+specificYearWeekDayIndex :: Time.Day -> (Int, Int) -- (Positive index, Negative index)
 specificYearWeekDayIndex d =
-  let (y, _, _) = toGregorian d
-      firstDayOfTheYear = fromGregorian y 01 01
-      lastDayOfTheYear = fromGregorian y 12 31
+  let (y, _, _) = Time.toGregorian d
+      firstDayOfTheYear = Time.fromGregorian y 01 01
+      lastDayOfTheYear = Time.fromGregorian y 12 31
       daysOfThisYear = numberWeekdays [firstDayOfTheYear .. lastDayOfTheYear]
-      numberOfThisWeekDayInTheYear = length $ filter ((== dayOfWeek d) . fst . snd) daysOfThisYear
+      numberOfThisWeekDayInTheYear = length $ filter ((== Time.dayOfWeek d) . fst . snd) daysOfThisYear
       (_, positiveSpecificWeekDayIndex) = fromJust (lookup d daysOfThisYear) -- Must be there
    in (positiveSpecificWeekDayIndex, negate $ numberOfThisWeekDayInTheYear - positiveSpecificWeekDayIndex + 1)
 
--- Quadruples: Day, Positive index, negative index, day of week
-daysOfMonth :: Integer -> Int -> [(Day, Int, Int, DayOfWeek)]
+-- Quadruples: Time.Day, Positive index, negative index, day of week
+daysOfMonth :: Integer -> Int -> [(Time.Day, Int, Int, Time.DayOfWeek)]
 daysOfMonth year month = map go daysOfThisMonth
   where
-    firstDayOfTheMonth = fromGregorian year month 1
-    lastDayOfTheMonth = fromGregorian year month 31 -- Will be clipped
+    firstDayOfTheMonth = Time.fromGregorian year month 1
+    lastDayOfTheMonth = Time.fromGregorian year month 31 -- Will be clipped
     days = [firstDayOfTheMonth .. lastDayOfTheMonth]
     daysOfThisMonth = numberWeekdays days
-    numberOfThisWeekDayInTheMonth wd = fromMaybe 1 $ M.lookup wd $ count $ map dayOfWeek days
-    go :: (Day, (DayOfWeek, Int)) -> (Day, Int, Int, DayOfWeek)
+    numberOfThisWeekDayInTheMonth wd = fromMaybe 1 $ M.lookup wd $ count $ map Time.dayOfWeek days
+    go :: (Time.Day, (Time.DayOfWeek, Int)) -> (Time.Day, Int, Int, Time.DayOfWeek)
     go (d, (dow, p)) =
       let n = negate $ fromIntegral (numberOfThisWeekDayInTheMonth dow) - p + 1
        in (d, p, n, dow)
 
-numberWeekdays :: [Day] -> [(Day, (DayOfWeek, Int))]
+numberWeekdays :: [Time.Day] -> [(Time.Day, (Time.DayOfWeek, Int))]
 numberWeekdays = go M.empty
   where
     go _ [] = []
     go m (d_ : ds) =
-      let dow = dayOfWeek d_
+      let dow = Time.dayOfWeek d_
           (mv, m') =
             M.insertLookupWithKey
               (\_ new old -> new + old) -- If found, just increment

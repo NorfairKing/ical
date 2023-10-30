@@ -16,6 +16,22 @@
         "type": "github"
       }
     },
+    "conformance": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1698672237,
+        "narHash": "sha256-k18tf4TCbXuChi+6qyIJKFSbzi7EV5+Pc+Sl4vMXXCc=",
+        "owner": "NorfairKing",
+        "repo": "conformance",
+        "rev": "27e6479eb7f1cca918f1cef0c122f72e6a5ea026",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NorfairKing",
+        "repo": "conformance",
+        "type": "github"
+      }
+    },
     "dekking": {
       "flake": false,
       "locked": {
@@ -177,11 +193,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1697628203,
-        "narHash": "sha256-5YvzTd7+G44TOjxGMSBNxRm6SFvcb8+QLeVl3Q/oGzo=",
+        "lastModified": 1698675444,
+        "narHash": "sha256-sKsPH1hfn1iCSR/jmPSpLROziwkBrXdYMShbixrMbwI=",
         "ref": "refs/heads/master",
-        "rev": "cea6e1bb36f9ef5c1b03d2d46f8049644f579aac",
-        "revCount": 81,
+        "rev": "ee8dbf702a10d92065f052999b5933d53aa2bf72",
+        "revCount": 90,
         "type": "git",
         "url": "https://gitlab.horizon-haskell.net/package-sets/horizon-advance"
       },
@@ -197,11 +213,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1697623726,
-        "narHash": "sha256-UjpWptx4N0APGGs8r5vyepqUTy2U7e8nEBhOtN+Nq4k=",
+        "lastModified": 1698146773,
+        "narHash": "sha256-bIrdrXEiFpTNWEe48QKLHsWp62ZcFEnpL7VcHOS5UdY=",
         "ref": "refs/heads/master",
-        "rev": "7f765c192fb6cebe7b14f639fb49776a83428996",
-        "revCount": 1162,
+        "rev": "9786e93fbfc3f1c70d07b49dfe993fe638174006",
+        "revCount": 1172,
         "type": "git",
         "url": "https://gitlab.horizon-haskell.net/package-sets/horizon-core"
       },
@@ -380,11 +396,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1697456312,
-        "narHash": "sha256-roiSnrqb5r+ehnKCauPLugoU8S36KgmWraHgRqVYndo=",
+        "lastModified": 1697723726,
+        "narHash": "sha256-SaTWPkI8a5xSHX/rrKzUe+/uVNy6zCGMXgoeMb7T9rg=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ca012a02bf8327be9e488546faecae5e05d7d749",
+        "rev": "7c9cc5a6e5d38010801741ac830a3f8fd667a7a0",
         "type": "github"
       },
       "original": {
@@ -451,6 +467,7 @@
     "root": {
       "inputs": {
         "autodocodec": "autodocodec",
+        "conformance": "conformance",
         "dekking": "dekking",
         "fast-myers-diff": "fast-myers-diff",
         "horizon-advance": "horizon-advance",

@@ -19,7 +19,6 @@ library
       ICal.Component.Journal
       ICal.Component.TimeZone
       ICal.Component.Todo
-      ICal.Conformance
       ICal.ContentLine
       ICal.Parameter
       ICal.Parameter.Class
@@ -49,6 +48,7 @@ library
     , base64
     , bytestring
     , case-insensitive
+    , conformance
     , containers
     , deepseq
     , dlist

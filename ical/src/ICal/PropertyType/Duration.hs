@@ -20,6 +20,7 @@ module ICal.PropertyType.Duration
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import Data.Data
@@ -30,7 +31,6 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Void
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

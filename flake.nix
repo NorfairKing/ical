@@ -22,6 +22,8 @@
     fast-myers-diff.flake = false;
     sydtest.url = "github:NorfairKing/sydtest";
     sydtest.flake = false;
+    conformance.url = "github:NorfairKing/conformance";
+    conformance.flake = false;
     dekking.url = "github:NorfairKing/dekking";
     dekking.flake = false;
   };
@@ -39,6 +41,7 @@
     , autodocodec
     , fast-myers-diff
     , sydtest
+    , conformance
     , dekking
     }:
     let
@@ -51,6 +54,7 @@
         (pkgs.callPackage (safe-coloured-text + "/nix/overrides.nix") { })
         (pkgs.callPackage (fast-myers-diff + "/nix/overrides.nix") { })
         (pkgs.callPackage (sydtest + "/nix/overrides.nix") { })
+        (pkgs.callPackage (conformance + "/nix/overrides.nix") { })
         (pkgs.callPackage (dekking + "/nix/overrides.nix") { })
         self.overrides.${system}
       ];
@@ -74,7 +78,7 @@
           backwardCompatibilityChecks = pkgs.lib.mapAttrs (_: nixpkgs: backwardCompatibilityCheckFor nixpkgs) allNixpkgs;
         in
         backwardCompatibilityChecks // {
-          forwardCompatibility = horizonPkgs.validityRelease;
+          forwardCompatibility = horizonPkgs.icalRelease;
           coverage-report = haskellPackages.dekking.makeCoverageReport {
             name = "test-coverage-report";
             packages = [

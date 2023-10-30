@@ -8,6 +8,7 @@
 
 module ICal.Parameter.Class where
 
+import Conformance
 import Control.Exception
 import Control.Monad
 import Data.CaseInsensitive (CI)
@@ -20,7 +21,6 @@ import Data.Proxy
 import Data.Text (Text)
 import Data.Validity.Time ()
 import Data.Void
-import ICal.Conformance
 import ICal.ContentLine
 import Text.Megaparsec
 

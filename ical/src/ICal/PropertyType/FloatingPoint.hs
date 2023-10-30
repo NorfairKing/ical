@@ -6,6 +6,7 @@ module ICal.PropertyType.FloatingPoint
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Data.Proxy
 import qualified Data.Text as T
@@ -13,7 +14,6 @@ import Data.Validity
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class

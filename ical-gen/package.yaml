@@ -13,6 +13,8 @@ library:
   - QuickCheck
   - bytestring
   - case-insensitive
+  - conformance
+  - conformance-gen
   - containers
   - dlist
   - genvalidity
@@ -78,6 +80,8 @@ tests:
     dependencies:
     - QuickCheck
     - bytestring
+    - conformance
+    - conformance-gen
     - containers
     - dlist
     - genvalidity

@@ -47,6 +47,7 @@ module ICal
   )
 where
 
+import Conformance
 import Control.Arrow (left)
 import Control.Exception
 import Data.ByteString (ByteString)
@@ -56,7 +57,6 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Encoding.Error as TE
 import Data.Void
 import ICal.Component
-import ICal.Conformance
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.Property

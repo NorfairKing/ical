@@ -19,6 +19,7 @@ module ICal.Component.TimeZone
   )
 where
 
+import Conformance
 import Control.DeepSeq
 import Control.Monad
 import qualified Data.List.NonEmpty as NE
@@ -32,7 +33,6 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import ICal.Component.Class
-import ICal.Conformance
 import ICal.Property
 import ICal.PropertyType.Class
 import ICal.PropertyType.DateTime

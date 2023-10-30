@@ -2,6 +2,7 @@
 
 module ICalSpec where
 
+import Conformance.TestUtils
 import Control.Exception
 import Control.Monad
 import qualified Data.ByteString as SB
@@ -9,7 +10,6 @@ import qualified Data.Text as T
 import Data.Time
 import ICal
 import ICal.Component.Gen ()
-import ICal.Conformance.TestUtils
 import Path
 import Test.Syd
 import Test.Syd.Validity
