@@ -71,9 +71,14 @@ import ICal.UnfoldedLine
 -- content type.
 -- @
 --
--- > icalContentType = "text/calendar"
+-- @
+-- The "charset" Content-Type parameter MUST be used in MIME transports
+-- to specify the charset being used.
+-- @
+--
+-- > icalContentType = "text/calendar; charset=utf-8"
 icalContentType :: ByteString
-icalContentType = "text/calendar"
+icalContentType = "text/calendar; charset=utf-8"
 
 type ICalendar = [Calendar]
 

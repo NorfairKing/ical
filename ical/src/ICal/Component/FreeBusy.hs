@@ -162,6 +162,20 @@ import ICal.Property
 --     URL:http://www.example.com/calendar/busytime/jsmith.ifb
 --     END:VFREEBUSY
 -- @
+-- with erratum [1916](https://www.rfc-editor.org/errata/eid1916):
+-- @
+--     BEGIN:VFREEBUSY
+--     UID:19970901T115957Z-76A912@example.com
+--     DTSTAMP:19970901T120000Z
+--     ORGANIZER:mailto:jsmith@example.com
+--     DTSTART:19980313T141711Z
+--     DTEND:19980410T141711Z
+--     FREEBUSY:19980314T233000Z/19980315T003000Z
+--     FREEBUSY:19980316T153000Z/19980316T163000Z
+--     FREEBUSY:19980318T030000Z/19980318T040000Z
+--     URL:http://www.example.com/calendar/busytime/jsmith.ifb
+--     END:VFREEBUSY
+-- @
 data FreeBusy = FreeBusy
   { -- @
     --                ;

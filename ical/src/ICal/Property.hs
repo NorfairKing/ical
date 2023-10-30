@@ -1304,7 +1304,7 @@ defaultPriority = Priority 0
 --    representation, and language property parameters can be specified
 --    on this property.
 --
--- Conformance:  This property can be specified once in "VEVENT" or
+-- Conformance:  This property can be specified in "VEVENT" or
 --    "VTODO" calendar component.
 --
 -- Description:  The property value is an arbitrary text.  More than one
@@ -1335,6 +1335,10 @@ defaultPriority = Priority 0
 --
 --     RESOURCES;LANGUAGE=fr:Nettoyeur haute pression
 -- @
+--
+-- The above includes:
+--
+-- * [Erratum 2677](https://www.rfc-editor.org/rfc/inline-errata/rfc5545.html#btn_2677)
 data Resources = Resources
   { resources :: [Text], -- TODO make this a nonempty list
     resourcesLanguage :: Maybe Language
@@ -2497,6 +2501,17 @@ instance IsProperty TimeZoneURL where
 --     ATTENDEE;SENT-BY=mailto:jan_doe@example.com;CN=John Smith:
 --      mailto:jsmith@example.com
 -- @
+--
+-- This last example is corrected in [Erratum 2516](https://www.rfc-editor.org/errata/eid2516):
+--
+-- @
+-- Example:  The following is an example of this property's use when
+--       another calendar user is acting on behalf of the "Attendee":
+--
+--        ATTENDEE;SENT-BY="mailto:jan_doe@example.com";CN=John Smith:
+--                         ^                          ^
+--         mailto:jsmith@example.com
+-- @
 data Attendee = Attendee
   { attendeeCalAddress :: !CalAddress,
     attendeeCommonName :: !(Maybe CommonName),
@@ -3420,6 +3435,22 @@ instance IsProperty ExceptionDateTimes where
 --
 --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
 --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
+-- @
+--
+-- These examples are corrected in [Erratum 2527](https://www.rfc-editor.org/errata/eid2527):
+--
+-- @
+-- Example:  The following are examples of this property:
+--
+--      RDATE:19970714T123000Z
+--      RDATE;TZID=America/New_York:19970714T083000
+--
+--      RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
+--       19960404T010000Z/PT3H
+--
+--      RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,
+--                                                          ^
+--       19970526,19970704,19970901,19971014,19971128,19971129,19971225
 -- @
 data RecurrenceDateTimes
   = RecurrenceDateTimes !DateTimes

@@ -244,7 +244,7 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --    BYDAY rule part with the FREQ rule part set to YEARLY corresponds
 --    to an offset within the month when the BYMONTH rule part is
 --    present, and corresponds to an offset within the year when the
---    BYWEEKNO or BYMONTH rule parts are present.  If an integer
+--    BYMONTH rule part is not present.  If an integer
 --    modifier is not present, it means all days of this type within the
 --    specified frequency.  For example, within a MONTHLY rule, MO
 --    represents all Mondays within the month.  The BYDAY rule part MUST
@@ -313,10 +313,13 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --    rule.
 --
 --    Recurrence rules may generate recurrence instances with an invalid
---    date (e.g., February 30) or nonexistent local time (e.g., 1:30 AM
---    on a day where the local time is moved forward by an hour at 1:00
---    AM).  Such recurrence instances MUST be ignored and MUST NOT be
---    counted as part of the recurrence set.
+--    date (e.g., February 30). Such recurrence instances MUST be ignored
+--    and MUST NOT be counted as part of the recurrence set.
+--
+--    Recurrence rules may generate recurrence instances with a nonexistent
+--    local time ((e.g., 1:30 AM on a day where the local time is moved
+--    forward by an hour at 1:00 AM).  Such recurrence instances are
+--    handled as specified in Section 3.3.5.
 --
 --    Information, not contained in the rule, necessary to determine the
 --    various recurrence instance start time and dates are derived from
@@ -380,8 +383,6 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --             for MONTHLY.
 --
 --    Note 2:  Limit if BYYEARDAY or BYMONTHDAY is present; otherwise,
---             special expand for WEEKLY if BYWEEKNO present; otherwise,
---             special expand for MONTHLY if BYMONTH present; otherwise,
 --             special expand for YEARLY.
 --
 --    Here is an example of evaluating multiple BYxxx rule parts.
@@ -421,6 +422,12 @@ deriving instance Bounded DayOfWeek -- Silly that this doesn't exist.
 --
 --    There are other examples specified in Section 3.8.5.3.
 -- @
+--
+-- The above already contains:
+--
+-- * [Erratum 4271](https://www.rfc-editor.org/errata/eid4271)
+-- * [Erratum 3779](https://www.rfc-editor.org/errata/eid3779)
+-- * [Erratum 3747](https://www.rfc-editor.org/errata/eid3747)
 data RecurrenceRule = RecurrenceRule
   { -- | The FREQ rule part identifies the type of recurrence rule.
     --
@@ -787,6 +794,7 @@ intervalB = T.pack . show . unInterval
 -- @
 --
 -- However, we find the following in [Erratum 4414 (verified)]https://www.rfc-editor.org/errata/eid4414):
+--
 -- @
 -- Section 3.3.10 says:
 --       The UNTIL rule part defines a DATE or DATE-TIME value that bounds

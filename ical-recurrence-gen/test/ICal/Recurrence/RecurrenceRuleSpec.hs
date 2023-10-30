@@ -1071,18 +1071,30 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1998 02 26) (TimeOfDay 09 00 00),
         LocalTime (fromGregorian 1998 03 30) (TimeOfDay 09 00 00)
       ]
+  -- Corrected based on [erratum 3883](https://www.rfc-editor.org/errata/eid3883)
   xit "Every 3 hours from 9:00 AM to 5:00 PM on a specific day" $ do
     -- @
-    -- DTSTART;TZID=America/New_York:19970902T090000
-    -- RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T170000Z
+    -- Every 3 hours from 9:00 AM to 5:00 PM on a specific day:
     --
-    -- ==> (September 2, 1997 EDT) 09:00,12:00,15:00
+    --  DTSTART;TZID=America/New_York:19970902T090000
+    --  RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T170000Z
+    --
+    --  ==> (September 2, 1997 EDT) 09:00,12:00,15:00
+    -- @
+    -- which should have been:
+    -- @
+    -- Every 3 hours from 9:00 AM to 5:00 PM on a specific day:
+    --
+    --  DTSTART;TZID=America/New_York:19970902T090000
+    --  RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T210000Z
+    --
+    --  ==> (September 2, 1997 EDT) 09:00,12:00,15:00
     -- @
     let dtstart = LocalTime (fromGregorian 1997 09 02) (TimeOfDay 09 00 00)
         rule =
           (makeRecurrenceRule Hourly)
             { recurrenceRuleInterval = Interval 3,
-              recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC $ localTimeToUTC utc (LocalTime (fromGregorian 1997 09 02) (TimeOfDay 00 00 00))
+              recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeUTC $ localTimeToUTC utc (LocalTime (fromGregorian 1997 09 02) (TimeOfDay 21 00 00))
             }
         -- Limit: the set is finite so the limit will just be some point beyond the end
         limit = fromGregorian 2000 00 00

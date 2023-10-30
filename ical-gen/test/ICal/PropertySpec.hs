@@ -1055,6 +1055,23 @@ spec = do
     --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
     --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
     -- @
+    --
+    -- Corrected by [Erratum 2527](https://www.rfc-editor.org/errata/eid2527)
+    -- to contain a comma at the end of the second-to-last line:
+    -- @
+    -- Example:  The following are examples of this property:
+    --
+    --      RDATE:19970714T123000Z
+    --      RDATE;TZID=America/New_York:19970714T083000
+    --
+    --      RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,
+    --       19960404T010000Z/PT3H
+    --
+    --      RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,
+    --                                                          ^
+    --       19970526,19970704,19970901,19971014,19971128,19971129,19971225
+    -- @
+
     --     RDATE:19970714T123000Z
     let ex1 =
           RecurrenceDateTimes $
@@ -1109,7 +1126,7 @@ spec = do
       "RDATE;VALUE=PERIOD:19960403T020000Z/19960403T040000Z,19960404T010000Z/PT3H"
       ex3
 
-    --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421
+    --     RDATE;VALUE=DATE:19970101,19970120,19970217,19970421,
     --      19970526,19970704,19970901,19971014,19971128,19971129,19971225
     let ex4 =
           RecurrenceDates $
