@@ -3315,7 +3315,16 @@ instance IsProperty UID where
 --     EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
 -- @
 --
+-- The above does not include [Erratum
+-- 5215](https://www.rfc-editor.org/errata/eid5215), which suggests that this
+-- property may not be included in time zone definitions because the section on
+-- time zone definitions does not iclude the exdate property.
+--
+-- TODO parse exception dates for those too, just to be sure?
+--
+--
 -- TODO check this SHOULD:
+--
 -- @
 --    defines the first instance in the recurrence set.  The "DTSTART"
 --    property value SHOULD match the pattern of the recurrence rule, if

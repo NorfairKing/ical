@@ -1180,6 +1180,27 @@ instance IsParameter SentBy where
 --    For more information, see the sections on the value types DATE-
 --    TIME and TIME.
 -- @
+--
+-- However, [Erratum 5505](https://www.rfc-editor.org/errata/eid5505) says:
+--
+-- @
+-- Section 3.2.19 says:
+--
+--        tzidparam  = "TZID" "=" [tzidprefix] paramtext
+--
+-- It should say:
+--
+--        tzidparam  = "TZID" "=" [tzidprefix] param-value
+--
+-- Notes:
+--
+-- TZID appears to be the only parameter defined 5545 whose value can not be a
+-- quoted string. This is problematic in that time zone IDs such as "GMT-03:00"
+-- are beginning to appear (note the embedded colon). RFC 6868 has no mechanism
+-- to quote a colon character, as it relies on such characters appearing within
+-- a quoted string. I see no technical reason why a TZID parameter can not be
+-- quoted, and existing implementations already accept quoted TZIDs.
+-- @
 newtype TimeZoneIdentifierParam = TimeZoneIdentifierParam
   { unTimeZoneIdentifierParam ::
       -- We assume that TimeZoneIdentifier parameters are case-insensitive because the examples in the spec are not quoted and the spec says:
