@@ -1002,17 +1002,46 @@ spec = do
     --     CONTACT;ALTREP="http://example.com/pdi/jdoe.vcf":Jim
     --       Dolittle\, ABC Industries\, +1-919-555-1234
     -- @
+    --
+    -- With [Erratum 7691](https://www.rfc-editor.org/errata/eid7691)
+    --
+    -- @
+    -- Section 3.8.4.2 says:
+    --
+    -- The following is an example of this property with an alternate
+    -- representation of an LDAP URI to a directory entry containing the
+    -- contact information:
+    --
+    -- CONTACT;ALTREP="ldap://example.com:6666/o=ABC%20Industries\,
+    --  c=US???(cn=Jim%20Dolittle)":Jim Dolittle\, ABC Industries\,
+    --  +1-919-555-1234
+    --
+    -- It should say:
+    --
+    -- The following is an example of this property with an alternate
+    -- representation of an LDAP URI to a directory entry containing the
+    -- contact information:
+    --
+    -- CONTACT;ALTREP="ldap://example.com:6666/o=ABC%20Industries,
+    --  c=US???(cn=Jim%20Dolittle)":Jim Dolittle\, ABC Industries\,
+    --  +1-919-555-1234
+    --
+    -- Notes:
+    --
+    -- Note that the original text has an escaped comma in the ALTREP parameter
+    -- value at the end of the unfolded line.
+    --
+    -- The characters '\' and ',' are allowed in quoted parameter values.
+    -- This means that the URL must be parsed as
+    -- "ldap://example.com:6666/o=ABC%20Industries\,c=US???(cn=Jim%20Dolittle)"
+    -- but this is not a valid URI because of the extra backslash.
+    --
+    -- Because commas do not need to be escaped in quoted parameter values, I
+    -- assume that this is an error and the comma should not have been quoted.
+    -- @
     propertyExampleSpec
       "CONTACT:Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
       (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")
-    -- WARNING: DEVIATION FROM THE SPEC
-    -- This example from the spec makes no sense.
-    -- On the one hand there is an escaped comma in the parameter value of ALTREP.
-    -- This is allowed and should not be unescaped in such a situation.
-    -- HOWEVER, if we don't unescape it then the result is not a valid URI.
-    -- There are no errata about this so I assume that this is an unfound
-    -- mistake in the spec and the comma after Industries, should not be
-    -- escaped.
     propertyExampleSpec
       "CONTACT;ALTREP=\"ldap://example.com:6666/o=ABC%20Industries,c=US???(cn=Jim%20Dolittle)\":Jim Dolittle\\, ABC Industries\\, +1-919-555-1234"
       ( (makeContact "Jim Dolittle, ABC Industries, +1-919-555-1234")

@@ -186,6 +186,7 @@ It's already being used in production at https://smos.online and https://social-
 - [x] [2527](https://www.rfc-editor.org/errata/eid2527)
 - [x] [3747](https://www.rfc-editor.org/errata/eid3747)
 - [x] [4414](https://www.rfc-editor.org/errata/eid4414)
+- [x] [7691 (Found while writing this library!)](https://www.rfc-editor.org/errata/eid7691)
 
 - [x] [5794](https://www.rfc-editor.org/errata/eid5794)
 - [x] [5214](https://www.rfc-editor.org/errata/eid5214)
