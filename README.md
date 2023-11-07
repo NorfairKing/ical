@@ -204,8 +204,8 @@ It's already being used in production at https://smos.online and https://social-
 
 ### RFC 6350
 
-- [ ] 1.  Introduction
-- [ ] 2.  Conventions
+- [x] 1.  Introduction
+- [x] 2.  Conventions
 - [ ] 3.  vCard Format Specification
   - [ ] 3.1.  Charset
   - [ ] 3.2.  Line Delimiting and Folding

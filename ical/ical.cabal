@@ -39,6 +39,7 @@ library
       ICal.PropertyType.URI
       ICal.PropertyType.UTCOffset
       ICal.UnfoldedLine
+      VCard
   other-modules:
       Paths_ical
   hs-source-dirs:
