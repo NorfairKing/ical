@@ -270,7 +270,7 @@ componentScenarioDir dir = scenarioDir dir $ \tzFile ->
   it "can parse this file as a component strictly and roundtrip it" $ do
     let parseBS bs = runConformStrict $ do
           textContents <- conformFromEither $ left TextDecodingError $ TE.decodeUtf8' bs
-          unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines textContents
+          unfoldedLines <- conformMapAll UnfoldingError UnfoldingFixableError absurd $ parseUnfoldedLines textContents
           contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
           conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseComponentFromContentLines contentLines
 

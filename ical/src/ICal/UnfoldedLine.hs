@@ -7,6 +7,7 @@
 module ICal.UnfoldedLine
   ( UnfoldedLine (..),
     UnfoldingError (..),
+    UnfoldingFixableError (..),
     parseUnfoldedLines,
     renderUnfoldedLines,
   )
@@ -71,12 +72,19 @@ newtype UnfoldedLine = UnfoldedLine {unUnfoldedLine :: Text}
 
 instance Validity UnfoldedLine -- TODO: requirement that it's a single line?
 
-data UnfoldingError = NoCRLFAtEnd -- TODO this is a fixable error, I think.
+data UnfoldingError = NoCRLFAtEndError
   deriving (Show, Eq)
 
 instance Exception UnfoldingError where
   displayException = \case
-    NoCRLFAtEnd -> "Document did not end in a crlf."
+    NoCRLFAtEndError -> "Document did not end in a crlf."
+
+data UnfoldingFixableError = NoCRLFAtEndFixableError
+  deriving (Show, Eq)
+
+instance Exception UnfoldingFixableError where
+  displayException = \case
+    NoCRLFAtEndFixableError -> "Document did not end in a crlf, but it ended in END:VCALENDAR so tried to parse it anyway."
 
 data UnfoldingWarning = LineTooLong
   deriving (Show, Eq)
@@ -86,39 +94,49 @@ instance Exception UnfoldingWarning where
     LineTooLong -> "Line was too long, so not folded according to spec: \"Lines of text SHOULD NOT be longer than 75 octets, excluding the line break.\""
 
 -- TODO we can probably do something more efficient here with megaparsec.
-parseUnfoldedLines :: Text -> Conform UnfoldingError Void Void [UnfoldedLine]
+parseUnfoldedLines :: Text -> Conform UnfoldingError UnfoldingFixableError Void [UnfoldedLine]
 parseUnfoldedLines t
   | T.null t = pure []
-  | T.takeEnd 2 t == "\r\n" =
-      pure
-        . map UnfoldedLine
-        . init -- Ignore the last, empty, line
-        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-        -- @
-        -- Content lines are delimited by a line break,
-        -- which is a CRLF sequence (CR character followed by LF character).
-        -- @
-        . T.splitOn "\r\n"
-        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-        -- @
-        -- Any sequence of CRLF followed immediately by a
-        -- single linear white-space character is ignored (i.e., removed) when
-        -- processing the content type.
-        -- @
-        -- Replace a newline + tab character.
-        . T.replace "\r\n\t" ""
-        -- Replace a newline + space character.
-        --
-        -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
-        -- @
-        -- The process of moving from this folded multiple-line representation
-        -- to its single-line representation is called "unfolding".  Unfolding
-        -- is accomplished by removing the CRLF and the linear white-space
-        -- character that immediately follows.
-        -- @
-        . T.replace "\r\n " ""
-        $ t
-  | otherwise = unfixableError NoCRLFAtEnd
+  | otherwise = do
+      let tryToParse =
+            pure
+              . map UnfoldedLine
+              . init -- Ignore the last, empty, line
+              -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+              -- @
+              -- Content lines are delimited by a line break,
+              -- which is a CRLF sequence (CR character followed by LF character).
+              -- @
+              . T.splitOn "\r\n"
+              -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+              -- @
+              -- Any sequence of CRLF followed immediately by a
+              -- single linear white-space character is ignored (i.e., removed) when
+              -- processing the content type.
+              -- @
+              -- Replace a newline + tab character.
+              . T.replace "\r\n\t" ""
+              -- Replace a newline + space character.
+              --
+              -- [Section 3.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.1)
+              -- @
+              -- The process of moving from this folded multiple-line representation
+              -- to its single-line representation is called "unfolding".  Unfolding
+              -- is accomplished by removing the CRLF and the linear white-space
+              -- character that immediately follows.
+              -- @
+              . T.replace "\r\n " ""
+      if T.takeEnd 2 t == "\r\n"
+        then tryToParse t
+        else do
+          let t' = T.stripEnd t
+          -- If the stream ends with END:VCALENDAR then we don't have to be
+          -- scared that it got cut off, so we can try to fix this error.
+          if T.takeEnd (T.length "END:VCALENDAR") t' == "END:VCALENDAR"
+            then do
+              emitFixableError NoCRLFAtEndFixableError
+              tryToParse (t' <> "\r\n")
+            else unfixableError NoCRLFAtEndError
 
 renderUnfoldedLines :: [UnfoldedLine] -> Text
 renderUnfoldedLines = LT.toStrict . LTB.toLazyText . unfoldedLinesB

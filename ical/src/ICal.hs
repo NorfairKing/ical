@@ -103,11 +103,13 @@ instance Exception ICalParseError where
 --
 -- Use 'displayException'@ :: ICalParseFixableError -> String@ to display this error nicely.
 data ICalParseFixableError
-  = CalendarParseFixableError !CalendarParseFixableError
+  = UnfoldingFixableError !UnfoldingFixableError
+  | CalendarParseFixableError !CalendarParseFixableError
   deriving (Show, Eq)
 
 instance Exception ICalParseFixableError where
   displayException = \case
+    UnfoldingFixableError fe -> displayException fe
     CalendarParseFixableError fe -> displayException fe
 
 -- | Parse warning
@@ -154,7 +156,7 @@ parseICalendar ::
     ICalParseWarning
     ICalendar
 parseICalendar contents = do
-  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  unfoldedLines <- conformMapAll UnfoldingError UnfoldingFixableError absurd $ parseUnfoldedLines contents
   contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseICalendarFromContentLines contentLines
 
@@ -167,7 +169,7 @@ parseVCalendar ::
     ICalParseWarning
     Calendar
 parseVCalendar contents = do
-  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  unfoldedLines <- conformMapAll UnfoldingError UnfoldingFixableError absurd $ parseUnfoldedLines contents
   contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseVCalendarFromContentLines contentLines
 
@@ -213,7 +215,7 @@ parseComponentFromText ::
     ICalParseWarning
     component
 parseComponentFromText contents = do
-  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  unfoldedLines <- conformMapAll UnfoldingError UnfoldingFixableError absurd $ parseUnfoldedLines contents
   contentLines <- conformMapAll ContentLineParseError absurd absurd $ conformFromEither $ mapM parseContentLineFromUnfoldedLine unfoldedLines
   conformMapAll CalendarParseError CalendarParseFixableError CalendarParseWarning $ parseComponentFromContentLines contentLines
 
@@ -242,7 +244,7 @@ parsePropertyFromText ::
     ICalParseWarning
     property
 parsePropertyFromText contents = do
-  unfoldedLines <- conformMapAll UnfoldingError absurd absurd $ parseUnfoldedLines contents
+  unfoldedLines <- conformMapAll UnfoldingError UnfoldingFixableError absurd $ parseUnfoldedLines contents
   case unfoldedLines of
     [] -> unfixableError $ ContentLineParseError "No unfolded lines."
     [unfoldedLine] -> do

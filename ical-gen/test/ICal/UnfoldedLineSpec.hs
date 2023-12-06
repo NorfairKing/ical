@@ -4,7 +4,6 @@ module ICal.UnfoldedLineSpec where
 
 import Conformance
 import Conformance.TestUtils
-import Control.Arrow (left)
 import Control.Monad
 import qualified Data.ByteString as SB
 import qualified Data.Text.Encoding as TE
@@ -71,11 +70,18 @@ spec = do
   pending "that multi-octet UTF-8 sequences are preserved correctly"
 
   -- Tests based on example calendars
-  scenarioDirRecur "test_resources/calendar" $ \calFile -> do
+  scenarioDirRecur "test_resources/calendar/valid" $ \calFile -> do
     relCalFile <- runIO $ parseRelFile calFile
     when (fileExtension relCalFile == Just ".ics") $
       it "can parse and unfold every line" $ do
-        contents <- SB.readFile calFile
-        case left show . (runConformStrict . parseUnfoldedLines) =<< left show (TE.decodeUtf8' contents) of
-          Left err -> expectationFailure err
-          Right unfoldedLines -> shouldBeValid unfoldedLines
+        contents <- TE.decodeUtf8 <$> SB.readFile calFile
+        unfoldedLines <- shouldConformStrict (parseUnfoldedLines contents)
+        shouldBeValid unfoldedLines
+
+  scenarioDirRecur "test_resources/calendar/fixable" $ \calFile -> do
+    relCalFile <- runIO $ parseRelFile calFile
+    when (fileExtension relCalFile == Just ".ics") $
+      it "can parse and unfold every line" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile calFile
+        unfoldedLines <- shouldConformLenient (parseUnfoldedLines contents)
+        shouldBeValid unfoldedLines
