@@ -212,91 +212,91 @@ It's already being used in production at https://smos.online and https://social-
   - [ ] 3.3.  ABNF Format Definition
   - [ ] 3.4.  Property Value Escaping
 - [ ] 4.  Property Value Data Types
-- [ ] 4.1.  TEXT
-- [ ] 4.2.  URI
-- [ ] 4.3.  DATE, TIME, DATE-TIME, DATE-AND-OR-TIME, and TIMESTAMP
-  - [ ] 4.3.1.  DATE
-  - [ ] 4.3.2.  TIME
-  - [ ] 4.3.3.  DATE-TIME
-  - [ ] 4.3.4.  DATE-AND-OR-TIME
-  - [ ] 4.3.5.  TIMESTAMP
-- [ ] 4.4.  BOOLEAN
-- [ ] 4.5.  INTEGER
-- [ ] 4.6.  FLOAT
-- [ ] 4.7.  UTC-OFFSET
-- [ ] 4.8.  LANGUAGE-TAG
+  - [ ] 4.1.  TEXT
+  - [ ] 4.2.  URI
+  - [ ] 4.3.  DATE, TIME, DATE-TIME, DATE-AND-OR-TIME, and TIMESTAMP
+    - [ ] 4.3.1.  DATE
+    - [ ] 4.3.2.  TIME
+    - [ ] 4.3.3.  DATE-TIME
+    - [ ] 4.3.4.  DATE-AND-OR-TIME
+    - [ ] 4.3.5.  TIMESTAMP
+  - [ ] 4.4.  BOOLEAN
+  - [ ] 4.5.  INTEGER
+  - [ ] 4.6.  FLOAT
+  - [ ] 4.7.  UTC-OFFSET
+  - [ ] 4.8.  LANGUAGE-TAG
 - [ ] 5.  Property Parameters
-- [ ] 5.1.  LANGUAGE
-- [ ] 5.2.  VALUE
-- [ ] 5.3.  PREF
-- [ ] 5.4.  ALTID
-- [ ] 5.5.  PID
-- [ ] 5.6.  TYPE
-- [ ] 5.7.  MEDIATYPE
-- [ ] 5.8.  CALSCALE
-- [ ] 5.9.  SORT-AS
-- [ ] 5.10. GEO
-- [ ] 5.11. TZ
+  - [ ] 5.1.  LANGUAGE
+  - [ ] 5.2.  VALUE
+  - [ ] 5.3.  PREF
+  - [ ] 5.4.  ALTID
+  - [ ] 5.5.  PID
+  - [ ] 5.6.  TYPE
+  - [ ] 5.7.  MEDIATYPE
+  - [ ] 5.8.  CALSCALE
+  - [ ] 5.9.  SORT-AS
+  - [ ] 5.10. GEO
+  - [ ] 5.11. TZ
 - [ ] 6.  vCard Properties
-- [ ] 6.1.  General Properties
-  - [ ] 6.1.1.  BEGIN
-  - [ ] 6.1.2.  END
-  - [ ] 6.1.3.  SOURCE
-  - [ ] 6.1.4.  KIND
-  - [ ] 6.1.5.  XML
-- [ ] 6.2.  Identification Properties
-  - [ ] 6.2.1.  FN
-  - [ ] 6.2.2.  N
-  - [ ] 6.2.3.  NICKNAME
-  - [ ] 6.2.4.  PHOTO
-  - [ ] 6.2.5.  BDAY
-  - [ ] 6.2.6.  ANNIVERSARY
-  - [ ] 6.2.7.  GENDER
-- [ ] 6.3.  Delivery Addressing Properties
-  - [ ] 6.3.1.  ADR
-- [ ] 6.4.  Communications Properties
-  - [ ] 6.4.1.  TEL
-  - [ ] 6.4.2.  EMAIL
-  - [ ] 6.4.3.  IMPP
-  - [ ] 6.4.4.  LANG
-- [ ] 6.5.  Geographical Properties
-  - [ ] 6.5.1.  TZ
-  - [ ] 6.5.2.  GEO
-- [ ] 6.6.  Organizational Properties
-  - [ ] 6.6.1.  TITLE
-  - [ ] 6.6.2.  ROLE
-  - [ ] 6.6.3.  LOGO
-  - [ ] 6.6.4.  ORG
-  - [ ] 6.6.5.  MEMBER
-  - [ ] 6.6.6.  RELATED
-- [ ] 6.7.  Explanatory Properties
-  - [ ] 6.7.1.  CATEGORIES
-  - [ ] 6.7.2.  NOTE
-  - [ ] 6.7.3.  PRODID
-  - [ ] 6.7.4.  REV
-  - [ ] 6.7.5.  SOUND
-  - [ ] 6.7.6.  UID
-  - [ ] 6.7.7.  CLIENTPIDMAP
-  - [ ] 6.7.8.  URL
-  - [ ] 6.7.9.  VERSION
-- [ ] 6.8.  Security Properties
-  - [ ] 6.8.1.  KEY
-- [ ] 6.9.  Calendar Properties
-  - [ ] 6.9.1.  FBURL
-  - [ ] 6.9.2.  CALADRURI
-  - [ ] 6.9.3.  CALURI
-- [ ] 6.10. Extended Properties and Parameters
+  - [ ] 6.1.  General Properties
+    - [ ] 6.1.1.  BEGIN
+    - [ ] 6.1.2.  END
+    - [ ] 6.1.3.  SOURCE
+    - [ ] 6.1.4.  KIND
+    - [ ] 6.1.5.  XML
+  - [ ] 6.2.  Identification Properties
+    - [ ] 6.2.1.  FN
+    - [ ] 6.2.2.  N
+    - [ ] 6.2.3.  NICKNAME
+    - [ ] 6.2.4.  PHOTO
+    - [ ] 6.2.5.  BDAY
+    - [ ] 6.2.6.  ANNIVERSARY
+    - [ ] 6.2.7.  GENDER
+  - [ ] 6.3.  Delivery Addressing Properties
+    - [ ] 6.3.1.  ADR
+  - [ ] 6.4.  Communications Properties
+    - [ ] 6.4.1.  TEL
+    - [ ] 6.4.2.  EMAIL
+    - [ ] 6.4.3.  IMPP
+    - [ ] 6.4.4.  LANG
+  - [ ] 6.5.  Geographical Properties
+    - [ ] 6.5.1.  TZ
+    - [ ] 6.5.2.  GEO
+  - [ ] 6.6.  Organizational Properties
+    - [ ] 6.6.1.  TITLE
+    - [ ] 6.6.2.  ROLE
+    - [ ] 6.6.3.  LOGO
+    - [ ] 6.6.4.  ORG
+    - [ ] 6.6.5.  MEMBER
+    - [ ] 6.6.6.  RELATED
+  - [ ] 6.7.  Explanatory Properties
+    - [ ] 6.7.1.  CATEGORIES
+    - [ ] 6.7.2.  NOTE
+    - [ ] 6.7.3.  PRODID
+    - [ ] 6.7.4.  REV
+    - [ ] 6.7.5.  SOUND
+    - [ ] 6.7.6.  UID
+    - [ ] 6.7.7.  CLIENTPIDMAP
+    - [ ] 6.7.8.  URL
+    - [ ] 6.7.9.  VERSION
+  - [ ] 6.8.  Security Properties
+    - [ ] 6.8.1.  KEY
+  - [ ] 6.9.  Calendar Properties
+    - [ ] 6.9.1.  FBURL
+    - [ ] 6.9.2.  CALADRURI
+    - [ ] 6.9.3.  CALURI
+  - [ ] 6.10. Extended Properties and Parameters
 - [ ] 7.  Synchronization
-- [ ] 7.1.  Mechanisms
-  - [ ] 7.1.1.  Matching vCard Instances
-  - [ ] 7.1.2.  Matching Property Instances
-  - [ ] 7.1.3.  PID Matching
-- [ ] 7.2.  Example
-  - [ ] 7.2.1.  Creation
-  - [ ] 7.2.2.  Initial Sharing
-  - [ ] 7.2.3.  Adding and Sharing a Property
-  - [ ] 7.2.4.  Simultaneous Editing
-  - [ ] 7.2.5.  Global Context Simplification
+  - [ ] 7.1.  Mechanisms
+    - [ ] 7.1.1.  Matching vCard Instances
+    - [ ] 7.1.2.  Matching Property Instances
+    - [ ] 7.1.3.  PID Matching
+  - [ ] 7.2.  Example
+    - [ ] 7.2.1.  Creation
+    - [ ] 7.2.2.  Initial Sharing
+    - [ ] 7.2.3.  Adding and Sharing a Property
+    - [ ] 7.2.4.  Simultaneous Editing
+    - [ ] 7.2.5.  Global Context Simplification
 - [ ] 8.  Example: Author's vCard
 - [ ] 9.  Security Considerations
 - [ ] 10. IANA Considerations

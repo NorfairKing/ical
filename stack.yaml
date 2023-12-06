@@ -15,7 +15,7 @@ extra-deps:
 - timeout-0.1.1@sha256:56c1d3321d7139d1f7ebf04d46c95d3a3f1c8c9e0f15666ae3ccd6bae6204b6e,1427
 
 - github: NorfairKing/conformance
-  commit: 27e6479eb7f1cca918f1cef0c122f72e6a5ea026
+  commit: 2c236fd28c4cef63cd40d04631c5462d1df37759
   subdirs:
   - conformance
   - conformance-gen
