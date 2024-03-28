@@ -36,6 +36,7 @@ extra-source-files:
     test_resources/calendar/valid/exception.ics
     test_resources/calendar/valid/funky.ics
     test_resources/calendar/valid/ignored.ics
+    test_resources/calendar/valid/invitation.ics
     test_resources/calendar/valid/minimal.ics
     test_resources/calendar/valid/museum.ics
     test_resources/calendar/valid/one-recurrence-invalid.ics

@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+METHOD:REQUEST
+PRODID:-//CS SYD//Smos//EN
+VERSION:2.0
+BEGIN:VEVENT
+ATTENDEE;CN="Shahar ^'Dawn^' Or";PARTSTAT=ACCEPTED:mailto:mightyiampresen
+ ce@gmail.com
+ATTENDEE;CN="Tom Sydney Kerckhove";PARTSTAT=TENTATIVE;RSVP=TRUE:mailto:sy
+ d@cs-syd.eu
+CLASS:PRIVATE
+CREATED:20240328T084247Z
+DESCRIPTION:Shahar "Dawn" Or meets Tom Sydney Kerckhove\n\nFor Tom Sydney
+  Kerckhove:\nMonday 2024-04-01 11:00\n\nFor Shahar "Dawn" Or:\nMonday 202
+ 4-04-01 16:00\nI'd like to meet with you and talk about your possible par
+ ticipation in the NGIpkgs Maintenance Mob.\nMeeting link: https://meet.ji
+ t.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove\n
+DTSTAMP:20240328T084247Z
+DTSTART:20240401T090000Z
+DURATION:PT1H
+LOCATION:https://meet.jit.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove
+ORGANIZER;CN="Shahar ^'Dawn^' Or":mailto:mightyiampresence@gmail.com
+STATUS:TENTATIVE
+SUMMARY:Shahar "Dawn" Or <> Tom Sydney Kerckhove
+UID:486cc1b4-a811-48be-8e51-47a7963a6cf1
+URL:https://meet.jit.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Meeting between Tom Sydney Kerckhove and Shahar "Dawn" Or sta
+ rts in 15 minutes
+TRIGGER:-PT15M
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Meeting between Tom Sydney Kerckhove and Shahar "Dawn" Or sta
+ rts in 5 minutes!
+TRIGGER:-PT5M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

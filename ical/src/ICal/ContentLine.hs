@@ -192,8 +192,10 @@ instance Validity ParamValue where
     mconcat
       [ genericValidate pv,
         case pv of
-          UnquotedParam c -> decorateText (CI.original c) validateSafeChar
-          QuotedParam t -> decorateText t validateQSafeChar
+          UnquotedParam c ->
+            decorateText (escapeParamValue (CI.original c)) validateSafeChar
+          QuotedParam t ->
+            decorateText (escapeParamValue t) validateQSafeChar
       ]
 
 instance NFData ParamValue
