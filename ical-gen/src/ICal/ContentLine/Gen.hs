@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ICal.ContentLine.Gen where
@@ -39,12 +38,10 @@ genNameChar = genValid `suchThat` (validationIsValid . validateNameChar)
 instance GenValid ParamValue where
   genValid =
     oneof
-      [ UnquotedParam . CI.mk <$> genTextBy genSafeChar,
-        QuotedParam <$> genTextBy genQSafeChar
+      [ UnquotedParam . CI.mk <$> genValid,
+        QuotedParam <$> genValid
       ]
-  shrinkValid = \case
-    UnquotedParam c -> UnquotedParam <$> shrinkValid c
-    QuotedParam t -> UnquotedParam (CI.mk t) : (QuotedParam <$> shrinkValid t)
+      `suchThat` isValid
 
 genQSafeChar :: Gen Char
 genQSafeChar = genValid `suchThat` (validationIsValid . validateQSafeChar)
