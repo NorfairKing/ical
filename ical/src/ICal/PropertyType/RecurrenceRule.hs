@@ -578,22 +578,22 @@ recurrenceRuleP ContentLineValue {..} = do
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
     [] -> error "cannot happen because T.splitOn never returns an empty list."
     (k : vs) -> pure (k, T.intercalate "=" vs)
-  let parsePart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError PropertyTypeFixableError Void part
+  let parsePart :: forall part. (IsRecurrenceRulePart part) => Conform PropertyTypeParseError PropertyTypeFixableError Void part
       parsePart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in case lookup name tups of
               Nothing -> unfixableError $ RecurrenceRulePartNotFound name
               Just val -> recurrenceRulePartP val
 
-      parseMPart :: forall part. IsRecurrenceRulePart part => Conform PropertyTypeParseError PropertyTypeFixableError Void (Maybe part)
+      parseMPart :: forall part. (IsRecurrenceRulePart part) => Conform PropertyTypeParseError PropertyTypeFixableError Void (Maybe part)
       parseMPart =
         let name = recurrenceRulePartName (Proxy :: Proxy part)
          in mapM recurrenceRulePartP (lookup name tups)
 
-      parseDPart :: forall part. IsRecurrenceRulePart part => part -> Conform PropertyTypeParseError PropertyTypeFixableError Void part
+      parseDPart :: forall part. (IsRecurrenceRulePart part) => part -> Conform PropertyTypeParseError PropertyTypeFixableError Void part
       parseDPart defaultValue = fromMaybe defaultValue <$> parseMPart
 
-      parseSetPart :: forall part. IsRecurrenceRulePart (Set part) => Conform PropertyTypeParseError PropertyTypeFixableError Void (Set part)
+      parseSetPart :: forall part. (IsRecurrenceRulePart (Set part)) => Conform PropertyTypeParseError PropertyTypeFixableError Void (Set part)
       parseSetPart = parseDPart S.empty
 
   recurrenceRuleFrequency <- parsePart
@@ -631,11 +631,11 @@ recurrenceRuleP ContentLineValue {..} = do
 recurrenceRuleB ::
   RecurrenceRule -> ContentLineValue
 recurrenceRuleB RecurrenceRule {..} =
-  let tup :: forall part. IsRecurrenceRulePart part => part -> (Text, Text)
+  let tup :: forall part. (IsRecurrenceRulePart part) => part -> (Text, Text)
       tup part = (recurrenceRulePartName (Proxy :: Proxy part), recurrenceRulePartB part)
       dTup :: forall part. (Eq part, IsRecurrenceRulePart part) => part -> part -> [(Text, Text)]
       dTup defaultValue p = if p == defaultValue then [] else [tup p]
-      setTup :: forall part. IsRecurrenceRulePart (Set part) => Set part -> [(Text, Text)]
+      setTup :: forall part. (IsRecurrenceRulePart (Set part)) => Set part -> [(Text, Text)]
       setTup set = if S.null set then [] else [tup set]
       tups :: [(Text, Text)]
       tups =
@@ -667,7 +667,7 @@ class IsRecurrenceRulePart part where
   recurrenceRulePartB :: part -> Text
 
 setP ::
-  Ord part =>
+  (Ord part) =>
   (Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void part) ->
   Text ->
   Conform PropertyTypeParseError PropertyTypeFixableError Void (Set part)

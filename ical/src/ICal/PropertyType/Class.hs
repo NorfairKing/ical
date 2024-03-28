@@ -62,20 +62,20 @@ import Text.Read
 data PropertyTypeParseError
   = ParameterParseError !ParameterParseError
   | TimeStrParseError
+      -- Format String
       !String
-      -- ^ Format String
+      -- Input String
       !String
-      -- ^ Input String
   | UnexpectedValueType
+      -- Actual
       !ValueDataType
-      -- ^ Actual
+      -- Expected
       !ValueDataType
-      -- ^ Expected
   | UnparseableBinary
+      -- Input
       !Text
-      -- ^ Input
+      -- Error
       !Text
-      -- ^ Error
   | UnparseableBoolean !Text
   | UnparseableInteger !Text
   | UnparseableURI !Text
@@ -327,7 +327,7 @@ instance IsPropertyType Text where
   propertyTypeB = mkSimpleContentLineValue . escapeText
 
 propertyTypeListP ::
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   ContentLineValue ->
   Conform PropertyTypeParseError PropertyTypeFixableError Void [propertyType]
 propertyTypeListP clv =
@@ -339,7 +339,7 @@ propertyTypeListP clv =
             pure (clv {contentLineValueRaw = raw})
        in mapM typedPropertyTypeP clvs
 
-propertyTypeListB :: IsPropertyType propertyType => [propertyType] -> ContentLineValue
+propertyTypeListB :: (IsPropertyType propertyType) => [propertyType] -> ContentLineValue
 propertyTypeListB = \case
   [] -> emptyContentLineValue
   (pt : pts) ->
@@ -368,14 +368,14 @@ propertyTypeSetP ::
 propertyTypeSetP = fmap S.fromList . propertyTypeListP
 
 propertyTypeSetB ::
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   Set propertyType ->
   ContentLineValue
 propertyTypeSetB = propertyTypeListB . S.toList
 
 typedPropertyTypeP ::
   forall propertyType.
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   ContentLineValue ->
   Conform PropertyTypeParseError PropertyTypeFixableError Void propertyType
 typedPropertyTypeP clv = do
@@ -393,7 +393,7 @@ typedPropertyTypeP clv = do
 
 typedPropertyTypeB ::
   forall propertyType.
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   propertyType ->
   ContentLineValue
 typedPropertyTypeB =
@@ -454,12 +454,12 @@ validateImpreciseTimeOfDay tod =
 proxyOf :: a -> Proxy a
 proxyOf !_ = Proxy
 
-parseTimeStr :: Time.ParseTime t => String -> String -> Conform PropertyTypeParseError void void' t
+parseTimeStr :: (Time.ParseTime t) => String -> String -> Conform PropertyTypeParseError void void' t
 parseTimeStr formatStr s = case Time.parseTimeM True Time.defaultTimeLocale formatStr s of
   Nothing -> unfixableError $ TimeStrParseError formatStr s
   Just t -> pure t
 
-parseTimesListText :: Time.ParseTime t => String -> Text -> Conform PropertyTypeParseError void void' [t]
+parseTimesListText :: (Time.ParseTime t) => String -> Text -> Conform PropertyTypeParseError void void' [t]
 parseTimesListText formatStr t =
   if T.null t
     then pure []

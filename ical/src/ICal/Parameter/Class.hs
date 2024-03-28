@@ -24,7 +24,7 @@ import Data.Void
 import ICal.ContentLine
 import Text.Megaparsec
 
-deriving instance Ord s => Ord (PosState s)
+deriving instance (Ord s) => Ord (PosState s)
 
 deriving instance (Ord s, Ord (Token s), Ord e) => Ord (ParseError s e)
 
@@ -119,7 +119,7 @@ class IsParameter param where
 
 lookupParam ::
   forall param.
-  IsParameter param =>
+  (IsParameter param) =>
   Map ParamName (NonEmpty ParamValue) ->
   Maybe (Conform ParameterParseError ParameterParseFixableError Void param)
 lookupParam m = do
@@ -131,7 +131,7 @@ lookupParam m = do
 
 optionalParam ::
   forall param.
-  IsParameter param =>
+  (IsParameter param) =>
   Map ParamName (NonEmpty ParamValue) ->
   Conform ParameterParseError ParameterParseFixableError Void (Maybe param)
 optionalParam m = do
@@ -142,7 +142,7 @@ optionalParam m = do
 
 listParam ::
   forall param.
-  IsParameter param =>
+  (IsParameter param) =>
   Map ParamName (NonEmpty ParamValue) ->
   Conform ParameterParseError ParameterParseFixableError Void [param]
 listParam m = do
@@ -150,24 +150,24 @@ listParam m = do
   let paramValues = maybe [] NE.toList (M.lookup name m)
   mapM parameterP paramValues
 
-insertParam :: forall param. IsParameter param => param -> ContentLineValue -> ContentLineValue
+insertParam :: forall param. (IsParameter param) => param -> ContentLineValue -> ContentLineValue
 insertParam param clv =
   clv
     { contentLineValueParams =
         M.insert (parameterName (Proxy :: Proxy param)) (parameterB param :| []) (contentLineValueParams clv)
     }
 
-insertMParam :: forall param. IsParameter param => Maybe param -> ContentLineValue -> ContentLineValue
+insertMParam :: forall param. (IsParameter param) => Maybe param -> ContentLineValue -> ContentLineValue
 insertMParam = maybe id insertParam
 
-insertParamNE :: forall param. IsParameter param => NonEmpty param -> ContentLineValue -> ContentLineValue
+insertParamNE :: forall param. (IsParameter param) => NonEmpty param -> ContentLineValue -> ContentLineValue
 insertParamNE params clv =
   clv
     { contentLineValueParams =
         M.insert (parameterName (Proxy :: Proxy param)) (NE.map parameterB params) (contentLineValueParams clv)
     }
 
-insertParamList :: forall param. IsParameter param => [param] -> ContentLineValue -> ContentLineValue
+insertParamList :: forall param. (IsParameter param) => [param] -> ContentLineValue -> ContentLineValue
 insertParamList params clv =
   case NE.nonEmpty params of
     Nothing -> clv

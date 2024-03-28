@@ -267,7 +267,7 @@ numberWeekdays = go M.empty
               m
        in (d_, (dow, maybe 1 succ mv)) : go m' ds
 
-count :: forall a. Ord a => [a] -> Map a Word
+count :: forall a. (Ord a) => [a] -> Map a Word
 count = foldl go M.empty
   where
     go :: Map a Word -> a -> Map a Word

@@ -44,10 +44,10 @@ import Text.Read
 data PropertyParseError
   = PropertyTypeParseError !PropertyTypeParseError
   | MismatchedPropertyName
+      -- Expected
       !ContentLineName
-      -- ^ Expected
+      -- Actual
       !ContentLineName
-      -- ^ Actual
   | UnknownCalendarScale !Text
   | UnReadableGeographicPosition !Text
   | UnknownStatus !Text
@@ -124,7 +124,7 @@ class IsProperty property where
 
 propertyContentLineP ::
   forall property.
-  IsProperty property =>
+  (IsProperty property) =>
   ContentLine ->
   Conform PropertyParseError PropertyFixableError Void property
 propertyContentLineP ContentLine {..} =
@@ -133,12 +133,12 @@ propertyContentLineP ContentLine {..} =
         then propertyP contentLineValue
         else unfixableError $ MismatchedPropertyName name contentLineName
 
-propertyContentLineB :: forall property. IsProperty property => property -> ContentLine
+propertyContentLineB :: forall property. (IsProperty property) => property -> ContentLine
 propertyContentLineB = ContentLine (propertyName (Proxy :: Proxy property)) . propertyB
 
 viaPropertyTypeP ::
   forall propertyType property.
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   (propertyType -> Conform PropertyParseError PropertyFixableError Void property) ->
   (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 viaPropertyTypeP func clv = do
@@ -146,14 +146,14 @@ viaPropertyTypeP func clv = do
   func propertyType
 
 wrapPropertyTypeP ::
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   (propertyType -> property) ->
   (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 wrapPropertyTypeP func = viaPropertyTypeP (pure . func)
 
 viaPropertyTypeListP ::
   forall propertyType property.
-  IsPropertyType propertyType =>
+  (IsPropertyType propertyType) =>
   ([propertyType] -> Conform PropertyParseError PropertyFixableError Void property) ->
   (ContentLineValue -> Conform PropertyParseError PropertyFixableError Void property)
 viaPropertyTypeListP func clv = do
@@ -161,7 +161,7 @@ viaPropertyTypeListP func clv = do
   func propertyType
 
 propertyParamP ::
-  IsParameter param =>
+  (IsParameter param) =>
   ContentLineValue ->
   Conform
     PropertyParseError
@@ -174,7 +174,7 @@ propertyParamP clv =
       contentLineValueParams clv
 
 propertyParamWithDefaultP ::
-  IsParameter param =>
+  (IsParameter param) =>
   param ->
   ContentLineValue ->
   Conform
@@ -185,7 +185,7 @@ propertyParamWithDefaultP ::
 propertyParamWithDefaultP defaultValue clv = fromMaybe defaultValue <$> propertyParamP clv
 
 propertyParamListP ::
-  IsParameter param =>
+  (IsParameter param) =>
   ContentLineValue ->
   Conform
     PropertyParseError

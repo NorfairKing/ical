@@ -144,7 +144,7 @@ shrinkRangeUp (lower, upper) value
   | value < lower = [lower]
   | otherwise = [upper] -- Could maybe have more than this
 
-clampMaybe :: Ord a => a -> a -> a -> Maybe a
+clampMaybe :: (Ord a) => a -> a -> a -> Maybe a
 clampMaybe lower upper value =
   if lower <= value && value <= upper
     then Just value

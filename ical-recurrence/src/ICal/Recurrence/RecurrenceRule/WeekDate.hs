@@ -115,7 +115,7 @@ firstDayOfTheWSWeekThatContainsJan1st (WeekStart weekStartDow) year =
         )
         firstDayOfTheYear
 
-positiveMod :: Integral i => i -> i -> i
+positiveMod :: (Integral i) => i -> i -> i
 positiveMod r n =
   let m = n `mod` r
    in if m < 0 then m + r else m

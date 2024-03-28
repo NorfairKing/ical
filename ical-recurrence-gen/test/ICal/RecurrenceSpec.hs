@@ -115,7 +115,7 @@ parseEventOccurrence t = case T.splitOn "\r\n" t of
         l ->
           Just
             <$> (Left <$> parsePropertyFromText (l <> "\r\n"))
-            `altConform` (Right <$> parsePropertyFromText (l <> "\r\n"))
+              `altConform` (Right <$> parsePropertyFromText (l <> "\r\n"))
       pure EventOccurrence {..}
   _ -> Nothing
 

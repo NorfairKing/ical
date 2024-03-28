@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -29,6 +30,9 @@ import GHC.Generics (Generic)
 import ICal.ContentLine
 import ICal.Parameter
 import ICal.PropertyType.Class
+#if MIN_VERSION_base64(1,0,0)
+import Data.Base64.Types
+#endif
 
 -- | Binary
 --
@@ -108,8 +112,16 @@ binaryP ContentLineValue {..} = do
 binaryB :: Binary -> ContentLineValue
 binaryB = insertParam EncodingBase64 . mkSimpleContentLineValue . renderBinary
 
+#if MIN_VERSION_base64(1,0,0)
+parseBinary :: Text -> Either Text Binary
+parseBinary t = Binary <$> decodeBase64Untyped (TE.encodeUtf8 t)
+
+renderBinary :: Binary -> Text
+renderBinary = extractBase64 . encodeBase64 . unBinary
+#else
 parseBinary :: Text -> Either Text Binary
 parseBinary t = Binary <$> decodeBase64 (TE.encodeUtf8 t)
 
 renderBinary :: Binary -> Text
 renderBinary = encodeBase64 . unBinary
+#endif

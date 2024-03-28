@@ -223,7 +223,7 @@ parseComponentFromText contents = do
 --
 -- You probably don't want to use this.
 -- Individual components are not described by the spec as text.
-renderComponentText :: IsComponent component => component -> Text
+renderComponentText :: (IsComponent component) => component -> Text
 renderComponentText =
   renderUnfoldedLines
     . map renderContentLineToUnfoldedLine
@@ -236,7 +236,7 @@ renderComponentText =
 -- You probably don't want to use this.
 -- Individual properties are not described by the spec as text.
 parsePropertyFromText ::
-  IsProperty property =>
+  (IsProperty property) =>
   Text ->
   Conform
     ICalParseError
@@ -256,7 +256,7 @@ parsePropertyFromText contents = do
 --
 -- You probably don't want to use this.
 -- Individual properties are not described by the spec as text.
-renderPropertyText :: IsProperty property => property -> Text
+renderPropertyText :: (IsProperty property) => property -> Text
 renderPropertyText =
   renderUnfoldedLines
     . (: [])

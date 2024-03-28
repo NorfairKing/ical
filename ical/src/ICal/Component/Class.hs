@@ -291,10 +291,10 @@ data CalendarParseFixableError
   | MissingProductIdentifier !ProductIdentifier
   | UntilTypeGuess
       !DateTimeStart
+      -- Old 'UNTIL'
       !Until
-      -- ^ Old 'UNTIL'
+      -- New guessed 'UNTIL
       !Until
-      -- ^ New guessed 'UNTIL
   | MoreThanOneRequiredPropertyValue ContentLineName ContentLineValue ContentLineValue [ContentLineValue]
   | InvalidPropertyOmitted !ContentLine
   deriving (Show, Eq, Ord)
@@ -320,7 +320,7 @@ instance Exception CalendarParseWarning where
       unlines $ unwords ["Multiple values of optional property:", show name] : map show (v1 : v2 : vRest)
 
 parseComponentFromContentLines ::
-  IsComponent component =>
+  (IsComponent component) =>
   [ContentLine] ->
   CP component
 parseComponentFromContentLines cls = do
@@ -360,7 +360,7 @@ class IsComponent component where
 
 namedComponentP ::
   forall component.
-  IsComponent component =>
+  (IsComponent component) =>
   Text ->
   Component ->
   CP component
@@ -372,7 +372,7 @@ namedComponentP actualName component =
 
 namedComponentB ::
   forall component.
-  IsComponent component =>
+  (IsComponent component) =>
   component ->
   (ComponentName, Component)
 namedComponentB component =
@@ -382,14 +382,14 @@ namedComponentB component =
 
 namedComponentMapB ::
   forall component.
-  IsComponent component =>
+  (IsComponent component) =>
   component ->
   Map ComponentName (NonEmpty Component)
 namedComponentMapB component =
   let (name, generalComponent) = namedComponentB component
    in M.singleton name (generalComponent :| [])
 
-requiredPropertyP :: forall a. IsProperty a => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
+requiredPropertyP :: forall a. (IsProperty a) => Map ContentLineName (NonEmpty ContentLineValue) -> CP a
 requiredPropertyP m = case M.lookup name m of
   Nothing -> unfixableError $ CalendarParseErrorMissingRequiredProperty name
   Just (value :| restValues) -> do
@@ -401,12 +401,12 @@ requiredPropertyP m = case M.lookup name m of
   where
     name = propertyName (Proxy :: Proxy a)
 
-requiredPropertyB :: IsProperty property => property -> Map ContentLineName (NonEmpty ContentLineValue)
+requiredPropertyB :: (IsProperty property) => property -> Map ContentLineName (NonEmpty ContentLineValue)
 requiredPropertyB property =
   let cl = propertyContentLineB property
    in M.singleton (contentLineName cl) (contentLineValue cl :| [])
 
-optionalPropertyB :: IsProperty property => Maybe property -> Map ContentLineName (NonEmpty ContentLineValue)
+optionalPropertyB :: (IsProperty property) => Maybe property -> Map ContentLineName (NonEmpty ContentLineValue)
 optionalPropertyB = maybe M.empty requiredPropertyB
 
 optionalPropertyWithDefaultB ::
@@ -454,14 +454,14 @@ optionalPropertyWithDefaultP ::
 optionalPropertyWithDefaultP defaultValue m = fromMaybe defaultValue <$> optionalPropertyP m
 
 listOfPropertiesB ::
-  IsProperty property =>
+  (IsProperty property) =>
   [property] ->
   Map ContentLineName (NonEmpty ContentLineValue)
 listOfPropertiesB = M.unionsWith (<>) . map requiredPropertyB
 
 listOfPropertiesP ::
   forall a.
-  IsProperty a =>
+  (IsProperty a) =>
   Map ContentLineName (NonEmpty ContentLineValue) ->
   CP [a]
 listOfPropertiesP m = do
@@ -471,7 +471,7 @@ listOfPropertiesP m = do
     name = propertyName (Proxy :: Proxy a)
 
 setOfPropertiesB ::
-  IsProperty property =>
+  (IsProperty property) =>
   Set property ->
   Map ContentLineName (NonEmpty ContentLineValue)
 setOfPropertiesB = listOfPropertiesB . S.toList
@@ -485,7 +485,7 @@ setOfPropertiesP = fmap S.fromList . listOfPropertiesP
 
 subComponentsP ::
   forall component.
-  IsComponent component =>
+  (IsComponent component) =>
   Map ComponentName (NonEmpty Component) ->
   CP [component]
 subComponentsP =
@@ -495,7 +495,7 @@ subComponentsP =
 
 subComponentsB ::
   forall component.
-  IsComponent component =>
+  (IsComponent component) =>
   [component] ->
   Map ComponentName (NonEmpty Component)
 subComponentsB = M.unionsWith (<>) . map namedComponentMapB
