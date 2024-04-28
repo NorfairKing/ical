@@ -51,9 +51,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
-    , conformance
     , conformance-gen
-    , containers
     , genvalidity
     , genvalidity-containers
     , ical-gen

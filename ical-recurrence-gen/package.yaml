@@ -10,9 +10,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - conformance
   - conformance-gen
-  - containers
   - genvalidity
   - genvalidity-containers
   - ical-gen

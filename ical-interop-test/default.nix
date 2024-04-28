@@ -1,22 +1,12 @@
-{ mkDerivation, base, bytestring, case-insensitive, containers
-, dlist, genvalidity, genvalidity-bytestring
-, genvalidity-case-insensitive, genvalidity-containers
-, genvalidity-network-uri, genvalidity-sydtest, genvalidity-text
-, genvalidity-time, ical, ical-gen, lib, megaparsec, network-uri
-, path, path-io, process, QuickCheck, sydtest, sydtest-discover
-, text, time, timeout
+{ mkDerivation, base, bytestring, genvalidity-sydtest, ical
+, ical-gen, lib, path, path-io, process, sydtest, sydtest-discover
+, text, timeout
 }:
 mkDerivation {
   pname = "ical-interop-test";
   version = "0.0.0.0";
   src = ./.;
-  libraryHaskellDepends = [
-    base bytestring case-insensitive containers dlist genvalidity
-    genvalidity-bytestring genvalidity-case-insensitive
-    genvalidity-containers genvalidity-network-uri genvalidity-sydtest
-    genvalidity-text genvalidity-time ical megaparsec network-uri
-    QuickCheck sydtest text time
-  ];
+  libraryHaskellDepends = [ base ];
   testHaskellDepends = [
     base bytestring genvalidity-sydtest ical ical-gen path path-io
     process sydtest text timeout

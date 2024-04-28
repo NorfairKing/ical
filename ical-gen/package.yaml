@@ -58,15 +58,11 @@ benchmarks:
     - -with-rtsopts=-N
     - -Wall
     dependencies:
-    - QuickCheck
     - criterion
-    - deepseq
-    - genvalidity
     - genvalidity-criterion
     - genvalidity-vector
     - ical
     - ical-gen
-    - vector
 
 tests:
   ical-test:
@@ -84,7 +80,6 @@ tests:
     - conformance-gen
     - containers
     - dlist
-    - genvalidity
     - genvalidity-sydtest
     - genvalidity-text
     - ical
@@ -92,9 +87,6 @@ tests:
     - megaparsec
     - network-uri
     - path
-    - path-io
-    - pretty-show
     - sydtest
     - text
     - time
-    - validity-network-uri

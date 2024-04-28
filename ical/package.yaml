@@ -15,7 +15,6 @@ library:
   - deepseq
   - dlist
   - megaparsec
-  - mtl
   - network-uri
   - text
   - time

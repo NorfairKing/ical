@@ -12,26 +12,7 @@ library
   other-modules:
       Paths_ical_interop_test
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
-    , bytestring
-    , case-insensitive
-    , containers
-    , dlist
-    , genvalidity
-    , genvalidity-bytestring
-    , genvalidity-case-insensitive
-    , genvalidity-containers
-    , genvalidity-network-uri
-    , genvalidity-sydtest
-    , genvalidity-text
-    , genvalidity-time
-    , ical
-    , megaparsec
-    , network-uri
-    , sydtest
-    , text
-    , time
+      base >=4.7 && <5
   default-language: Haskell2010
 
 test-suite ical-interop-test
