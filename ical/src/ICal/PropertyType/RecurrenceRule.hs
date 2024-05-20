@@ -13,6 +13,8 @@
 module ICal.PropertyType.RecurrenceRule
   ( RecurrenceRule (..),
     makeRecurrenceRule,
+    parseRecurrenceRule,
+    renderRecurrenceRule,
     recurrenceRuleP,
     recurrenceRuleB,
     Until (..),
@@ -573,8 +575,13 @@ instance IsPropertyType RecurrenceRule where
 recurrenceRuleP ::
   ContentLineValue ->
   Conform PropertyTypeParseError PropertyTypeFixableError Void RecurrenceRule
-recurrenceRuleP ContentLineValue {..} = do
-  let parts = T.splitOn ";" contentLineValueRaw
+recurrenceRuleP = parseRecurrenceRule . contentLineValueRaw
+
+parseRecurrenceRule ::
+  Text ->
+  Conform PropertyTypeParseError PropertyTypeFixableError Void RecurrenceRule
+parseRecurrenceRule t = do
+  let parts = T.splitOn ";" t
   tups <- forM parts $ \partText -> case T.splitOn "=" partText of
     [] -> error "cannot happen because T.splitOn never returns an empty list."
     (k : vs) -> pure (k, T.intercalate "=" vs)
@@ -628,9 +635,11 @@ recurrenceRuleP ContentLineValue {..} = do
 -- iCalendar the FREQ rule part MUST be the first rule part specified
 -- in a RECUR value.
 -- @
-recurrenceRuleB ::
-  RecurrenceRule -> ContentLineValue
-recurrenceRuleB RecurrenceRule {..} =
+recurrenceRuleB :: RecurrenceRule -> ContentLineValue
+recurrenceRuleB = mkSimpleContentLineValue . renderRecurrenceRule
+
+renderRecurrenceRule :: RecurrenceRule -> Text
+renderRecurrenceRule RecurrenceRule {..} =
   let tup :: forall part. (IsRecurrenceRulePart part) => part -> (Text, Text)
       tup part = (recurrenceRulePartName (Proxy :: Proxy part), recurrenceRulePartB part)
       dTup :: forall part. (Eq part, IsRecurrenceRulePart part) => part -> part -> [(Text, Text)]
@@ -659,7 +668,7 @@ recurrenceRuleB RecurrenceRule {..} =
           ]
       parts :: [Text]
       parts = map (\(k, v) -> k <> "=" <> v) tups
-   in mkSimpleContentLineValue $ T.intercalate ";" parts
+   in T.intercalate ";" parts
 
 class IsRecurrenceRulePart part where
   recurrenceRulePartName :: Proxy part -> Text
