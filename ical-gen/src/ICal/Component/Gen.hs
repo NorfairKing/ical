@@ -42,8 +42,24 @@ instance GenValid Component where
     pure Component {..}
 
 instance GenValid Calendar where
-  genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = sized $ \s -> do
+    calendarProductIdentifier <- genValid
+    calendarVersion <- genValid
+    calendarCalendarScale <- genValid
+    calendarMethod <- genValid
+    calendarUID <- genValid
+    calendarLastModified <- genValid
+    calendarURL <- genValid
+    calendarDescriptions <- genValid
+    calendarImages <- genValid
+    (a, b, c, d, e) <- genSplit5 s
+    calendarEvents <- resize a genValid
+    calendarTodos <- resize b genValid
+    calendarJournals <- resize c genValid
+    calendarFreeBusys <- resize d genValid
+    calendarTimeZones <- resize e genValid
+    pure Calendar {..}
 
 fixUntilCount :: DateTimeStart -> RecurrenceRule -> Gen RecurrenceRule
 fixUntilCount dateTimeStart rrule =
@@ -195,7 +211,9 @@ instance GenValid Journal where
 
     pure Journal {..}
 
-instance GenValid FreeBusy
+instance GenValid FreeBusy where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid Alarm where
   genValid = do

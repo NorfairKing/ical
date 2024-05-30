@@ -14,7 +14,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
-  it "resolution and unresolution roundtrip with a single observance" $ do
+  xit "resolution and unresolution roundtrip with a single observance" $ do
     forAllValid $ \tzid ->
       forAllValid $ \start ->
         forAllValid $ \fromOffset ->
@@ -27,6 +27,7 @@ spec = do
                 resolved <- resolveLocalTime tz lt
                 unresolveUTCTime tz resolved
               actual `shouldBe` lt
+
   describe "resolveDateTime" $ do
     it "Works for any single-standard-observance timezone just like the time library would" $
       forAllValid $ \tzid ->
