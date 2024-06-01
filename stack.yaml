@@ -1,4 +1,4 @@
-resolver: lts-21.22
+resolver: lts-22.22
 packages:
 - ical
 - ical-gen
@@ -33,7 +33,7 @@ extra-deps:
   - safe-coloured-text-layout
   - safe-coloured-text-terminfo
 - github: NorfairKing/sydtest
-  commit: c27494342ab0102681f67cb28679ca7cf1d77bc4
+  commit: 352bd93035210f3811634288d0dd73fe0507f2af
   subdirs:
   - sydtest
   - sydtest-discover
