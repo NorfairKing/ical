@@ -114,11 +114,11 @@
         packages = p: builtins.attrValues p.icalPackages;
         withHoogle = true;
         doBenchmark = true;
-        buildInputs = (with pkgs; [
+        buildInputs = with pkgs; [
           cabal-install
           vcal
           zlib
-        ]) ++ self.checks.${system}.pre-commit.enabledPackages;
+        ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;
       };
       nix-ci = {
