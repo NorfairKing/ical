@@ -99,7 +99,7 @@ data Duration
   = DurationDate !DurDate
   | DurationTime !DurTime
   | DurationWeek !DurWeek
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Duration
 
@@ -168,7 +168,7 @@ data DurDate = DurDate
     durDateMinute :: !Word,
     durDateSecond :: !Word
   }
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DurDate
 
@@ -189,7 +189,7 @@ data DurTime = DurTime
     durTimeMinute :: !Word,
     durTimeSecond :: !Word
   }
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DurTime
 
@@ -207,7 +207,7 @@ data DurWeek = DurWeek
   { durWeekSign :: !Sign,
     durWeekWeek :: !Word
   }
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity DurWeek
 
@@ -223,7 +223,7 @@ durWeekNominalDiffTime DurWeek {..} =
     ]
 
 data Sign = Positive | Negative
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Sign
 

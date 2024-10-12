@@ -79,15 +79,18 @@ goldenEventOccurrenceFile goldenFile produceOccurrences =
       goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderEventOccurrences,
       goldenTestCompare = \actual expected ->
         if actual == expected
-          then Nothing
-          else
-            Just $
-              Context
-                ( stringsNotEqualButShouldHaveBeenEqual
-                    (ppShow (S.toList actual))
-                    (ppShow (S.toList expected))
-                )
-                (goldenContext (fromRelFile goldenFile))
+          then pure Nothing
+          else do
+            a <-
+              stringsNotEqualButShouldHaveBeenEqual
+                (ppShow (S.toList actual))
+                (ppShow (S.toList expected))
+
+            pure $
+              Just $
+                Context
+                  a
+                  (goldenContext (fromRelFile goldenFile))
     }
 
 chunksOf :: Int -> [a] -> [[a]]
@@ -144,15 +147,18 @@ goldenResolvedEventFile goldenFile produceResolvedEvents =
       goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderResolvedEvents,
       goldenTestCompare = \actual expected ->
         if actual == expected
-          then Nothing
-          else
-            Just $
-              Context
-                ( stringsNotEqualButShouldHaveBeenEqual
-                    (ppShow (S.toList actual))
-                    (ppShow (S.toList expected))
-                )
-                (goldenContext (fromRelFile goldenFile))
+          then pure Nothing
+          else do
+            a <-
+              stringsNotEqualButShouldHaveBeenEqual
+                (ppShow (S.toList actual))
+                (ppShow (S.toList expected))
+
+            pure $
+              Just $
+                Context
+                  a
+                  (goldenContext (fromRelFile goldenFile))
     }
 
 parseResolvedEvents :: Text -> Set ResolvedEvent

@@ -81,7 +81,7 @@ import ICal.PropertyType.Duration
 data Period
   = PeriodStartEnd !Time.UTCTime !Time.UTCTime
   | PeriodStartDuration !Time.UTCTime !Duration
-  deriving (Show, Eq, Ord, Generic, Typeable)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Period where
   validate p =

@@ -63,8 +63,6 @@ import ICal.PropertyType.Date
 import ICal.PropertyType.DateTime
 import Text.Read
 
-deriving instance Generic Time.DayOfWeek
-
 deriving instance Bounded Time.DayOfWeek -- Silly that this doesn't exist.
 
 -- | Recurrence Rule
