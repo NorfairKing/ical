@@ -3,36 +3,35 @@ METHOD:REQUEST
 PRODID:-//CS SYD//Smos//EN
 VERSION:2.0
 BEGIN:VEVENT
-ATTENDEE;CN="Shahar ^'Dawn^' Or";PARTSTAT=ACCEPTED:mailto:mightyiampresen
- ce@gmail.com
+ATTENDEE;CN="Isaac Shapira";PARTSTAT=ACCEPTED:mailto:isaac.shapira@platon
+ ic.systems
 ATTENDEE;CN="Tom Sydney Kerckhove";PARTSTAT=TENTATIVE;RSVP=TRUE:mailto:sy
  d@cs-syd.eu
 CLASS:PRIVATE
-CREATED:20240328T084247Z
-DESCRIPTION:Shahar "Dawn" Or meets Tom Sydney Kerckhove\n\nFor Tom Sydney
-  Kerckhove:\nMonday 2024-04-01 11:00\n\nFor Shahar "Dawn" Or:\nMonday 202
- 4-04-01 16:00\nI'd like to meet with you and talk about your possible par
- ticipation in the NGIpkgs Maintenance Mob.\nMeeting link: https://meet.ji
- t.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove\n
-DTSTAMP:20240328T084247Z
-DTSTART:20240401T090000Z
-DURATION:PT1H
-LOCATION:https://meet.jit.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove
-ORGANIZER;CN="Shahar ^'Dawn^' Or":mailto:mightyiampresence@gmail.com
+CREATED:20250324T203308Z
+DESCRIPTION:Isaac Shapira meets Tom Sydney Kerckhove\n\nFor Tom Sydney Ke
+ rckhove:\nWednesday 2025-03-26 15:00\n\nFor Isaac Shapira:\nWednesday 202
+ 5-03-26 08:00\nMeeting link: https://meet.jit.si/IsaacShapiraMeetsTomSydn
+ eyKerckhove\n
+DTSTAMP:20250324T203308Z
+DTSTART:20250326T140000Z
+DURATION:PT30M
+LOCATION:https://meet.jit.si/IsaacShapiraMeetsTomSydneyKerckhove
+ORGANIZER;CN="Isaac Shapira":mailto:isaac.shapira@platonic.systems
 STATUS:TENTATIVE
-SUMMARY:Shahar "Dawn" Or <> Tom Sydney Kerckhove
-UID:486cc1b4-a811-48be-8e51-47a7963a6cf1
-URL:https://meet.jit.si/Shahar%22Dawn%22OrMeetsTomSydneyKerckhove
+SUMMARY:Isaac Shapira <> Tom Sydney Kerckhove
+UID:84f3e9b2-f6dd-483e-971a-49fbf4cac757
+URL:https://meet.jit.si/IsaacShapiraMeetsTomSydneyKerckhove
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Meeting between Tom Sydney Kerckhove and Shahar "Dawn" Or sta
- rts in 15 minutes
+DESCRIPTION:Meeting between Tom Sydney Kerckhove and Isaac Shapira starts
+  in 15 minutes
 TRIGGER:-PT15M
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Meeting between Tom Sydney Kerckhove and Shahar "Dawn" Or sta
- rts in 5 minutes!
+DESCRIPTION:Meeting between Tom Sydney Kerckhove and Isaac Shapira starts
+  in 5 minutes!
 TRIGGER:-PT5M
 END:VALARM
 END:VEVENT
