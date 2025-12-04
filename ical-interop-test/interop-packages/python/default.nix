@@ -6,5 +6,8 @@ buildPythonApplication {
   version = "0.0";
   propagatedBuildInputs = [ icalendar ];
 
+  pyproject = true;
+  build-system = [ setuptools ];
+
   src = ./.;
 }

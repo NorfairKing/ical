@@ -566,8 +566,8 @@ defaultFreeBusyTimeType = FreeBusyTimeTypeBusy
 --
 --     LOCATION;LANGUAGE=no:Tyskland
 -- @
-newtype Language =
-  -- TODO consider actually implementing the tag from RFC5646 here.
+newtype Language
+  = -- TODO consider actually implementing the tag from RFC5646 here.
   Language {unLanguage :: ParamValue}
   deriving stock (Show, Eq, Ord, Generic)
   deriving newtype (IsString)
