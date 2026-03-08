@@ -20,6 +20,7 @@ extra-source-files:
     test_resources/calendar/error/timezone-without-observances.error
     test_resources/calendar/error/timezone-without-observances.ics
     test_resources/calendar/fixable/invalid-until.ics
+    test_resources/calendar/fixable/lf-only.ics
     test_resources/calendar/fixable/missing-prodid.ics
     test_resources/calendar/fixable/seattle.cs
     test_resources/calendar/fixable/uid.ics

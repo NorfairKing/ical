@@ -7,7 +7,7 @@
 }:
 mkDerivation {
   pname = "ical";
-  version = "0.0.0.0";
+  version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
     base base64 bytestring case-insensitive conformance containers

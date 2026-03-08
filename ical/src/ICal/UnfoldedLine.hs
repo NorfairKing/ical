@@ -79,12 +79,15 @@ instance Exception UnfoldingError where
   displayException = \case
     NoCRLFAtEndError -> "Document did not end in a crlf."
 
-data UnfoldingFixableError = NoCRLFAtEndFixableError
+data UnfoldingFixableError
+  = NoCRLFAtEndFixableError
+  | LFOnlyLineEndingsFixableError
   deriving (Show, Eq)
 
 instance Exception UnfoldingFixableError where
   displayException = \case
     NoCRLFAtEndFixableError -> "Document did not end in a crlf, but it ended in END:VCALENDAR so tried to parse it anyway."
+    LFOnlyLineEndingsFixableError -> "Document uses LF line endings instead of CRLF as required by the spec."
 
 data UnfoldingWarning = LineTooLong
   deriving (Show, Eq)
@@ -98,6 +101,14 @@ parseUnfoldedLines :: Text -> Conform UnfoldingError UnfoldingFixableError Void 
 parseUnfoldedLines t
   | T.null t = pure []
   | otherwise = do
+      -- Normalize LF-only line endings to CRLF.
+      -- Many producers use LF instead of CRLF as required by the spec.
+      t' <-
+        if "\r\n" `T.isInfixOf` t
+          then pure t
+          else do
+            emitFixableError LFOnlyLineEndingsFixableError
+            pure $ T.intercalate "\r\n" $ T.splitOn "\n" $ T.filter (/= '\r') t
       let tryToParse =
             pure
               . map UnfoldedLine
@@ -126,16 +137,16 @@ parseUnfoldedLines t
               -- character that immediately follows.
               -- @
               . T.replace "\r\n " ""
-      if T.takeEnd 2 t == "\r\n"
-        then tryToParse t
+      if T.takeEnd 2 t' == "\r\n"
+        then tryToParse t'
         else do
-          let t' = T.stripEnd t
+          let t'' = T.stripEnd t'
           -- If the stream ends with END:VCALENDAR then we don't have to be
           -- scared that it got cut off, so we can try to fix this error.
-          if T.takeEnd (T.length "END:VCALENDAR") t' == "END:VCALENDAR"
+          if T.takeEnd (T.length "END:VCALENDAR") t'' == "END:VCALENDAR"
             then do
               emitFixableError NoCRLFAtEndFixableError
-              tryToParse (t' <> "\r\n")
+              tryToParse (t'' <> "\r\n")
             else unfixableError NoCRLFAtEndError
 
 renderUnfoldedLines :: [UnfoldedLine] -> Text
