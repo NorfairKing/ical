@@ -1,5 +1,7 @@
 # ICal
 
+[![NixCI](https://staging.nix-ci.com/badge/gh:NorfairKing:ical)](https://staging.nix-ci.com/gh:NorfairKing:ical)
+
 An implementation of:
 
 * [RCF5545: Internet Calendaring and Scheduling Core Object Specification (iCalendar)](https://tools.ietf.org/html/rfc5545)
