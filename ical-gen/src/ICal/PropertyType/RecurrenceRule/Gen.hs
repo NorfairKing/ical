@@ -18,7 +18,7 @@ import Data.Text (Text)
 import GHC.Stack
 import ICal.PropertyType.Gen
 import ICal.PropertyType.RecurrenceRule
-import Test.QuickCheck
+import Test.QuickCheck (Gen, choose, oneof, sized)
 import Test.Syd
 import Test.Syd.Validity
 
