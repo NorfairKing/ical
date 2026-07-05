@@ -408,6 +408,24 @@ resolveDateTime = \case
     ut <- resolveLocalTimeR tzid lt
     pure $ TimestampUTCTime ut
 
+-- | Render a resolved 'Timestamp' as a wall-clock time in a given display
+-- timezone.
+--
+-- 'resolveDateTime' turns a UTC or zoned 'DateTime' into an absolute
+-- 'TimestampUTCTime'. To display that instant to a human you need to convert it
+-- back into the local wall-clock of some timezone; this does that, DST-correctly
+-- (via 'unresolveUTCTimeR', which consults the 'VTIMEZONE' rules). A floating
+-- ('TimestampLocalTime') timestamp has no timezone and is passed through
+-- unchanged, and a 'TimestampDay' is passed through as a 'Left'.
+--
+-- Consumers must not hand-roll this: keeping the UTC wall-clock for a UTC
+-- 'DateTime' would be wrong by the display zone's offset.
+unresolveTimestampR :: TimeZoneIdentifierParam -> Timestamp -> R (Either Time.Day Time.LocalTime)
+unresolveTimestampR tzid = \case
+  TimestampDay d -> pure $ Left d
+  TimestampLocalTime lt -> pure $ Right lt
+  TimestampUTCTime ut -> Right <$> unresolveUTCTimeR tzid ut
+
 resolveUTCTime :: Time.TimeZone -> Time.UTCTime -> Time.LocalTime
 resolveUTCTime = Time.utcToLocalTime
 
