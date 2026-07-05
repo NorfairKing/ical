@@ -1,0 +1,54 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Salsa Bachata Kizomba Warszawa
+X-WR-TIMEZONE:Europe/Warsaw
+BEGIN:VTIMEZONE
+TZID:Europe/Warsaw
+X-LIC-LOCATION:Europe/Warsaw
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:GMT+2
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:GMT+1
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Warsaw:20250523T221500
+DTEND;TZID=Europe/Warsaw:20250524T030000
+DTSTAMP:20260705T091355Z
+UID:93DC3253-F327-4851-BFCA-D20CF068AC77
+RECURRENCE-ID;TZID=Europe/Warsaw:20250523T221500
+URL:https://www.facebook.com/share/19h647rPt5/?mibextid=wwXIfr
+CREATED:20250425T151633Z
+DESCRIPTION:Kultowe Dos Mundos Party!\n\nChcesz wypróbować to\, czego naucz
+ yłeś się na zajęciach? Nie masz miejsca do ćwiczeń?\n\nWpadnij do Nas i pot
+ renuj w wyśmienitym towarzystwie!\n\n\nW piątek impreza na 3 parkietach:\n\
+ nSala 1 -> Bachata  \nSala 2 -> Kizomba \nSala 3 -> Salsa \n\n\nMuzyka/ Sty
+ le: Bachata\, Kizomba\, Salsa\nKiedy? PIĄTEK 23.05.2025\nGodziny wydarzenia
+ : 22:15 - 3:00\nGdzie? Akademia Tańca Ireneusza Sulewskiego Atlas Tower poz
+ iom -1\n\n\nCennik:\n\n- 15 PLN GOTÓWKĄ + odbicie się kartą MultiSport Plus
+  (Ta opcja możliwa tylko do 23:00 przy okazaniu dokumentu potwierdzającego 
+ tożsamość ze zdjęciem)\n\n- bez karty -> 35 PLN GOTÓWKA\n\n\nUwaga:\n\nDla 
+ korzystających z opcji z kartą MultiSport - pamiętajcie musicie ją zabrać z
+ e sobą w piątek!\n\n\nZapraszamy w piątek do Atlas Tower!\n\n--------------
+ ------------------------------\nOrganizator:\nAkademia Tańca Ireneusza Sule
+ wskiego\nDos Mundos
+LAST-MODIFIED:20260505T191208Z
+LOCATION:Atlas Tower\, al. Jerozolimskie 123\, 00-001 Warszawa\, Polska
+SEQUENCE:5
+STATUS:CONFIRMED
+SUMMARY:Dos Mundos
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

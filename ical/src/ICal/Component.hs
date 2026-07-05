@@ -157,6 +157,9 @@ data Calendar = Calendar
     -- @
     calendarCalendarScale :: !CalendarScale,
     calendarMethod :: !(Maybe Method),
+    -- | The non-standard @X-WR-TIMEZONE@ property: the calendar's default
+    -- display time zone. Not part of RFC 5545, but ubiquitous in the wild.
+    calendarTimeZoneIdentifier :: !(Maybe CalendarTimeZoneIdentifier),
     -- From [Section 4 of RFC 7986](https://datatracker.ietf.org/doc/html/rfc7986#section-4):
     -- @
     -- calprops =/ *(
@@ -244,6 +247,7 @@ instance IsComponent Calendar where
 
     calendarCalendarScale <- optionalPropertyWithDefaultP defaultCalendarScale componentProperties
     calendarMethod <- optionalPropertyP componentProperties
+    calendarTimeZoneIdentifier <- optionalPropertyP componentProperties
 
     calendarUID <- optionalPropertyP componentProperties
     calendarURL <- optionalPropertyP componentProperties
@@ -268,6 +272,7 @@ instance IsComponent Calendar where
               requiredPropertyB calendarVersion,
               optionalPropertyWithDefaultB defaultCalendarScale calendarCalendarScale,
               optionalPropertyB calendarMethod,
+              optionalPropertyB calendarTimeZoneIdentifier,
               optionalPropertyB calendarUID,
               optionalPropertyB calendarLastModified,
               optionalPropertyB calendarURL,
@@ -292,6 +297,7 @@ makeCalendar prodId =
       calendarVersion = version20,
       calendarCalendarScale = defaultCalendarScale,
       calendarMethod = Nothing,
+      calendarTimeZoneIdentifier = Nothing,
       calendarUID = Nothing,
       calendarLastModified = Nothing,
       calendarURL = Nothing,

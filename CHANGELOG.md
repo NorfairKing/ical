@@ -1,5 +1,13 @@
 # Changelog
 
+## ical 0.2.0.0
+
+* Parse and retain the non-standard `X-WR-TIMEZONE` calendar property (as
+  `calendarTimeZoneIdentifier`). It is emitted by most real-world calendar
+  producers (Google Calendar, Apple, ...) to declare the calendar's default
+  display time zone, and was previously dropped. Note: this adds a field to the
+  `Calendar` record.
+
 ## ical-recurrence 0.1.0.0
 
 * Add `unresolveTimestampR`, to render a resolved `Timestamp` as a wall-clock

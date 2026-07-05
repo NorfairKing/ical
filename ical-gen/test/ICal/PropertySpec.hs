@@ -50,6 +50,13 @@ spec = do
     propertyExampleSpec "METHOD:COUNTER" (Method "COUNTER")
     propertyExampleSpec "METHOD:DECLINECOUNTER" (Method "DECLINECOUNTER")
 
+  describe "CalendarTimeZoneIdentifier" $ do
+    genValidSpec @CalendarTimeZoneIdentifier
+    propertySpec @CalendarTimeZoneIdentifier
+    -- The non-standard X-WR-TIMEZONE property, ubiquitous in the wild (Google
+    -- Calendar, Apple, ...), declares the calendar's default display time zone.
+    propertyExampleSpec "X-WR-TIMEZONE:Europe/Warsaw" (CalendarTimeZoneIdentifier "Europe/Warsaw")
+
   describe "ProductIdentifier" $ do
     genValidSpec @ProductIdentifier
     propertySpec @ProductIdentifier

@@ -346,6 +346,28 @@ instance IsProperty Method where
   propertyP = wrapPropertyTypeP Method
   propertyB = propertyTypeB . unMethod
 
+-- | X-WR-TIMEZONE
+--
+-- This property is __not__ part of RFC 5545, but it is emitted by many calendar
+-- producers (Google Calendar, Apple Calendar, ...) to declare the calendar's
+-- default display time zone. Because it is so common in the wild, we keep it
+-- rather than dropping it, so that consumers can render floating and absolute
+-- (UTC) times in the calendar's intended zone.
+--
+-- Its value is a time zone identifier, matching the "TZID" of a "VTIMEZONE"
+-- component in the same calendar.
+newtype CalendarTimeZoneIdentifier = CalendarTimeZoneIdentifier {unCalendarTimeZoneIdentifier :: Text}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity CalendarTimeZoneIdentifier
+
+instance NFData CalendarTimeZoneIdentifier
+
+instance IsProperty CalendarTimeZoneIdentifier where
+  propertyName Proxy = "X-WR-TIMEZONE"
+  propertyP = wrapPropertyTypeP CalendarTimeZoneIdentifier
+  propertyB = propertyTypeB . unCalendarTimeZoneIdentifier
+
 -- | Product Identifier
 --
 -- === [section 3.7.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3)

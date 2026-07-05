@@ -48,6 +48,7 @@ instance GenValid Calendar where
     calendarVersion <- genValid
     calendarCalendarScale <- genValid
     calendarMethod <- genValid
+    calendarTimeZoneIdentifier <- genValid
     calendarUID <- genValid
     calendarLastModified <- genValid
     calendarURL <- genValid
