@@ -1,0 +1,11 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20200615T000000Z
+DTEND:20200615T010000Z
+SUMMARY:The first of four months every year
+DESCRIPTION:The candidate set of 2020 is the 15th of January\, April\, July
+  and October\, so BYSETPOS=1 selects the 15th of January\, which is before
+  DTSTART and so is not in the recurrence set.
+RRULE:FREQ=YEARLY;BYMONTH=1,4,7,10;BYSETPOS=1
+END:VEVENT

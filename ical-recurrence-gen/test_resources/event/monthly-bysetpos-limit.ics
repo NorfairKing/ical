@@ -1,0 +1,11 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20221015T000000Z
+DTEND:20221015T010000Z
+SUMMARY:The later of the 1st and the 15th of every month
+DESCRIPTION:The recurrence limit of these tests is the 1st of January 2023\,
+  and the 15th of January 2023 lies beyond it\, so January 2023 contributes
+  no instance at all.
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1,15;BYSETPOS=-1
+END:VEVENT
