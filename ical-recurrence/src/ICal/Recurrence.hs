@@ -802,6 +802,19 @@ timeZoneRuleOccurrences limit zone = do
             )
         )
         occurrences
+  -- If two observances of one time zone put a transition at the same local
+  -- time, only one of them can be kept, and 'M.unions' keeps the leftmost.  The
+  -- observances arrive in the order of 'Ord TimeZoneObservance', which compares
+  -- the DTSTART first and the offsets after it, so the smaller TZOFFSETTO wins
+  -- and the order the calendar listed them in has no say.
+  --
+  -- That is arbitrary, but it is at least the same answer every time: it does
+  -- not depend on the order the observances were parsed in.  The spec does not
+  -- say what a time zone whose observances disagree about one instant means, so
+  -- there is nothing here to be faithful to.  Recorded rather than changed,
+  -- because "last one listed wins" and "latest DTSTART wins" are just as
+  -- arbitrary, and rejecting it outright would be a new unfixable error for
+  -- input that resolves fine today.
   pure $ M.unions maps
 
 -- | Compute a map of the timezone utc offset transitions, from UTC's perspective.
