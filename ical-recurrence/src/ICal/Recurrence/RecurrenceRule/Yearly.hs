@@ -143,6 +143,17 @@ yearlyDayCandidate
           pure d'
       Just wnos -> do
         wno <- NE.toList wnos
+        -- @
+        --    Note: Assuming a Monday week start, week 53 can only occur when
+        --    Thursday is January 1 or if it is a leap year and Wednesday is
+        --    January 1.
+        -- @
+        --
+        -- A week number is a valid value even in a year that does not have
+        -- that many weeks, so it has to be ignored for such a year the way
+        -- an invalid date is.  Without this, 'fromWeekDateWithStart' keeps
+        -- counting weeks past the end of the year and lands in the next one.
+        guard $ wno <= weeksInYear weekStart year
         dow <- case byEveryWeekDayWeek byDays of
           Nothing -> [Monday .. Sunday]
           Just dows -> NE.toList dows
