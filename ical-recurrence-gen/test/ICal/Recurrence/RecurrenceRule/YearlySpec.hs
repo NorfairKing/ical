@@ -6,7 +6,9 @@ import Data.GenValidity.Time ()
 import Data.Maybe
 import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, midnight)
 import ICal.PropertyType.RecurrenceRule
+import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Yearly
+import ICal.Recurrence.TestUtils
 import Test.Syd
 import Test.Syd.Validity
 
@@ -19,6 +21,67 @@ spec = do
         listToMaybe $ yearlyDateTimeRecurrence lim start i ba bb bc bd be bf bg bh bi bj
   let yearlyDateNextOccurrence lim start i ba bb bc bd be bf bg =
         fmap localDay $ listToMaybe $ yearlyDateTimeRecurrence lim (LocalTime start midnight) i ba bb bc bd be bf [] [] [] bg
+  describe "recurRecurrenceRuleLocalTimes" $ do
+    specify "BySetPos selects within the whole year, not only within the part of the year after DTSTART" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYSETPOS rule part specifies a COMMA-separated list of values
+      -- that corresponds to the nth occurrence within the set of
+      -- recurrence instances specified by the rule.  BYSETPOS operates on
+      -- a set of recurrence instances in one interval of the recurrence
+      -- rule.  For example, in a WEEKLY rule, the interval would be one
+      -- week A set of recurrence instances starts at the beginning of the
+      -- interval defined by the FREQ rule part.
+      -- @
+      --
+      -- The set starts at the beginning of the year, so for 2020 it is the
+      -- 15th of January, April, July and October.  BYSETPOS=1 selects the
+      -- 15th of January 2020, which is before DTSTART and so is not part of
+      -- the recurrence set; the 15th of July must not take its place.
+      --
+      -- @
+      -- the BYxxx rule parts
+      -- are applied to the current set of evaluated occurrences in the
+      -- following order: BYMONTH, BYWEEKNO, BYYEARDAY, BYMONTHDAY, BYDAY,
+      -- BYHOUR, BYMINUTE, BYSECOND and BYSETPOS; then COUNT and UNTIL are
+      -- evaluated.
+      -- @
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth April, ByMonth July, ByMonth October],
+                recurrenceRuleBySetPos = [BySetPos 1]
+              }
+          start = l (d 2020 06 15) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2020 06 15) midnight,
+                             l (d 2021 01 15) midnight
+                           ]
+    specify "BySetPos selects within the whole year, no matter where the limit lies" $ do
+      -- The other way the limit leaks into filterSetPos in this function.
+      -- The set BYSETPOS numbers "starts at the beginning of the interval
+      -- defined by the FREQ rule part", so it is the whole year regardless of
+      -- where our limit falls.  The July instance of 2022 lies beyond the
+      -- limit, so 2022 contributes nothing at all, and its January instance
+      -- must not take that place.
+      let rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth July],
+                recurrenceRuleBySetPos = [BySetPos (-1)]
+              }
+          start = l (d 2020 01 15) midnight
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 12 31) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight,
+                         l (d 2022 07 15) midnight
+                       ]
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 07 01) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight
+                       ]
   describe "yearlyDateTimeRecurrence" $ do
     --  An unimportant limit because we don't specify any rules that have no occurrences
     let limit = d 2030 01 01
