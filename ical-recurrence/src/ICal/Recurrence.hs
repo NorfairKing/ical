@@ -188,7 +188,8 @@ recurRecurrenceRule ::
   R (Set EventOccurrence)
 recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
   localisedRule <- localiseUntil start recurrenceRule
-  generatedStarts <- recurRecurrenceRuleDateTimeStarts limit start localisedRule
+  exists <- localTimeExists start
+  generatedStarts <- recurRecurrenceRuleDateTimeStarts exists limit start localisedRule
   starts <- boundByUntil start recurrenceRule generatedStarts
   fmap S.fromList $
     forM (S.toList starts) $ \newStart -> do
@@ -224,6 +225,35 @@ recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
 -- 'recurRecurrenceRuleDateTimeStarts' is given a bare 'Time.LocalTime' and has
 -- no time zone to resolve with, and because unresolving one bound is cheaper
 -- than resolving every occurrence.
+-- | Whether a local time exists in the time zone that a 'DateTimeStart' names
+--
+-- @
+-- Recurrence rules may generate recurrence instances with an invalid
+-- date (e.g., February 30) or nonexistent local time (e.g., 1:30 AM
+-- on a day where the local time is moved forward by an hour at 1:00
+-- AM).  Such recurrence instances MUST be ignored and MUST NOT be
+-- counted as part of the recurrence set.
+-- @
+--
+-- An hour that a transition skips has no instant that maps to it, so resolving
+-- a local time inside it lands on an instant belonging to a different local
+-- time.  Resolving and unresolving is therefore the test: a local time exists
+-- exactly when that round trip gives it back.
+--
+-- This says yes for anything it cannot judge, so a floating or UTC start, or a
+-- time zone the calendar does not define, leaves the occurrences alone.
+localTimeExists :: DateTimeStart -> R (Time.LocalTime -> Bool)
+localTimeExists = \case
+  DateTimeStartDateTime (DateTimeZoned tzid _) -> do
+    ctxMap <- ask
+    pure $ case M.lookup tzid ctxMap of
+      Nothing -> const True
+      Just (resolutionCtx, unresolutionCtx) -> \localTime ->
+        case tryToResolveLocalTime' resolutionCtx localTime of
+          Nothing -> True
+          Just utcTime -> tryToUnresolveUTCTime' unresolutionCtx utcTime == Just localTime
+  _ -> pure (const True)
+
 -- | Drop the instances that fall after a UTC 'Until'
 --
 -- @
