@@ -105,6 +105,32 @@ recurEvents limit RecurringEvent {..} =
             eventOccurrenceEndOrDuration = recurringEventEndOrDuration
           }
    in case recurringEventStart of
+        -- An event without a DTSTART, which is conforming input:
+        --
+        -- @
+        -- ; The following is REQUIRED if the component
+        -- ; appears in an iCalendar object that doesn't
+        -- ; specify the "METHOD" property; otherwise, it
+        -- ; is OPTIONAL; in any case, it MUST NOT occur
+        -- ; more than once.
+        -- ;
+        -- dtstart /
+        -- @
+        --
+        -- Any RDATEs are silently dropped here and any EXDATEs go unapplied.
+        -- That is a known gap rather than a decision, and it is left alone
+        -- because the spec does not say what the recurrence set of such an
+        -- event is: every definition of one is phrased in terms of DTSTART,
+        -- down to "The "DTSTART" property defines the first instance in the
+        -- recurrence set".  Nor is there a way to work out where an instance an
+        -- RDATE adds should end, since the duration that would carry over comes
+        -- from the DTSTART and DTEND pair that is missing.  A period-valued
+        -- RDATE would be well defined, carrying its own end, and DURATION would
+        -- carry over, but a DTEND without a DTSTART would not.
+        --
+        -- Applying the EXDATEs would change nothing on its own: the one
+        -- occurrence here has no start, and an exception date can never match
+        -- that.
         Nothing -> pure $ S.singleton startEvent
         Just startDateTime -> do
           let Recurrence {..} = recurringEventRecurrence
