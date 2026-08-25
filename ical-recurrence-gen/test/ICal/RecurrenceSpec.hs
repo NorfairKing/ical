@@ -140,6 +140,18 @@ spec = do
             runR lim (calendarTimeZoneMap calendar) $
               fmap S.unions $
                 mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+    let plusTwo :: [Text]
+        plusTwo =
+          [ "BEGIN:VTIMEZONE",
+            "TZID:Test/PlusTwo",
+            "BEGIN:STANDARD",
+            "DTSTART:19700101T000000",
+            "TZOFFSETFROM:+0200",
+            "TZOFFSETTO:+0200",
+            "TZNAME:P2",
+            "END:STANDARD",
+            "END:VTIMEZONE"
+          ]
     let minus5 :: [Text]
         minus5 =
           [ "BEGIN:VTIMEZONE",
@@ -278,6 +290,18 @@ spec = do
         -- start excluding instances the EXDATE never named: 01:00 UTC is
         -- 02:00 local, which is not an instance of this event.
         startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T010000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
+    describe "ExceptionDateTimes" $ do
+      it "excludes an instance of a zoned event that is given in another time zone" $
+        -- 02:00 at +0200 is the same instant as the second instance, which
+        -- is at 01:00 at +0100.
+        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T020000"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
+      it "keeps an instance that an ExceptionDateTimes in another time zone does not name" $
+        -- Guards the other direction.  01:00 at +0200 is 23:00 UTC on the
+        -- first, which is not an instance, so comparing the wall clocks while
+        -- ignoring the time zone would wrongly exclude here.
+        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T010000"])
           `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
