@@ -16,6 +16,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Time as Time
 import qualified Data.Time.Calendar.MonthDay as Time
+import Data.Time.Calendar.OrdinalDate as Time (toOrdinalDate)
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.WeekDate
 
@@ -68,6 +69,41 @@ byDayLimitInYear = limitBy $ \d bd -> case bd of
 
 byEveryWeekDayLimit :: Set Time.DayOfWeek -> Time.Day -> Bool
 byEveryWeekDayLimit = limitBy $ \d dow -> dow == Time.dayOfWeek d
+
+-- | @
+-- The BYYEARDAY rule part specifies a COMMA-separated list of days
+-- of the year.  Valid values are 1 to 366 or -366 to -1.  For
+-- example, -1 represents the last day of the year (December 31st)
+-- and -306 represents the 306th to the last day of the year (March
+-- 1st).
+-- @
+byYearDayLimit :: Set ByYearDay -> Time.Day -> Bool
+byYearDayLimit = limitBy $ \d (ByYearDay yd) ->
+  let (year, dayOfYear) = Time.toOrdinalDate d
+      days = daysInYear year
+   in dayOfYear == yd
+        || dayOfYear == days + yd + 1
+
+byHourLimit :: Set ByHour -> Int -> Bool
+byHourLimit = limitBy $ \h byHour -> h == fromIntegral (unByHour byHour)
+
+byMinuteLimit :: Set ByMinute -> Int -> Bool
+byMinuteLimit = limitBy $ \m byMinute -> m == fromIntegral (unByMinute byMinute)
+
+bySecondLimit :: Set BySecond -> Pico -> Bool
+bySecondLimit = limitBy $ \s bySecond -> s == fromIntegral (unBySecond bySecond)
+
+-- | The local times at a fixed step from a starting one, up to a limit
+--
+-- The step is applied to the local time as arithmetic, without reference to any
+-- time zone, which is what a recurrence rule means: an hourly rule steps by an
+-- hour on the clock.
+stepLocalTimes :: Time.NominalDiffTime -> Time.Day -> Time.LocalTime -> Interval -> [Time.LocalTime]
+stepLocalTimes step limitDay start (Interval interval) =
+  takeWhile (< Time.LocalTime (Time.addDays 1 limitDay) Time.midnight) $
+    map
+      (\i -> Time.addLocalTime (fromInteger i * fromIntegral interval * step) start)
+      [0 ..]
 
 byYearDayExpand :: Integer -> Set ByYearDay -> Maybe (NonEmpty Word)
 byYearDayExpand year s = NE.nonEmpty $
