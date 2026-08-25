@@ -426,6 +426,16 @@ spec = do
               utcAt 1997 09 02 (16 * 3600),
               utcAt 1997 09 02 (19 * 3600)
             ]
+    describe "the limit" $ do
+      it "keeps an explicitly listed instance that lies beyond it" $
+        startsOf (fromGregorian 2020 12 31) (calendarWith [] ["DTSTART:20200101T000000Z", "DTEND:20200101T010000Z", "RDATE:20990101T000000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2099 01 01 0]
+      it "keeps a DTSTART that lies beyond it" $
+        startsOf (fromGregorian 2020 12 31) (calendarWith [] ["DTSTART:20990101T000000Z", "DTEND:20990101T010000Z", "RRULE:FREQ=DAILY;COUNT=3"])
+          `shouldReturn` S.fromList [utcAt 2099 01 01 0]
+      it "bounds what a recurrence rule generates" $
+        startsOf (fromGregorian 2020 01 03) (calendarWith [] ["DTSTART:20200101T000000Z", "DTEND:20200101T010000Z", "RRULE:FREQ=DAILY;COUNT=10"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
