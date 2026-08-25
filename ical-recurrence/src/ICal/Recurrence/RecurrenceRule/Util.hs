@@ -100,13 +100,25 @@ byMonthDayExpandMonth year month s = NE.nonEmpty $
             GT -> Just $ fromIntegral md
             LT -> Just $ fromIntegral $ days + md + 1 -- Must be positive
 
+-- | The week days of a 'ByDay' set, for use within a single week.
+--
+-- @
+-- The BYDAY rule part
+-- MUST NOT be specified with a numeric value with the FREQ rule part
+-- set to YEARLY when the BYWEEKNO rule part is specified.
+-- @
+--
+-- A numeric value is meaningless here, because the week the days are being
+-- picked out of is already fixed by BYWEEKNO.  Keep the week day and discard
+-- only the number: dropping the whole rule part instead leaves no week days
+-- at all, and the caller then falls back to every day of the week.
 byEveryWeekDayWeek :: Set ByDay -> Maybe (NonEmpty Time.DayOfWeek)
 byEveryWeekDayWeek =
   NE.nonEmpty
-    . mapMaybe
+    . map
       ( \case
-          Every dow -> Just dow
-          _ -> Nothing
+          Every dow -> dow
+          Specific _ dow -> dow
       )
     . S.toList
 
