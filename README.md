@@ -175,6 +175,7 @@ It's already being used in production at https://smos.online and https://social-
 
 
 - [x] [1911](https://www.rfc-editor.org/errata/eid1911)
+- [x] [1913](https://www.rfc-editor.org/errata/eid1913)
 - [x] [1916](https://www.rfc-editor.org/errata/eid1916)
 - [x] [4271](https://www.rfc-editor.org/errata/eid4271)
 - [x] [2677](https://www.rfc-editor.org/errata/eid2677)
