@@ -152,7 +152,7 @@ recurEvents limit RecurringEvent {..} =
                             [startEvent],
                             S.toList occurrencesFromRecurrenceDateTimes
                           ]
-          pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
+          removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
 recurRecurrenceRules ::
@@ -359,9 +359,78 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
 removeExceptionDatetimesSet ::
   Set ExceptionDateTimes ->
   Set EventOccurrence ->
-  Set EventOccurrence
+  R (Set EventOccurrence)
 removeExceptionDatetimesSet exceptionSet occurrences =
-  S.foldl' (flip removeExceptionDatetimes) occurrences exceptionSet
+  removeExceptionInstants exceptionSet $
+    S.foldl' (flip removeExceptionDatetimes) occurrences exceptionSet
+
+-- | Remove the occurrences that an exception date names the same instant as
+--
+-- [section 3.8.5.1](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.1)
+--
+-- @
+-- Value Type:  The default value type for this property is DATE-TIME.
+--    The value type can be set to DATE.
+-- @
+--
+-- @
+-- Property Parameters:  IANA, non-standard, value data type, and time
+--    zone identifier property parameters can be specified on this
+--    property.
+-- @
+--
+-- A time zone identifier is allowed on an EXDATE and nothing ties it to the one
+-- DTSTART uses, so an exception may name an instance in a different time zone,
+-- or in UTC, from the one the instance itself is written in.  The instants are
+-- what have to agree, not the way they are spelled, and comparing the values as
+-- written misses every case where the spelling differs.
+--
+-- This runs on top of that comparison rather than replacing it, so an
+-- occurrence or an exception whose time zone the calendar does not define is
+-- still excluded on the strength of how it is written.  Nothing that used to be
+-- excluded stops being excluded, and nothing fails for want of a time zone.
+removeExceptionInstants ::
+  Set ExceptionDateTimes ->
+  Set EventOccurrence ->
+  R (Set EventOccurrence)
+removeExceptionInstants exceptionSet occurrences
+  | S.null exceptionSet = pure occurrences
+  | otherwise = do
+      excluded <- fmap (S.fromList . concat) $ mapM exceptionInstants $ S.toList exceptionSet
+      fmap S.fromList $
+        flip filterM (S.toList occurrences) $ \occurrence ->
+          case eventOccurrenceStart occurrence of
+            Nothing -> pure True
+            Just start -> do
+              mTimestamp <- tryResolveDateTimeStart start
+              pure $ case mTimestamp of
+                Nothing -> True
+                Just timestamp -> not $ timestamp `S.member` excluded
+
+exceptionInstants :: ExceptionDateTimes -> R [Timestamp]
+exceptionInstants = \case
+  ExceptionDateTimes dateTimes -> catMaybes <$> mapM tryResolveDateTime (S.toList (DateTimes.toSet dateTimes))
+  ExceptionDates dates -> pure $ map resolveDate $ S.toList dates
+
+-- | Resolve a 'DateTimeStart' to an instant if the time zone it names is known
+--
+-- Unlike 'resolveDateTimeStart' this does not fail when the calendar does not
+-- define the time zone, so that it can be used to compare instants
+-- opportunistically.
+tryResolveDateTimeStart :: DateTimeStart -> R (Maybe Timestamp)
+tryResolveDateTimeStart = \case
+  DateTimeStartDate date -> pure $ Just $ resolveDate date
+  DateTimeStartDateTime dateTime -> tryResolveDateTime dateTime
+
+tryResolveDateTime :: DateTime -> R (Maybe Timestamp)
+tryResolveDateTime = \case
+  DateTimeFloating localTime -> pure $ Just $ TimestampLocalTime localTime
+  DateTimeUTC utcTime -> pure $ Just $ TimestampUTCTime utcTime
+  DateTimeZoned tzid localTime -> do
+    ctxMap <- ask
+    pure $ do
+      (resolutionCtx, _) <- M.lookup tzid ctxMap
+      TimestampUTCTime <$> tryToResolveLocalTime' resolutionCtx localTime
 
 removeExceptionDatetimes ::
   ExceptionDateTimes ->
