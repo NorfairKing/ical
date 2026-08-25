@@ -1161,6 +1161,13 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1998 03 30) (TimeOfDay 09 00 00)
       ]
   -- Corrected based on [erratum 3883](https://www.rfc-editor.org/errata/eid3883)
+  -- This one cannot be expressed here.  DTSTART is in America/New_York and the
+  -- UNTIL is in UTC, as the spec requires for a zoned DTSTART, but
+  -- 'recurRecurrenceRuleLocalTimes' is handed a bare 'LocalTime' and has no
+  -- time zone to compare the two in, so the 18:00 and 21:00 instances survive.
+  --
+  -- ICal.RecurrenceSpec covers it through 'recurEvents', where the calendar
+  -- supplies the time zone.
   xit "Every 3 hours from 9:00 AM to 5:00 PM on a specific day" $ do
     -- @
     -- Every 3 hours from 9:00 AM to 5:00 PM on a specific day:
@@ -1195,7 +1202,7 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 12 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 15 00 00)
       ]
-  xit "Every 15 minutes for 6 occurrences" $ do
+  it "Every 15 minutes for 6 occurrences" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=MINUTELY;INTERVAL=15;COUNT=6
@@ -1221,7 +1228,7 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 10 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 10 15 00)
       ]
-  xit "Every hour and a half for 4 occurrences" $ do
+  it "Every hour and a half for 4 occurrences" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=MINUTELY;INTERVAL=90;COUNT=4
@@ -1245,7 +1252,7 @@ spec = describe "Examples from the spec in section 3.8.5.3" $ do
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 12 00 00),
         LocalTime (fromGregorian 1997 09 02) (TimeOfDay 13 30 00)
       ]
-  xit "Every 20 minutes from 9:00 AM to 4:40 PM every day" $ do
+  it "Every 20 minutes from 9:00 AM to 4:40 PM every day" $ do
     -- @
     -- DTSTART;TZID=America/New_York:19970902T090000
     -- RRULE:FREQ=DAILY;BYHOUR=9,10,11,12,13,14,15,16;BYMINUTE=0,20,40

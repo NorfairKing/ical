@@ -152,6 +152,20 @@ spec = do
             "END:STANDARD",
             "END:VTIMEZONE"
           ]
+    -- Only the offset that America/New_York had in September 1997 matters here,
+    -- so this stands in for it without its transitions.
+    let easternDaylight :: [Text]
+        easternDaylight =
+          [ "BEGIN:VTIMEZONE",
+            "TZID:Test/EasternDaylight",
+            "BEGIN:DAYLIGHT",
+            "DTSTART:19700101T000000",
+            "TZOFFSETFROM:-0400",
+            "TZOFFSETTO:-0400",
+            "TZNAME:EDT",
+            "END:DAYLIGHT",
+            "END:VTIMEZONE"
+          ]
     let minus5 :: [Text]
         minus5 =
           [ "BEGIN:VTIMEZONE",
@@ -372,6 +386,45 @@ spec = do
             [ utcAt 2022 10 29 (30 * 60),
               utcAt 2022 10 30 (30 * 60),
               utcAt 2022 10 31 (1 * 3600 + 30 * 60)
+            ]
+    describe "Frequency" $ do
+      it "recurs an hourly event" $
+        startsOf limit (calendarWith [] ["DTSTART:20200101T000000Z", "RRULE:FREQ=HOURLY;COUNT=3"])
+          `shouldReturn` S.fromList
+            [ utcAt 2020 01 01 0,
+              utcAt 2020 01 01 3600,
+              utcAt 2020 01 01 7200
+            ]
+      it "recurs a minutely event" $
+        startsOf limit (calendarWith [] ["DTSTART:20200101T000000Z", "RRULE:FREQ=MINUTELY;COUNT=3"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 01 60, utcAt 2020 01 01 120]
+      it "recurs a secondly event" $
+        startsOf limit (calendarWith [] ["DTSTART:20200101T000000Z", "RRULE:FREQ=SECONDLY;COUNT=3"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 01 1, utcAt 2020 01 01 2]
+      it "recurs every 3 hours from 9:00 AM to 5:00 PM on a specific day" $
+        -- [section 3.8.5.3](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.3)
+        --
+        -- @
+        -- Every 3 hours from 9:00 AM to 5:00 PM on a specific day:
+        --
+        --  DTSTART;TZID=America/New_York:19970902T090000
+        --  RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T170000Z
+        --
+        --  ==> (September 2, 1997 EDT) 09:00,12:00,15:00
+        -- @
+        --
+        -- With the UNTIL corrected to 19970902T210000Z, which is 17:00 at the
+        -- -0400 that New York was on in September 1997.  The example as printed
+        -- says 17:00 UTC, which is 13:00 there, and would stop after the first
+        -- instance.
+        --
+        -- ICal.Recurrence.RecurrenceRuleSpec cannot express this one, because
+        -- it works in local times with no time zone to compare a UTC UNTIL in.
+        startsOf (fromGregorian 1997 09 30) (calendarWith easternDaylight ["DTSTART;TZID=Test/EasternDaylight:19970902T090000", "RRULE:FREQ=HOURLY;INTERVAL=3;UNTIL=19970902T210000Z"])
+          `shouldReturn` S.fromList
+            [ utcAt 1997 09 02 (13 * 3600),
+              utcAt 1997 09 02 (16 * 3600),
+              utcAt 1997 09 02 (19 * 3600)
             ]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
