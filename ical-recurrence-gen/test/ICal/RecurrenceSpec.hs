@@ -339,7 +339,7 @@ spec = do
             ]
       it "adds a date-time-valued instance to an all-day event that has a DTEND" $
         -- The mirror of the case above.  computeNewEnd has the same gap in its
-        -- all-day arm, so this fails with StartStartMismatch as well.
+        -- all-day arm, so this fails the same way.
         startsOf limit (calendarWith [] ["DTSTART;VALUE=DATE:20200101", "DTEND;VALUE=DATE:20200102", "RDATE:20200103T000000Z"])
           `shouldReturn` S.fromList
             [ Just $ TimestampDay $ fromGregorian 2020 01 01,

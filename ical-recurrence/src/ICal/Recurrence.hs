@@ -477,18 +477,37 @@ resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDura
 computeNewEnd :: DateTimeStart -> DateTimeEnd -> DateTimeStart -> R DateTimeEnd
 computeNewEnd originalStart end newStart =
   case (originalStart, end) of
+    -- [section 3.8.5.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.2)
+    --
+    -- @
+    -- Value Type:  The default value type for this property is DATE-TIME.
+    --    The value type can be set to DATE or PERIOD.
+    -- @
+    --
+    -- Only DTEND and DUE are required to use the same value type as DTSTART, so
+    -- an RDATE may give an instance a different value type from the event it
+    -- belongs to.  The instance still has to end somewhere, so carry the
+    -- duration across into the value type of the new start.
     (DateTimeStartDate startDate, DateTimeEndDate endDate) ->
       let exactDuration = dateExactDuration startDate endDate
        in case newStart of
             DateTimeStartDate newDate -> pure $ DateTimeEndDate (dateAddDays exactDuration newDate)
-            _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
+            DateTimeStartDateTime newDateTime -> do
+              newEndDateTime <- addExactDuration (fromIntegral exactDuration * Time.nominalDay) newDateTime
+              pure $ DateTimeEndDateTime newEndDateTime
     (DateTimeStartDateTime startDateTime, DateTimeEndDateTime endDateTime) ->
       case newStart of
         DateTimeStartDateTime newDateTime -> do
           exactDuration <- dateTimeExactDuration startDateTime endDateTime
           newEndDateTime <- addExactDuration exactDuration newDateTime
           pure $ DateTimeEndDateTime newEndDateTime
-        _ -> unfixableErrorR $ StartStartMismatch originalStart newStart
+        -- An all-day instance of a timed event.  A DATE-valued DTEND is
+        -- exclusive and cannot name a part of a day, so round the duration up
+        -- to whole days, and never down to none.
+        DateTimeStartDate newDate -> do
+          exactDuration <- dateTimeExactDuration startDateTime endDateTime
+          let days = max 1 $ ceiling $ exactDuration / Time.nominalDay
+          pure $ DateTimeEndDate (dateAddDays days newDate)
     -- These two cases represent invalid ical:
     -- @
     -- The "VEVENT" is also the calendar component used to specify an
