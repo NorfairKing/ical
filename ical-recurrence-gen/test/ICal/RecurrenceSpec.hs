@@ -148,40 +148,49 @@ chunksOf n xs =
   let (ys, zs) = splitAt n xs
    in ys : chunksOf n zs
 
+-- | Read a golden file back into the recurrence set it was rendered from.
+--
+-- The occurrences are chunked by unfolded line rather than by raw line,
+-- because a property whose content line is longer than 75 octets is rendered
+-- folded over several raw lines.
 parseEventOccurrences :: Text -> Set EventOccurrence
-parseEventOccurrences =
-  S.fromList
-    . mapMaybe (parseEventOccurrence . T.intercalate "\r\n")
-    . chunksOf 2
-    . T.splitOn "\r\n"
+parseEventOccurrences contents = case runConform (parseUnfoldedLines contents) of
+  Left _ -> S.empty
+  Right (unfoldedLines, _) ->
+    S.fromList $ mapMaybe parseEventOccurrence $ chunksOf 2 unfoldedLines
 
-parseEventOccurrence :: Text -> Maybe EventOccurrence
-parseEventOccurrence t = case T.splitOn "\r\n" t of
-  (startLine : endDurationLine : _) -> either (const Nothing) (Just . fst) $
+parseEventOccurrence :: [UnfoldedLine] -> Maybe EventOccurrence
+parseEventOccurrence = \case
+  [UnfoldedLine startLine, UnfoldedLine endDurationLine] -> either (const Nothing) (Just . fst) $
     runConform $ do
       eventOccurrenceStart <- case startLine of
         "" -> pure Nothing
-        l -> Just <$> parsePropertyFromText (l <> "\r\n")
+        l -> Just <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l])
       eventOccurrenceEndOrDuration <- case endDurationLine of
         "" -> pure Nothing
         l ->
           Just
-            <$> (Left <$> parsePropertyFromText (l <> "\r\n"))
-              `altConform` (Right <$> parsePropertyFromText (l <> "\r\n"))
+            <$> (Left <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l]))
+              `altConform` (Right <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l]))
       pure EventOccurrence {..}
   _ -> Nothing
 
 renderEventOccurrences :: Set EventOccurrence -> Text
 renderEventOccurrences = foldMap renderEventOccurrence
 
+-- | Render an occurrence as exactly two lines, so that an absent property
+-- does not shift the occurrences after it in the file.
+--
+-- 'parseEventOccurrences' reads the file back in two-line chunks and reads an
+-- empty line as an absent property, so both lines must always be written.
 renderEventOccurrence :: EventOccurrence -> Text
 renderEventOccurrence EventOccurrence {..} =
   T.concat
     [ case eventOccurrenceStart of
-        Nothing -> ""
+        Nothing -> "\r\n"
         Just dtstart -> renderPropertyText dtstart,
       case eventOccurrenceEndOrDuration of
-        Nothing -> ""
+        Nothing -> "\r\n"
         Just (Left end) -> renderPropertyText end
         Just (Right dur) -> renderPropertyText dur
     ]
