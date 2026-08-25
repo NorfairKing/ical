@@ -19,8 +19,10 @@ import Data.Time
 import ICal
 import ICal.Recurrence
 import ICal.Recurrence.Gen ()
+import ICal.Recurrence.TestUtils
 import Path
 import Path.IO
+import Test.QuickCheck (choose, forAll, suchThat)
 import Test.Syd
 import Test.Syd.Validity
 
@@ -74,6 +76,30 @@ spec = do
       -- stop covering folding if the fold width ever changes.
       renderEventOccurrences occurrences `shouldSatisfy` T.isInfixOf "\r\n "
       parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+  describe "recurRecurrenceRuleLocalTimes" $
+    it "gives the same occurrences below a limit no matter where the limit is" $
+      -- The limit is an implementation detail of this library rather than
+      -- anything the recurrence rule says, so raising it must only ever reveal
+      -- more occurrences.  It must never change the ones already below it.
+      --
+      -- This is the general form of the BYSETPOS bugs: those all came from a
+      -- limit narrowing a set that a rule part then selected from.
+      --
+      -- SECONDLY, MINUTELY and HOURLY are left out.  The limit is a day, so the
+      -- smallest window this can ask for still holds 86400 seconds, and
+      -- generating that many occurrences per case is too slow to be worth it.
+      -- They step through the same code as the others.
+      forAllValid $ \start ->
+        forAll (genValid `suchThat` (\rule -> recurrenceRuleFrequency rule `notElem` [Secondly, Minutely, Hourly])) $ \rule ->
+          forAll (choose (0, 40)) $ \offset1 ->
+            forAll (choose (0, 40)) $ \offset2 -> do
+              let startDay = localDay start
+              let nearLimit = addDays (min offset1 offset2) startDay
+              let farLimit = addDays (max offset1 offset2) startDay
+              let belowNearLimit occurrence = localDay occurrence <= nearLimit
+              near <- shouldRecur (recurRecurrenceRuleLocalTimes nearLimit start rule)
+              far <- shouldRecur (recurRecurrenceRuleLocalTimes farLimit start rule)
+              S.filter belowNearLimit far `shouldBe` S.filter belowNearLimit near
   describe "recurEvents" $ do
     -- A time zone without any transitions, so that the only thing that
     -- matters about it is its offset from UTC.
