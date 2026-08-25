@@ -1,6 +1,7 @@
 module ICal.Recurrence.RecurrenceRule.Yearly (yearlyDateTimeRecurrence) where
 
 import Control.Monad
+import Data.List (sort)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Set (Set)
@@ -59,10 +60,24 @@ yearlyDateTimeRecurrence
     -- The set is the whole year and BYSETPOS is applied before the
     -- recurrence is bounded, so neither DTSTART nor our limit may narrow
     -- what 'filterSetPos' numbers.  Both only remove instances afterwards.
-    next <- filterSetPos bySetPoss $ do
-      d <- yearlyDayCandidate (localDay start) weekStart year byMonths byWeekNos byYearDays byMonthDays byDays
-      tod <- timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
-      pure (LocalTime d tod)
+    -- Need to sort because week days may not be in order: the BYWEEKNO branch
+    -- of 'yearlyDayCandidate' walks Monday to Sunday whatever the week start
+    -- is, so with WKST=SU it yields the Sunday of a week last.
+    --
+    -- @
+    -- the BYxxx rule parts
+    -- are applied to the current set of evaluated occurrences in the
+    -- following order: [...] and BYSETPOS; then COUNT and UNTIL are
+    -- evaluated.
+    -- @
+    --
+    -- COUNT and UNTIL both range-bound the occurrences, which only means
+    -- anything if they ascend.
+    next <- filterSetPos bySetPoss $
+      sort $ do
+        d <- yearlyDayCandidate (localDay start) weekStart year byMonths byWeekNos byYearDays byMonthDays byDays
+        tod <- timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
+        pure (LocalTime d tod)
     guard (next > start) -- Don't take the current one again
     guard (next < LocalTime (addDays 1 limit) midnight) -- Don't go beyond the limit
     pure next
