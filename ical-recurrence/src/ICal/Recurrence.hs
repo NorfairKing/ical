@@ -160,7 +160,8 @@ recurRecurrenceRule ::
   R (Set EventOccurrence)
 recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
   localisedRule <- localiseUntil start recurrenceRule
-  starts <- recurRecurrenceRuleDateTimeStarts limit start localisedRule
+  generatedStarts <- recurRecurrenceRuleDateTimeStarts limit start localisedRule
+  starts <- boundByUntil start recurrenceRule generatedStarts
   fmap S.fromList $
     forM (S.toList starts) $ \newStart -> do
       newMEndOrDuration <- resolveEndOrDurationDate start mEndOrDuration newStart
@@ -195,6 +196,36 @@ recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
 -- 'recurRecurrenceRuleDateTimeStarts' is given a bare 'Time.LocalTime' and has
 -- no time zone to resolve with, and because unresolving one bound is cheaper
 -- than resolving every occurrence.
+-- | Drop the instances that fall after a UTC 'Until'
+--
+-- @
+-- The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+-- the recurrence rule in an inclusive manner.
+-- @
+--
+-- The bound is an instant, so this is a question about instants.  Comparing
+-- local times, as 'recurRecurrenceRuleLocalTimes' has to, only answers it while
+-- the instance and the bound share an offset from UTC; across a transition the
+-- two orders disagree.  'localiseUntil' gets the whole-day-and-more cases right
+-- and cheaply, so it stays as a pre-filter, and this settles the hour or so
+-- around a transition where it cannot.
+--
+-- An instance whose local time we cannot resolve is kept, so that this only
+-- ever removes instances it is sure about.
+boundByUntil :: DateTimeStart -> RecurrenceRule -> Set DateTimeStart -> R (Set DateTimeStart)
+boundByUntil start recurrenceRule starts = case (start, recurrenceRuleUntilCount recurrenceRule) of
+  (DateTimeStartDateTime (DateTimeZoned tzid _), Just (Left (UntilDateTimeUTC untilTime))) -> do
+    ctxMap <- ask
+    pure $ case M.lookup tzid ctxMap of
+      Nothing -> starts
+      Just (resolutionCtx, _) -> flip S.filter starts $ \case
+        DateTimeStartDateTime (DateTimeZoned _ localTime) ->
+          case tryToResolveLocalTime' resolutionCtx localTime of
+            Nothing -> True
+            Just utcTime -> utcTime <= untilTime
+        _ -> True
+  _ -> pure starts
+
 -- If the time zone is unknown we leave the 'Until' alone rather than failing.
 -- Computing the recurrence set of a zoned event never needed the time zone
 -- before, so requiring it here would turn calendars that refer to a time zone
@@ -208,7 +239,14 @@ localiseUntil start recurrenceRule = case (start, recurrenceRuleUntilCount recur
           tryToUnresolveUTCTime' unresolutionCtx utcTime
     pure $ case mLocalTime of
       Nothing -> recurrenceRule
-      Just localTime -> recurrenceRule {recurrenceRuleUntilCount = Just (Left (UntilDateTimeFloating localTime))}
+      Just localTime ->
+        -- A day of slack, because this is only a pre-filter and must not cut
+        -- off an instance that 'boundByUntil' would have kept.  An instance
+        -- can look later than the bound in local terms while still being at or
+        -- before it in instants, by as much as the difference between two of
+        -- the zone's offsets from UTC, which is well under a day.
+        let slackLocalTime = Time.addLocalTime Time.nominalDay localTime
+         in recurrenceRule {recurrenceRuleUntilCount = Just (Left (UntilDateTimeFloating slackLocalTime))}
   _ -> pure recurrenceRule
 
 -- | Compute the occurrences that the recurrence date times imply
