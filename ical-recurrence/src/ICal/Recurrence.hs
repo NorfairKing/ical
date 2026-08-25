@@ -159,7 +159,8 @@ recurRecurrenceRule ::
   RecurrenceRule ->
   R (Set EventOccurrence)
 recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
-  starts <- recurRecurrenceRuleDateTimeStarts limit start recurrenceRule
+  localisedRule <- localiseUntil start recurrenceRule
+  starts <- recurRecurrenceRuleDateTimeStarts limit start localisedRule
   fmap S.fromList $
     forM (S.toList starts) $ \newStart -> do
       newMEndOrDuration <- resolveEndOrDurationDate start mEndOrDuration newStart
@@ -168,6 +169,47 @@ recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
           { eventOccurrenceStart = Just newStart,
             eventOccurrenceEndOrDuration = newMEndOrDuration
           }
+
+-- | Express a UTC 'Until' in the local time of the time zone of 'DateTimeStart'
+--
+-- @
+-- The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+-- the recurrence rule in an inclusive manner.
+-- @
+--
+-- @
+-- If the "DTSTART" property
+-- is specified as a date with UTC time or a date with local time and time
+-- zone reference, then the UNTIL rule part MUST be specified as a date
+-- with UTC time.
+-- @
+--
+-- So a zoned 'DateTimeStart' is bounded by an 'Until' in UTC, while the
+-- occurrences are generated as local times in that same time zone.  The two
+-- have to be brought into the same time zone before they can be compared,
+-- otherwise the comparison is out by that zone's offset from UTC: east of UTC
+-- the last instance is dropped, and west of it an instance past the bound is
+-- kept.
+--
+-- We move the 'Until' rather than the occurrences because
+-- 'recurRecurrenceRuleDateTimeStarts' is given a bare 'Time.LocalTime' and has
+-- no time zone to resolve with, and because unresolving one bound is cheaper
+-- than resolving every occurrence.
+-- If the time zone is unknown we leave the 'Until' alone rather than failing.
+-- Computing the recurrence set of a zoned event never needed the time zone
+-- before, so requiring it here would turn calendars that refer to a time zone
+-- they do not define from recurring into an unfixable error.
+localiseUntil :: DateTimeStart -> RecurrenceRule -> R RecurrenceRule
+localiseUntil start recurrenceRule = case (start, recurrenceRuleUntilCount recurrenceRule) of
+  (DateTimeStartDateTime (DateTimeZoned tzid _), Just (Left (UntilDateTimeUTC utcTime))) -> do
+    ctxMap <- ask
+    let mLocalTime = do
+          (_, unresolutionCtx) <- M.lookup tzid ctxMap
+          tryToUnresolveUTCTime' unresolutionCtx utcTime
+    pure $ case mLocalTime of
+      Nothing -> recurrenceRule
+      Just localTime -> recurrenceRule {recurrenceRuleUntilCount = Just (Left (UntilDateTimeFloating localTime))}
+  _ -> pure recurrenceRule
 
 -- | Compute the occurrences that the recurrence date times imply
 recurRecurrenceDateTimes ::
