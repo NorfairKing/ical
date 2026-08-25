@@ -16,7 +16,10 @@ import ICal.Property
 import ICal.PropertyType
 import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule.Daily
+import ICal.Recurrence.RecurrenceRule.Hourly
+import ICal.Recurrence.RecurrenceRule.Minutely
 import ICal.Recurrence.RecurrenceRule.Monthly
+import ICal.Recurrence.RecurrenceRule.Secondly
 import ICal.Recurrence.RecurrenceRule.Weekly
 import ICal.Recurrence.RecurrenceRule.Yearly
 
@@ -192,7 +195,51 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
         recurrenceRuleByMinute
         recurrenceRuleBySecond
         recurrenceRuleBySetPos
-  _ -> error $ "not implemented yet: " <> show recurrenceRuleFrequency
+  Hourly -> do
+    every <- filterEvery recurrenceRuleByDay
+    pure $
+      hourlyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleByYearDay
+        recurrenceRuleByMonthDay
+        every
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
+  Minutely -> do
+    every <- filterEvery recurrenceRuleByDay
+    pure $
+      minutelyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleByYearDay
+        recurrenceRuleByMonthDay
+        every
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
+  Secondly -> do
+    every <- filterEvery recurrenceRuleByDay
+    pure $
+      secondlyDateTimeRecurrence
+        limit
+        lt
+        recurrenceRuleInterval
+        recurrenceRuleByMonth
+        recurrenceRuleByYearDay
+        recurrenceRuleByMonthDay
+        every
+        recurrenceRuleByHour
+        recurrenceRuleByMinute
+        recurrenceRuleBySecond
+        recurrenceRuleBySetPos
 
 -- | Filter the 'Every' to implement the fixable error defined by this part of the spec:
 --
