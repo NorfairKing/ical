@@ -279,54 +279,6 @@ spec = do
                   eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 3600
                 }
             ]
-    describe "ExceptionDateTimes" $ do
-      it "excludes an instance of a zoned event that is given in UTC" $
-        -- 20200102T000000Z is the second instance, which is at 01:00 at
-        -- +0100.
-        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T000000Z"])
-          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
-      it "keeps an instance that a UTC ExceptionDateTimes does not name" $
-        -- Guards the other direction.  Matching on resolved instants must not
-        -- start excluding instances the EXDATE never named: 01:00 UTC is
-        -- 02:00 local, which is not an instance of this event.
-        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T010000Z"])
-          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
-    describe "ExceptionDateTimes" $ do
-      it "excludes an instance of a zoned event that is given in another time zone" $
-        -- 02:00 at +0200 is the same instant as the second instance, which
-        -- is at 01:00 at +0100.
-        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T020000"])
-          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
-      it "keeps an instance that an ExceptionDateTimes in another time zone does not name" $
-        -- Guards the other direction.  01:00 at +0200 is 23:00 UTC on the
-        -- first, which is not an instance, so comparing the wall clocks while
-        -- ignoring the time zone would wrongly exclude here.
-        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T010000"])
-          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
-  describe "recurEvents" $ do
-    let calendarWith :: [Text] -> [Text] -> Text
-        calendarWith timeZones event =
-          T.intercalate "\r\n" $
-            concat
-              [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
-                timeZones,
-                ["BEGIN:VEVENT", "DTSTAMP:20200101T000000Z", "UID:test"],
-                event,
-                ["END:VEVENT", "END:VCALENDAR", ""]
-              ]
-    let startsOf :: Day -> Text -> IO (Set (Maybe Timestamp))
-        startsOf lim contents = do
-          calendar <- shouldConform $ parseVCalendar contents
-          shouldConform $
-            runR lim (calendarTimeZoneMap calendar) $ do
-              occurrences <-
-                fmap S.unions $
-                  mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
-              S.fromList . map resolvedEventStart
-                <$> mapM resolveEventOccurrence (S.toList occurrences)
-    let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
-        utcAt y m dd tod = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m dd) tod
-    describe "RecurrenceDateTimes" $ do
       it "adds a date-valued instance to an event that has a DTEND" $
         -- @
         -- Value Type: The default value type for this property is
@@ -345,6 +297,29 @@ spec = do
             [ Just $ TimestampDay $ fromGregorian 2020 01 01,
               utcAt 2020 01 03 0
             ]
+    describe "ExceptionDateTimes" $ do
+      it "excludes an instance of a zoned event that is given in UTC" $
+        -- 20200102T000000Z is the second instance, which is at 01:00 at
+        -- +0100.
+        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T000000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
+      it "keeps an instance that a UTC ExceptionDateTimes does not name" $
+        -- Guards the other direction.  Matching on resolved instants must not
+        -- start excluding instances the EXDATE never named: 01:00 UTC is
+        -- 02:00 local, which is not an instance of this event.
+        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T010000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
+      it "excludes an instance of a zoned event that is given in another time zone" $
+        -- 02:00 at +0200 is the same instant as the second instance, which
+        -- is at 01:00 at +0100.
+        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T020000"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
+      it "keeps an instance that an ExceptionDateTimes in another time zone does not name" $
+        -- Guards the other direction.  01:00 at +0200 is 23:00 UTC on the
+        -- first, which is not an instance, so comparing the wall clocks while
+        -- ignoring the time zone would wrongly exclude here.
+        startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T010000"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
