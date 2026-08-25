@@ -41,13 +41,22 @@ weeklyDateTimeRecurrence
         (localDay start)
         interval
         weekStart
+    -- @
+    -- BYSETPOS operates on
+    -- a set of recurrence instances in one interval of the recurrence
+    -- rule.  For example, in a WEEKLY rule, the interval would be one
+    -- week A set of recurrence instances starts at the beginning of the
+    -- interval defined by the FREQ rule part.
+    -- @
+    --
+    -- The limit is ours rather than the rule's, so it must not narrow the set
+    -- that 'filterSetPos' numbers.  It only cuts off results, below.
     next <- filterSetPos bySetPoss $
       sort $ do
         -- Need to sort because week days may not be in order.
         dow <- byEveryWeekDayExpand (dayOfWeek (localDay start)) byDays
         d <- maybeToList $ fromWeekDateWithStart weekStart y w dow
         guard $ byMonthLimit byMonths d
-        guard (d <= limit) -- Early check
         tod <- timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
         let next = LocalTime d tod
         pure next
