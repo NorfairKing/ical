@@ -40,6 +40,15 @@ monthlyDateTimeRecurrence
     m <- maybeToList $ monthNoToMonth month
     guard $ byMonthLimitMonth byMonths m
     let (_, _, md_) = Time.toGregorian startDay
+    -- @
+    -- BYSETPOS operates on
+    -- a set of recurrence instances in one interval of the recurrence
+    -- rule. [...] A set of recurrence instances starts at the beginning of the
+    -- interval defined by the FREQ rule part.
+    -- @
+    --
+    -- The limit is ours rather than the rule's, so it must not narrow the set
+    -- that 'filterSetPos' numbers.  It only cuts off results, below.
     next <- filterSetPos bySetPoss $
       sort $ do
         d <-
@@ -50,7 +59,6 @@ monthlyDateTimeRecurrence
               d' <- maybeToList $ Time.fromGregorianValid year month md
               guard $ byDayLimit byDays d'
               pure d'
-        guard (d <= limit) -- Early check
         let startTime = Time.localTimeOfDay start
         tod <- timeOfDayExpand startTime byHours byMinutes bySeconds
         let next = Time.LocalTime d tod
