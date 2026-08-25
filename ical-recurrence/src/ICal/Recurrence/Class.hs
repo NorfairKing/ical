@@ -76,8 +76,7 @@ data Timestamp
 instance Validity Timestamp
 
 data RecurrenceError
-  = StartStartMismatch !DateTimeStart !DateTimeStart -- Internal error, should not happen.
-  | StartEndMismatch !DateTimeStart !DateTimeEnd
+  = StartEndMismatch !DateTimeStart !DateTimeEnd
   | ExactDurationMismatch !DateTime !DateTime
   | TimeZoneNotFound !TimeZoneIdentifierParam
   | FailedToResolveLocalTime !TimeZone !Time.LocalTime
