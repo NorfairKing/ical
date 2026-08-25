@@ -320,6 +320,59 @@ spec = do
         -- ignoring the time zone would wrongly exclude here.
         startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T010000"])
           `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
+    describe "nonexistent local times" $ do
+      it "ignores an instance that falls in the gap of a daylight saving time transition" $
+        -- @
+        -- Recurrence rules may generate recurrence instances with an invalid
+        -- date (e.g., February 30) or nonexistent local time (e.g., 1:30 AM
+        -- on a day where the local time is moved forward by an hour at 1:00
+        -- AM).  Such recurrence instances MUST be ignored and MUST NOT be
+        -- counted as part of the recurrence set.
+        -- @
+        startsOf (fromGregorian 2022 03 29) (calendarWith zurich ["DTSTART;TZID=Europe/Zurich:20220325T023000", "RRULE:FREQ=DAILY"])
+          `shouldReturn` S.fromList
+            [ utcAt 2022 03 25 (1 * 3600 + 30 * 60),
+              utcAt 2022 03 26 (1 * 3600 + 30 * 60),
+              utcAt 2022 03 28 (30 * 60),
+              utcAt 2022 03 29 (30 * 60)
+            ]
+      it "does not spend a Count on an instance that falls in the gap" $
+        -- @
+        -- Such recurrence instances MUST be ignored and MUST NOT be
+        -- counted as part of the recurrence set.
+        -- @
+        --
+        -- @
+        -- the BYxxx rule parts
+        -- are applied to the current set of evaluated occurrences in the
+        -- following order: [...] and BYSETPOS; then COUNT and UNTIL are
+        -- evaluated.
+        -- @
+        --
+        -- An ignored instance never becomes an occurrence, and COUNT counts
+        -- occurrences and is evaluated last, so the 27th being skipped must not
+        -- use up one of the four.
+        --
+        -- leapdays.ics already relies on that for the other half of the same
+        -- sentence: three counted instances there, with the 29th of February
+        -- skipped in every year that does not have one.
+        startsOf (fromGregorian 2022 04 30) (calendarWith zurich ["DTSTART;TZID=Europe/Zurich:20220325T023000", "RRULE:FREQ=DAILY;COUNT=4"])
+          `shouldReturn` S.fromList
+            [ utcAt 2022 03 25 (1 * 3600 + 30 * 60),
+              utcAt 2022 03 26 (1 * 3600 + 30 * 60),
+              utcAt 2022 03 28 (30 * 60),
+              utcAt 2022 03 29 (30 * 60)
+            ]
+      it "resolves an ambiguous instance to the earlier of the two" $
+        -- On the 30th of October 2022 the local time in Zurich goes back from
+        -- 03:00 to 02:00, so 02:30 happens twice that day.  This is not broken
+        -- today, and a fix for the gap above must not change it.
+        startsOf (fromGregorian 2022 10 31) (calendarWith zurich ["DTSTART;TZID=Europe/Zurich:20221029T023000", "RRULE:FREQ=DAILY"])
+          `shouldReturn` S.fromList
+            [ utcAt 2022 10 29 (30 * 60),
+              utcAt 2022 10 30 (30 * 60),
+              utcAt 2022 10 31 (1 * 3600 + 30 * 60)
+            ]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
