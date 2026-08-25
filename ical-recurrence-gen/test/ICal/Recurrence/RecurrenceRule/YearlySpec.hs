@@ -116,6 +116,146 @@ spec = do
             `shouldReturn` [ l (d 2019 01 07) midnight,
                              l (d 2020 12 28) midnight
                            ]
+    specify "BySetPos selects within the whole year, not only within the part of the year after DTSTART" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYSETPOS rule part specifies a COMMA-separated list of values
+      -- that corresponds to the nth occurrence within the set of
+      -- recurrence instances specified by the rule.  BYSETPOS operates on
+      -- a set of recurrence instances in one interval of the recurrence
+      -- rule.  For example, in a WEEKLY rule, the interval would be one
+      -- week A set of recurrence instances starts at the beginning of the
+      -- interval defined by the FREQ rule part.
+      -- @
+      --
+      -- The set starts at the beginning of the year, so for 2020 it is the
+      -- 15th of January, April, July and October.  BYSETPOS=1 selects the
+      -- 15th of January 2020, which is before DTSTART and so is not part of
+      -- the recurrence set; the 15th of July must not take its place.
+      --
+      -- @
+      -- the BYxxx rule parts
+      -- are applied to the current set of evaluated occurrences in the
+      -- following order: BYMONTH, BYWEEKNO, BYYEARDAY, BYMONTHDAY, BYDAY,
+      -- BYHOUR, BYMINUTE, BYSECOND and BYSETPOS; then COUNT and UNTIL are
+      -- evaluated.
+      -- @
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth April, ByMonth July, ByMonth October],
+                recurrenceRuleBySetPos = [BySetPos 1]
+              }
+          start = l (d 2020 06 15) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2020 06 15) midnight,
+                             l (d 2021 01 15) midnight
+                           ]
+    specify "BySetPos selects within the whole year, no matter where the limit lies" $ do
+      -- The other way the limit leaks into filterSetPos in this function.
+      -- The set BYSETPOS numbers "starts at the beginning of the interval
+      -- defined by the FREQ rule part", so it is the whole year regardless of
+      -- where our limit falls.  The July instance of 2022 lies beyond the
+      -- limit, so 2022 contributes nothing at all, and its January instance
+      -- must not take that place.
+      let rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth July],
+                recurrenceRuleBySetPos = [BySetPos (-1)]
+              }
+          start = l (d 2020 01 15) midnight
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 12 31) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight,
+                         l (d 2022 07 15) midnight
+                       ]
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 07 01) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight
+                       ]
+    specify "Count takes the chronologically first instances when a week does not start on a Monday" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The COUNT rule part defines the number of occurrences at which to
+      -- range-bound the recurrence.  The "DTSTART" property value always
+      -- counts as the first occurrence.
+      -- @
+      --
+      -- @
+      -- A week is defined as a
+      -- seven day period, starting on the day of the week defined to be
+      -- the week start (see WKST).
+      -- @
+      --
+      -- With a week start of Sunday, week 1 of 2021 therefore starts on
+      -- Sunday the 3rd of January and week 1 of 2022 on Sunday the 2nd.
+      -- Counting three occurrences from DTSTART gives the Monday after it
+      -- and then the Sunday of week 1 of 2022.
+      let limit = d 2023 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleUntilCount = Just $ Right $ Count 3,
+                recurrenceRuleByWeekNo = [ByWeekNo 1],
+                recurrenceRuleByDay = [Every Monday, Every Sunday],
+                recurrenceRuleWeekStart = WeekStart Sunday
+              }
+          start = l (d 2021 01 03) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2021 01 03) midnight,
+                             l (d 2021 01 04) midnight,
+                             l (d 2022 01 02) midnight
+                           ]
+    specify "Until does not stop early when a week does not start on a Monday" $
+      -- The same out-of-order emission as the case above, but reached through
+      -- Until rather than Count, where it is worse: recurUntil returns the
+      -- empty set at the first element past the Until, so one day out of order
+      -- truncates every day after it.  The Sunday of week 1 of 2022 is lost
+      -- even though it falls before the Monday that stops the walk.
+      let limit = d 2025 01 01
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleUntilCount = Just $ Left $ UntilDateTimeFloating $ l (d 2022 01 02) midnight,
+                recurrenceRuleByWeekNo = [ByWeekNo 1],
+                recurrenceRuleByDay = [Every Monday, Every Sunday],
+                recurrenceRuleWeekStart = WeekStart Sunday
+              }
+          start = l (d 2021 01 03) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2021 01 03) midnight,
+                             l (d 2021 01 04) midnight,
+                             l (d 2022 01 02) midnight
+                           ]
+    specify "Count takes the chronologically first instances when a ByMonthDay is negative" $
+      -- A second way the occurrences come out of order, which the same sort
+      -- also settles.  Without a test for it, replacing that sort with
+      -- ordering at the source would silently bring this back.
+      --
+      -- @
+      -- The BYMONTHDAY rule part specifies a COMMA-separated list of days
+      -- of the month.  Valid values are 1 to 31 or -31 to -1.  For
+      -- example, -10 represents the tenth to the last day of the month.
+      -- @
+      --
+      -- byMonthDayExpand resolves -1 to the 31st but keeps the order of the
+      -- values before they were resolved, so the 31st comes out before the
+      -- 15th.
+      let limit = d 2023 01 01
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleUntilCount = Just $ Right $ Count 3,
+                recurrenceRuleByMonth = [ByMonth January],
+                recurrenceRuleByMonthDay = [ByMonthDay (-1), ByMonthDay 15]
+              }
+          start = l (d 2020 01 15) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2020 01 15) midnight,
+                             l (d 2020 01 31) midnight,
+                             l (d 2021 01 15) midnight
+                           ]
   describe "yearlyDateTimeRecurrence" $ do
     --  An unimportant limit because we don't specify any rules that have no occurrences
     let limit = d 2030 01 01
