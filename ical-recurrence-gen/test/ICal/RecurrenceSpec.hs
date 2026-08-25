@@ -111,6 +111,28 @@ spec = do
                 <$> mapM resolveEventOccurrence (S.toList occurrences)
     let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
         utcAt y m dd tod = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m dd) tod
+    -- Europe/Zurich as Google Calendar emits it: +0100 in winter, +0200 in
+    -- summer, switching on the last Sunday of March and of October.
+    let zurich :: [Text]
+        zurich =
+          [ "BEGIN:VTIMEZONE",
+            "TZID:Europe/Zurich",
+            "BEGIN:DAYLIGHT",
+            "TZOFFSETFROM:+0100",
+            "TZOFFSETTO:+0200",
+            "TZNAME:CEST",
+            "DTSTART:19700329T020000",
+            "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+            "END:DAYLIGHT",
+            "BEGIN:STANDARD",
+            "TZOFFSETFROM:+0200",
+            "TZOFFSETTO:+0100",
+            "TZNAME:CET",
+            "DTSTART:19701025T030000",
+            "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+            "END:STANDARD",
+            "END:VTIMEZONE"
+          ]
     let minus5 :: [Text]
         minus5 =
           [ "BEGIN:VTIMEZONE",
@@ -167,6 +189,32 @@ spec = do
               fmap S.unions $
                 mapM (recurEvents limit . getRecurringEvent) (calendarEvents calendar)
         S.size occurrences `shouldBe` 4
+      it "includes an instance at or before a UTC Until across a daylight saving transition" $
+        -- @
+        -- The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+        -- the recurrence rule in an inclusive manner.
+        -- @
+        --
+        -- The bound is an instant, so whether an instance is inside it is a
+        -- question about instants.  Comparing local times answers that
+        -- question only while the instance and the bound share an offset from
+        -- UTC, because across a transition the local order and the order of
+        -- the instants disagree.
+        --
+        -- Zurich goes back from 03:00 to 02:00 on the 30th of October 2022, so
+        -- the 30th at 02:30 is still at +0200 while the Until, an hour later
+        -- in absolute terms, is already at +0100.  In local terms the instance
+        -- looks later than the bound; in instants it is half an hour earlier.
+        --
+        -- The 30th at 02:30 falls in the hour that happens twice, which is
+        -- unavoidable: this disagreement can only arise for an instance inside
+        -- that hour.  It is read as the earlier of the two, which is what
+        -- 'chooseResolutionOffset' does.
+        startsOf (fromGregorian 2022 11 05) (calendarWith zurich ["DTSTART;TZID=Europe/Zurich:20221029T023000", "RRULE:FREQ=DAILY;UNTIL=20221030T010000Z"])
+          `shouldReturn` S.fromList
+            [ utcAt 2022 10 29 (30 * 60),
+              utcAt 2022 10 30 (30 * 60)
+            ]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
