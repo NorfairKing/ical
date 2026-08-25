@@ -87,7 +87,14 @@ recur limit event = do
   occurrences <- recurEvents limit recurringEvent
   pure $ S.map (makeOccurrence event) occurrences
 
--- | Compute the recurrence set, up to a given limit
+-- | Compute the recurrence set, expanding the recurrence rules as far as a
+-- given limit
+--
+-- A recurrence rule can be infinite, so it is only expanded as far as the
+-- limit.  Nothing else is bounded by it.  DTSTART and the instances that the
+-- RDATEs enumerate are finite however far out they fall, and leaving them out
+-- would discard what the calendar actually said, so they are returned whether
+-- or not they lie beyond the limit.
 recurEvents :: Time.Day -> RecurringEvent -> R (Set EventOccurrence)
 recurEvents limit RecurringEvent {..} =
   let -- @
@@ -308,6 +315,10 @@ localiseUntil start recurrenceRule = case (start, recurrenceRuleUntilCount recur
   _ -> pure recurrenceRule
 
 -- | Compute the occurrences that the recurrence date times imply
+--
+-- These are enumerated by the calendar rather than generated from a rule, so
+-- there are finitely many of them and there is no limit to bound them by.  See
+-- 'recurEvents'.
 recurRecurrenceDateTimes ::
   DateTimeStart ->
   Maybe (Either DateTimeEnd Duration) ->
