@@ -121,9 +121,37 @@ recurEvents limit RecurringEvent {..} =
           -- and "RDATE" properties, only one recurrence is considered.
           -- Duplicate instances are ignored.
           -- @
+          -- @
+          -- The
+          -- duration of a specific recurrence may be modified in an exception
+          -- component or simply by using an "RDATE" property of PERIOD value
+          -- type.
+          -- @
+          --
+          -- The recurrence set is a set of instances, so two of them must not
+          -- share a start.  Keying on the whole occurrence would not do it,
+          -- because the same start can arrive with two different ends: a
+          -- period-valued RDATE is exactly how the duration of one instance is
+          -- changed, so it is meant to collide with the instance the rule
+          -- generates.
+          --
+          -- Which one survives is settled by the quote above.  An RDATE that
+          -- names the same start as the rule is the one carrying the modified
+          -- duration, so it wins.  DTSTART beats the rule as well, because its
+          -- end is stated outright while the rule's is derived from it.
+          --
+          -- 'M.fromList' keeps the last value for a key, so these are listed
+          -- in increasing order of precedence.
           let preliminarySet =
-                S.insert startEvent $
-                  S.union occurrencesFromRecurrenceDateTimes occurrencesFromRecurrenceRules
+                S.fromList $
+                  M.elems $
+                    M.fromList $
+                      map (\occurrence -> (eventOccurrenceStart occurrence, occurrence)) $
+                        concat
+                          [ S.toList occurrencesFromRecurrenceRules,
+                            [startEvent],
+                            S.toList occurrencesFromRecurrenceDateTimes
+                          ]
           pure $ removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
