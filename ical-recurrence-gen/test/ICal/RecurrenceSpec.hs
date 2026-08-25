@@ -267,6 +267,18 @@ spec = do
                   eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 3600
                 }
             ]
+    describe "ExceptionDateTimes" $ do
+      it "excludes an instance of a zoned event that is given in UTC" $
+        -- 20200102T000000Z is the second instance, which is at 01:00 at
+        -- +0100.
+        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T000000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 03 0]
+      it "keeps an instance that a UTC ExceptionDateTimes does not name" $
+        -- Guards the other direction.  Matching on resolved instants must not
+        -- start excluding instances the EXDATE never named: 01:00 UTC is
+        -- 02:00 local, which is not an instance of this event.
+        startsOf limit (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE:20200102T010000Z"])
+          `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
