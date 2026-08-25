@@ -39,6 +39,39 @@ spec = do
                                LocalTime (d 2022 04 26) tod,
                                LocalTime (d 2022 08 30) tod
                              ]
+    specify "BySetPos selects the last week day of the month, no matter where the limit lies" $ do
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYSETPOS rule part specifies a COMMA-separated list of values
+      -- that corresponds to the nth occurrence within the set of
+      -- recurrence instances specified by the rule.  BYSETPOS operates on
+      -- a set of recurrence instances in one interval of the recurrence
+      -- rule.  For example, in a WEEKLY rule, the interval would be one
+      -- week A set of recurrence instances starts at the beginning of the
+      -- interval defined by the FREQ rule part.
+      -- @
+      --
+      -- The set is therefore the whole month, starting at the beginning of
+      -- the month.  The limit is ours, not the rule's, so it may only cut
+      -- off results: the last week day of February 2020 is the 28th, which
+      -- lies beyond a limit of the 20th, so February contributes nothing.
+      let rule =
+            (makeRecurrenceRule Monthly)
+              { recurrenceRuleByDay = [Every Monday, Every Tuesday, Every Wednesday, Every Thursday, Every Friday],
+                recurrenceRuleBySetPos = [BySetPos (-1)]
+              }
+          start = l (d 2020 01 01) midnight
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2020 03 31) start rule)
+        `shouldReturn` [ l (d 2020 01 01) midnight,
+                         l (d 2020 01 31) midnight,
+                         l (d 2020 02 28) midnight,
+                         l (d 2020 03 31) midnight
+                       ]
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2020 02 20) start rule)
+        `shouldReturn` [ l (d 2020 01 01) midnight,
+                         l (d 2020 01 31) midnight
+                       ]
   describe "monthlyDateTimeRecurrence" $ do
     let monthlyDateTimeNextOccurrence start lim i ba bb bc bd be bf bg =
           listToMaybe $ monthlyDateTimeRecurrence start lim i ba bb bc bd be bf bg
