@@ -34,6 +34,8 @@ extra-source-files:
     test_resources/event/one-recurrence-invalid-end.occ
     test_resources/event/one-recurrence-invalid-start.ics
     test_resources/event/one-recurrence-invalid-start.occ
+    test_resources/event/rdate-date.ics
+    test_resources/event/rdate-date.occ
     test_resources/event/rdate-period.ics
     test_resources/event/rdate-period.occ
     test_resources/event/rdate.ics

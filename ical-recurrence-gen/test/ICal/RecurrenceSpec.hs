@@ -303,6 +303,48 @@ spec = do
         -- ignoring the time zone would wrongly exclude here.
         startsOf limit (calendarWith (plusOne <> plusTwo) ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;COUNT=3", "EXDATE;TZID=Test/PlusTwo:20200102T010000"])
           `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
+  describe "recurEvents" $ do
+    let calendarWith :: [Text] -> [Text] -> Text
+        calendarWith timeZones event =
+          T.intercalate "\r\n" $
+            concat
+              [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
+                timeZones,
+                ["BEGIN:VEVENT", "DTSTAMP:20200101T000000Z", "UID:test"],
+                event,
+                ["END:VEVENT", "END:VCALENDAR", ""]
+              ]
+    let startsOf :: Day -> Text -> IO (Set (Maybe Timestamp))
+        startsOf lim contents = do
+          calendar <- shouldConform $ parseVCalendar contents
+          shouldConform $
+            runR lim (calendarTimeZoneMap calendar) $ do
+              occurrences <-
+                fmap S.unions $
+                  mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+              S.fromList . map resolvedEventStart
+                <$> mapM resolveEventOccurrence (S.toList occurrences)
+    let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
+        utcAt y m dd tod = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m dd) tod
+    describe "RecurrenceDateTimes" $ do
+      it "adds a date-valued instance to an event that has a DTEND" $
+        -- @
+        -- Value Type: The default value type for this property is
+        -- DATE-TIME.  The value type can be set to DATE or PERIOD.
+        -- @
+        startsOf limit (calendarWith [] ["DTSTART:20200101T000000Z", "DTEND:20200101T010000Z", "RDATE;VALUE=DATE:20200102"])
+          `shouldReturn` S.fromList
+            [ utcAt 2020 01 01 0,
+              Just $ TimestampDay $ fromGregorian 2020 01 02
+            ]
+      it "adds a date-time-valued instance to an all-day event that has a DTEND" $
+        -- The mirror of the case above.  computeNewEnd has the same gap in its
+        -- all-day arm, so this fails with StartStartMismatch as well.
+        startsOf limit (calendarWith [] ["DTSTART;VALUE=DATE:20200101", "DTEND;VALUE=DATE:20200102", "RDATE:20200103T000000Z"])
+          `shouldReturn` S.fromList
+            [ Just $ TimestampDay $ fromGregorian 2020 01 01,
+              utcAt 2020 01 03 0
+            ]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do

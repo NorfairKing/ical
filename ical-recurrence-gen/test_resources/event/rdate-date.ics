@@ -1,0 +1,10 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20200101T000000Z
+DTEND:20200101T010000Z
+SUMMARY:A date-valued RDATE on an event that has a DTEND
+DESCRIPTION:The value type of RDATE is not constrained to that of DTSTART\, so
+  this adds an all-day instance to a timed event.
+RDATE;VALUE=DATE:20200102
+END:VEVENT
