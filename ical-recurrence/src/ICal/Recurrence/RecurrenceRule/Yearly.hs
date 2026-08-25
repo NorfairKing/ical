@@ -41,14 +41,31 @@ yearlyDateTimeRecurrence
   bySeconds
   bySetPoss = do
     year <- yearlyYearRecurrence limit (localDay start) interval
-    filterSetPos bySetPoss $ do
+    -- @
+    -- BYSETPOS operates on
+    -- a set of recurrence instances in one interval of the recurrence
+    -- rule. [...] A set of recurrence instances starts at the beginning of the
+    -- interval defined by the FREQ rule part.
+    -- @
+    --
+    -- @
+    -- the BYxxx rule parts
+    -- are applied to the current set of evaluated occurrences in the
+    -- following order: BYMONTH, BYWEEKNO, BYYEARDAY, BYMONTHDAY, BYDAY,
+    -- BYHOUR, BYMINUTE, BYSECOND and BYSETPOS; then COUNT and UNTIL are
+    -- evaluated.
+    -- @
+    --
+    -- The set is the whole year and BYSETPOS is applied before the
+    -- recurrence is bounded, so neither DTSTART nor our limit may narrow
+    -- what 'filterSetPos' numbers.  Both only remove instances afterwards.
+    next <- filterSetPos bySetPoss $ do
       d <- yearlyDayCandidate (localDay start) weekStart year byMonths byWeekNos byYearDays byMonthDays byDays
-      guard (d <= limit) -- Early check
       tod <- timeOfDayExpand (localTimeOfDay start) byHours byMinutes bySeconds
-      let next = LocalTime d tod
-      guard (next > start) -- Don't take the current one again
-      guard (next < LocalTime (addDays 1 limit) midnight) -- Don't go beyond the limit
-      pure next
+      pure (LocalTime d tod)
+    guard (next > start) -- Don't take the current one again
+    guard (next < LocalTime (addDays 1 limit) midnight) -- Don't go beyond the limit
+    pure next
 
 yearlyYearRecurrence ::
   Day ->
