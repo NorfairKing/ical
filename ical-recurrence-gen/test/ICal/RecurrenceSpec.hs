@@ -18,13 +18,62 @@ import qualified Data.Text.Encoding as TE
 import Data.Time
 import ICal
 import ICal.Recurrence
+import ICal.Recurrence.Gen ()
 import Path
 import Path.IO
 import Test.Syd
+import Test.Syd.Validity
 
 spec :: Spec
 spec = do
   let limit = fromGregorian 2023 01 01
+  describe "renderEventOccurrences" $ do
+    it "roundtrips with parseEventOccurrences" $
+      forAllValid $ \occurrences ->
+        parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+    it "roundtrips occurrences when an earlier one has no end" $
+      -- An occurrence with neither a DTEND nor a DURATION renders as one line
+      -- instead of two, which shifts every occurrence after it in the file.
+      --
+      -- There have to be two occurrences to see this.  A single one roundtrips
+      -- by accident, because the empty line that the final CRLF leaves behind
+      -- stands in for the line it never wrote.
+      let occurrences =
+            S.fromList
+              [ EventOccurrence
+                  { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                    eventOccurrenceEndOrDuration = Nothing
+                  },
+                EventOccurrence
+                  { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 0,
+                    eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 3600
+                  }
+              ]
+       in parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+    it "roundtrips an occurrence whose properties are folded over several lines" $ do
+      -- A TZID of the shape that Thunderbird emits makes both content lines
+      -- longer than the 75 octets after which they are folded.  Both
+      -- properties are present here, so this covers folding on its own.
+      let tzid = "/mozilla.org/20050126_1/America/Argentina/Buenos_Aires"
+      let occurrences =
+            S.singleton
+              EventOccurrence
+                { eventOccurrenceStart =
+                    Just $
+                      DateTimeStartDateTime $
+                        DateTimeZoned tzid $
+                          LocalTime (fromGregorian 2020 01 01) (TimeOfDay 01 00 00),
+                  eventOccurrenceEndOrDuration =
+                    Just $
+                      Left $
+                        DateTimeEndDateTime $
+                          DateTimeZoned tzid $
+                            LocalTime (fromGregorian 2020 01 01) (TimeOfDay 02 00 00)
+                }
+      -- Assert that this is really folded, so that the test cannot quietly
+      -- stop covering folding if the fold width ever changes.
+      renderEventOccurrences occurrences `shouldSatisfy` T.isInfixOf "\r\n "
+      parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
