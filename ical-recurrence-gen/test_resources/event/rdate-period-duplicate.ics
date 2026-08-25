@@ -1,0 +1,12 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20200101T000000Z
+DTEND:20200101T010000Z
+SUMMARY:A period-valued RDATE on an instance the RRULE also generates
+DESCRIPTION:Duplicate instances are ignored\, and the period-valued form of
+  RDATE is how the duration of one instance is modified\, so the second
+  instance lasts five hours.
+RRULE:FREQ=DAILY;COUNT=3
+RDATE;VALUE=PERIOD:20200102T000000Z/PT5H
+END:VEVENT

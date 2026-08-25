@@ -1,0 +1,11 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20221210T000000Z
+DTEND:20221210T010000Z
+SUMMARY:The later of Sunday and Saturday of every week
+DESCRIPTION:With a week start of Sunday the last week that the recurrence
+  limit of the 1st of January 2023 touches runs to Saturday the 7th\, which
+  lies beyond the limit\, so that week contributes no instance at all.
+RRULE:FREQ=WEEKLY;BYDAY=SU,SA;BYSETPOS=-1;WKST=SU
+END:VEVENT

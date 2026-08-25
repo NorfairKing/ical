@@ -1,0 +1,11 @@
+BEGIN:VEVENT
+DTSTAMP:19960704T120000Z
+UID:0
+DTSTART:20210103T000000Z
+DTEND:20210103T010000Z
+SUMMARY:The Monday and Sunday of week 1 with a week start of Sunday
+DESCRIPTION:Week 1 of 2021 starts on Sunday the 3rd of January and week 1 of
+  2022 on Sunday the 2nd\, so the three first instances are the 3rd and 4th
+  of January 2021 and the 2nd of January 2022.
+RRULE:FREQ=YEARLY;BYWEEKNO=1;BYDAY=MO,SU;WKST=SU;COUNT=3
+END:VEVENT

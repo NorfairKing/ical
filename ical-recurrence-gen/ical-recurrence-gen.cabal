@@ -8,6 +8,12 @@ name:           ical-recurrence-gen
 version:        0.0.0.0
 build-type:     Simple
 extra-source-files:
+    test_resources/calendar/exdate-other-timezone.ics
+    test_resources/calendar/exdate-other-timezone.occ
+    test_resources/calendar/exdate-other-timezone.res
+    test_resources/calendar/exdate-utc-zoned-event.ics
+    test_resources/calendar/exdate-utc-zoned-event.occ
+    test_resources/calendar/exdate-utc-zoned-event.res
     test_resources/calendar/zoned-border.ics
     test_resources/calendar/zoned-border.occ
     test_resources/calendar/zoned-border.res
@@ -20,28 +26,48 @@ extra-source-files:
     test_resources/calendar/zoned-recurring.ics
     test_resources/calendar/zoned-recurring.occ
     test_resources/calendar/zoned-recurring.res
+    test_resources/calendar/zoned-until-utc.ics
+    test_resources/calendar/zoned-until-utc.occ
+    test_resources/calendar/zoned-until-utc.res
     test_resources/calendar/zoned.ics
     test_resources/calendar/zoned.occ
     test_resources/calendar/zoned.res
+    test_resources/calendar/zurich-dst-gap.ics
+    test_resources/calendar/zurich-dst-gap.occ
+    test_resources/calendar/zurich-dst-gap.res
     test_resources/calendar/zurich.ics
     test_resources/calendar/zurich.occ
     test_resources/calendar/zurich.res
     test_resources/event/daily-bysetpos.ics
     test_resources/event/daily-bysetpos.occ
+    test_resources/event/hourly.ics
+    test_resources/event/hourly.occ
     test_resources/event/leapdays.ics
     test_resources/event/leapdays.occ
+    test_resources/event/monthly-bysetpos-limit.ics
+    test_resources/event/monthly-bysetpos-limit.occ
     test_resources/event/one-recurrence-invalid-end.ics
     test_resources/event/one-recurrence-invalid-end.occ
     test_resources/event/one-recurrence-invalid-start.ics
     test_resources/event/one-recurrence-invalid-start.occ
     test_resources/event/rdate-date.ics
     test_resources/event/rdate-date.occ
+    test_resources/event/rdate-period-duplicate.ics
+    test_resources/event/rdate-period-duplicate.occ
     test_resources/event/rdate-period.ics
     test_resources/event/rdate-period.occ
     test_resources/event/rdate.ics
     test_resources/event/rdate.occ
+    test_resources/event/weekly-bysetpos-limit.ics
+    test_resources/event/weekly-bysetpos-limit.occ
     test_resources/event/weekly.ics
     test_resources/event/weekly.occ
+    test_resources/event/yearly-bysetpos.ics
+    test_resources/event/yearly-bysetpos.occ
+    test_resources/event/yearly-byweekno-53.ics
+    test_resources/event/yearly-byweekno-53.occ
+    test_resources/event/yearly-byweekno-wkst.ics
+    test_resources/event/yearly-byweekno-wkst.occ
 
 library
   exposed-modules:
