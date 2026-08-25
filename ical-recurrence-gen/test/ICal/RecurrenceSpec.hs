@@ -74,6 +74,99 @@ spec = do
       -- stop covering folding if the fold width ever changes.
       renderEventOccurrences occurrences `shouldSatisfy` T.isInfixOf "\r\n "
       parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+  describe "recurEvents" $ do
+    -- A time zone without any transitions, so that the only thing that
+    -- matters about it is its offset from UTC.
+    let plusOne :: [Text]
+        plusOne =
+          [ "BEGIN:VTIMEZONE",
+            "TZID:Test/PlusOne",
+            "BEGIN:STANDARD",
+            "DTSTART:19700101T000000",
+            "TZOFFSETFROM:+0100",
+            "TZOFFSETTO:+0100",
+            "TZNAME:P1",
+            "END:STANDARD",
+            "END:VTIMEZONE"
+          ]
+    let calendarWith :: [Text] -> [Text] -> Text
+        calendarWith timeZones event =
+          T.intercalate "\r\n" $
+            concat
+              [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
+                timeZones,
+                ["BEGIN:VEVENT", "DTSTAMP:20200101T000000Z", "UID:test"],
+                event,
+                ["END:VEVENT", "END:VCALENDAR", ""]
+              ]
+    let startsOf :: Day -> Text -> IO (Set (Maybe Timestamp))
+        startsOf lim contents = do
+          calendar <- shouldConform $ parseVCalendar contents
+          shouldConform $
+            runR lim (calendarTimeZoneMap calendar) $ do
+              occurrences <-
+                fmap S.unions $
+                  mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+              S.fromList . map resolvedEventStart
+                <$> mapM resolveEventOccurrence (S.toList occurrences)
+    let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
+        utcAt y m dd tod = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m dd) tod
+    let minus5 :: [Text]
+        minus5 =
+          [ "BEGIN:VTIMEZONE",
+            "TZID:Test/MinusFive",
+            "BEGIN:STANDARD",
+            "DTSTART:19700101T000000",
+            "TZOFFSETFROM:-0500",
+            "TZOFFSETTO:-0500",
+            "TZNAME:M5",
+            "END:STANDARD",
+            "END:VTIMEZONE"
+          ]
+    describe "Until" $ do
+      it "includes the instance that falls exactly on a UTC Until of a zoned event" $
+        -- @
+        -- The UNTIL rule part defines a DATE or DATE-TIME value that bounds
+        -- the recurrence rule in an inclusive manner.
+        -- @
+        --
+        -- The event starts at 01:00 local time, which is 00:00 UTC, so
+        -- 20200105T000000Z is exactly the fifth instance.
+        startsOf (fromGregorian 2020 02 01) (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T010000", "RRULE:FREQ=DAILY;UNTIL=20200105T000000Z"])
+          `shouldReturn` S.fromList
+            [ utcAt 2020 01 01 0,
+              utcAt 2020 01 02 0,
+              utcAt 2020 01 03 0,
+              utcAt 2020 01 04 0,
+              utcAt 2020 01 05 0
+            ]
+      it "excludes the instance that falls after a UTC Until of a zoned event" $
+        -- The mirror of the case above.  West of UTC the same comparison
+        -- over-generates rather than dropping an instance, so a fix that gets
+        -- the direction of the offset wrong would still pass that one.
+        --
+        -- The event starts at 23:00 local time, which is 04:00 UTC the next
+        -- day, so the third instance is at 20200104T040000Z, past the UNTIL.
+        startsOf (fromGregorian 2020 02 01) (calendarWith minus5 ["DTSTART;TZID=Test/MinusFive:20200101T230000", "RRULE:FREQ=DAILY;UNTIL=20200104T000000Z"])
+          `shouldReturn` S.fromList
+            [ utcAt 2020 01 02 (4 * 3600),
+              utcAt 2020 01 03 (4 * 3600)
+            ]
+      it "still recurs a zoned event whose time zone the calendar does not define" $ do
+        -- Comparing the Until in the time zone of DTSTART needs that time zone,
+        -- but computing the recurrence set never needed it before, so a
+        -- calendar that refers to a time zone it does not define has to keep
+        -- recurring rather than becoming an unfixable error.
+        --
+        -- The instances stay zoned and unresolved here, so this asserts the
+        -- starts rather than resolving them.
+        calendar <- shouldConform $ parseVCalendar (calendarWith [] ["DTSTART;TZID=Nowhere/Undefined:20200101T010000", "RRULE:FREQ=DAILY;UNTIL=20200105T000000Z"])
+        occurrences <-
+          shouldConform $
+            runR limit (calendarTimeZoneMap calendar) $
+              fmap S.unions $
+                mapM (recurEvents limit . getRecurringEvent) (calendarEvents calendar)
+        S.size occurrences `shouldBe` 4
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
