@@ -82,6 +82,40 @@ spec = do
                          l (d 2020 07 15) midnight,
                          l (d 2021 07 15) midnight
                        ]
+    specify "ByWeekNo 53 does not occur in a year that has only 52 weeks" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYWEEKNO rule part specifies a COMMA-separated list of
+      -- ordinals specifying weeks of the year.  Valid values are 1 to 53
+      -- or -53 to -1.  This corresponds to weeks according to week
+      -- numbering as defined in [ISO.8601.2004].  A week is defined as a
+      -- seven day period, starting on the day of the week defined to be
+      -- the week start (see WKST).  Week number one of the calendar year
+      -- is the first week that contains at least four (4) days in that
+      -- calendar year.
+      -- @
+      --
+      -- @
+      --    Note: Assuming a Monday week start, week 53 can only occur when
+      --    Thursday is January 1 or if it is a leap year and Wednesday is
+      --    January 1.
+      -- @
+      --
+      -- So 53 is a valid value that simply does not exist in every year, and
+      -- a year that does not have it contributes nothing, the way a February
+      -- without a 30th does.  2019, 2021 and 2022 have 52 weeks; 2020 has 53.
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByWeekNo = [ByWeekNo 53],
+                recurrenceRuleByDay = [Every Monday]
+              }
+          start = l (d 2019 01 07) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2019 01 07) midnight,
+                             l (d 2020 12 28) midnight
+                           ]
   describe "yearlyDateTimeRecurrence" $ do
     --  An unimportant limit because we don't specify any rules that have no occurrences
     let limit = d 2030 01 01
