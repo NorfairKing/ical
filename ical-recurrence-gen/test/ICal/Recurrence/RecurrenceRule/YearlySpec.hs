@@ -4,7 +4,8 @@ module ICal.Recurrence.RecurrenceRule.YearlySpec (spec) where
 
 import Data.GenValidity.Time ()
 import Data.Maybe
-import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, midnight)
+import qualified Data.Set as S
+import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), dayOfWeek, fromGregorian, midnight)
 import ICal.PropertyType.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.RecurrenceRule.Yearly
@@ -256,6 +257,188 @@ spec = do
                              l (d 2020 01 31) midnight,
                              l (d 2021 01 15) midnight
                            ]
+    specify "BySetPos selects within the whole year, not only within the part of the year after DTSTART" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYSETPOS rule part specifies a COMMA-separated list of values
+      -- that corresponds to the nth occurrence within the set of
+      -- recurrence instances specified by the rule.  BYSETPOS operates on
+      -- a set of recurrence instances in one interval of the recurrence
+      -- rule.  For example, in a WEEKLY rule, the interval would be one
+      -- week A set of recurrence instances starts at the beginning of the
+      -- interval defined by the FREQ rule part.
+      -- @
+      --
+      -- The set starts at the beginning of the year, so for 2020 it is the
+      -- 15th of January, April, July and October.  BYSETPOS=1 selects the
+      -- 15th of January 2020, which is before DTSTART and so is not part of
+      -- the recurrence set; the 15th of July must not take its place.
+      --
+      -- @
+      -- the BYxxx rule parts
+      -- are applied to the current set of evaluated occurrences in the
+      -- following order: BYMONTH, BYWEEKNO, BYYEARDAY, BYMONTHDAY, BYDAY,
+      -- BYHOUR, BYMINUTE, BYSECOND and BYSETPOS; then COUNT and UNTIL are
+      -- evaluated.
+      -- @
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth April, ByMonth July, ByMonth October],
+                recurrenceRuleBySetPos = [BySetPos 1]
+              }
+          start = l (d 2020 06 15) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2020 06 15) midnight,
+                             l (d 2021 01 15) midnight
+                           ]
+    specify "BySetPos selects within the whole year, no matter where the limit lies" $ do
+      -- The other way the limit leaks into filterSetPos in this function.
+      -- The set BYSETPOS numbers "starts at the beginning of the interval
+      -- defined by the FREQ rule part", so it is the whole year regardless of
+      -- where our limit falls.  The July instance of 2022 lies beyond the
+      -- limit, so 2022 contributes nothing at all, and its January instance
+      -- must not take that place.
+      let rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth July],
+                recurrenceRuleBySetPos = [BySetPos (-1)]
+              }
+          start = l (d 2020 01 15) midnight
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 12 31) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight,
+                         l (d 2022 07 15) midnight
+                       ]
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 07 01) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight
+                       ]
+    specify "ByWeekNo 53 does not occur in a year that has only 52 weeks" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYWEEKNO rule part specifies a COMMA-separated list of
+      -- ordinals specifying weeks of the year.  Valid values are 1 to 53
+      -- or -53 to -1.  This corresponds to weeks according to week
+      -- numbering as defined in [ISO.8601.2004].  A week is defined as a
+      -- seven day period, starting on the day of the week defined to be
+      -- the week start (see WKST).  Week number one of the calendar year
+      -- is the first week that contains at least four (4) days in that
+      -- calendar year.
+      -- @
+      --
+      -- @
+      --    Note: Assuming a Monday week start, week 53 can only occur when
+      --    Thursday is January 1 or if it is a leap year and Wednesday is
+      --    January 1.
+      -- @
+      --
+      -- So 53 is a valid value that simply does not exist in every year, and
+      -- a year that does not have it contributes nothing, the way a February
+      -- without a 30th does.  2019, 2021 and 2022 have 52 weeks; 2020 has 53.
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByWeekNo = [ByWeekNo 53],
+                recurrenceRuleByDay = [Every Monday]
+              }
+          start = l (d 2019 01 07) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2019 01 07) midnight,
+                             l (d 2020 12 28) midnight
+                           ]
+    specify "BySetPos selects within the whole year, not only within the part of the year after DTSTART" $
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYSETPOS rule part specifies a COMMA-separated list of values
+      -- that corresponds to the nth occurrence within the set of
+      -- recurrence instances specified by the rule.  BYSETPOS operates on
+      -- a set of recurrence instances in one interval of the recurrence
+      -- rule.  For example, in a WEEKLY rule, the interval would be one
+      -- week A set of recurrence instances starts at the beginning of the
+      -- interval defined by the FREQ rule part.
+      -- @
+      --
+      -- The set starts at the beginning of the year, so for 2020 it is the
+      -- 15th of January, April, July and October.  BYSETPOS=1 selects the
+      -- 15th of January 2020, which is before DTSTART and so is not part of
+      -- the recurrence set; the 15th of July must not take its place.
+      --
+      -- @
+      -- the BYxxx rule parts
+      -- are applied to the current set of evaluated occurrences in the
+      -- following order: BYMONTH, BYWEEKNO, BYYEARDAY, BYMONTHDAY, BYDAY,
+      -- BYHOUR, BYMINUTE, BYSECOND and BYSETPOS; then COUNT and UNTIL are
+      -- evaluated.
+      -- @
+      let limit = d 2021 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth April, ByMonth July, ByMonth October],
+                recurrenceRuleBySetPos = [BySetPos 1]
+              }
+          start = l (d 2020 06 15) midnight
+       in shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+            `shouldReturn` [ l (d 2020 06 15) midnight,
+                             l (d 2021 01 15) midnight
+                           ]
+    specify "BySetPos selects within the whole year, no matter where the limit lies" $ do
+      -- The other way the limit leaks into filterSetPos in this function.
+      -- The set BYSETPOS numbers "starts at the beginning of the interval
+      -- defined by the FREQ rule part", so it is the whole year regardless of
+      -- where our limit falls.  The July instance of 2022 lies beyond the
+      -- limit, so 2022 contributes nothing at all, and its January instance
+      -- must not take that place.
+      let rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByMonth = [ByMonth January, ByMonth July],
+                recurrenceRuleBySetPos = [BySetPos (-1)]
+              }
+          start = l (d 2020 01 15) midnight
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 12 31) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight,
+                         l (d 2022 07 15) midnight
+                       ]
+      shouldRecur (recurRecurrenceRuleLocalTimes (d 2022 07 01) start rule)
+        `shouldReturn` [ l (d 2020 01 15) midnight,
+                         l (d 2020 07 15) midnight,
+                         l (d 2021 07 15) midnight
+                       ]
+    specify "ByWeekNo with a numeric ByDay does not expand to every day of the week" $ do
+      -- [section 3.3.10](https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.10)
+      --
+      -- @
+      -- The BYDAY rule part MUST NOT be specified with a numeric value
+      -- with the FREQ rule part set to YEARLY when the BYWEEKNO rule part
+      -- is specified.
+      -- @
+      --
+      -- So this rule does not conform and there is a choice about what to do
+      -- with it, but no reading of it puts an occurrence on a day other than
+      -- Monday.  That part is asserted first, and holds whichever way the
+      -- non-conformance is resolved.
+      let limit = d 2020 12 31
+          rule =
+            (makeRecurrenceRule Yearly)
+              { recurrenceRuleByWeekNo = [ByWeekNo 20],
+                recurrenceRuleByDay = [Specific 2 Monday]
+              }
+          start = l (d 2020 01 01) midnight
+      occurrences <- shouldRecur (recurRecurrenceRuleLocalTimes limit start rule)
+      S.filter (\lt -> lt /= start && dayOfWeek (localDay lt) /= Monday) occurrences
+        `shouldBe` S.empty
+      -- The assertion above is also satisfied by producing nothing at all, so
+      -- assert that the Monday of week 20 is still there.  That does commit to
+      -- reading 2MO as MO; reporting a fixable error and keeping the week day
+      -- is the same outcome here.
+      occurrences `shouldSatisfy` S.member (l (d 2020 05 11) midnight)
   describe "yearlyDateTimeRecurrence" $ do
     --  An unimportant limit because we don't specify any rules that have no occurrences
     let limit = d 2030 01 01
