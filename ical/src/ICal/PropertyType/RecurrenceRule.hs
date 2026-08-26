@@ -603,14 +603,26 @@ parseRecurrenceRule t = do
 
   recurrenceRuleFrequency <- parsePart
   recurrenceRuleInterval <- parseDPart (Interval 1)
-  mUntil <- parseMPart
   mCount <- parseMPart
-  let recurrenceRuleUntilCount = case (mUntil, mCount) of
-        (Nothing, Nothing) -> Nothing
-        (Nothing, Just c) -> Just (Left c)
-        -- Don't reject invalid ical that defines both, but ignore the count.
-        -- TODO emit a fixable warning here.
-        (Just u, _) -> Just (Right u)
+  mUntil <- parseMPart
+  -- @
+  -- The UNTIL or COUNT rule parts are OPTIONAL,
+  -- but they MUST NOT occur in the same 'recur'.
+  -- @
+  --
+  -- A rule that specifies both is not conforming, but it is not ambiguous
+  -- enough to refuse either: each part on its own says something usable.  So
+  -- one is kept and the other reported.
+  --
+  -- Which one is kept is arbitrary, because the spec does not say.  The COUNT
+  -- wins, which is what this did before it said so out loud.
+  recurrenceRuleUntilCount <- case (mUntil, mCount) of
+    (Nothing, Nothing) -> pure Nothing
+    (Just u, Nothing) -> pure $ Just $ Left u
+    (Nothing, Just c) -> pure $ Just $ Right c
+    (Just u, Just c) -> do
+      emitFixableError $ RecurrenceRuleHasBothUntilAndCount (untilB u) (countB c)
+      pure $ Just $ Right c
 
   recurrenceRuleBySecond <- parseSetPart
   recurrenceRuleByMinute <- parseSetPart
