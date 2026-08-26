@@ -13,6 +13,7 @@ library:
   - conformance-gen
   - genvalidity
   - genvalidity-containers
+  - genvalidity-time
   - ical-gen
   - ical-recurrence
 

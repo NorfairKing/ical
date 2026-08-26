@@ -84,6 +84,7 @@ library
     , conformance-gen
     , genvalidity
     , genvalidity-containers
+    , genvalidity-time
     , ical-gen
     , ical-recurrence
   default-language: Haskell2010
@@ -92,7 +93,6 @@ test-suite ical-recurrence-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ICal.Recurrence.ClassSpec
       ICal.Recurrence.RecurrenceDateTimesSpec
       ICal.Recurrence.RecurrenceRule.DailySpec
       ICal.Recurrence.RecurrenceRule.MonthlySpec
@@ -100,6 +100,7 @@ test-suite ical-recurrence-test
       ICal.Recurrence.RecurrenceRule.YearlySpec
       ICal.Recurrence.RecurrenceRuleSpec
       ICal.Recurrence.TimeZoneSpec
+      ICal.Recurrence.TypesSpec
       ICal.RecurrenceSpec
       Paths_ical_recurrence_gen
   hs-source-dirs:

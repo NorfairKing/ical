@@ -11,7 +11,6 @@ build-type:     Simple
 library
   exposed-modules:
       ICal.Recurrence
-      ICal.Recurrence.Class
       ICal.Recurrence.RecurrenceRule
       ICal.Recurrence.RecurrenceRule.Daily
       ICal.Recurrence.RecurrenceRule.Hourly
@@ -22,6 +21,7 @@ library
       ICal.Recurrence.RecurrenceRule.WeekDate
       ICal.Recurrence.RecurrenceRule.Weekly
       ICal.Recurrence.RecurrenceRule.Yearly
+      ICal.Recurrence.Types
   other-modules:
       Paths_ical_recurrence
   hs-source-dirs:

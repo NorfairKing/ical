@@ -22,7 +22,7 @@ spec = do
                   Nothing -> forAllValid p
                   Just start -> property $ p start
              in supplyStart $ \dateTimeStart -> do
-                  actual <- shouldRecur $ recurRecurrenceDateTimes dateTimeStart mEndOrDuration recurrenceDateTimess
+                  actual <- shouldRecur $ recurRecurrenceDateTimes () dateTimeStart mEndOrDuration recurrenceDateTimess
                   actual `shouldBe` expected
 
     -- [Section 3.8.5.2.  Recurrence Date-Times](https://www.rfc-editor.org/rfc/rfc5545#section-3.8.5.2)
@@ -34,10 +34,11 @@ spec = do
       Nothing
       Nothing
       [RecurrenceDateTimes (DateTimesUTC [UTCTime (fromGregorian 1997 07 14) (timeOfDayToTime (TimeOfDay 23 00 00))])]
-      [ EventOccurrence
-          { eventOccurrenceStart =
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDateTime (DateTimeUTC (UTCTime (fromGregorian 1997 07 14) (timeOfDayToTime (TimeOfDay 23 00 00))))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           }
       ]
 
@@ -50,10 +51,11 @@ spec = do
       Nothing
       Nothing
       [RecurrenceDateTimes (DateTimesZoned "America/New_York" [LocalTime (fromGregorian 1997 07 14) (TimeOfDay 08 30 00)])]
-      [ EventOccurrence
-          { eventOccurrenceStart =
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDateTime (DateTimeZoned "America/New_York" (LocalTime (fromGregorian 1997 07 14) (TimeOfDay 08 30 00)))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           }
       ]
 
@@ -75,15 +77,17 @@ spec = do
               (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 3, durTimeMinute = 0, durTimeSecond = 0}))
           ]
       ]
-      [ EventOccurrence
-          { eventOccurrenceStart =
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDateTime (DateTimeUTC (UTCTime (fromGregorian 1996 04 03) (timeOfDayToTime (TimeOfDay 02 00 00))))),
-            eventOccurrenceEndOrDuration = Just (Left (DateTimeEndDateTime (DateTimeUTC (UTCTime (fromGregorian 1996 04 03) (timeOfDayToTime (TimeOfDay 04 00 00))))))
+            occurrenceEnd = Just (Left (RecurrenceEndDateTime (DateTimeUTC (UTCTime (fromGregorian 1996 04 03) (timeOfDayToTime (TimeOfDay 04 00 00))))))
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDateTime (DateTimeUTC (UTCTime (fromGregorian 1996 04 04) (timeOfDayToTime (TimeOfDay 01 00 00))))),
-            eventOccurrenceEndOrDuration = Just (Right (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 3, durTimeMinute = 0, durTimeSecond = 0})))
+            occurrenceEnd = Just (Right (DurationTime (DurTime {durTimeSign = Positive, durTimeHour = 3, durTimeMinute = 0, durTimeSecond = 0})))
           }
       ]
 
@@ -110,60 +114,71 @@ spec = do
             Date $ fromGregorian 1997 12 25
           ]
       ]
-      [ EventOccurrence
-          { eventOccurrenceStart =
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 01 01))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 01 20))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 02 17))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 04 21))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 05 26))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 07 04))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 09 01))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 10 14))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 11 28))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 11 29))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 12 25))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           }
       ]
     -- [Section 3.1.1.  List and Field Separators](https://www.rfc-editor.org/rfc/rfc5545#section-3.1.1)
@@ -181,25 +196,29 @@ spec = do
             Date $ fromGregorian 1997 09 04
           ]
       ]
-      [ EventOccurrence
-          { eventOccurrenceStart =
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 03 04))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 05 04))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 07 04))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           },
-        EventOccurrence
-          { eventOccurrenceStart =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart =
               Just (DateTimeStartDate (Date (fromGregorian 1997 09 04))),
-            eventOccurrenceEndOrDuration = Nothing
+            occurrenceEnd = Nothing
           }
       ]
 
@@ -216,8 +235,9 @@ spec = do
       (Just (DateTimeStartDateTime (DateTimeFloating (LocalTime (fromGregorian 1974 01 06) (TimeOfDay 02 00 00)))))
       Nothing
       [RecurrenceDateTimes (DateTimesFloating [LocalTime (fromGregorian 1975 02 23) (TimeOfDay 02 00 00)])]
-      [ EventOccurrence
-          { eventOccurrenceStart = Just (DateTimeStartDateTime (DateTimeFloating (LocalTime (fromGregorian 1975 02 23) (TimeOfDay 02 00 00)))),
-            eventOccurrenceEndOrDuration = Nothing
+      [ Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart = Just (DateTimeStartDateTime (DateTimeFloating (LocalTime (fromGregorian 1975 02 23) (TimeOfDay 02 00 00)))),
+            occurrenceEnd = Nothing
           }
       ]
