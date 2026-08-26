@@ -22,6 +22,11 @@ spec = do
     genValidSpec @Interval
     recurrenceRulePartSpec @Interval
     recurrenceRulePartExampleSpec "1" (Interval 1)
+    -- @
+    --    The INTERVAL rule part contains a positive integer representing at
+    --    which intervals the recurrence rule repeats.
+    -- @
+    recurrenceRulePartRefusesSpec @Interval "0"
 
   describe "Until" $ do
     genValidSpec @Until
@@ -54,16 +59,28 @@ spec = do
     genValidSpec @BySecond
     recurrenceRulePartSpec @(Set BySecond)
     recurrenceRulePartExampleSpec @(Set BySecond) "1" [BySecond 1]
+    -- @
+    -- Valid values are 0 to 60.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set BySecond) "61"
 
   describe "ByMinute" $ do
     genValidSpec @ByMinute
     recurrenceRulePartSpec @(Set ByMinute)
     recurrenceRulePartExampleSpec @(Set ByMinute) "1" [ByMinute 1]
+    -- @
+    -- Valid values are 0 to 59.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set ByMinute) "60"
 
   describe "ByHour" $ do
     genValidSpec @ByHour
     recurrenceRulePartSpec @(Set ByHour)
     recurrenceRulePartExampleSpec @(Set ByHour) "1" [ByHour 1]
+    -- @
+    -- Valid values are 0 to 23.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set ByHour) "24"
 
   describe "ByDay" $ do
     genValidSpec @ByDay
@@ -102,6 +119,7 @@ spec = do
     recurrenceRulePartExampleSpec @(Set ByDay)
       "-53MO"
       [Specific (-53) Monday]
+    recurrenceRulePartRefusesSpec @(Set ByDay) "54MO"
     it "considers the largest ordinal valid" $ do
       shouldBeValid (Specific 53 Monday)
       shouldBeValid (Specific (-53) Monday)
@@ -113,16 +131,31 @@ spec = do
     genValidSpec @ByMonthDay
     recurrenceRulePartSpec @(Set ByMonthDay)
     recurrenceRulePartExampleSpec @(Set ByMonthDay) "1" [ByMonthDay 1]
+    -- @
+    -- Valid values are 1 to 31 or -31 to -1.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set ByMonthDay) "32"
+    recurrenceRulePartRefusesSpec @(Set ByMonthDay) "0"
 
   describe "ByYearDay" $ do
     genValidSpec @ByYearDay
     recurrenceRulePartSpec @(Set ByYearDay)
     recurrenceRulePartExampleSpec @(Set ByYearDay) "1" [ByYearDay 1]
+    -- @
+    -- Valid values are 1 to 366 or -366 to -1.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set ByYearDay) "367"
+    recurrenceRulePartRefusesSpec @(Set ByYearDay) "0"
 
   describe "ByWeekNo" $ do
     genValidSpec @ByWeekNo
     recurrenceRulePartSpec @(Set ByWeekNo)
     recurrenceRulePartExampleSpec @(Set ByWeekNo) "1" [ByWeekNo 1]
+    -- @
+    -- Valid values are 1 to 53 or -53 to -1.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set ByWeekNo) "54"
+    recurrenceRulePartRefusesSpec @(Set ByWeekNo) "0"
 
   describe "ByMonth" $ do
     genValidSpec @ByMonth
@@ -133,6 +166,11 @@ spec = do
     genValidSpec @BySetPos
     recurrenceRulePartSpec @(Set BySetPos)
     recurrenceRulePartExampleSpec @(Set BySetPos) "1" [BySetPos 1]
+    -- @
+    -- Valid values are 1 to 366 or -366 to -1.
+    -- @
+    recurrenceRulePartRefusesSpec @(Set BySetPos) "367"
+    recurrenceRulePartRefusesSpec @(Set BySetPos) "0"
     -- @
     -- The BYSETPOS rule part specifies a COMMA-separated list of values
     -- that corresponds to the nth occurrence within the set of
