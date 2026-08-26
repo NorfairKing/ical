@@ -226,6 +226,26 @@ recurrenceRulePartExampleSpec text value = withFrozenCallStack $ do
   it "can render this example correctly" $
     recurrenceRulePartB value `shouldBe` text
 
+-- | A rule part value that reads but lies outside the range the spec gives for
+-- it must be refused, rather than parsed into a value that fails its own
+-- 'Validity'.
+--
+-- 'recurrenceRulePartSpec' cannot catch this.  Its "parses only valid things"
+-- property feeds back the rendering of an already-valid value, so out-of-range
+-- text never reaches the parser there.
+recurrenceRulePartRefusesSpec ::
+  forall a.
+  (HasCallStack, Show a, IsRecurrenceRulePart a) =>
+  Text ->
+  Spec
+recurrenceRulePartRefusesSpec text = withFrozenCallStack $
+  it ("refuses " <> show text) $
+    case runConform (recurrenceRulePartP text) of
+      Left _ -> pure ()
+      Right (part, _) ->
+        expectationFailure $
+          unlines ["Should have refused this value but parsed it into:", ppShow (part :: a)]
+
 recurrenceRulePartSpec ::
   forall a.
   (HasCallStack, Show a, Eq a, GenValid a, IsRecurrenceRulePart a) =>
