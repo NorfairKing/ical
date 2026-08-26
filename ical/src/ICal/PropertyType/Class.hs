@@ -143,12 +143,31 @@ instance Exception PropertyTypeParseError where
 data PropertyTypeFixableError
   = ParameterParseFixableError !ParameterParseFixableError
   | UrlTextEncoded !Text
+  | -- | A recurrence rule specified both UNTIL and COUNT
+    --
+    -- @
+    -- The UNTIL or COUNT rule parts are OPTIONAL,
+    -- but they MUST NOT occur in the same 'recur'.
+    -- @
+    --
+    -- The two values are carried as the text they were written as, because the
+    -- types that would say it better are defined in a module that imports this
+    -- one.
+    RecurrenceRuleHasBothUntilAndCount !Text !Text
   deriving (Show, Eq, Ord)
 
 instance Exception PropertyTypeFixableError where
   displayException = \case
     ParameterParseFixableError ppfe -> displayException ppfe
     UrlTextEncoded t -> unwords ["URL was TEXT-encoded but should not have been:", show t]
+    RecurrenceRuleHasBothUntilAndCount u c ->
+      unwords
+        [ "Recurrence rule specified both UNTIL",
+          show u,
+          "and COUNT",
+          show c,
+          "but must specify at most one of them. Kept the COUNT."
+        ]
 
 -- | Property type
 --
