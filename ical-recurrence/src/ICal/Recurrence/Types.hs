@@ -161,6 +161,12 @@ instance Exception RecurrenceError
 data RecurrenceFixableError
   = RecurrenceMultipleRecurrenceRules !(Set RecurrenceRule)
   | RecurrenceByDayNumeric !ByDay
+  | -- | A RECURRENCE-ID that names no instance of its UID's series
+    RecurrenceIdentifierUnmatched !UID !DateTimeStart
+  | -- | Two components of one UID overriding the same instance at the same SEQUENCE
+    RecurrenceIdentifierDuplicate !UID !DateTimeStart
+  | -- | Two components of one UID with no RECURRENCE-ID between them
+    RecurrenceMultipleSeries !UID
   deriving (Show, Eq, Ord)
 
 instance Exception RecurrenceFixableError
