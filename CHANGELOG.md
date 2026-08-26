@@ -1,5 +1,28 @@
 # Changelog
 
+## ical-recurrence 0.3.0.0
+
+* `RECURRENCE-ID` is handled: a component carrying one replaces the instance it
+  names instead of appearing beside it. Google and Outlook write one for every
+  "this event only" edit, so such a calendar previously produced that instance
+  twice. `RANGE=THISANDFUTURE` reschedules every later instance by the same
+  difference and applies the override's duration, leaving alone any instance
+  that has an override of its own.
+
+* Recurrence is computed over collections of components, because the
+  occurrences of one depend on the others sharing its UID. Start from
+  `recurCalendar`, with `runCalendarR` for the time zones. `recur` and
+  `recurEvents` keep their names with incompatible types, so old call sites are
+  compile errors rather than silent changes of meaning; the single-component
+  expansion `recurEvents` used to do is now `expandRecurring`. `HasRecurrence`,
+  `getRecurringEvent`, `makeOccurrence`, `RecurringEvent`, `EventOccurrence`,
+  `ResolvedEvent` and `resolveEventOccurrence` give way to `Recurring`,
+  `Occurrence`, `Resolved` and `resolveOccurrence`, parameterised over the
+  component.
+
+* `VTODO` and `VJOURNAL` recur, not only `VEVENT`. Only the end of an instance
+  differs (`DTEND`, `DUE`, none), so `RecurrenceEnd` is that shared spelling.
+
 ## ical 0.3.0.0
 
 * `COUNT` is no longer capped at 60. Its `Validity` instance carried the
