@@ -4,7 +4,8 @@
 {-# LANGUAGE LambdaCase #-}
 
 module ICal.Recurrence.Types
-  ( Recurring (..),
+  ( CalendarRecurrence (..),
+    Recurring (..),
     Recurrence (..),
     RecurrenceEnd (..),
     dateTimeEndRecurrenceEnd,
@@ -33,10 +34,27 @@ import qualified Data.Time as Time
 import Data.Validity
 import Data.Void
 import GHC.Generics (Generic)
+import ICal.Component.Event
+import ICal.Component.Journal
 import ICal.Component.TimeZone
+import ICal.Component.Todo
 import ICal.Parameter
 import ICal.Property
 import ICal.PropertyType
+
+-- | The recurrence sets of a whole calendar, by UID
+--
+-- The VEVENTs, VTODOs and VJOURNALs of a calendar recur independently of one
+-- another: a UID names a recurrence set within one of the three, not across
+-- them.
+data CalendarRecurrence = CalendarRecurrence
+  { calendarRecurrenceEvents :: !(Map UID (Set (Occurrence Event))),
+    calendarRecurrenceTodos :: !(Map UID (Set (Occurrence Todo))),
+    calendarRecurrenceJournals :: !(Map UID (Set (Occurrence Journal)))
+  }
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity CalendarRecurrence
 
 -- | A component's recurrence, and the component itself
 --
