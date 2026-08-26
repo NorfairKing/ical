@@ -42,14 +42,16 @@ spec = do
                     lt >= start
                       && Time.localTimeToUTC (utcOffsetTimeZone toOffset) lt
                         < Time.localTimeToUTC (utcOffsetTimeZone fromOffset) start
-                  -- Whether 'time' keeps a leap second across a round trip
-                  -- depends on both the time of day and the offset: at 23:59:60
-                  -- with a zero offset it survives, and everywhere else it
-                  -- normalises into the following minute.  That is a property
-                  -- of splitting an instant into a wall clock rather than
-                  -- anything about time zones, so it is out of scope here.
-                  isLeapSecond = Time.todSec (Time.localTimeOfDay lt) >= 60
-              when (not inTransitionGap && not isLeapSecond) $ do
+              -- Whether 'time' keeps a leap second across a round trip depends
+              -- on both the time of day and the offset: at 23:59:60 with a zero
+              -- offset it survives, and everywhere else it normalises into the
+              -- following minute.  That is a property of splitting an instant
+              -- into a wall clock rather than anything about time zones, so it
+              -- is out of scope here.  'isLeapSecond' is the same predicate
+              -- 'localTimeExists' uses to rule one out, and it is a syntactic
+              -- check on the local time rather than anything derived from this
+              -- round trip.  The cases below pin what actually happens to one.
+              when (not inTransitionGap && not (isLeapSecond lt)) $ do
                 actual <- shouldConform $ do
                   resolved <- resolveLocalTime tz lt
                   unresolveUTCTime tz resolved
