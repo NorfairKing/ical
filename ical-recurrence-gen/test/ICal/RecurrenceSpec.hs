@@ -599,6 +599,60 @@ spec = do
                   }
               ]
           )
+    it "takes the override with the higher SEQUENCE when two name the same instance" $
+      -- [section 3.8.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.4)
+      --
+      -- @
+      -- When a calendar component is created, its sequence
+      -- number is 0.  It is monotonically incremented by the "Organizer's"
+      -- CUA each time the "Organizer" makes a significant revision to the
+      -- calendar component.
+      -- @
+      --
+      -- Two components of one UID with the same RECURRENCE-ID are two
+      -- revisions of one instance, so the higher SEQUENCE is the later
+      -- revision.  The later revision is listed first here, so file order and
+      -- SEQUENCE disagree and only one of them can be what decides.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T000000Z",
+                "DTEND:20200101T010000Z",
+                "RRULE:FREQ=DAILY;COUNT=2",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200102T000000Z",
+                "SEQUENCE:2",
+                "DTSTART:20200102T120000Z",
+                "DTEND:20200102T130000Z",
+                "SUMMARY:Later revision"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200102T000000Z",
+                "SEQUENCE:1",
+                "DTSTART:20200102T180000Z",
+                "DTEND:20200102T190000Z",
+                "SUMMARY:Earlier revision"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Later revision",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (12 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (13 * 3600)
+                  }
+              ]
+          )
     it "reschedules every later instance by the same difference as a THISANDFUTURE override" $
       -- [section 3.8.4.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.4)
       --
@@ -916,60 +970,84 @@ spec = do
             ]
         )
         `shouldReturn` [RecurrenceMultipleSeries (UID "test")]
-    it "takes the override with the higher SEQUENCE when two name the same instance" $
-      -- [section 3.8.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.4)
-      --
+  describe "recurCalendar" $
+    it "recurs the events, to-dos and journals of one UID as three recurrence sets" $ do
       -- @
-      -- When a calendar component is created, its sequence
-      -- number is 0.  It is monotonically incremented by the "Organizer's"
-      -- CUA each time the "Organizer" makes a significant revision to the
-      -- calendar component.
+      -- The full range of calendar components specified by a
+      -- recurrence set is referenced by referring to just the "UID"
+      -- property value corresponding to the calendar component.
       -- @
       --
-      -- Two components of one UID with the same RECURRENCE-ID are two
-      -- revisions of one instance, so the higher SEQUENCE is the later
-      -- revision.  The later revision is listed first here, so file order and
-      -- SEQUENCE disagree and only one of them can be what decides.
-      summariesOf
-        limit
-        ( calendarWithEvents
-            [ [ "UID:test",
-                "DTSTART:20200101T000000Z",
-                "DTEND:20200101T010000Z",
-                "RRULE:FREQ=DAILY;COUNT=2",
-                "SUMMARY:Series"
-              ],
-              [ "UID:test",
-                "RECURRENCE-ID:20200102T000000Z",
-                "SEQUENCE:2",
-                "DTSTART:20200102T120000Z",
-                "DTEND:20200102T130000Z",
-                "SUMMARY:Later revision"
-              ],
-              [ "UID:test",
-                "RECURRENCE-ID:20200102T000000Z",
-                "SEQUENCE:1",
-                "DTSTART:20200102T180000Z",
-                "DTEND:20200102T190000Z",
-                "SUMMARY:Earlier revision"
-              ]
-            ]
-        )
-        `shouldReturn` M.singleton
-          (UID "test")
-          ( S.fromList
-              [ Occurrence
-                  { occurrenceComponent = Just "Series",
-                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
-                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
-                  },
-                Occurrence
-                  { occurrenceComponent = Just "Later revision",
-                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (12 * 3600),
-                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (13 * 3600)
-                  }
-              ]
-          )
+      -- A UID names a recurrence set within one kind of component, so the same
+      -- UID on a VEVENT, a VTODO and a VJOURNAL is three recurrence sets and
+      -- not one.
+      --
+      -- The starts are zoned and resolved afterwards, which is what shows that
+      -- 'runCalendarR' supplied the time zone that the calendar defines: 01:00
+      -- at +0100 is midnight UTC.
+      calendar <-
+        shouldConform $
+          parseVCalendar $
+            T.intercalate "\r\n" $
+              concat
+                [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
+                  [ "BEGIN:VTIMEZONE",
+                    "TZID:Test/PlusOne",
+                    "BEGIN:STANDARD",
+                    "DTSTART:19700101T000000",
+                    "TZOFFSETFROM:+0100",
+                    "TZOFFSETTO:+0100",
+                    "TZNAME:P1",
+                    "END:STANDARD",
+                    "END:VTIMEZONE"
+                  ],
+                  [ "BEGIN:VEVENT",
+                    "DTSTAMP:20200101T000000Z",
+                    "UID:shared",
+                    "DTSTART;TZID=Test/PlusOne:20200101T010000",
+                    "RRULE:FREQ=DAILY;COUNT=2",
+                    "END:VEVENT"
+                  ],
+                  [ "BEGIN:VTODO",
+                    "DTSTAMP:20200101T000000Z",
+                    "UID:shared",
+                    "DTSTART;TZID=Test/PlusOne:20200201T010000",
+                    "RRULE:FREQ=DAILY;COUNT=2",
+                    "END:VTODO"
+                  ],
+                  [ "BEGIN:VJOURNAL",
+                    "DTSTAMP:20200101T000000Z",
+                    "UID:shared",
+                    "DTSTART;TZID=Test/PlusOne:20200301T010000",
+                    "RRULE:FREQ=DAILY;COUNT=2",
+                    "END:VJOURNAL"
+                  ],
+                  ["END:VCALENDAR", ""]
+                ]
+      starts <-
+        shouldConform $
+          runCalendarR limit calendar $ do
+            recurrence <- recurCalendar limit calendar
+            let resolveStarts :: Set (Occurrence component) -> R (Set (Maybe Timestamp))
+                resolveStarts occurrences =
+                  S.fromList . map resolvedStart <$> mapM resolveOccurrence (S.toList occurrences)
+            events <- traverse resolveStarts (calendarRecurrenceEvents recurrence)
+            todos <- traverse resolveStarts (calendarRecurrenceTodos recurrence)
+            journals <- traverse resolveStarts (calendarRecurrenceJournals recurrence)
+            pure (events, todos, journals)
+      let midnightUTC :: Integer -> Int -> Int -> Maybe Timestamp
+          midnightUTC y m d = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m d) 0
+      starts
+        `shouldBe` ( M.singleton (UID "shared") (S.fromList [midnightUTC 2020 01 01, midnightUTC 2020 01 02]),
+                     M.singleton (UID "shared") (S.fromList [midnightUTC 2020 02 01, midnightUTC 2020 02 02]),
+                     M.singleton (UID "shared") (S.fromList [midnightUTC 2020 03 01, midnightUTC 2020 03 02])
+                   )
+
+  -- A VTODO ends at its DUE where a VEVENT ends at its DTEND, and the two
+  -- properties agree on their value type and on what recurrence does with
+  -- them, so an occurrence carries whichever of them the component spelled as
+  -- one 'RecurrenceEnd'.  The golden format writes that back out as a DTEND
+  -- line whatever the component called it.
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
@@ -978,6 +1056,33 @@ spec = do
         event <- shouldConform $ parseComponentFromText contents
         goldenFile <- replaceExtension ".occ" eventFile
         pure $ pureGoldenEventRecurrenceFile goldenFile limit event
+  scenarioDir "test_resources/todo" $ \fp -> do
+    todoFile <- liftIO $ parseRelFile fp
+    when (fileExtension todoFile == Just ".ics") $ do
+      it "recurs this file correctly" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile todoFile)
+        todo <- shouldConform $ parseComponentFromText contents
+        goldenFile <- replaceExtension ".occ" todoFile
+        pure $
+          goldenOccurrenceFile goldenFile $
+            shouldConform $
+              runRWithoutZones (expandRecurring limit (todoRecurring todo))
+
+  -- A VJOURNAL has no property for the end of an instance at all, so its
+  -- occurrences never have one and the golden writes an empty line where the
+  -- end would go.
+  scenarioDir "test_resources/journal" $ \fp -> do
+    journalFile <- liftIO $ parseRelFile fp
+    when (fileExtension journalFile == Just ".ics") $ do
+      it "recurs this file correctly" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile journalFile)
+        journal <- shouldConform $ parseComponentFromText contents
+        goldenFile <- replaceExtension ".occ" journalFile
+        pure $
+          goldenOccurrenceFile goldenFile $
+            shouldConform $
+              runRWithoutZones (expandRecurring limit (journalRecurring journal))
+
   -- Events that a conforming implementation must refuse to recur, and what
   -- recurring them anyway produces.
   --

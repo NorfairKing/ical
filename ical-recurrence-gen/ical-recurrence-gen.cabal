@@ -78,6 +78,14 @@ extra-source-files:
     test_resources/event/yearly-byweekno-53.occ
     test_resources/event/yearly-byweekno-wkst.ics
     test_resources/event/yearly-byweekno-wkst.occ
+    test_resources/journal/rdate.ics
+    test_resources/journal/rdate.occ
+    test_resources/journal/weekly.ics
+    test_resources/journal/weekly.occ
+    test_resources/todo/due.ics
+    test_resources/todo/due.occ
+    test_resources/todo/duration.ics
+    test_resources/todo/duration.occ
 
 library
   exposed-modules:
