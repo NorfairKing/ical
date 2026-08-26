@@ -75,6 +75,37 @@ spec = do
     recurrenceRulePartExampleSpec @(Set ByDay)
       "2TU"
       [Specific 2 Tuesday]
+    -- @
+    --     weekdaynum  = [[plus / minus] ordwk] weekday
+    --
+    --     ordwk       = 1*2DIGIT       ;1 to 53
+    -- @
+    --
+    -- Two digits, so up to 53.  Within a YEARLY rule the number is an offset
+    -- within the year, which is where the larger ones are meant:
+    --
+    -- @
+    -- The numeric value in a
+    -- BYDAY rule part with the FREQ rule part set to YEARLY corresponds
+    -- to an offset within the month when the BYMONTH rule part is
+    -- present, and corresponds to an offset within the year when the
+    -- BYMONTH rule part is not present.
+    -- @
+    recurrenceRulePartExampleSpec @(Set ByDay)
+      "10MO"
+      [Specific 10 Monday]
+    recurrenceRulePartExampleSpec @(Set ByDay)
+      "53SU"
+      [Specific 53 Sunday]
+    recurrenceRulePartExampleSpec @(Set ByDay)
+      "-53MO"
+      [Specific (-53) Monday]
+    it "considers the largest ordinal valid" $ do
+      shouldBeValid (Specific 53 Monday)
+      shouldBeValid (Specific (-53) Monday)
+    it "rejects an ordinal past the number of weeks in a year" $ do
+      isValid (Specific 54 Monday) `shouldBe` False
+      isValid (Specific (-54) Monday) `shouldBe` False
 
   describe "ByMonthDay" $ do
     genValidSpec @ByMonthDay
