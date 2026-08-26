@@ -43,6 +43,7 @@ import Control.DeepSeq
 import Control.Monad
 import Data.CaseInsensitive (CI (..))
 import qualified Data.CaseInsensitive as CI
+import Data.Char (isDigit)
 import Data.Maybe
 import Data.Proxy
 import Data.Set (Set)
@@ -1027,10 +1028,18 @@ instance Validity ByDay where
       [ genericValidate bd,
         case bd of
           Every _ -> valid
+          -- @
+          --     ordwk       = 1*2DIGIT       ;1 to 53
+          -- @
+          --
+          -- Not the tighter bound that a MONTHLY rule would allow, because the
+          -- ordinal means an offset within the year for a YEARLY rule and this
+          -- type does not know the frequency.  'Validity RecurrenceRule' is
+          -- where a restriction that depends on the frequency belongs.
           Specific i _ ->
             mconcat
               [ declare "The specific weekday number is not zero" $ i /= 0,
-                declare "The specific weekday number is between -5 and 5" $ i >= -5 && i <= 5
+                declare "The specific weekday number is between -53 and 53" $ i >= -53 && i <= 53
               ]
       ]
 
@@ -1049,21 +1058,30 @@ byDayP t =
 everyP :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByDay
 everyP = fmap Every . parseDayOfWeek
 
+-- | Parse a BYDAY value that carries an ordinal
+--
+-- @
+--     weekdaynum  = [[plus / minus] ordwk] weekday
+--
+--     ordwk       = 1*2DIGIT       ;1 to 53
+-- @
+--
+-- The digits are taken as a run rather than one at a time, so that the
+-- two-digit ordinals the grammar allows can be read at all.
 specificP :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void ByDay
 specificP ci =
   let t = CI.original ci
-   in case T.unpack t of
-        '-' : d : rest -> case readMaybe [d] of
-          Nothing -> unfixableError $ UnReadableByDay t
-          Just i -> do
-            dow <- parseDayOfWeek (CI.mk (T.pack rest))
-            pure $ Specific (negate i) dow
-        d : rest -> case readMaybe [d] of
-          Nothing -> unfixableError $ UnReadableByDay t
-          Just i -> do
-            dow <- parseDayOfWeek (CI.mk (T.pack rest))
-            pure $ Specific i dow
-        _ -> unfixableError $ UnReadableByDay t
+      signedP negated rest =
+        let (digits, dayText) = T.span isDigit rest
+         in case readMaybe (T.unpack digits) of
+              Nothing -> unfixableError $ UnReadableByDay t
+              Just i -> do
+                dow <- parseDayOfWeek (CI.mk dayText)
+                pure $ Specific (if negated then negate i else i) dow
+   in case T.uncons t of
+        Just ('-', rest) -> signedP True rest
+        Just ('+', rest) -> signedP False rest
+        _ -> signedP False t
 
 parseDayOfWeek :: CI Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void Time.DayOfWeek
 parseDayOfWeek = \case

@@ -62,7 +62,7 @@ instance GenValid ByDay where
     Every i -> Every <$> shrinkValid i
     Specific i dow ->
       Specific
-        <$> shrinkRange2 (-5, -1) (1, 5) i
+        <$> shrinkRange2 (-53, -1) (1, 53) i
         <*> shrinkValid dow
   genValid =
     oneof
@@ -74,8 +74,8 @@ genSpecificByDay :: Gen ByDay
 genSpecificByDay =
   Specific
     <$> oneof
-      [ choose (1, 5),
-        choose (-5, -1)
+      [ choose (1, 53),
+        choose (-53, -1)
       ]
     <*> genValid
 
