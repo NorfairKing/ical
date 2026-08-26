@@ -9,6 +9,8 @@ import Conformance.TestUtils
 import Control.Applicative
 import Control.Monad
 import qualified Data.ByteString as SB
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -132,10 +134,8 @@ spec = do
         startsOf lim contents = do
           calendar <- shouldConform $ parseVCalendar contents
           shouldConform $
-            runR lim (calendarTimeZoneMap calendar) $ do
-              occurrences <-
-                fmap S.unions $
-                  mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
+            runCalendarR lim calendar $ do
+              occurrences <- allOccurrences <$> recurEvents lim (calendarEvents calendar)
               S.fromList . map resolvedStart
                 <$> mapM resolveOccurrence (S.toList occurrences)
     let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
@@ -168,9 +168,8 @@ spec = do
         occurrencesOf lim contents = do
           calendar <- shouldConform $ parseVCalendar contents
           shouldConform $
-            runR lim (calendarTimeZoneMap calendar) $
-              fmap (S.map void . S.unions) $
-                mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
+            runCalendarR lim calendar $
+              S.map void . allOccurrences <$> recurEvents lim (calendarEvents calendar)
     let plusTwo :: [Text]
         plusTwo =
           [ "BEGIN:VTIMEZONE",
@@ -249,9 +248,8 @@ spec = do
         calendar <- shouldConform $ parseVCalendar (calendarWith [] ["DTSTART;TZID=Nowhere/Undefined:20200101T010000", "RRULE:FREQ=DAILY;UNTIL=20200105T000000Z"])
         occurrences <-
           shouldConform $
-            runR limit (calendarTimeZoneMap calendar) $
-              fmap S.unions $
-                mapM (expandRecurring limit . eventRecurring) (calendarEvents calendar)
+            runCalendarR limit calendar $
+              allOccurrences <$> recurEvents limit (calendarEvents calendar)
         S.size occurrences `shouldBe` 4
       it "includes an instance at or before a UTC Until across a daylight saving transition" $
         -- @
@@ -495,9 +493,9 @@ spec = do
           localStartsOf lim contents = do
             calendar <- shouldConform $ parseVCalendar contents
             shouldConform $
-              runR lim (calendarTimeZoneMap calendar) $
-                S.map occurrenceStart . S.unions
-                  <$> mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
+              runCalendarR lim calendar $
+                S.map occurrenceStart . allOccurrences
+                  <$> recurEvents lim (calendarEvents calendar)
       let floatingAt :: TimeOfDay -> Maybe DateTimeStart
           floatingAt tod =
             Just $
@@ -519,6 +517,88 @@ spec = do
                   DateTimeZoned "Test/PlusOne" $
                     LocalTime (fromGregorian 2020 01 01) (TimeOfDay 12 00 00)
             ]
+  describe "recurEvents" $ do
+    let calendarWithEvents :: [[Text]] -> Text
+        calendarWithEvents events =
+          T.intercalate "\r\n" $
+            concat
+              [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
+                concatMap
+                  (\event -> concat [["BEGIN:VEVENT", "DTSTAMP:20200101T000000Z"], event, ["END:VEVENT"]])
+                  events,
+                ["END:VCALENDAR", ""]
+              ]
+    -- Narrowed to the SUMMARY of the component each instance came from, so
+    -- that one assertion covers both which instances there are and which
+    -- component contributed each of them.
+    let summariesOf :: Day -> Text -> IO (Map UID (Set (Occurrence (Maybe Summary))))
+        summariesOf lim contents = do
+          calendar <- shouldConform $ parseVCalendar contents
+          shouldConform $
+            runCalendarR lim calendar $
+              M.map (S.map (fmap eventSummary)) <$> recurEvents lim (calendarEvents calendar)
+    it "replaces the instance that an override names instead of adding an occurrence beside it" $
+      -- [section 3.8.4.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.4)
+      --
+      -- @
+      -- This property is used in conjunction with the "UID" and
+      -- "SEQUENCE" properties to identify a specific instance of a
+      -- recurring "VEVENT", "VTODO", or "VJOURNAL" calendar component.
+      -- The property value is the original value of the "DTSTART" property
+      -- of the recurrence instance.
+      -- @
+      --
+      -- @
+      -- The DATE-TIME value is set to the time when the original
+      -- recurrence instance would occur; meaning that if the intent is to
+      -- change a Friday meeting to Thursday, the DATE-TIME is still set to
+      -- the original Friday meeting.
+      -- @
+      --
+      -- So the RECURRENCE-ID says where the instance used to be, and the
+      -- overriding component's own DTSTART says where it is now.  Both cannot
+      -- be in the recurrence set: the meeting moved, it did not happen twice.
+      --
+      -- Google and Outlook emit an override of exactly this shape for every
+      -- "this event only" edit, so this is what an ordinary calendar looks
+      -- like rather than a corner case.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T000000Z",
+                "DTEND:20200101T010000Z",
+                "RRULE:FREQ=DAILY;COUNT=3",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200102T000000Z",
+                "DTSTART:20200102T120000Z",
+                "DTEND:20200102T130000Z",
+                "SUMMARY:Override"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Override",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (12 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (13 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 0,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 3600
+                  }
+              ]
+          )
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
@@ -575,12 +655,8 @@ spec = do
         contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
         calendar <- shouldConform $ parseVCalendar contents
         resolvedEvents <- shouldConform $ do
-          runR limit (calendarTimeZoneMap calendar) $ do
-            occurrences <-
-              fmap S.unions $
-                mapM
-                  (expandRecurring limit . eventRecurring)
-                  (calendarEvents calendar)
+          runCalendarR limit calendar $ do
+            occurrences <- allOccurrences <$> recurEvents limit (calendarEvents calendar)
             S.fromList <$> mapM resolveOccurrence (S.toList occurrences)
         goldenFile <- replaceExtension ".res" eventFile
         pure $ goldenResolvedFile goldenFile $ pure resolvedEvents
@@ -588,12 +664,17 @@ spec = do
 pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set (Occurrence ()))
 pureGoldenCalendarRecurrenceFile goldenFile limit calendar =
   goldenOccurrenceFile goldenFile $
-    shouldConform $ do
-      runR limit (calendarTimeZoneMap calendar) $
-        fmap S.unions $
-          mapM
-            (expandRecurring limit . eventRecurring)
-            (calendarEvents calendar)
+    shouldConform $
+      runCalendarR limit calendar $
+        allOccurrences <$> recurEvents limit (calendarEvents calendar)
+
+-- | Every instance of every recurrence set, with the UID that groups them
+-- thrown away
+--
+-- The golden formats and the assertions that predate grouping are about the
+-- instances themselves, and every one of those scenarios holds a single UID.
+allOccurrences :: (Ord component) => Map UID (Set (Occurrence component)) -> Set (Occurrence component)
+allOccurrences = S.unions . M.elems
 
 pureGoldenEventRecurrenceFile :: Path Rel File -> Day -> Event -> GoldenTest (Set (Occurrence ()))
 pureGoldenEventRecurrenceFile goldenFile limit event =

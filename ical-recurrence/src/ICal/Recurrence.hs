@@ -49,6 +49,8 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
 import Data.Bifunctor (first)
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NE
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -59,6 +61,69 @@ import ICal
 import ICal.PropertyType.DateTimes as DateTimes
 import ICal.Recurrence.RecurrenceRule
 import ICal.Recurrence.Types
+
+-- | Everything in a calendar that recurs
+--
+-- Components sharing a UID form one recurrence set.
+--
+-- @
+-- The full range of calendar components specified by a
+-- recurrence set is referenced by referring to just the "UID"
+-- property value corresponding to the calendar component.  The
+-- "RECURRENCE-ID" property allows the reference to an individual
+-- instance within the recurrence set.
+-- @
+--
+-- This stays in 'R' rather than running the time zone context itself, so that
+-- a caller can go on resolving without rebuilding those contexts.  See
+-- 'runCalendarR'.
+recurCalendar :: Time.Day -> Calendar -> R CalendarRecurrence
+recurCalendar limit cal = do
+  calendarRecurrenceEvents <- recurEvents limit (calendarEvents cal)
+  calendarRecurrenceTodos <- recurTodos limit (calendarTodos cal)
+  calendarRecurrenceJournals <- recurJournals limit (calendarJournals cal)
+  pure CalendarRecurrence {..}
+
+-- | Run an 'R' action with the time zones a calendar defines
+runCalendarR :: Time.Day -> Calendar -> R a -> Resolv a
+runCalendarR limit cal = runR limit (calendarTimeZoneMap cal)
+
+-- | The recurrence sets of the VEVENTs of a calendar
+recurEvents :: Time.Day -> [Event] -> R (Map UID (Set (Occurrence Event)))
+recurEvents limit = recur limit . map eventRecurring
+
+-- | The recurrence sets of the VTODOs of a calendar
+recurTodos :: Time.Day -> [Todo] -> R (Map UID (Set (Occurrence Todo)))
+recurTodos limit = recur limit . map todoRecurring
+
+-- | The recurrence sets of the VJOURNALs of a calendar
+recurJournals :: Time.Day -> [Journal] -> R (Map UID (Set (Occurrence Journal)))
+recurJournals limit = recur limit . map journalRecurring
+
+-- | The recurrence sets of a collection of components, by UID
+--
+-- This groups by UID itself, which is why it takes a collection rather than a
+-- single component: the occurrences of one component depend on the others
+-- sharing its UID.
+recur ::
+  (Ord component) =>
+  Time.Day ->
+  [Recurring component] ->
+  R (Map UID (Set (Occurrence component)))
+recur limit = traverse (recurGroup limit) . groupByUID
+
+-- | The components sharing one UID, gathered
+groupByUID :: [Recurring component] -> Map UID (NonEmpty (Recurring component))
+groupByUID =
+  M.fromListWith (<>) . map (\recurring -> (recurringUID recurring, recurring :| []))
+
+-- | The recurrence set of one UID's components
+recurGroup ::
+  (Ord component) =>
+  Time.Day ->
+  NonEmpty (Recurring component) ->
+  R (Set (Occurrence component))
+recurGroup limit = fmap S.unions . mapM (expandRecurring limit) . NE.toList
 
 -- | The recurrence-relevant properties of a VEVENT
 eventRecurring :: Event -> Recurring Event
@@ -127,12 +192,16 @@ expandRecurring ::
   Recurring component ->
   R (Set (Occurrence component))
 expandRecurring limit recurring =
-  expandRecurrence limit (recurringRecurrence recurring) $
-    Occurrence
-      { occurrenceComponent = recurringComponent recurring,
-        occurrenceStart = recurringStart recurring,
-        occurrenceEnd = recurringEnd recurring
-      }
+  expandRecurrence limit (recurringRecurrence recurring) (recurringOccurrence recurring)
+
+-- | The instance that a component's own DTSTART names
+recurringOccurrence :: Recurring component -> Occurrence component
+recurringOccurrence recurring =
+  Occurrence
+    { occurrenceComponent = recurringComponent recurring,
+      occurrenceStart = recurringStart recurring,
+      occurrenceEnd = recurringEnd recurring
+    }
 
 -- | Compute the recurrence set, expanding the recurrence rules as far as a
 -- given limit
