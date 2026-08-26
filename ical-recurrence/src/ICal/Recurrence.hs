@@ -158,7 +158,110 @@ recurGroup limit group = do
         RecurrenceIdentifierUnmatched uid start
   let notOverridden =
         S.filter (maybe True (not . (`M.member` overriding)) . occurrenceStart) seriesOccurrences
-  pure $ notOverridden <> S.fromList (map recurringOccurrence (M.elems overriding))
+  let thisAndFuture =
+        M.mapMaybe
+          ( \override -> do
+              identifier <- recurringRecurrenceIdentifier override
+              case recurrenceIdentifierRange identifier of
+                Just RecurrenceIdentifierRangeThisAndFuture -> Just override
+                Nothing -> Nothing
+          )
+          overriding
+  rescheduled <- mapM (rescheduleThisAndFuture thisAndFuture) (S.toList notOverridden)
+  pure $ S.fromList rescheduled <> S.fromList (map recurringOccurrence (M.elems overriding))
+
+-- | Reschedule an instance that a RANGE=THISANDFUTURE override covers
+--
+-- @
+-- The "RANGE" parameter is used to specify the effective range of
+-- recurrence instances from the instance specified by the
+-- "RECURRENCE-ID" property value.  The value for the range parameter
+-- can only be "THISANDFUTURE" to indicate a range defined by the
+-- given recurrence instance and all subsequent instances.
+-- Subsequent instances are determined by their "RECURRENCE-ID" value
+-- and not their current scheduled start time.
+-- @
+--
+-- An instance's own start is its RECURRENCE-ID value, so the override that
+-- covers it is the last one naming an instance at or before it, and an
+-- override's own effect on where it sits is not what decides.  Two overrides
+-- therefore do not compose: each measures its difference from the instance it
+-- names.
+--
+-- @
+-- When the given recurrence instance is
+-- rescheduled, all subsequent instances are also rescheduled by the
+-- same time difference.
+-- @
+--
+-- @
+-- Similarly, if the duration of the given recurrence instance is
+-- modified, then all subsequence instances are also modified to have
+-- this same duration.
+-- @
+--
+-- An instance with an override of its own is not passed to this at all, which
+-- is what makes the rest of that paragraph hold: "Subsequent instances defined
+-- in separate components are not impacted by the given recurrence instance."
+--
+-- Only the rescheduling and the duration are prescribed.  The override's
+-- component comes along with them because an 'Occurrence' carries the
+-- component whose properties apply to it, and a producer that says "this and
+-- future" with a changed SUMMARY means that for the range too.
+rescheduleThisAndFuture ::
+  Map DateTimeStart (Recurring component) ->
+  Occurrence component ->
+  R (Occurrence component)
+rescheduleThisAndFuture overrides occurrence = case occurrenceStart occurrence of
+  Nothing -> pure occurrence
+  Just start -> case M.lookupLE start overrides of
+    Nothing -> pure occurrence
+    Just (named, override) -> case recurringStart override of
+      -- An override with no DTSTART does not say where its instance went, so
+      -- there is no difference to reschedule by.
+      Nothing -> pure occurrence
+      Just overrideStart -> do
+        newStart <- shiftDateTimeStart named overrideStart start
+        newEnd <- resolveEndOrDurationDate overrideStart (recurringEnd override) newStart
+        pure
+          Occurrence
+            { occurrenceComponent = recurringComponent override,
+              occurrenceStart = Just newStart,
+              occurrenceEnd = newEnd
+            }
+
+-- | Move a start by the difference between two other starts
+--
+-- @
+-- For instance, if the given recurrence
+-- instance is rescheduled to start 2 hours later, then all
+-- subsequent instances are also rescheduled 2 hours later.
+-- @
+--
+-- The difference is exact rather than nominal, which is what keeps a zoned
+-- instance on the same wall clock across a daylight saving change: two hours
+-- exactly after 09:00 is 11:00 in whichever offset that day is in, because
+-- 'addExactDuration' resolves and unresolves through the time zone.
+--
+-- All three of these have to share a value type.  A RECURRENCE-ID and the
+-- DTSTART of the component carrying it must, by section 3.8.4.4, and every
+-- instance of a series has the value type of that series' own DTSTART, so
+-- anything else is input that no rescheduling can be derived from.
+shiftDateTimeStart ::
+  -- | The instance the override names
+  DateTimeStart ->
+  -- | Where the override starts instead
+  DateTimeStart ->
+  -- | The instance to reschedule
+  DateTimeStart ->
+  R DateTimeStart
+shiftDateTimeStart named overrideStart start = case (named, overrideStart, start) of
+  (DateTimeStartDate namedDate, DateTimeStartDate overrideDate, DateTimeStartDate startDate) ->
+    pure $ DateTimeStartDate $ dateAddDays (dateExactDuration namedDate overrideDate) startDate
+  (DateTimeStartDateTime namedDateTime, DateTimeStartDateTime overrideDateTime, DateTimeStartDateTime startDateTime) -> do
+    exactDuration <- dateTimeExactDuration namedDateTime overrideDateTime
+    DateTimeStartDateTime <$> addExactDuration exactDuration startDateTime
+  _ -> unfixableErrorR $ ThisAndFutureMismatch named overrideStart start
 
 -- | The component that overrides each instance that has one
 --
@@ -202,6 +305,18 @@ winningOverrides uid components =
                 these
         unless (null tied) $ emitFixableErrorR $ RecurrenceIdentifierDuplicate uid start
         pure winner
+
+-- | The effective range of a RECURRENCE-ID, if it has one
+--
+-- @
+-- The "RANGE" parameter is used to specify the effective range of
+-- recurrence instances from the instance specified by the
+-- "RECURRENCE-ID" property value.
+-- @
+recurrenceIdentifierRange :: RecurrenceIdentifier -> Maybe RecurrenceIdentifierRange
+recurrenceIdentifierRange = \case
+  RecurrenceIdentifierDate range _ -> range
+  RecurrenceIdentifierDateTime range _ -> range
 
 -- | The instance that a RECURRENCE-ID names
 --
