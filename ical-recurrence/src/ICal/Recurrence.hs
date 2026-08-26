@@ -118,12 +118,115 @@ groupByUID =
   M.fromListWith (<>) . map (\recurring -> (recurringUID recurring, recurring :| []))
 
 -- | The recurrence set of one UID's components
+--
+-- The component without a RECURRENCE-ID is the series, and each component with
+-- one replaces the instance it names.
+--
+-- @
+-- The DATE-TIME value is set to the time when the original
+-- recurrence instance would occur; meaning that if the intent is to
+-- change a Friday meeting to Thursday, the DATE-TIME is still set to
+-- the original Friday meeting.
+-- @
+--
+-- So a component with a RECURRENCE-ID does not add a Thursday to a recurrence
+-- set that still holds its Friday.  It says the Friday instance is now on
+-- Thursday.
 recurGroup ::
   (Ord component) =>
   Time.Day ->
   NonEmpty (Recurring component) ->
   R (Set (Occurrence component))
-recurGroup limit = fmap S.unions . mapM (expandRecurring limit) . NE.toList
+recurGroup limit group = do
+  let uid = recurringUID (NE.head group)
+  let series = NE.filter (isNothing . recurringRecurrenceIdentifier) group
+  -- One UID names one recurrence set, so two components that both leave out
+  -- the RECURRENCE-ID do not say which of them the overrides are overriding.
+  -- The spec does not define this case, and dropping one would discard what
+  -- the calendar said, so both series are expanded.
+  when (length series > 1) $ emitFixableErrorR $ RecurrenceMultipleSeries uid
+  seriesOccurrences <- S.unions <$> mapM (expandRecurring limit) series
+  overriding <- winningOverrides uid (NE.toList group)
+  let seriesStarts = S.fromList $ mapMaybe occurrenceStart $ S.toList seriesOccurrences
+  -- An override that names no instance the series generates.  The spec says
+  -- nothing about this, and dropping the override would lose what the calendar
+  -- said, so it contributes its own instance and the calendar is reported as
+  -- needing a fix.
+  forM_ (M.keys overriding) $ \start ->
+    unless (start `S.member` seriesStarts) $
+      emitFixableErrorR $
+        RecurrenceIdentifierUnmatched uid start
+  let notOverridden =
+        S.filter (maybe True (not . (`M.member` overriding)) . occurrenceStart) seriesOccurrences
+  pure $ notOverridden <> S.fromList (map recurringOccurrence (M.elems overriding))
+
+-- | The component that overrides each instance that has one
+--
+-- Two components of one UID with the same RECURRENCE-ID are two revisions of
+-- the same instance.
+--
+-- @
+-- When a calendar component is created, its sequence
+-- number is 0.  It is monotonically incremented by the "Organizer's"
+-- CUA each time the "Organizer" makes a significant revision to the
+-- calendar component.
+-- @
+--
+-- so the higher SEQUENCE is the later revision and wins.  Two revisions
+-- sharing a SEQUENCE contradict that, and the calendar does not say which to
+-- take, so 'Ord' settles it rather than the order the components happen to
+-- appear in the file.
+winningOverrides ::
+  (Ord component) =>
+  UID ->
+  [Recurring component] ->
+  R (Map DateTimeStart (Recurring component))
+winningOverrides uid components =
+  let candidates =
+        M.fromListWith (<>) $
+          mapMaybe
+            ( \recurring -> do
+                identifier <- recurringRecurrenceIdentifier recurring
+                pure (recurrenceIdentifierDateTimeStart identifier, recurring :| [])
+            )
+            components
+   in flip M.traverseWithKey candidates $ \start these -> do
+        let winner =
+              snd $ maximum $ NE.map (\recurring -> (recurringSequenceNumber recurring, recurring)) these
+        let tied =
+              NE.filter
+                ( \recurring ->
+                    recurring /= winner
+                      && recurringSequenceNumber recurring == recurringSequenceNumber winner
+                )
+                these
+        unless (null tied) $ emitFixableErrorR $ RecurrenceIdentifierDuplicate uid start
+        pure winner
+
+-- | The instance that a RECURRENCE-ID names
+--
+-- @
+-- The property value is the original value of the "DTSTART" property
+-- of the recurrence instance.
+-- @
+--
+-- @
+-- This property MUST have the same
+-- value type as the "DTSTART" property contained within the
+-- recurring component.  Furthermore, this property MUST be specified
+-- as a date with local time if and only if the "DTSTART" property
+-- contained within the recurring component is specified as a date
+-- with local time.
+-- @
+--
+-- So the value can be compared with a generated instance's start as written,
+-- and a RECURRENCE-ID that matches none of them exactly is non-conforming
+-- input rather than a near miss to be resolved.  The RANGE parameter is not
+-- part of the value.
+recurrenceIdentifierDateTimeStart :: RecurrenceIdentifier -> DateTimeStart
+recurrenceIdentifierDateTimeStart = \case
+  RecurrenceIdentifierDate _ date -> DateTimeStartDate date
+  RecurrenceIdentifierDateTime _ dateTime -> DateTimeStartDateTime dateTime
 
 -- | The recurrence-relevant properties of a VEVENT
 eventRecurring :: Event -> Recurring Event
