@@ -3,7 +3,7 @@
 
 -- | ICal Recurrence
 --
--- This module exists to help you canculate the recurrence set of an event.
+-- This module exists to help you canculate the recurrence set of a component.
 --
 -- [section 3.8.5](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5)
 --
@@ -34,13 +34,13 @@
 -- This module is quite big and that's on purpose.
 -- The problem is the following cyclical dependencies:
 --
--- recurEvents -> resolveEndOrDuration
--- resolveEndOrDuration -> resolveLocalTime
--- resolveLocalTime -> recurEvents
+-- expandRecurrence -> resolveEndOrDurationDate
+-- resolveEndOrDurationDate -> resolveLocalTime
+-- resolveLocalTime -> expandRecurrence
 module ICal.Recurrence
   ( module ICal.Recurrence,
     module ICal.Recurrence.RecurrenceRule,
-    module ICal.Recurrence.Class,
+    module ICal.Recurrence.Types,
   )
 where
 
@@ -48,6 +48,7 @@ import Conformance
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
+import Data.Bifunctor (first)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -56,36 +57,82 @@ import qualified Data.Set as S
 import qualified Data.Time as Time
 import ICal
 import ICal.PropertyType.DateTimes as DateTimes
-import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule
+import ICal.Recurrence.Types
 
-class HasRecurrence a where
-  getRecurringEvent :: a -> RecurringEvent
-  makeOccurrence :: a -> EventOccurrence -> a
+-- | The recurrence-relevant properties of a VEVENT
+eventRecurring :: Event -> Recurring Event
+eventRecurring event =
+  Recurring
+    { recurringComponent = event,
+      recurringUID = eventUID event,
+      recurringSequenceNumber = eventSequenceNumber event,
+      recurringRecurrenceIdentifier = eventRecurrenceIdentifier event,
+      recurringStart = eventDateTimeStart event,
+      recurringEnd = first dateTimeEndRecurrenceEnd <$> eventDateTimeEndDuration event,
+      recurringRecurrence =
+        Recurrence
+          { recurrenceExceptionDateTimes = eventExceptionDateTimes event,
+            recurrenceRecurrenceDateTimes = eventRecurrenceDateTimes event,
+            recurrenceRecurrenceRules = eventRecurrenceRules event
+          }
+    }
 
-instance HasRecurrence Event where
-  getRecurringEvent Event {..} =
-    let recurringEventStart = eventDateTimeStart
-        recurringEventEndOrDuration = eventDateTimeEndDuration
-        recurrenceExceptionDateTimes = eventExceptionDateTimes
-        recurrenceRecurrenceDateTimes = eventRecurrenceDateTimes
-        recurrenceRecurrenceRules = eventRecurrenceRules
-        recurringEventRecurrence = Recurrence {..}
-     in RecurringEvent {..}
-  makeOccurrence e EventOccurrence {..} =
-    e
-      { eventDateTimeStart = eventOccurrenceStart,
-        eventDateTimeEndDuration = eventOccurrenceEndOrDuration,
-        eventRecurrenceRules = S.empty,
-        eventExceptionDateTimes = S.empty,
-        eventRecurrenceDateTimes = S.empty
+-- | The recurrence-relevant properties of a VTODO
+todoRecurring :: Todo -> Recurring Todo
+todoRecurring todo =
+  Recurring
+    { recurringComponent = todo,
+      recurringUID = todoUID todo,
+      recurringSequenceNumber = todoSequenceNumber todo,
+      recurringRecurrenceIdentifier = todoRecurrenceIdentifier todo,
+      recurringStart = todoDateTimeStart todo,
+      recurringEnd = first dateTimeDueRecurrenceEnd <$> todoDateTimeDueDuration todo,
+      recurringRecurrence =
+        Recurrence
+          { recurrenceExceptionDateTimes = todoExceptionDateTimes todo,
+            recurrenceRecurrenceDateTimes = todoRecurrenceDateTimes todo,
+            recurrenceRecurrenceRules = todoRecurrenceRules todo
+          }
+    }
+
+-- | The recurrence-relevant properties of a VJOURNAL
+--
+-- A VJOURNAL has no property for the end of an instance, so its occurrences
+-- never have one either.
+journalRecurring :: Journal -> Recurring Journal
+journalRecurring journal =
+  Recurring
+    { recurringComponent = journal,
+      recurringUID = journalUID journal,
+      recurringSequenceNumber = journalSequenceNumber journal,
+      recurringRecurrenceIdentifier = journalRecurrenceIdentifier journal,
+      recurringStart = journalDateTimeStart journal,
+      recurringEnd = Nothing,
+      recurringRecurrence =
+        Recurrence
+          { recurrenceExceptionDateTimes = journalExceptionDateTimes journal,
+            recurrenceRecurrenceDateTimes = journalRecurrenceDateTimes journal,
+            recurrenceRecurrenceRules = journalRecurrenceRules journal
+          }
+    }
+
+-- | Expand one component's own DTSTART, RRULE, RDATE and EXDATE
+--
+-- This is one component's own recurrence, not the recurrence set of its UID:
+-- it knows nothing about the components that override its instances.
+expandRecurring ::
+  (Ord component) =>
+  Time.Day ->
+  Recurring component ->
+  R (Set (Occurrence component))
+expandRecurring limit recurring =
+  expandRecurrence limit (recurringRecurrence recurring) $
+    Occurrence
+      { occurrenceComponent = recurringComponent recurring,
+        occurrenceStart = recurringStart recurring,
+        occurrenceEnd = recurringEnd recurring
       }
-
-recur :: (Ord event, HasRecurrence event) => Time.Day -> event -> R (Set event)
-recur limit event = do
-  let recurringEvent = getRecurringEvent event
-  occurrences <- recurEvents limit recurringEvent
-  pure $ S.map (makeOccurrence event) occurrences
 
 -- | Compute the recurrence set, expanding the recurrence rules as far as a
 -- given limit
@@ -95,84 +142,90 @@ recur limit event = do
 -- RDATEs enumerate are finite however far out they fall, and leaving them out
 -- would discard what the calendar actually said, so they are returned whether
 -- or not they lie beyond the limit.
-recurEvents :: Time.Day -> RecurringEvent -> R (Set EventOccurrence)
-recurEvents limit RecurringEvent {..} =
-  let -- @
-      -- The "DTSTART" property for a "VEVENT" specifies the inclusive
-      -- start of the event.  For recurring events, it also specifies the
-      -- very first instance in the recurrence set.
+--
+-- The occurrence given is the one that DTSTART names, and every occurrence
+-- produced carries its component.
+expandRecurrence ::
+  (Ord component) =>
+  Time.Day ->
+  Recurrence ->
+  Occurrence component ->
+  R (Set (Occurrence component))
+expandRecurrence limit Recurrence {..} startOccurrence =
+  -- @
+  -- The "DTSTART" property for a "VEVENT" specifies the inclusive
+  -- start of the event.  For recurring events, it also specifies the
+  -- very first instance in the recurrence set.
+  -- @
+  -- @
+  -- The "DTSTART" property
+  -- defines the first instance in the recurrence set.
+  -- @
+  case occurrenceStart startOccurrence of
+    Nothing -> pure $ S.singleton startOccurrence
+    Just startDateTime -> do
+      let endOrDuration = occurrenceEnd startOccurrence
+      let component = occurrenceComponent startOccurrence
+      occurrencesFromRecurrenceDateTimes <- recurRecurrenceDateTimes component startDateTime endOrDuration recurrenceRecurrenceDateTimes
+      occurrencesFromRecurrenceRules <- recurRecurrenceRules component limit startDateTime endOrDuration recurrenceRecurrenceRules
+      -- @
+      -- The final recurrence set is generated by gathering all of the
+      -- start DATE-TIME values generated by any of the specified "RRULE"
+      -- and "RDATE" properties, and then excluding any start DATE-TIME
+      -- values specified by "EXDATE" properties.
       -- @
       -- @
-      -- The "DTSTART" property
-      -- defines the first instance in the recurrence set.
+      -- Where duplicate instances are generated by the "RRULE"
+      -- and "RDATE" properties, only one recurrence is considered.
+      -- Duplicate instances are ignored.
       -- @
-      startEvent =
-        EventOccurrence
-          { eventOccurrenceStart = recurringEventStart,
-            eventOccurrenceEndOrDuration = recurringEventEndOrDuration
-          }
-   in case recurringEventStart of
-        Nothing -> pure $ S.singleton startEvent
-        Just startDateTime -> do
-          let Recurrence {..} = recurringEventRecurrence
-          occurrencesFromRecurrenceDateTimes <- recurRecurrenceDateTimes startDateTime recurringEventEndOrDuration recurrenceRecurrenceDateTimes
-          occurrencesFromRecurrenceRules <- recurRecurrenceRules limit startDateTime recurringEventEndOrDuration recurrenceRecurrenceRules
-          -- @
-          -- The final recurrence set is generated by gathering all of the
-          -- start DATE-TIME values generated by any of the specified "RRULE"
-          -- and "RDATE" properties, and then excluding any start DATE-TIME
-          -- values specified by "EXDATE" properties.
-          -- @
-          -- @
-          -- Where duplicate instances are generated by the "RRULE"
-          -- and "RDATE" properties, only one recurrence is considered.
-          -- Duplicate instances are ignored.
-          -- @
-          -- @
-          -- The
-          -- duration of a specific recurrence may be modified in an exception
-          -- component or simply by using an "RDATE" property of PERIOD value
-          -- type.
-          -- @
-          --
-          -- The recurrence set is a set of instances, so two of them must not
-          -- share a start.  Keying on the whole occurrence would not do it,
-          -- because the same start can arrive with two different ends: a
-          -- period-valued RDATE is exactly how the duration of one instance is
-          -- changed, so it is meant to collide with the instance the rule
-          -- generates.
-          --
-          -- Which one survives is settled by the quote above.  An RDATE that
-          -- names the same start as the rule is the one carrying the modified
-          -- duration, so it wins.  DTSTART beats the rule as well, because its
-          -- end is stated outright while the rule's is derived from it.
-          --
-          -- 'M.fromList' keeps the last value for a key, so these are listed
-          -- in increasing order of precedence.
-          let preliminarySet =
-                S.fromList $
-                  M.elems $
-                    M.fromList $
-                      map (\occurrence -> (eventOccurrenceStart occurrence, occurrence)) $
-                        concat
-                          [ S.toList occurrencesFromRecurrenceRules,
-                            [startEvent],
-                            S.toList occurrencesFromRecurrenceDateTimes
-                          ]
-          removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
+      -- @
+      -- The
+      -- duration of a specific recurrence may be modified in an exception
+      -- component or simply by using an "RDATE" property of PERIOD value
+      -- type.
+      -- @
+      --
+      -- The recurrence set is a set of instances, so two of them must not
+      -- share a start.  Keying on the whole occurrence would not do it,
+      -- because the same start can arrive with two different ends: a
+      -- period-valued RDATE is exactly how the duration of one instance is
+      -- changed, so it is meant to collide with the instance the rule
+      -- generates.
+      --
+      -- Which one survives is settled by the quote above.  An RDATE that
+      -- names the same start as the rule is the one carrying the modified
+      -- duration, so it wins.  DTSTART beats the rule as well, because its
+      -- end is stated outright while the rule's is derived from it.
+      --
+      -- 'M.fromList' keeps the last value for a key, so these are listed
+      -- in increasing order of precedence.
+      let preliminarySet =
+            S.fromList $
+              M.elems $
+                M.fromList $
+                  map (\occurrence -> (occurrenceStart occurrence, occurrence)) $
+                    concat
+                      [ S.toList occurrencesFromRecurrenceRules,
+                        [startOccurrence],
+                        S.toList occurrencesFromRecurrenceDateTimes
+                      ]
+      removeExceptionDatetimesSet recurrenceExceptionDateTimes preliminarySet
 
 -- | Compute the occurrences that the recurrence rules imply
 recurRecurrenceRules ::
+  (Ord component) =>
+  component ->
   -- | Limit
   Time.Day ->
   DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
+  Maybe (Either RecurrenceEnd Duration) ->
   Set RecurrenceRule ->
-  R (Set EventOccurrence)
-recurRecurrenceRules limit start mEndOrDuration recurrenceRules = do
+  R (Set (Occurrence component))
+recurRecurrenceRules component limit start mEndOrDuration recurrenceRules = do
   case S.toList recurrenceRules of
     [] -> pure S.empty
-    [recurrenceRule] -> recurRecurrenceRule limit start mEndOrDuration recurrenceRule
+    [recurrenceRule] -> recurRecurrenceRule component limit start mEndOrDuration recurrenceRule
     l -> do
       -- The spec says:
       --
@@ -184,16 +237,18 @@ recurRecurrenceRules limit start mEndOrDuration recurrenceRules = do
       -- However, we choose to define it as the union of the
       -- reccurence sets defined by the recurrence rules.
       emitFixableErrorR $ RecurrenceMultipleRecurrenceRules recurrenceRules
-      S.unions <$> mapM (recurRecurrenceRule limit start mEndOrDuration) l
+      S.unions <$> mapM (recurRecurrenceRule component limit start mEndOrDuration) l
 
 recurRecurrenceRule ::
+  (Ord component) =>
+  component ->
   -- | Limit
   Time.Day ->
   DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
+  Maybe (Either RecurrenceEnd Duration) ->
   RecurrenceRule ->
-  R (Set EventOccurrence)
-recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
+  R (Set (Occurrence component))
+recurRecurrenceRule component limit start mEndOrDuration recurrenceRule = do
   localisedRule <- localiseUntil start recurrenceRule
   exists <- localTimeExists start
   generatedStarts <- recurRecurrenceRuleDateTimeStarts exists limit start localisedRule
@@ -202,9 +257,10 @@ recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
     forM (S.toList starts) $ \newStart -> do
       newMEndOrDuration <- resolveEndOrDurationDate start mEndOrDuration newStart
       pure
-        EventOccurrence
-          { eventOccurrenceStart = Just newStart,
-            eventOccurrenceEndOrDuration = newMEndOrDuration
+        Occurrence
+          { occurrenceComponent = component,
+            occurrenceStart = Just newStart,
+            occurrenceEnd = newMEndOrDuration
           }
 
 -- | Express a UTC 'Until' in the local time of the time zone of 'DateTimeStart'
@@ -341,21 +397,24 @@ localiseUntil start recurrenceRule = case (start, recurrenceRuleUntilCount recur
 --
 -- These are enumerated by the calendar rather than generated from a rule, so
 -- there are finitely many of them and there is no limit to bound them by.  See
--- 'recurEvents'.
+-- 'expandRecurrence'.
 recurRecurrenceDateTimes ::
+  (Ord component) =>
+  component ->
   DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
+  Maybe (Either RecurrenceEnd Duration) ->
   Set RecurrenceDateTimes ->
-  R (Set EventOccurrence)
-recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
+  R (Set (Occurrence component))
+recurRecurrenceDateTimes component dateTimeStart endOrDuration recurrenceDateTimess =
   fmap (S.unions . map S.fromList) $
     forM (S.toList recurrenceDateTimess) $
       let withNewStart newStart = do
             resolvedEndOrDuration <- resolveEndOrDurationDate dateTimeStart endOrDuration newStart
             pure $
-              EventOccurrence
-                { eventOccurrenceStart = Just newStart,
-                  eventOccurrenceEndOrDuration = resolvedEndOrDuration
+              Occurrence
+                { occurrenceComponent = component,
+                  occurrenceStart = Just newStart,
+                  occurrenceEnd = resolvedEndOrDuration
                 }
        in \case
             RecurrenceDates dates ->
@@ -371,14 +430,16 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
                 map
                   ( \case
                       PeriodStartEnd start end ->
-                        EventOccurrence
-                          { eventOccurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
-                            eventOccurrenceEndOrDuration = Just (Left (DateTimeEndDateTime (DateTimeUTC end)))
+                        Occurrence
+                          { occurrenceComponent = component,
+                            occurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
+                            occurrenceEnd = Just (Left (RecurrenceEndDateTime (DateTimeUTC end)))
                           }
                       PeriodStartDuration start duration ->
-                        EventOccurrence
-                          { eventOccurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
-                            eventOccurrenceEndOrDuration = Just (Right duration)
+                        Occurrence
+                          { occurrenceComponent = component,
+                            occurrenceStart = Just $ DateTimeStartDateTime (DateTimeUTC start),
+                            occurrenceEnd = Just (Right duration)
                           }
                   )
                   (S.toList periods)
@@ -421,9 +482,10 @@ recurRecurrenceDateTimes dateTimeStart endOrDuration recurrenceDateTimess =
 
 -- | Remove the occurrences that the exception date times imply should be removed
 removeExceptionDatetimesSet ::
+  (Ord component) =>
   Set ExceptionDateTimes ->
-  Set EventOccurrence ->
-  R (Set EventOccurrence)
+  Set (Occurrence component) ->
+  R (Set (Occurrence component))
 removeExceptionDatetimesSet exceptionSet occurrences =
   removeExceptionInstants exceptionSet $
     S.foldl' (flip removeExceptionDatetimes) occurrences exceptionSet
@@ -454,16 +516,17 @@ removeExceptionDatetimesSet exceptionSet occurrences =
 -- still excluded on the strength of how it is written.  Nothing that used to be
 -- excluded stops being excluded, and nothing fails for want of a time zone.
 removeExceptionInstants ::
+  (Ord component) =>
   Set ExceptionDateTimes ->
-  Set EventOccurrence ->
-  R (Set EventOccurrence)
+  Set (Occurrence component) ->
+  R (Set (Occurrence component))
 removeExceptionInstants exceptionSet occurrences
   | S.null exceptionSet = pure occurrences
   | otherwise = do
       excluded <- fmap (S.fromList . concat) $ mapM exceptionInstants $ S.toList exceptionSet
       fmap S.fromList $
         flip filterM (S.toList occurrences) $ \occurrence ->
-          case eventOccurrenceStart occurrence of
+          case occurrenceStart occurrence of
             Nothing -> pure True
             Just start -> do
               mTimestamp <- tryResolveDateTimeStart start
@@ -498,10 +561,10 @@ tryResolveDateTime = \case
 
 removeExceptionDatetimes ::
   ExceptionDateTimes ->
-  Set EventOccurrence ->
-  Set EventOccurrence
+  Set (Occurrence component) ->
+  Set (Occurrence component)
 removeExceptionDatetimes exceptions = S.filter $ \occurrence ->
-  case eventOccurrenceStart occurrence of
+  case occurrenceStart occurrence of
     Nothing -> True
     Just start -> case start of
       DateTimeStartDateTime dateTime -> case exceptions of
@@ -513,9 +576,9 @@ removeExceptionDatetimes exceptions = S.filter $ \occurrence ->
 
 resolveEndOrDurationDate ::
   DateTimeStart ->
-  Maybe (Either DateTimeEnd Duration) ->
+  Maybe (Either RecurrenceEnd Duration) ->
   DateTimeStart ->
-  R (Maybe (Either DateTimeEnd Duration))
+  R (Maybe (Either RecurrenceEnd Duration))
 resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDuration of
   Nothing -> pure Nothing
   Just (Right duration) -> pure $ Just (Right duration)
@@ -538,7 +601,7 @@ resolveEndOrDurationDate originalStart mEndOrDuration newStart = case mEndOrDura
     newEnd <- computeNewEnd originalStart end newStart
     pure $ Just $ Left newEnd
 
-computeNewEnd :: DateTimeStart -> DateTimeEnd -> DateTimeStart -> R DateTimeEnd
+computeNewEnd :: DateTimeStart -> RecurrenceEnd -> DateTimeStart -> R RecurrenceEnd
 computeNewEnd originalStart end newStart =
   case (originalStart, end) of
     -- [section 3.8.5.2](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.5.2)
@@ -552,26 +615,26 @@ computeNewEnd originalStart end newStart =
     -- an RDATE may give an instance a different value type from the event it
     -- belongs to.  The instance still has to end somewhere, so carry the
     -- duration across into the value type of the new start.
-    (DateTimeStartDate startDate, DateTimeEndDate endDate) ->
+    (DateTimeStartDate startDate, RecurrenceEndDate endDate) ->
       let exactDuration = dateExactDuration startDate endDate
        in case newStart of
-            DateTimeStartDate newDate -> pure $ DateTimeEndDate (dateAddDays exactDuration newDate)
+            DateTimeStartDate newDate -> pure $ RecurrenceEndDate (dateAddDays exactDuration newDate)
             DateTimeStartDateTime newDateTime -> do
               newEndDateTime <- addExactDuration (fromIntegral exactDuration * Time.nominalDay) newDateTime
-              pure $ DateTimeEndDateTime newEndDateTime
-    (DateTimeStartDateTime startDateTime, DateTimeEndDateTime endDateTime) ->
+              pure $ RecurrenceEndDateTime newEndDateTime
+    (DateTimeStartDateTime startDateTime, RecurrenceEndDateTime endDateTime) ->
       case newStart of
         DateTimeStartDateTime newDateTime -> do
           exactDuration <- dateTimeExactDuration startDateTime endDateTime
           newEndDateTime <- addExactDuration exactDuration newDateTime
-          pure $ DateTimeEndDateTime newEndDateTime
+          pure $ RecurrenceEndDateTime newEndDateTime
         -- An all-day instance of a timed event.  A DATE-valued DTEND is
         -- exclusive and cannot name a part of a day, so round the duration up
         -- to whole days, and never down to none.
         DateTimeStartDate newDate -> do
           exactDuration <- dateTimeExactDuration startDateTime endDateTime
           let days = max 1 $ ceiling $ exactDuration / Time.nominalDay
-          pure $ DateTimeEndDate (dateAddDays days newDate)
+          pure $ RecurrenceEndDate (dateAddDays days newDate)
     -- These two cases represent invalid ical:
     -- @
     -- The "VEVENT" is also the calendar component used to specify an
@@ -589,9 +652,9 @@ computeNewEnd originalStart end newStart =
     -- The value type of the "DTEND" or "DUE" properties MUST match the
     -- value type of "DTSTART" property.
     -- @
-    (DateTimeStartDate _, DateTimeEndDateTime _) ->
+    (DateTimeStartDate _, RecurrenceEndDateTime _) ->
       unfixableErrorR $ StartEndMismatch originalStart end
-    (DateTimeStartDateTime _, DateTimeEndDate _) ->
+    (DateTimeStartDateTime _, RecurrenceEndDate _) ->
       unfixableErrorR $ StartEndMismatch originalStart end
 
 -- TODO it is not clear at all whether this is the intended interpretation.
@@ -621,17 +684,18 @@ addExactDuration ndt = \case
     lt' <- unresolveUTCTimeR tzid (Time.addUTCTime ndt ut)
     pure $ DateTimeZoned tzid lt'
 
-resolveEventOccurrence :: EventOccurrence -> R ResolvedEvent
-resolveEventOccurrence EventOccurrence {..} = do
-  resolvedEventStart <- mapM resolveDateTimeStart eventOccurrenceStart
-  resolvedEventEnd <- case eventOccurrenceEndOrDuration of
-    Just ced -> resolveEndDuration resolvedEventStart ced
+resolveOccurrence :: Occurrence component -> R (Resolved component)
+resolveOccurrence Occurrence {..} = do
+  let resolvedComponent = occurrenceComponent
+  resolvedStart <- mapM resolveDateTimeStart occurrenceStart
+  resolvedEnd <- case occurrenceEnd of
+    Just ced -> resolveEndDuration resolvedStart ced
     Nothing -> pure Nothing
-  pure ResolvedEvent {..}
+  pure Resolved {..}
 
-resolveEndDuration :: Maybe Timestamp -> Either DateTimeEnd Duration -> R (Maybe Timestamp)
+resolveEndDuration :: Maybe Timestamp -> Either RecurrenceEnd Duration -> R (Maybe Timestamp)
 resolveEndDuration mts = \case
-  Left end -> Just <$> resolveDateTimeEnd end
+  Left end -> Just <$> resolveRecurrenceEnd end
   Right duration -> pure $ case mts of
     Nothing -> Nothing -- Start timestamp but no end timestamp: Nothing we can do.
     Just ts ->
@@ -647,10 +711,10 @@ resolveEndDuration mts = \case
               TimestampLocalTime lt -> TimestampLocalTime $ Time.addLocalTime ndt lt
               TimestampUTCTime ut -> TimestampUTCTime $ Time.addUTCTime ndt ut
 
-resolveDateTimeEnd :: DateTimeEnd -> R Timestamp
-resolveDateTimeEnd = \case
-  DateTimeEndDate date -> pure $ resolveDate date
-  DateTimeEndDateTime dateTime -> resolveDateTime dateTime
+resolveRecurrenceEnd :: RecurrenceEnd -> R Timestamp
+resolveRecurrenceEnd = \case
+  RecurrenceEndDate date -> pure $ resolveDate date
+  RecurrenceEndDateTime dateTime -> resolveDateTime dateTime
 
 resolveDateTimeStart :: DateTimeStart -> R Timestamp
 resolveDateTimeStart = \case
@@ -859,23 +923,26 @@ buildUnresolutionCtx m =
 -- | Compute when, until a given limit, the following observance changes the UTC offset
 observanceOccurrences :: Time.Day -> Observance -> R (Set Time.LocalTime)
 observanceOccurrences limit Observance {..} = do
-  let recurringEvent =
-        RecurringEvent
-          { recurringEventStart = Just (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
-            recurringEventEndOrDuration = Nothing,
-            recurringEventRecurrence =
-              Recurrence
-                { recurrenceExceptionDateTimes = S.empty,
-                  recurrenceRecurrenceDateTimes = observanceRecurrenceDateTimes,
-                  recurrenceRecurrenceRules = observanceRecurrenceRules
-                }
+  let recurrence =
+        Recurrence
+          { recurrenceExceptionDateTimes = S.empty,
+            recurrenceRecurrenceDateTimes = observanceRecurrenceDateTimes,
+            recurrenceRecurrenceRules = observanceRecurrenceRules
           }
-  events <- recurEvents limit recurringEvent
+  -- An observance is not a component and has no UID, so there is nothing for
+  -- its instances to carry.
+  let startOccurrence =
+        Occurrence
+          { occurrenceComponent = (),
+            occurrenceStart = Just (DateTimeStartDateTime (DateTimeFloating observanceDateTimeStart)),
+            occurrenceEnd = Nothing
+          }
+  occurrences <- expandRecurrence limit recurrence startOccurrence
 
   -- TODO use errors instead of Nothings?
-  let go :: EventOccurrence -> Maybe Time.LocalTime
-      go eo = do
-        dts <- eventOccurrenceStart eo
+  let go :: Occurrence () -> Maybe Time.LocalTime
+      go occurrence = do
+        dts <- occurrenceStart occurrence
         case dts of
           DateTimeStartDate _ -> Nothing
           DateTimeStartDateTime dt -> case dt of
@@ -883,4 +950,4 @@ observanceOccurrences limit Observance {..} = do
             DateTimeUTC _ -> Nothing
             DateTimeFloating lt -> Just lt
 
-  pure $ S.fromList $ mapMaybe go $ S.toList events
+  pure $ S.fromList $ mapMaybe go $ S.toList occurrences

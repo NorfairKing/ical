@@ -13,7 +13,6 @@ import qualified Data.Set as S
 import Data.Time as Time
 import ICal.Property
 import ICal.PropertyType
-import ICal.Recurrence.Class
 import ICal.Recurrence.RecurrenceRule.Daily
 import ICal.Recurrence.RecurrenceRule.Hourly
 import ICal.Recurrence.RecurrenceRule.Minutely
@@ -21,6 +20,7 @@ import ICal.Recurrence.RecurrenceRule.Monthly
 import ICal.Recurrence.RecurrenceRule.Secondly
 import ICal.Recurrence.RecurrenceRule.Weekly
 import ICal.Recurrence.RecurrenceRule.Yearly
+import ICal.Recurrence.Types
 
 recurRecurrenceRuleDateTimeStarts ::
   -- | Whether a generated local time exists at all
