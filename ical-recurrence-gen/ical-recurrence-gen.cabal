@@ -14,6 +14,14 @@ extra-source-files:
     test_resources/calendar/exdate-utc-zoned-event.ics
     test_resources/calendar/exdate-utc-zoned-event.occ
     test_resources/calendar/exdate-utc-zoned-event.res
+    test_resources/calendar/fixable/duplicate-override.ics
+    test_resources/calendar/fixable/duplicate-override.occ
+    test_resources/calendar/fixable/orphan-override.ics
+    test_resources/calendar/fixable/orphan-override.occ
+    test_resources/calendar/fixable/overrides-only.ics
+    test_resources/calendar/fixable/overrides-only.occ
+    test_resources/calendar/fixable/two-series.ics
+    test_resources/calendar/fixable/two-series.occ
     test_resources/calendar/zoned-border.ics
     test_resources/calendar/zoned-border.occ
     test_resources/calendar/zoned-border.res
