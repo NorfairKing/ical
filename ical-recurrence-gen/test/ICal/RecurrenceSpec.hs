@@ -599,6 +599,280 @@ spec = do
                   }
               ]
           )
+    it "reschedules every later instance by the same difference as a THISANDFUTURE override" $
+      -- [section 3.8.4.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.4)
+      --
+      -- @
+      -- The "RANGE" parameter is used to specify the effective range of
+      -- recurrence instances from the instance specified by the
+      -- "RECURRENCE-ID" property value.  The value for the range parameter
+      -- can only be "THISANDFUTURE" to indicate a range defined by the
+      -- given recurrence instance and all subsequent instances.
+      -- @
+      --
+      -- @
+      -- When the given recurrence instance is
+      -- rescheduled, all subsequent instances are also rescheduled by the
+      -- same time difference.  For instance, if the given recurrence
+      -- instance is rescheduled to start 2 hours later, then all
+      -- subsequent instances are also rescheduled 2 hours later.
+      -- @
+      --
+      -- The third instance moves from 09:00 to 11:00, so the fourth moves too.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T090000Z",
+                "DTEND:20200101T100000Z",
+                "RRULE:FREQ=DAILY;COUNT=4",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID;RANGE=THISANDFUTURE:20200103T090000Z",
+                "DTSTART:20200103T110000Z",
+                "DTEND:20200103T120000Z",
+                "SUMMARY:Moved"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (10 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (10 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (11 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (12 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 04) (11 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 04) (12 * 3600)
+                  }
+              ]
+          )
+    it "gives every later instance the duration of a THISANDFUTURE override" $
+      -- @
+      -- Similarly, if the duration of the given recurrence instance is
+      -- modified, then all subsequence instances are also modified to have
+      -- this same duration.
+      -- @
+      --
+      -- The override starts where its instance already started, so nothing
+      -- moves and only the duration propagates.  An hour becomes two and a
+      -- half.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T090000Z",
+                "DTEND:20200101T100000Z",
+                "RRULE:FREQ=DAILY;COUNT=3",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID;RANGE=THISANDFUTURE:20200102T090000Z",
+                "DTSTART:20200102T090000Z",
+                "DTEND:20200102T113000Z",
+                "SUMMARY:Longer"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (10 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Longer",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (11 * 3600 + 30 * 60)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Longer",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (11 * 3600 + 30 * 60)
+                  }
+              ]
+          )
+    it "keeps a zoned instance on the same wall clock when a THISANDFUTURE override reschedules it across a daylight saving change" $
+      -- The difference between the override and the instance it names is an
+      -- exact duration, as it is for a DTEND, so rescheduling has to be exact
+      -- too.  Zurich goes back from 03:00 to 02:00 on the 30th of October 2022,
+      -- so the first instance is at +0200 and the two after it are at +0100:
+      -- adding two hours to the instant and reading the result back in the
+      -- time zone is what puts all three at 11:00 local.
+      summariesOf
+        (fromGregorian 2022 11 05)
+        ( T.intercalate "\r\n" $
+            concat
+              [ ["BEGIN:VCALENDAR", "PRODID:test", "VERSION:2.0"],
+                [ "BEGIN:VTIMEZONE",
+                  "TZID:Europe/Zurich",
+                  "BEGIN:DAYLIGHT",
+                  "TZOFFSETFROM:+0100",
+                  "TZOFFSETTO:+0200",
+                  "TZNAME:CEST",
+                  "DTSTART:19700329T020000",
+                  "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+                  "END:DAYLIGHT",
+                  "BEGIN:STANDARD",
+                  "TZOFFSETFROM:+0200",
+                  "TZOFFSETTO:+0100",
+                  "TZNAME:CET",
+                  "DTSTART:19701025T030000",
+                  "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
+                  "END:STANDARD",
+                  "END:VTIMEZONE"
+                ],
+                [ "BEGIN:VEVENT",
+                  "DTSTAMP:20200101T000000Z",
+                  "UID:test",
+                  "DTSTART;TZID=Europe/Zurich:20221029T090000",
+                  "DTEND;TZID=Europe/Zurich:20221029T100000",
+                  "RRULE:FREQ=DAILY;COUNT=3",
+                  "SUMMARY:Series",
+                  "END:VEVENT"
+                ],
+                [ "BEGIN:VEVENT",
+                  "DTSTAMP:20200101T000000Z",
+                  "UID:test",
+                  "RECURRENCE-ID;RANGE=THISANDFUTURE;TZID=Europe/Zurich:20221029T090000",
+                  "DTSTART;TZID=Europe/Zurich:20221029T110000",
+                  "DTEND;TZID=Europe/Zurich:20221029T120000",
+                  "SUMMARY:Moved",
+                  "END:VEVENT"
+                ],
+                ["END:VCALENDAR", ""]
+              ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 29) (TimeOfDay 11 00 00),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 29) (TimeOfDay 12 00 00)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 30) (TimeOfDay 11 00 00),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 30) (TimeOfDay 12 00 00)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 31) (TimeOfDay 11 00 00),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeZoned "Europe/Zurich" $ LocalTime (fromGregorian 2022 10 31) (TimeOfDay 12 00 00)
+                  }
+              ]
+          )
+    it "reschedules an all-day instance by whole days" $
+      -- An all-day instance has a DATE-valued start and a DATE-valued
+      -- RECURRENCE-ID, so the difference between the override and the instance
+      -- it names is a number of days rather than an exact duration.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART;VALUE=DATE:20200101",
+                "DTEND;VALUE=DATE:20200102",
+                "RRULE:FREQ=WEEKLY;COUNT=3",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID;VALUE=DATE;RANGE=THISANDFUTURE:20200108",
+                "DTSTART;VALUE=DATE:20200109",
+                "DTEND;VALUE=DATE:20200110",
+                "SUMMARY:A day later"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDate $ Date $ fromGregorian 2020 01 01,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDate $ Date $ fromGregorian 2020 01 02
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "A day later",
+                    occurrenceStart = Just $ DateTimeStartDate $ Date $ fromGregorian 2020 01 09,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDate $ Date $ fromGregorian 2020 01 10
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "A day later",
+                    occurrenceStart = Just $ DateTimeStartDate $ Date $ fromGregorian 2020 01 16,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDate $ Date $ fromGregorian 2020 01 17
+                  }
+              ]
+          )
+    it "does not reschedule a later instance that has an override of its own" $
+      -- @
+      -- Subsequent instances
+      -- defined in separate components are not impacted by the given
+      -- recurrence instance.
+      -- @
+      --
+      -- The third instance has its own override, so the THISANDFUTURE shift of
+      -- two hours must not reach it: it is at 15:00 where its own component
+      -- puts it, not at 11:00.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T090000Z",
+                "DTEND:20200101T100000Z",
+                "RRULE:FREQ=DAILY;COUNT=3",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID;RANGE=THISANDFUTURE:20200102T090000Z",
+                "DTSTART:20200102T110000Z",
+                "DTEND:20200102T120000Z",
+                "SUMMARY:Moved"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200103T090000Z",
+                "DTSTART:20200103T150000Z",
+                "DTEND:20200103T160000Z",
+                "SUMMARY:Its own"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (9 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) (10 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Moved",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (11 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (12 * 3600)
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Its own",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (15 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) (16 * 3600)
+                  }
+              ]
+          )
     -- The scenario directory pins what a calendar with a fixable error recurs
     -- into, and that a conforming run halts on it.  These pin which error it
     -- halted on, which that directory cannot say.
