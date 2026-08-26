@@ -8,7 +8,6 @@ module ICal.Recurrence.RecurrenceRule
   )
 where
 
-import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Time as Time
@@ -241,7 +240,7 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
         recurrenceRuleBySecond
         recurrenceRuleBySetPos
 
--- | Filter the 'Every' to implement the fixable error defined by this part of the spec:
+-- | Discard the number from a numeric 'ByDay', keeping the week day
 --
 -- @
 -- If an integer
@@ -251,14 +250,24 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
 -- NOT be specified with a numeric value when the FREQ rule part is
 -- not set to MONTHLY or YEARLY.
 -- @
+--
+-- So the number is forbidden here, and the spec does not say what to do with
+-- one anyway.  The quote settles which repair changes the least: the
+-- unnumbered form already means every day of that type within the frequency,
+-- so keeping the week day and discarding only the number says what the rule
+-- nearly said.  'byEveryWeekDayWeek' repairs the same shape the same way.
+--
+-- Discarding the whole rule part instead would leave the day filter empty,
+-- and an empty day filter is no restriction at all, so forbidden input would
+-- widen the recurrence set rather than narrow it.
 filterEvery :: Set ByDay -> R (Set DayOfWeek)
 filterEvery =
-  fmap (S.fromList . catMaybes)
+  fmap S.fromList
     . mapM
       ( \case
-          Every d -> pure $ Just d
-          bd -> do
+          Every d -> pure d
+          bd@(Specific _ d) -> do
             emitFixableErrorR $ RecurrenceByDayNumeric bd
-            pure Nothing
+            pure d
       )
     . S.toList
