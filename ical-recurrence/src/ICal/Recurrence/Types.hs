@@ -148,6 +148,9 @@ instance Validity Timestamp
 
 data RecurrenceError
   = StartEndMismatch !DateTimeStart !RecurrenceEnd
+  | -- | A RANGE=THISANDFUTURE override, the instance it names, and an instance
+    -- it covers that do not all have the same value type
+    ThisAndFutureMismatch !DateTimeStart !DateTimeStart !DateTimeStart
   | ExactDurationMismatch !DateTime !DateTime
   | TimeZoneNotFound !TimeZoneIdentifierParam
   | FailedToResolveLocalTime !TimeZone !Time.LocalTime
