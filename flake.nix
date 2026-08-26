@@ -10,6 +10,7 @@
     nixpkgs-25_11.url = "github:NixOS/nixpkgs?ref=nixos-25.11";
     horizon-advance.url = "git+https://gitlab.horizon-haskell.net/package-sets/horizon-advance";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    release-to-hackage.url = "github:NorfairKing/release-to-hackage";
     validity.url = "github:NorfairKing/validity";
     validity.flake = false;
     autodocodec.url = "github:NorfairKing/autodocodec";
@@ -34,6 +35,7 @@
     , nixpkgs-25_11
     , horizon-advance
     , pre-commit-hooks
+    , release-to-hackage
     , validity
     , safe-coloured-text
     , autodocodec
@@ -65,7 +67,16 @@
     {
       overrides.${system} = pkgs.callPackage ./nix/overrides.nix { };
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = haskellPackages.icalRelease;
+      packages.${system} = {
+        default = haskellPackages.icalRelease;
+        release-to-hackage = release-to-hackage.lib.${system}.makeHackageRelease {
+          packages = removeAttrs haskellPackages.icalPackages [
+            "ical-gen"
+            "ical-recurrence-gen"
+            "ical-interop-test"
+          ];
+        };
+      };
       checks.${system} =
         let
           backwardCompatibilityCheckFor = nixpkgs: (haskellPackagesFor nixpkgs).icalRelease;
@@ -112,16 +123,6 @@
           zlib
         ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;
-      };
-      nix-ci = {
-        auto-update = {
-          enable = true;
-          base = "development";
-        };
-        cachix = {
-          name = "ical";
-          public-key = "ical.cachix.org-1:p7f+GXzQmwWs/h0Od3mQJNoB/8hJb86HjgHUtB4vF+c=";
-        };
       };
     };
 }
