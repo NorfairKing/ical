@@ -29,10 +29,10 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   let limit = fromGregorian 2023 01 01
-  describe "renderEventOccurrences" $ do
-    it "roundtrips with parseEventOccurrences" $
+  describe "renderOccurrences" $ do
+    it "roundtrips with parseOccurrences" $
       forAllValid $ \occurrences ->
-        parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+        parseOccurrences (renderOccurrences occurrences) `shouldBe` occurrences
     it "roundtrips occurrences when an earlier one has no end" $
       -- An occurrence with neither a DTEND nor a DURATION renders as one line
       -- instead of two, which shifts every occurrence after it in the file.
@@ -42,16 +42,18 @@ spec = do
       -- stands in for the line it never wrote.
       let occurrences =
             S.fromList
-              [ EventOccurrence
-                  { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
-                    eventOccurrenceEndOrDuration = Nothing
+              [ Occurrence
+                  { occurrenceComponent = (),
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                    occurrenceEnd = Nothing
                   },
-                EventOccurrence
-                  { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 0,
-                    eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 3600
+                Occurrence
+                  { occurrenceComponent = (),
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 0,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 3600
                   }
               ]
-       in parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+       in parseOccurrences (renderOccurrences occurrences) `shouldBe` occurrences
     it "roundtrips an occurrence whose properties are folded over several lines" $ do
       -- A TZID of the shape that Thunderbird emits makes both content lines
       -- longer than the 75 octets after which they are folded.  Both
@@ -59,23 +61,24 @@ spec = do
       let tzid = "/mozilla.org/20050126_1/America/Argentina/Buenos_Aires"
       let occurrences =
             S.singleton
-              EventOccurrence
-                { eventOccurrenceStart =
+              Occurrence
+                { occurrenceComponent = (),
+                  occurrenceStart =
                     Just $
                       DateTimeStartDateTime $
                         DateTimeZoned tzid $
                           LocalTime (fromGregorian 2020 01 01) (TimeOfDay 01 00 00),
-                  eventOccurrenceEndOrDuration =
+                  occurrenceEnd =
                     Just $
                       Left $
-                        DateTimeEndDateTime $
+                        RecurrenceEndDateTime $
                           DateTimeZoned tzid $
                             LocalTime (fromGregorian 2020 01 01) (TimeOfDay 02 00 00)
                 }
       -- Assert that this is really folded, so that the test cannot quietly
       -- stop covering folding if the fold width ever changes.
-      renderEventOccurrences occurrences `shouldSatisfy` T.isInfixOf "\r\n "
-      parseEventOccurrences (renderEventOccurrences occurrences) `shouldBe` occurrences
+      renderOccurrences occurrences `shouldSatisfy` T.isInfixOf "\r\n "
+      parseOccurrences (renderOccurrences occurrences) `shouldBe` occurrences
   describe "recurRecurrenceRuleLocalTimes" $
     it "gives the same occurrences below a limit no matter where the limit is" $
       -- The limit is an implementation detail of this library rather than
@@ -100,7 +103,7 @@ spec = do
               near <- shouldRecur (recurRecurrenceRuleLocalTimes nearLimit start rule)
               far <- shouldRecur (recurRecurrenceRuleLocalTimes farLimit start rule)
               S.filter belowNearLimit far `shouldBe` S.filter belowNearLimit near
-  describe "recurEvents" $ do
+  describe "expandRecurring" $ do
     -- A time zone without any transitions, so that the only thing that
     -- matters about it is its offset from UTC.
     let plusOne :: [Text]
@@ -132,9 +135,9 @@ spec = do
             runR lim (calendarTimeZoneMap calendar) $ do
               occurrences <-
                 fmap S.unions $
-                  mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
-              S.fromList . map resolvedEventStart
-                <$> mapM resolveEventOccurrence (S.toList occurrences)
+                  mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
+              S.fromList . map resolvedStart
+                <$> mapM resolveOccurrence (S.toList occurrences)
     let utcAt :: Integer -> Int -> Int -> DiffTime -> Maybe Timestamp
         utcAt y m dd tod = Just $ TimestampUTCTime $ UTCTime (fromGregorian y m dd) tod
     -- Europe/Zurich as Google Calendar emits it: +0100 in winter, +0200 in
@@ -159,13 +162,15 @@ spec = do
             "END:STANDARD",
             "END:VTIMEZONE"
           ]
-    let occurrencesOf :: Day -> Text -> IO (Set EventOccurrence)
+    -- The component each occurrence came from is dropped, because these
+    -- calendars hold one event and what is being asserted is its instances.
+    let occurrencesOf :: Day -> Text -> IO (Set (Occurrence ()))
         occurrencesOf lim contents = do
           calendar <- shouldConform $ parseVCalendar contents
           shouldConform $
             runR lim (calendarTimeZoneMap calendar) $
-              fmap S.unions $
-                mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+              fmap (S.map void . S.unions) $
+                mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
     let plusTwo :: [Text]
         plusTwo =
           [ "BEGIN:VTIMEZONE",
@@ -246,7 +251,7 @@ spec = do
           shouldConform $
             runR limit (calendarTimeZoneMap calendar) $
               fmap S.unions $
-                mapM (recurEvents limit . getRecurringEvent) (calendarEvents calendar)
+                mapM (expandRecurring limit . eventRecurring) (calendarEvents calendar)
         S.size occurrences `shouldBe` 4
       it "includes an instance at or before a UTC Until across a daylight saving transition" $
         -- @
@@ -290,20 +295,22 @@ spec = do
                 "RRULE:FREQ=DAILY;COUNT=3",
                 "RDATE;VALUE=PERIOD:20200102T000000Z/PT5H"
               ]
-        S.size (S.map eventOccurrenceStart occurrences) `shouldBe` S.size occurrences
+        S.size (S.map occurrenceStart occurrences) `shouldBe` S.size occurrences
         -- The size comparison on its own is also satisfied by dropping both of
         -- the colliding instances, or by dropping everything, so pin the whole
         -- set.  The period-valued RDATE is the one that carries the modified
         -- duration, so it is the one that survives.
         occurrences
           `shouldBe` S.fromList
-            [ EventOccurrence
-                { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
-                  eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
+            [ Occurrence
+                { occurrenceComponent = (),
+                  occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                  occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
                 },
-              EventOccurrence
-                { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 0,
-                  eventOccurrenceEndOrDuration =
+              Occurrence
+                { occurrenceComponent = (),
+                  occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) 0,
+                  occurrenceEnd =
                     Just $
                       Right $
                         DurationTime
@@ -314,9 +321,10 @@ spec = do
                               durTimeSecond = 0
                             }
                 },
-              EventOccurrence
-                { eventOccurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 0,
-                  eventOccurrenceEndOrDuration = Just $ Left $ DateTimeEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 3600
+              Occurrence
+                { occurrenceComponent = (),
+                  occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 0,
+                  occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 03) 3600
                 }
             ]
       it "adds a date-valued instance to an event that has a DTEND" $
@@ -488,8 +496,8 @@ spec = do
             calendar <- shouldConform $ parseVCalendar contents
             shouldConform $
               runR lim (calendarTimeZoneMap calendar) $
-                S.map eventOccurrenceStart . S.unions
-                  <$> mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+                S.map occurrenceStart . S.unions
+                  <$> mapM (expandRecurring lim . eventRecurring) (calendarEvents calendar)
       let floatingAt :: TimeOfDay -> Maybe DateTimeStart
           floatingAt tod =
             Just $
@@ -531,11 +539,11 @@ spec = do
       it "cannot recur this event without fixing something" $ do
         contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
         event <- shouldConform $ parseComponentFromText contents
-        let recurringEvent = getRecurringEvent (event :: Event)
+        let recurring = eventRecurring (event :: Event)
         -- 'runConform' fixes nothing, so it halts on the first fixable error.
         -- The warning type here is 'Void', so this and 'runConformStrict'
         -- cannot disagree.
-        case runConform $ runRWithoutZones $ recurEvents limit recurringEvent of
+        case runConform $ runRWithoutZones $ expandRecurring limit recurring of
           Left _ -> pure ()
           Right (occurrences, _) ->
             expectationFailure $
@@ -547,13 +555,13 @@ spec = do
       it "recurs this event leniently" $ do
         contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
         event <- shouldConform $ parseComponentFromText contents
-        let recurringEvent = getRecurringEvent (event :: Event)
+        let recurring = eventRecurring (event :: Event)
         goldenFile <- replaceExtension ".occ" eventFile
         pure $
-          goldenEventOccurrenceFile goldenFile $
+          goldenOccurrenceFile goldenFile $
             shouldConformLenient $
               runRWithoutZones $
-                recurEvents limit recurringEvent
+                expandRecurring limit recurring
 
   scenarioDir "test_resources/calendar" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
@@ -571,34 +579,41 @@ spec = do
             occurrences <-
               fmap S.unions $
                 mapM
-                  (recurEvents limit . getRecurringEvent)
+                  (expandRecurring limit . eventRecurring)
                   (calendarEvents calendar)
-            S.fromList <$> mapM resolveEventOccurrence (S.toList occurrences)
+            S.fromList <$> mapM resolveOccurrence (S.toList occurrences)
         goldenFile <- replaceExtension ".res" eventFile
-        pure $ goldenResolvedEventFile goldenFile $ pure resolvedEvents
+        pure $ goldenResolvedFile goldenFile $ pure resolvedEvents
 
-pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set EventOccurrence)
+pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set (Occurrence ()))
 pureGoldenCalendarRecurrenceFile goldenFile limit calendar =
-  goldenEventOccurrenceFile goldenFile $
+  goldenOccurrenceFile goldenFile $
     shouldConform $ do
       runR limit (calendarTimeZoneMap calendar) $
         fmap S.unions $
           mapM
-            (recurEvents limit . getRecurringEvent)
+            (expandRecurring limit . eventRecurring)
             (calendarEvents calendar)
 
-pureGoldenEventRecurrenceFile :: Path Rel File -> Day -> Event -> GoldenTest (Set EventOccurrence)
+pureGoldenEventRecurrenceFile :: Path Rel File -> Day -> Event -> GoldenTest (Set (Occurrence ()))
 pureGoldenEventRecurrenceFile goldenFile limit event =
-  goldenEventOccurrenceFile goldenFile $ shouldConform $ runRWithoutZones (recurEvents limit (getRecurringEvent event))
+  goldenOccurrenceFile goldenFile $ shouldConform $ runRWithoutZones (expandRecurring limit (eventRecurring event))
 
-goldenEventOccurrenceFile :: Path Rel File -> IO (Set EventOccurrence) -> GoldenTest (Set EventOccurrence)
-goldenEventOccurrenceFile goldenFile produceOccurrences =
+-- | Pin the recurrence set that a scenario produces
+--
+-- The golden format records where each instance starts and ends, and not which
+-- component it came from, so the component is dropped before the comparison.
+goldenOccurrenceFile ::
+  Path Rel File ->
+  IO (Set (Occurrence component)) ->
+  GoldenTest (Set (Occurrence ()))
+goldenOccurrenceFile goldenFile produceOccurrences =
   GoldenTest
     { goldenTestRead = do
         mGoldenContents <- forgivingAbsence $ TE.decodeUtf8 <$> SB.readFile (fromRelFile goldenFile)
-        pure $ parseEventOccurrences <$> mGoldenContents,
-      goldenTestProduce = produceOccurrences,
-      goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderEventOccurrences,
+        pure $ parseOccurrences <$> mGoldenContents,
+      goldenTestProduce = S.map void <$> produceOccurrences,
+      goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderOccurrences,
       goldenTestCompare = \actual expected ->
         if actual == expected
           then pure Nothing
@@ -626,56 +641,62 @@ chunksOf n xs =
 -- The occurrences are chunked by unfolded line rather than by raw line,
 -- because a property whose content line is longer than 75 octets is rendered
 -- folded over several raw lines.
-parseEventOccurrences :: Text -> Set EventOccurrence
-parseEventOccurrences contents = case runConform (parseUnfoldedLines contents) of
+parseOccurrences :: Text -> Set (Occurrence ())
+parseOccurrences contents = case runConform (parseUnfoldedLines contents) of
   Left _ -> S.empty
   Right (unfoldedLines, _) ->
-    S.fromList $ mapMaybe parseEventOccurrence $ chunksOf 2 unfoldedLines
+    S.fromList $ mapMaybe parseOccurrence $ chunksOf 2 unfoldedLines
 
-parseEventOccurrence :: [UnfoldedLine] -> Maybe EventOccurrence
-parseEventOccurrence = \case
+parseOccurrence :: [UnfoldedLine] -> Maybe (Occurrence ())
+parseOccurrence = \case
   [UnfoldedLine startLine, UnfoldedLine endDurationLine] -> either (const Nothing) (Just . fst) $
     runConform $ do
-      eventOccurrenceStart <- case startLine of
+      occurrenceStart <- case startLine of
         "" -> pure Nothing
         l -> Just <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l])
-      eventOccurrenceEndOrDuration <- case endDurationLine of
+      occurrenceEnd <- case endDurationLine of
         "" -> pure Nothing
         l ->
           Just
-            <$> (Left <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l]))
+            <$> (Left . dateTimeEndRecurrenceEnd <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l]))
               `altConform` (Right <$> parsePropertyFromText (renderUnfoldedLines [UnfoldedLine l]))
-      pure EventOccurrence {..}
+      pure Occurrence {occurrenceComponent = (), ..}
   _ -> Nothing
 
-renderEventOccurrences :: Set EventOccurrence -> Text
-renderEventOccurrences = foldMap renderEventOccurrence
+renderOccurrences :: Set (Occurrence ()) -> Text
+renderOccurrences = foldMap renderOccurrence
 
 -- | Render an occurrence as exactly two lines, so that an absent property
 -- does not shift the occurrences after it in the file.
 --
--- 'parseEventOccurrences' reads the file back in two-line chunks and reads an
+-- 'parseOccurrences' reads the file back in two-line chunks and reads an
 -- empty line as an absent property, so both lines must always be written.
-renderEventOccurrence :: EventOccurrence -> Text
-renderEventOccurrence EventOccurrence {..} =
+renderOccurrence :: Occurrence () -> Text
+renderOccurrence Occurrence {..} =
   T.concat
-    [ case eventOccurrenceStart of
+    [ case occurrenceStart of
         Nothing -> "\r\n"
         Just dtstart -> renderPropertyText dtstart,
-      case eventOccurrenceEndOrDuration of
+      case occurrenceEnd of
         Nothing -> "\r\n"
-        Just (Left end) -> renderPropertyText end
+        Just (Left end) -> renderPropertyText (recurrenceEndDateTimeEnd end)
         Just (Right dur) -> renderPropertyText dur
     ]
 
-goldenResolvedEventFile :: Path Rel File -> IO (Set ResolvedEvent) -> GoldenTest (Set ResolvedEvent)
-goldenResolvedEventFile goldenFile produceResolvedEvents =
+-- | Pin the instants that a scenario resolves to
+--
+-- As with 'goldenOccurrenceFile', the component is not part of the format.
+goldenResolvedFile ::
+  Path Rel File ->
+  IO (Set (Resolved component)) ->
+  GoldenTest (Set (Resolved ()))
+goldenResolvedFile goldenFile produceResolveds =
   GoldenTest
     { goldenTestRead = do
         mGoldenContents <- forgivingAbsence $ TE.decodeUtf8 <$> SB.readFile (fromRelFile goldenFile)
-        pure $ parseResolvedEvents <$> mGoldenContents,
-      goldenTestProduce = produceResolvedEvents,
-      goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderResolvedEvents,
+        pure $ parseResolveds <$> mGoldenContents,
+      goldenTestProduce = S.map void <$> produceResolveds,
+      goldenTestWrite = SB.writeFile (fromRelFile goldenFile) . TE.encodeUtf8 . renderResolveds,
       goldenTestCompare = \actual expected ->
         if actual == expected
           then pure Nothing
@@ -692,19 +713,19 @@ goldenResolvedEventFile goldenFile produceResolvedEvents =
                   (goldenContext (fromRelFile goldenFile))
     }
 
-parseResolvedEvents :: Text -> Set ResolvedEvent
-parseResolvedEvents =
+parseResolveds :: Text -> Set (Resolved ())
+parseResolveds =
   S.fromList
-    . mapMaybe (parseResolvedEvent . T.intercalate "\n")
+    . mapMaybe (parseResolved . T.intercalate "\n")
     . chunksOf 2
     . T.splitOn "\n"
 
-parseResolvedEvent :: Text -> Maybe ResolvedEvent
-parseResolvedEvent t = case T.splitOn "\n" t of
+parseResolved :: Text -> Maybe (Resolved ())
+parseResolved t = case T.splitOn "\n" t of
   (startLine : endDurationLine : _) -> do
-    resolvedEventStart <- goM startLine
-    resolvedEventEnd <- goM endDurationLine
-    pure ResolvedEvent {..}
+    resolvedStart <- goM startLine
+    resolvedEnd <- goM endDurationLine
+    pure Resolved {resolvedComponent = (), ..}
   _ -> Nothing
   where
     goM :: Text -> Maybe (Maybe Timestamp)
@@ -716,15 +737,15 @@ parseResolvedEvent t = case T.splitOn "\n" t of
         <|> (TimestampUTCTime <$> parseTimeM False defaultTimeLocale utcTimeFormat s)
         <|> (TimestampDay <$> parseTimeM False defaultTimeLocale dayFormat s)
 
-renderResolvedEvents :: Set ResolvedEvent -> Text
-renderResolvedEvents = foldMap renderResolvedEvent . S.toAscList
+renderResolveds :: Set (Resolved ()) -> Text
+renderResolveds = foldMap renderResolved . S.toAscList
 
-renderResolvedEvent :: ResolvedEvent -> Text
-renderResolvedEvent ResolvedEvent {..} =
+renderResolved :: Resolved () -> Text
+renderResolved Resolved {..} =
   T.pack $
     concat
-      [ maybe "" go resolvedEventStart <> "\n",
-        maybe "" go resolvedEventEnd <> "\n"
+      [ maybe "" go resolvedStart <> "\n",
+        maybe "" go resolvedEnd <> "\n"
       ]
   where
     go = \case
