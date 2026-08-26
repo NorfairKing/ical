@@ -462,6 +462,55 @@ spec = do
       it "bounds what a recurrence rule generates" $
         startsOf (fromGregorian 2020 01 03) (calendarWith [] ["DTSTART:20200101T000000Z", "DTEND:20200101T010000Z", "RRULE:FREQ=DAILY;COUNT=10"])
           `shouldReturn` S.fromList [utcAt 2020 01 01 0, utcAt 2020 01 02 0, utcAt 2020 01 03 0]
+    describe "a leap second that a rule generates" $ do
+      -- @
+      -- The BYSECOND rule part specifies a COMMA-separated list of seconds
+      -- within a minute.  Valid values are 0 to 60.
+      -- @
+      --
+      -- So 60 is legal, and names a leap second.  'bySecondExpand' puts it
+      -- straight into a 'TimeOfDay' without normalising, so a rule can generate
+      -- a local time that no wall clock ever shows.
+      --
+      -- @
+      -- Recurrence rules may generate recurrence instances with an invalid
+      -- date (e.g., February 30) or nonexistent local time (e.g., 1:30 AM
+      -- on a day where the local time is moved forward by an hour at 1:00
+      -- AM).  Such recurrence instances MUST be ignored and MUST NOT be
+      -- counted as part of the recurrence set.
+      -- @
+      --
+      -- These assert the local starts rather than resolved instants, because
+      -- resolving is what mangles a leap second and would hide what is being
+      -- tested.
+      let localStartsOf :: Day -> Text -> IO (Set (Maybe DateTimeStart))
+          localStartsOf lim contents = do
+            calendar <- shouldConform $ parseVCalendar contents
+            shouldConform $
+              runR lim (calendarTimeZoneMap calendar) $
+                S.map eventOccurrenceStart . S.unions
+                  <$> mapM (recurEvents lim . getRecurringEvent) (calendarEvents calendar)
+      let floatingAt :: TimeOfDay -> Maybe DateTimeStart
+          floatingAt tod =
+            Just $
+              DateTimeStartDateTime $
+                DateTimeFloating $
+                  LocalTime (fromGregorian 2020 01 01) tod
+      it "is ignored when DTSTART is floating" $
+        localStartsOf
+          (fromGregorian 2020 01 02)
+          (calendarWith [] ["DTSTART:20200101T120000", "RRULE:FREQ=MINUTELY;BYSECOND=60;COUNT=3"])
+          `shouldReturn` S.fromList [floatingAt (TimeOfDay 12 00 00)]
+      it "is ignored when DTSTART is zoned" $
+        localStartsOf
+          (fromGregorian 2020 01 02)
+          (calendarWith plusOne ["DTSTART;TZID=Test/PlusOne:20200101T120000", "RRULE:FREQ=MINUTELY;BYSECOND=60;COUNT=3"])
+          `shouldReturn` S.fromList
+            [ Just $
+                DateTimeStartDateTime $
+                  DateTimeZoned "Test/PlusOne" $
+                    LocalTime (fromGregorian 2020 01 01) (TimeOfDay 12 00 00)
+            ]
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
