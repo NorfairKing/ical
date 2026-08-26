@@ -1,5 +1,63 @@
 # Changelog
 
+## ical-recurrence 0.3.0.0
+
+* `RECURRENCE-ID` is handled. A component carrying one now replaces the
+  instance it names instead of appearing as an extra occurrence beside it.
+  Google and Outlook write such a component for every "this event only" edit,
+  so any calendar with one edited instance produced that instance twice: once
+  where it used to be and once where it now is. §3.8.4.4 is explicit that these
+  are the same instance rather than two — "The DATE-TIME value is set to the
+  time when the original recurrence instance would occur; meaning that if the
+  intent is to change a Friday meeting to Thursday, the DATE-TIME is still set
+  to the original Friday meeting."
+
+  `RANGE=THISANDFUTURE` is handled too: it reschedules every later instance by
+  the difference between the override's `DTSTART` and the instance it names, and
+  gives each of them the override's duration. An instance that has an override
+  component of its own is left where that component puts it, which is the rest
+  of the same paragraph.
+
+* The recurrence API is expressed over collections of components rather than one
+  at a time, which is what handling `RECURRENCE-ID` requires: the occurrences of
+  one component depend on the other components sharing its UID, so no function
+  taking a single component can be correct about them. Start from
+  `recurCalendar`, and use `runCalendarR` to supply the time zones a calendar
+  defines.
+
+  `recur` and `recurEvents` keep their names with incompatible types, so an old
+  call site is a compile error rather than a silent change of meaning.
+  `recurEvents` now takes the calendar's whole event list and returns one
+  recurrence set per UID; one component's own expansion, which is what it used
+  to compute, is `expandRecurring`.
+
+  `HasRecurrence`, `getRecurringEvent`, `makeOccurrence`, `RecurringEvent`,
+  `EventOccurrence`, `ResolvedEvent` and `resolveEventOccurrence` are gone,
+  replaced by `Recurring`, `Occurrence`, `Resolved` and `resolveOccurrence`,
+  each parameterised over the component so that one implementation serves all
+  three component kinds and a caller that has narrowed a `VEVENT` down to what
+  it cares about can still recur it. There is no `makeOccurrence` equivalent:
+  it existed to hand back a component with a rewritten `DTSTART` and blanked
+  recurrence properties, which was never a component the calendar contained.
+  An `Occurrence` keeps the component intact and carries the instance's start
+  and end beside it.
+
+* `VTODO` and `VJOURNAL` recur, not only `VEVENT`. RFC 5545 gives all three the
+  same recurrence properties, and §3.8.4.4 has `RECURRENCE-ID` identify an
+  instance of a "VEVENT, VTODO, or VJOURNAL". Only the end of an instance
+  differs — `DTEND`, `DUE`, and none respectively — so `RecurrenceEnd` is that
+  shared spelling and a `VTODO`'s `DUE` is no longer typed as a `DTEND`.
+
+* Note for anyone matching on them exhaustively: `RecurrenceFixableError` gains
+  `RecurrenceIdentifierUnmatched`, `RecurrenceIdentifierDuplicate` and
+  `RecurrenceMultipleSeries`, for the three cases the spec leaves undefined — an
+  override naming no instance of its series, two overrides of one instance at
+  the same `SEQUENCE`, and two components of one UID with no `RECURRENCE-ID`
+  between them. Each keeps what the calendar said rather than dropping it.
+  `RecurrenceError` gains `ThisAndFutureMismatch`, for a `RANGE=THISANDFUTURE`
+  override whose value type does not match the instances it covers, and
+  `StartEndMismatch` now carries a `RecurrenceEnd` rather than a `DateTimeEnd`.
+
 ## ical 0.3.0.0
 
 * `COUNT` is no longer capped at 60. Its `Validity` instance carried the
