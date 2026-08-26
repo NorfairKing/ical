@@ -599,6 +599,103 @@ spec = do
                   }
               ]
           )
+    -- The scenario directory pins what a calendar with a fixable error recurs
+    -- into, and that a conforming run halts on it.  These pin which error it
+    -- halted on, which that directory cannot say.
+    let fixableErrorsOf :: Day -> Text -> IO [RecurrenceFixableError]
+        fixableErrorsOf lim contents = do
+          calendar <- shouldConform $ parseVCalendar contents
+          case runConformLenient $ runCalendarR lim calendar $ recurEvents lim (calendarEvents calendar) of
+            Left err -> expectationFailure $ show err
+            Right (_, notes) -> pure $ notesFixableErrors notes
+    it "reports an override that names no instance of its series" $
+      fixableErrorsOf
+        limit
+        ( calendarWithEvents
+            [ ["UID:test", "DTSTART:20200101T000000Z", "RRULE:FREQ=DAILY;COUNT=3"],
+              ["UID:test", "RECURRENCE-ID:20200205T000000Z", "DTSTART:20200205T120000Z"]
+            ]
+        )
+        `shouldReturn` [ RecurrenceIdentifierUnmatched
+                           (UID "test")
+                           (DateTimeStartDateTime (DateTimeUTC (UTCTime (fromGregorian 2020 02 05) 0)))
+                       ]
+    it "reports two overrides that name the same instance at the same SEQUENCE" $
+      fixableErrorsOf
+        limit
+        ( calendarWithEvents
+            [ ["UID:test", "DTSTART:20200101T000000Z", "RRULE:FREQ=DAILY;COUNT=3"],
+              ["UID:test", "RECURRENCE-ID:20200102T000000Z", "DTSTART:20200102T120000Z"],
+              ["UID:test", "RECURRENCE-ID:20200102T000000Z", "DTSTART:20200102T180000Z"]
+            ]
+        )
+        `shouldReturn` [ RecurrenceIdentifierDuplicate
+                           (UID "test")
+                           (DateTimeStartDateTime (DateTimeUTC (UTCTime (fromGregorian 2020 01 02) 0)))
+                       ]
+    it "reports two components of one UID that both leave out the RECURRENCE-ID" $
+      fixableErrorsOf
+        limit
+        ( calendarWithEvents
+            [ ["UID:test", "DTSTART:20200101T000000Z"],
+              ["UID:test", "DTSTART:20200301T000000Z"]
+            ]
+        )
+        `shouldReturn` [RecurrenceMultipleSeries (UID "test")]
+    it "takes the override with the higher SEQUENCE when two name the same instance" $
+      -- [section 3.8.7.4](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.4)
+      --
+      -- @
+      -- When a calendar component is created, its sequence
+      -- number is 0.  It is monotonically incremented by the "Organizer's"
+      -- CUA each time the "Organizer" makes a significant revision to the
+      -- calendar component.
+      -- @
+      --
+      -- Two components of one UID with the same RECURRENCE-ID are two
+      -- revisions of one instance, so the higher SEQUENCE is the later
+      -- revision.  The later revision is listed first here, so file order and
+      -- SEQUENCE disagree and only one of them can be what decides.
+      summariesOf
+        limit
+        ( calendarWithEvents
+            [ [ "UID:test",
+                "DTSTART:20200101T000000Z",
+                "DTEND:20200101T010000Z",
+                "RRULE:FREQ=DAILY;COUNT=2",
+                "SUMMARY:Series"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200102T000000Z",
+                "SEQUENCE:2",
+                "DTSTART:20200102T120000Z",
+                "DTEND:20200102T130000Z",
+                "SUMMARY:Later revision"
+              ],
+              [ "UID:test",
+                "RECURRENCE-ID:20200102T000000Z",
+                "SEQUENCE:1",
+                "DTSTART:20200102T180000Z",
+                "DTEND:20200102T190000Z",
+                "SUMMARY:Earlier revision"
+              ]
+            ]
+        )
+        `shouldReturn` M.singleton
+          (UID "test")
+          ( S.fromList
+              [ Occurrence
+                  { occurrenceComponent = Just "Series",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 0,
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 01) 3600
+                  },
+                Occurrence
+                  { occurrenceComponent = Just "Later revision",
+                    occurrenceStart = Just $ DateTimeStartDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (12 * 3600),
+                    occurrenceEnd = Just $ Left $ RecurrenceEndDateTime $ DateTimeUTC $ UTCTime (fromGregorian 2020 01 02) (13 * 3600)
+                  }
+              ]
+          )
   scenarioDir "test_resources/event" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do
@@ -660,6 +757,44 @@ spec = do
             S.fromList <$> mapM resolveOccurrence (S.toList occurrences)
         goldenFile <- replaceExtension ".res" eventFile
         pure $ goldenResolvedFile goldenFile $ pure resolvedEvents
+
+  -- Calendars that a conforming implementation must refuse to recur, and what
+  -- recurring them anyway produces.
+  --
+  -- These are the fixable errors that only a group of components sharing a UID
+  -- can have, so unlike test_resources/event/fixable they need a whole
+  -- calendar rather than a single component.
+  --
+  -- 'scenarioDir' does not recur into subdirectories, so these are not also
+  -- picked up by the block above, which requires recurring without any fixable
+  -- error at all.
+  scenarioDir "test_resources/calendar/fixable" $ \fp -> do
+    calendarFile <- liftIO $ parseRelFile fp
+    when (fileExtension calendarFile == Just ".ics") $ do
+      it "cannot recur this calendar without fixing something" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile calendarFile)
+        calendar <- shouldConform $ parseVCalendar contents
+        -- 'runConform' fixes nothing, so it halts on the first fixable error.
+        -- The warning type here is 'Void', so this and 'runConformStrict'
+        -- cannot disagree.
+        case runConform $ runCalendarR limit calendar $ recurEvents limit (calendarEvents calendar) of
+          Left _ -> pure ()
+          Right (occurrences, _) ->
+            expectationFailure $
+              unlines
+                [ "Should have needed fixing but recurred cleanly into:",
+                  ppShow (M.toList (M.map S.toList occurrences))
+                ]
+
+      it "recurs this calendar leniently" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile calendarFile)
+        calendar <- shouldConform $ parseVCalendar contents
+        goldenFile <- replaceExtension ".occ" calendarFile
+        pure $
+          goldenOccurrenceFile goldenFile $
+            shouldConformLenient $
+              runCalendarR limit calendar $
+                allOccurrences <$> recurEvents limit (calendarEvents calendar)
 
 pureGoldenCalendarRecurrenceFile :: Path Rel File -> Day -> Calendar -> GoldenTest (Set (Occurrence ()))
 pureGoldenCalendarRecurrenceFile goldenFile limit calendar =
