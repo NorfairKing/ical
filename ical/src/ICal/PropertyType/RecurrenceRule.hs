@@ -686,6 +686,32 @@ class IsRecurrenceRulePart part where
   recurrenceRulePartP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void part
   recurrenceRulePartB :: part -> Text
 
+-- | Refuse a rule part value that read but fell outside the range the spec
+-- gives it
+--
+-- Each of these types already declares its range in its 'Validity' instance,
+-- so asking that is what keeps the parser and the invariant from drifting
+-- apart: tighten one and the other follows.
+--
+-- Refused rather than repaired.  The spec says which values are valid but not
+-- what to do with one that is not, and dropping it would empty the rule part,
+-- which for a part that limits rather than expands means no restriction at all
+-- -- a forbidden value would widen the recurrence set instead of narrowing it.
+-- BYMONTH already refused an out-of-range value, so this is also what the rest
+-- of the module did.
+requireInRange ::
+  (Validity part) =>
+  -- | Rule part name, for the error
+  Text ->
+  -- | The value as it was written, for the error
+  Text ->
+  part ->
+  Conform PropertyTypeParseError PropertyTypeFixableError Void part
+requireInRange name val part =
+  if isValid part
+    then pure part
+    else unfixableError $ RecurrenceRulePartOutOfRange name val
+
 setP ::
   (Ord part) =>
   (Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void part) ->
@@ -791,7 +817,7 @@ intervalP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Voi
 intervalP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableInterval t
-    Just w -> pure $ Interval w
+    Just w -> requireInRange "INTERVAL" t $ Interval w
 
 intervalB :: Interval -> Text
 intervalB = T.pack . show . unInterval
@@ -948,7 +974,7 @@ bySecondP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Voi
 bySecondP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableBySecond t
-    Just w -> pure $ BySecond w
+    Just w -> requireInRange "BYSECOND" t $ BySecond w
 
 bySecondB :: BySecond -> Text
 bySecondB = T.pack . show . unBySecond
@@ -978,7 +1004,7 @@ byMinuteP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Voi
 byMinuteP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByMinute t
-    Just w -> pure $ ByMinute w
+    Just w -> requireInRange "BYMINUTE" t $ ByMinute w
 
 byMinuteB :: ByMinute -> Text
 byMinuteB = T.pack . show . unByMinute
@@ -1008,7 +1034,7 @@ byHourP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Void 
 byHourP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByHour t
-    Just w -> pure $ ByHour w
+    Just w -> requireInRange "BYHOUR" t $ ByHour w
 
 byHourB :: ByHour -> Text
 byHourB = T.pack . show . unByHour
@@ -1089,7 +1115,7 @@ specificP ci =
               Nothing -> unfixableError $ UnReadableByDay t
               Just i -> do
                 dow <- parseDayOfWeek (CI.mk dayText)
-                pure $ Specific (if negated then negate i else i) dow
+                requireInRange "BYDAY" t $ Specific (if negated then negate i else i) dow
    in case T.uncons t of
         Just ('-', rest) -> signedP True rest
         Just ('+', rest) -> signedP False rest
@@ -1148,7 +1174,7 @@ byMonthDayP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError V
 byMonthDayP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByMonthDay t
-    Just w -> pure $ ByMonthDay w
+    Just w -> requireInRange "BYMONTHDAY" t $ ByMonthDay w
 
 byMonthDayB :: ByMonthDay -> Text
 byMonthDayB = T.pack . show . unByMonthDay
@@ -1180,7 +1206,7 @@ byYearDayP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Vo
 byYearDayP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByYearDay t
-    Just w -> pure $ ByYearDay w
+    Just w -> requireInRange "BYYEARDAY" t $ ByYearDay w
 
 byYearDayB :: ByYearDay -> Text
 byYearDayB = T.pack . show . unByYearDay
@@ -1221,7 +1247,7 @@ byWeekNoP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Voi
 byWeekNoP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableByWeekNo t
-    Just w -> pure $ ByWeekNo w
+    Just w -> requireInRange "BYWEEKNO" t $ ByWeekNo w
 
 byWeekNoB :: ByWeekNo -> Text
 byWeekNoB = T.pack . show . unByWeekNo
@@ -1291,7 +1317,7 @@ bySetPosP :: Text -> Conform PropertyTypeParseError PropertyTypeFixableError Voi
 bySetPosP t =
   case readMaybe (T.unpack t) of
     Nothing -> unfixableError $ UnReadableBySetPos t
-    Just w -> pure $ BySetPos w
+    Just w -> requireInRange "BYSETPOS" t $ BySetPos w
 
 bySetPosB :: BySetPos -> Text
 bySetPosB = T.pack . show . unBySetPos

@@ -84,6 +84,10 @@ data PropertyTypeParseError
   | UnparseableDuration !(ParseErrorBundle Text Void)
   | UnparseableFloatingPoint !Text
   | RecurrenceRulePartNotFound !Text
+  | -- | A rule part value read, but fell outside the range the spec gives it
+    --
+    -- The rule part name and the value as it was written.
+    RecurrenceRulePartOutOfRange !Text !Text
   | UnknownFrequency !Text
   | UnReadableInterval !Text
   | UnReadableCount !Text
@@ -125,6 +129,8 @@ instance Exception PropertyTypeParseError where
     UnparseablePeriod t -> unwords ["Unparseable Period", show t]
     UnparseableDuration t -> unwords ["Unparseable Duration", show t]
     RecurrenceRulePartNotFound t -> unwords ["Recurrence rule part not found:", show t]
+    RecurrenceRulePartOutOfRange name t ->
+      unwords ["Recurrence rule part", T.unpack name, "value out of range:", show t]
     UnparseableFloatingPoint t -> unwords ["Unparseable Floating point number", show t]
     UnknownFrequency s -> unwords ["Unknown FREQ value:", show s]
     UnReadableInterval s -> unwords ["Unreadable INTERVAL value:", show s]
