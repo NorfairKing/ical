@@ -40,6 +40,8 @@ extra-source-files:
     test_resources/calendar/zurich.res
     test_resources/event/daily-bysetpos.ics
     test_resources/event/daily-bysetpos.occ
+    test_resources/event/fixable/daily-byday-numeric.ics
+    test_resources/event/fixable/daily-byday-numeric.occ
     test_resources/event/hourly.ics
     test_resources/event/hourly.occ
     test_resources/event/leapdays.ics

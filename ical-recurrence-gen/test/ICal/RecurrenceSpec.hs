@@ -470,6 +470,42 @@ spec = do
         event <- shouldConform $ parseComponentFromText contents
         goldenFile <- replaceExtension ".occ" eventFile
         pure $ pureGoldenEventRecurrenceFile goldenFile limit event
+  -- Events that a conforming implementation must refuse to recur, and what
+  -- recurring them anyway produces.
+  --
+  -- 'scenarioDir' does not recur into subdirectories, so these are not also
+  -- picked up by the block above, which requires recurring without any fixable
+  -- error at all.
+  scenarioDir "test_resources/event/fixable" $ \fp -> do
+    eventFile <- liftIO $ parseRelFile fp
+    when (fileExtension eventFile == Just ".ics") $ do
+      it "cannot recur this event without fixing something" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
+        event <- shouldConform $ parseComponentFromText contents
+        let recurringEvent = getRecurringEvent (event :: Event)
+        -- 'runConform' fixes nothing, so it halts on the first fixable error.
+        -- The warning type here is 'Void', so this and 'runConformStrict'
+        -- cannot disagree.
+        case runConform $ runRWithoutZones $ recurEvents limit recurringEvent of
+          Left _ -> pure ()
+          Right (occurrences, _) ->
+            expectationFailure $
+              unlines
+                [ "Should have needed fixing but recurred cleanly into:",
+                  ppShow (S.toList occurrences)
+                ]
+
+      it "recurs this event leniently" $ do
+        contents <- TE.decodeUtf8 <$> SB.readFile (fromRelFile eventFile)
+        event <- shouldConform $ parseComponentFromText contents
+        let recurringEvent = getRecurringEvent (event :: Event)
+        goldenFile <- replaceExtension ".occ" eventFile
+        pure $
+          goldenEventOccurrenceFile goldenFile $
+            shouldConformLenient $
+              runRWithoutZones $
+                recurEvents limit recurringEvent
+
   scenarioDir "test_resources/calendar" $ \fp -> do
     eventFile <- liftIO $ parseRelFile fp
     when (fileExtension eventFile == Just ".ics") $ do

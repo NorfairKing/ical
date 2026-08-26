@@ -244,8 +244,12 @@ recurrenceRuleDateTimeOccurrences limit lt RecurrenceRule {..} = case recurrence
 -- | Filter the 'Every' to implement the fixable error defined by this part of the spec:
 --
 -- @
--- The BYDAY rule part MUST NOT be specified with a numeric value when
--- the FREQ rule part is not set to MONTHLY or YEARLY.  Furthermore,
+-- If an integer
+-- modifier is not present, it means all days of this type within the
+-- specified frequency.  For example, within a MONTHLY rule, MO
+-- represents all Mondays within the month.  The BYDAY rule part MUST
+-- NOT be specified with a numeric value when the FREQ rule part is
+-- not set to MONTHLY or YEARLY.
 -- @
 filterEvery :: Set ByDay -> R (Set DayOfWeek)
 filterEvery =
