@@ -35,6 +35,18 @@ spec = do
     genValidSpec @Count
     recurrenceRulePartSpec @Count
     recurrenceRulePartExampleSpec "1" (Count 1)
+    -- @
+    -- The COUNT rule part defines the number of occurrences at which to
+    -- range-bound the recurrence.  The "DTSTART" property value always
+    -- counts as the first occurrence.
+    -- @
+    --
+    -- That is the whole of what the spec says about COUNT: it bounds the value
+    -- nowhere.  A weekly meeting for two years is an ordinary count and must be
+    -- valid.
+    it "considers an ordinary count valid" $
+      shouldBeValid (Count 100)
+    recurrenceRulePartExampleSpec "100" (Count 100)
 
   describe "BySecond" $ do
     genValidSpec @BySecond
@@ -88,6 +100,18 @@ spec = do
     genValidSpec @BySetPos
     recurrenceRulePartSpec @(Set BySetPos)
     recurrenceRulePartExampleSpec @(Set BySetPos) "1" [BySetPos 1]
+    -- @
+    -- The BYSETPOS rule part specifies a COMMA-separated list of values
+    -- that corresponds to the nth occurrence within the set of
+    -- recurrence instances specified by the rule.  [...]  Valid values
+    -- are 1 to 366 or -366 to -1.
+    -- @
+    it "considers the largest set position valid" $ do
+      shouldBeValid (BySetPos 366)
+      shouldBeValid (BySetPos (-366))
+    it "rejects a set position past the number of days in a year" $ do
+      isValid (BySetPos 367) `shouldBe` False
+      isValid (BySetPos (-367)) `shouldBe` False
 
   describe "RecurrenceRule" $ do
     genValidSpec @RecurrenceRule
