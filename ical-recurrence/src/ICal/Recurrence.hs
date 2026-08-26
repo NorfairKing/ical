@@ -247,19 +247,42 @@ recurRecurrenceRule limit start mEndOrDuration recurrenceRule = do
 -- time.  Resolving and unresolving is therefore the test: a local time exists
 -- exactly when that round trip gives it back.
 --
--- This says yes for anything it cannot judge, so a floating or UTC start, or a
--- time zone the calendar does not define, leaves the occurrences alone.
+-- That round trip needs a time zone, so it only judges a zoned start.  For
+-- anything else it says yes and leaves the occurrences alone.  A leap second is
+-- judged either way, because it needs no time zone to rule out.
 localTimeExists :: DateTimeStart -> R (Time.LocalTime -> Bool)
 localTimeExists = \case
   DateTimeStartDateTime (DateTimeZoned tzid _) -> do
     ctxMap <- ask
     pure $ case M.lookup tzid ctxMap of
-      Nothing -> const True
+      Nothing -> not . isLeapSecond
       Just (resolutionCtx, unresolutionCtx) -> \localTime ->
-        case tryToResolveLocalTime' resolutionCtx localTime of
-          Nothing -> True
-          Just utcTime -> tryToUnresolveUTCTime' unresolutionCtx utcTime == Just localTime
-  _ -> pure (const True)
+        not (isLeapSecond localTime)
+          && case tryToResolveLocalTime' resolutionCtx localTime of
+            Nothing -> True
+            Just utcTime -> tryToUnresolveUTCTime' unresolutionCtx utcTime == Just localTime
+  _ -> pure (not . isLeapSecond)
+
+-- | Whether a local time names a leap second
+--
+-- @
+-- The BYSECOND rule part specifies a COMMA-separated list of seconds
+-- within a minute.  Valid values are 0 to 60.
+-- @
+--
+-- So a rule may ask for second 60, and 'bySecondExpand' puts it into a
+-- 'Time.TimeOfDay' as it stands.  Dividing an instant into a wall clock never
+-- produces one, though: whether such a local time survives being resolved and
+-- unresolved depends on the time of day and on the offset, so honouring it
+-- would make the recurrence set depend on facts about neither the rule nor the
+-- calendar.
+--
+-- A leap second is therefore treated as a local time that does not exist, which
+-- is the same answer whatever DTSTART's value type is.  The cost is that
+-- BYSECOND=60 never generates an instance.  That is the honest outcome: real
+-- leap seconds are announced for particular dates, and nothing here knows which.
+isLeapSecond :: Time.LocalTime -> Bool
+isLeapSecond = (>= 60) . Time.todSec . Time.localTimeOfDay
 
 -- | Drop the instances that fall after a UTC 'Until'
 --
