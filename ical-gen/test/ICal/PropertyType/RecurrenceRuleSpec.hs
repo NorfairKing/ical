@@ -6,6 +6,8 @@
 
 module ICal.PropertyType.RecurrenceRuleSpec where
 
+import Conformance
+import Conformance.TestUtils
 import Data.Set (Set)
 import Data.Time (DayOfWeek (..), LocalTime (..), TimeOfDay (..), fromGregorian, localTimeToUTC, utc)
 import ICal
@@ -158,3 +160,24 @@ spec = do
             recurrenceRuleByMonth = [ByMonth {unByMonth = January}]
           }
       )
+
+    describe "UNTIL and COUNT together" $ do
+      -- @
+      -- The UNTIL or COUNT rule parts are OPTIONAL, but they MUST NOT
+      -- occur in the same 'recur'.
+      -- @
+      --
+      -- The spec forbids both and does not say which one wins, so which one
+      -- survives is arbitrary.  It is pinned here so that it is at least
+      -- deterministic and written down, the same way the precedence between
+      -- colliding time zone observances was settled.
+      let both = "FREQ=DAILY;UNTIL=20200201T000000Z;COUNT=3"
+      it "does not parse without fixing something" $
+        case runConform (parseRecurrenceRule both) of
+          Left _ -> pure ()
+          Right (rule, _) ->
+            expectationFailure $
+              unlines ["Should have needed fixing but parsed cleanly into:", ppShow rule]
+      it "keeps the count and drops the until when parsed leniently" $ do
+        rule <- shouldConformLenient $ parseRecurrenceRule both
+        recurrenceRuleUntilCount rule `shouldBe` Just (Right (Count 3))
