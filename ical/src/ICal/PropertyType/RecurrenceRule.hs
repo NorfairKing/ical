@@ -885,13 +885,14 @@ untilB = \case
 newtype Count = Count {unCount :: Word}
   deriving (Show, Eq, Ord, Generic)
 
-instance Validity Count where
-  validate s@(Count w) =
-    mconcat
-      [ genericValidate s,
-        declare "Valid values are 0 to 60." $
-          w >= 0 && w <= 60
-      ]
+-- | The spec bounds COUNT nowhere, so neither does this.
+--
+-- @
+-- The COUNT rule part defines the number of occurrences at which to
+-- range-bound the recurrence.  The "DTSTART" property value always
+-- counts as the first occurrence.
+-- @
+instance Validity Count
 
 instance NFData Count
 
@@ -1245,8 +1246,8 @@ instance Validity BySetPos where
   validate sp@(BySetPos w) =
     mconcat
       [ genericValidate sp,
-        declare "The set position is not zero" $
-          w /= 0
+        declare "Valid values are 1 to 366 or -366 to -1." $
+          w /= 0 && w >= -366 && w <= 366
       ]
 
 instance NFData BySetPos
