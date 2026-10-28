@@ -8,7 +8,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-26.05";
     nixpkgs-25_11.url = "github:NixOS/nixpkgs?ref=nixos-25.11";
-    horizon-advance.url = "git+https://gitlab.horizon-haskell.net/package-sets/horizon-advance";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     validity.url = "github:NorfairKing/validity";
     validity.flake = false;
@@ -32,7 +31,6 @@
     { self
     , nixpkgs
     , nixpkgs-25_11
-    , horizon-advance
     , pre-commit-hooks
     , validity
     , safe-coloured-text
@@ -47,19 +45,19 @@
       system = "x86_64-linux";
       nixpkgsFor = nixpkgs: import nixpkgs { inherit system; };
       pkgs = nixpkgsFor nixpkgs;
-      allOverrides = pkgs.lib.composeManyExtensions [
-        (pkgs.callPackage (validity + "/nix/overrides.nix") { })
-        (pkgs.callPackage (autodocodec + "/nix/overrides.nix") { })
-        (pkgs.callPackage (safe-coloured-text + "/nix/overrides.nix") { })
-        (pkgs.callPackage (fast-myers-diff + "/nix/overrides.nix") { })
-        (pkgs.callPackage (sydtest + "/nix/overrides.nix") { })
-        (pkgs.callPackage (opt-env-conf + "/nix/overrides.nix") { })
-        (pkgs.callPackage (conformance + "/nix/overrides.nix") { })
-        (pkgs.callPackage (dekking + "/nix/overrides.nix") { })
-        self.overrides.${system}
-      ];
-      horizonPkgs = horizon-advance.legacyPackages.${system}.extend allOverrides;
-      haskellPackagesFor = nixpkgs: (nixpkgsFor nixpkgs).haskellPackages.extend allOverrides;
+      haskellPackagesFor = nixpkgs: (nixpkgsFor nixpkgs).haskellPackages.extend (
+        pkgs.lib.composeManyExtensions [
+          (pkgs.callPackage (validity + "/nix/overrides.nix") { })
+          (pkgs.callPackage (autodocodec + "/nix/overrides.nix") { })
+          (pkgs.callPackage (safe-coloured-text + "/nix/overrides.nix") { })
+          (pkgs.callPackage (fast-myers-diff + "/nix/overrides.nix") { })
+          (pkgs.callPackage (sydtest + "/nix/overrides.nix") { })
+          (pkgs.callPackage (opt-env-conf + "/nix/overrides.nix") { })
+          (pkgs.callPackage (conformance + "/nix/overrides.nix") { })
+          (pkgs.callPackage (dekking + "/nix/overrides.nix") { })
+          self.overrides.${system}
+        ]
+      );
       haskellPackages = haskellPackagesFor nixpkgs;
     in
     {
@@ -76,7 +74,6 @@
           backwardCompatibilityChecks = pkgs.lib.mapAttrs (_: nixpkgs: backwardCompatibilityCheckFor nixpkgs) allNixpkgs;
         in
         backwardCompatibilityChecks // {
-          forwardCompatibility = horizonPkgs.icalRelease;
           coverage-report = haskellPackages.dekking.makeCoverageReport {
             name = "test-coverage-report";
             packages = [
